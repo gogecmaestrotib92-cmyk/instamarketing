@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import SEO from './components/SEO';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -142,22 +143,24 @@ function App() {
   return (
     <HelmetProvider>
       <AuthProvider>
-        <Router>
-          <SEO />
-          <AppRoutes />
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="dark"
-          />
-        </Router>
+        <ErrorBoundary>
+          <Router>
+            <SEO />
+            <AppRoutes />
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="dark"
+            />
+          </Router>
+        </ErrorBoundary>
       </AuthProvider>
     </HelmetProvider>
   );
