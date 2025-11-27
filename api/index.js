@@ -1,4 +1,4 @@
-// Simple API for Vercel Serverless
+// Simple API for Vercel Serverless - v2
 module.exports = (req, res) => {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
