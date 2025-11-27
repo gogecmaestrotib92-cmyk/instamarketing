@@ -21,6 +21,7 @@ const Schedule = () => {
 
   useEffect(() => {
     fetchCalendar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate]);
 
   const fetchCalendar = async () => {
@@ -62,6 +63,7 @@ const Schedule = () => {
   };
 
   const { daysInMonth, startingDay } = getDaysInMonth(currentDate);
+  // eslint-disable-next-line no-unused-vars
   const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   const navigateMonth = (direction) => {

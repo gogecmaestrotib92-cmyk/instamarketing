@@ -12,13 +12,12 @@ import {
   Legend,
   ArcElement
 } from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { Line, Doughnut } from 'react-chartjs-2';
 import { 
   FiTrendingUp, 
   FiHeart, 
   FiMessageCircle, 
   FiEye,
-  FiShare2,
   FiBookmark,
   FiClock
 } from 'react-icons/fi';
@@ -47,6 +46,7 @@ const Analytics = () => {
 
   useEffect(() => {
     fetchAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period]);
 
   const fetchAnalytics = async () => {

@@ -8,7 +8,6 @@ import {
   FiUpload,
   FiX,
   FiDollarSign,
-  FiCalendar,
   FiUsers,
   FiTarget,
   FiSave

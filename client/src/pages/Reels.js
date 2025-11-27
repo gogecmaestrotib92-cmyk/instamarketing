@@ -25,6 +25,7 @@ const Reels = () => {
 
   useEffect(() => {
     fetchReels();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const fetchReels = async () => {

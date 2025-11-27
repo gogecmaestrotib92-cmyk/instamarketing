@@ -9,17 +9,11 @@ import {
   FiSettings, 
   FiEye, 
   FiDownload, 
-  FiPlay, 
   FiLayers,
   FiActivity,
   FiAperture,
-  FiCamera,
-  FiSun,
-  FiSmile,
-  FiMic,
   FiEdit3,
   FiSlash,
-  FiMonitor,
   FiClock,
   FiMaximize2,
   FiSliders
@@ -77,6 +71,7 @@ const AdvancedVideoGenerator = () => {
 
   useEffect(() => {
     buildPromptPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData]);
 
   const fetchPresets = async () => {

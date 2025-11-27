@@ -8,8 +8,6 @@ import {
   FiTrash2, 
   FiPlay,
   FiPause,
-  FiCheck,
-  FiX,
   FiDollarSign,
   FiEye,
   FiMousePointer
@@ -25,6 +23,7 @@ const Campaigns = () => {
 
   useEffect(() => {
     fetchCampaigns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const fetchCampaigns = async () => {

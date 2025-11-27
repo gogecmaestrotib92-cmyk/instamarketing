@@ -56,6 +56,7 @@ const AITools = () => {
   // Video generator state
   const [videoPrompt, setVideoPrompt] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [videoPredictionId, setVideoPredictionId] = useState('');
   const [videoStatus, setVideoStatus] = useState('');
   const [videoLoading, setVideoLoading] = useState(false);
@@ -67,6 +68,7 @@ const AITools = () => {
   const [reelTextOverlay, setReelTextOverlay] = useState('');
   const [reelScript, setReelScript] = useState('');
   const [reelAudioUrl, setReelAudioUrl] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [reelVideoUrl, setReelVideoUrl] = useState('');
   const [reelFinalUrl, setReelFinalUrl] = useState('');
   const [reelStatus, setReelStatus] = useState('');

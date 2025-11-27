@@ -4,12 +4,9 @@ import { authAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import { 
   FiUser, 
-  FiCamera, 
   FiBell, 
   FiLock, 
-  FiAlertTriangle,
-  FiCheck,
-  FiX
+  FiAlertTriangle
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import SEO from '../components/SEO';
