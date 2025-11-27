@@ -59,35 +59,38 @@ app.use((err, req, res, next) => {
 });
 
 // Database connection
+let isConnected = false;
 const connectDB = async () => {
+  if (isConnected) return;
+  
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/instamarketing';
     await mongoose.connect(mongoURI);
+    isConnected = true;
     console.log('✅ MongoDB connected successfully');
   } catch (error) {
     console.error('❌ MongoDB connection error:', error.message);
     // Don't exit in development - allow running without DB for testing
     if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
+      throw error;
     }
   }
 };
 
-// Start server
-const PORT = process.env.PORT || 5000;
-
-const startServer = async () => {
-  await connectDB();
-  
-  // Initialize the scheduler for automated posting
-  initScheduler();
-  
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📊 API available at http://localhost:${PORT}/api`);
+// Start server if running directly
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  connectDB().then(() => {
+    initScheduler();
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📊 API available at http://localhost:${PORT}/api`);
+    });
   });
+}
+
+// Export for Vercel
+module.exports = async (req, res) => {
+  await connectDB();
+  return app(req, res);
 };
-
-startServer();
-
-module.exports = app;
