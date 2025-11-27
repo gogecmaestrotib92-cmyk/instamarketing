@@ -6,9 +6,24 @@ const OpenAI = require('openai');
  */
 class OpenAIService {
   constructor() {
-    this.client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    this.client = null;
+  }
+
+  /**
+   * Initialize or get OpenAI client
+   * Lazy initialization to allow better error handling
+   */
+  getClient() {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY is not configured. Please add your OpenAI API key to the .env file. Get one at https://platform.openai.com/api-keys');
+    }
+    
+    if (!this.client) {
+      this.client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      });
+    }
+    return this.client;
   }
 
   /**
@@ -16,6 +31,7 @@ class OpenAIService {
    */
   async generateCaption(topic, options = {}) {
     try {
+      const client = this.getClient();
       const { tone = 'engaging', includeEmojis = true, includeHashtags = true, language = 'en' } = options;
 
       const systemPrompt = `You are an expert Instagram content creator. Generate engaging captions that drive engagement.
@@ -24,7 +40,7 @@ class OpenAIService {
       Tone: ${tone}
       Language: ${language === 'sr' ? 'Serbian' : 'English'}`;
 
-      const response = await this.client.chat.completions.create({
+      const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
@@ -49,7 +65,8 @@ class OpenAIService {
    */
   async generateHashtags(topic, count = 15) {
     try {
-      const response = await this.client.chat.completions.create({
+      const client = this.getClient();
+      const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { 
@@ -83,7 +100,8 @@ class OpenAIService {
    */
   async generateContentIdeas(niche, count = 5) {
     try {
-      const response = await this.client.chat.completions.create({
+      const client = this.getClient();
+      const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { 
@@ -122,7 +140,8 @@ class OpenAIService {
    */
   async generateReelScript(topic, duration = 30) {
     try {
-      const response = await this.client.chat.completions.create({
+      const client = this.getClient();
+      const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { 
@@ -152,7 +171,8 @@ class OpenAIService {
    */
   async improveCaption(caption) {
     try {
-      const response = await this.client.chat.completions.create({
+      const client = this.getClient();
+      const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { 
@@ -181,7 +201,8 @@ class OpenAIService {
    */
   async generateVideoPrompt(topic, style = 'cinematic') {
     try {
-      const response = await this.client.chat.completions.create({
+      const client = this.getClient();
+      const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { 
@@ -212,6 +233,7 @@ class OpenAIService {
    */
   async chat(message, conversationHistory = []) {
     try {
+      const client = this.getClient();
       const messages = [
         { 
           role: 'system', 
@@ -228,7 +250,7 @@ class OpenAIService {
         { role: 'user', content: message }
       ];
 
-      const response = await this.client.chat.completions.create({
+      const response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: messages,
         max_tokens: 1000,

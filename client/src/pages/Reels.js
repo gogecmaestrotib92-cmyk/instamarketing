@@ -141,7 +141,14 @@ const Reels = () => {
               <div className="post-media reel-media">
                 {reel.video?.url ? (
                   <>
-                    <video src={reel.video.url} />
+                    <video 
+                      src={reel.video.url} 
+                      muted 
+                      playsInline 
+                      crossOrigin="anonymous"
+                      preload="metadata"
+                      onError={(e) => console.error('Reel video error:', e)}
+                    />
                     <div className="play-overlay">
                       <FiPlay />
                     </div>

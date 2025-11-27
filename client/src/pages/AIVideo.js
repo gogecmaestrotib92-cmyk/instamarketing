@@ -324,7 +324,12 @@ const AIVideo = () => {
                   controls 
                   autoPlay 
                   loop
+                  muted
+                  playsInline
+                  crossOrigin="anonymous"
+                  preload="auto"
                   className={`aspect-${aspectRatio.replace(':', '-')}`}
+                  onError={(e) => console.error('Video playback error:', e)}
                 />
               </div>
               <div className="video-actions">
@@ -368,7 +373,14 @@ const AIVideo = () => {
                 {myVideos.map((video) => (
                   <div key={video._id} className="video-card">
                     <div className="video-thumbnail">
-                      <video src={video.videoUrl} muted />
+                      <video 
+                        src={video.videoUrl} 
+                        muted 
+                        playsInline 
+                        crossOrigin="anonymous"
+                        preload="metadata"
+                        onError={(e) => console.error('Video thumbnail error:', e)}
+                      />
                       <div className="video-overlay">
                         <FiPlay size={32} />
                       </div>

@@ -778,8 +778,13 @@ const AITools = () => {
                   src={reelFinalUrl} 
                   controls 
                   autoPlay 
-                  loop 
+                  loop
+                  muted
+                  playsInline
+                  crossOrigin="anonymous"
+                  preload="auto"
                   className="generated-video"
+                  onError={(e) => console.error('Reel video error:', e)}
                 />
                 <div className="video-actions">
                   <a 
@@ -850,8 +855,13 @@ const AITools = () => {
                   src={videoUrl} 
                   controls 
                   autoPlay 
-                  loop 
+                  loop
+                  muted
+                  playsInline
+                  crossOrigin="anonymous"
+                  preload="auto"
                   className="generated-video"
+                  onError={(e) => console.error('AI video error:', e)}
                 />
                 <div className="video-actions">
                   <a 

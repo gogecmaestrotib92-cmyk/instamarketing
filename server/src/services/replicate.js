@@ -6,9 +6,7 @@ const Replicate = require('replicate');
  */
 class ReplicateService {
   constructor() {
-    this.replicate = new Replicate({
-      auth: process.env.REPLICATE_API_TOKEN
-    });
+    this.replicate = null;
     this.maxRetries = 3;
     this.retryDelay = 10000; // 10 seconds
     this.pollInterval = 5000; // 5 seconds
@@ -16,12 +14,30 @@ class ReplicateService {
   }
 
   /**
+   * Initialize or get Replicate client
+   * Lazy initialization to allow better error handling
+   */
+  getClient() {
+    if (!process.env.REPLICATE_API_TOKEN) {
+      throw new Error('REPLICATE_API_TOKEN is not configured. Please add your Replicate API token to the .env file. Get one at https://replicate.com/account/api-tokens');
+    }
+    
+    if (!this.replicate) {
+      this.replicate = new Replicate({
+        auth: process.env.REPLICATE_API_TOKEN
+      });
+    }
+    return this.replicate;
+  }
+
+  /**
    * Wait for prediction to complete with polling
    */
   async waitForPrediction(predictionId) {
+    const client = this.getClient();
     for (let i = 0; i < this.maxPollAttempts; i++) {
       await this.sleep(this.pollInterval);
-      const status = await this.replicate.predictions.get(predictionId);
+      const status = await client.predictions.get(predictionId);
       
       console.log(`📊 Prediction status: ${status.status} (attempt ${i + 1})`);
       
@@ -45,11 +61,12 @@ class ReplicateService {
    */
   async textToVideo(prompt, options = {}) {
     try {
+      const client = this.getClient();
       console.log('🎬 Starting Replicate text-to-video generation (Minimax)...');
       console.log('Prompt:', prompt);
 
       // Create prediction using Minimax Video-01 model
-      const prediction = await this.replicate.predictions.create({
+      const prediction = await client.predictions.create({
         version: '5aa835260ff7f40f4069c41185f72036accf99e29957bb4a3b3a911f3b6c1912',
         input: {
           prompt: prompt,
@@ -84,9 +101,10 @@ class ReplicateService {
    */
   async startTextToVideo(prompt, options = {}) {
     try {
+      const client = this.getClient();
       console.log('🎬 Starting async text-to-video generation (Minimax)...');
       
-      const prediction = await this.replicate.predictions.create({
+      const prediction = await client.predictions.create({
         version: '5aa835260ff7f40f4069c41185f72036accf99e29957bb4a3b3a911f3b6c1912',
         input: {
           prompt: prompt,
@@ -112,7 +130,8 @@ class ReplicateService {
    */
   async getPredictionStatus(predictionId) {
     try {
-      const status = await this.replicate.predictions.get(predictionId);
+      const client = this.getClient();
+      const status = await client.predictions.get(predictionId);
       return {
         success: true,
         id: status.id,
@@ -153,6 +172,7 @@ class ReplicateService {
    * Run a model with retry logic
    */
   async runWithRetry(modelId, input) {
+    const client = this.getClient();
     let lastError;
     for (let i = 0; i < this.maxRetries; i++) {
       try {
@@ -162,7 +182,7 @@ class ReplicateService {
         let prediction;
         if (modelId.includes(':')) {
           const version = modelId.split(':')[1];
-          prediction = await this.replicate.predictions.create({
+          prediction = await client.predictions.create({
             version: version,
             input: input
           });
