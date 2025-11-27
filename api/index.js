@@ -1,10 +1,4 @@
 // Vercel Serverless API Handler with AI Integration
-const Replicate = require('replicate');
-
-// Initialize Replicate
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN
-});
 
 module.exports = async (req, res) => {
   // Set CORS headers
@@ -18,85 +12,93 @@ module.exports = async (req, res) => {
 
   const url = req.url.split('?')[0]; // Remove query params
 
-  // Health check
-  if (url === '/api/health' || url === '/api/health/') {
-    return res.status(200).json({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString(),
-      replicate: !!process.env.REPLICATE_API_TOKEN,
-      openai: !!process.env.OPENAI_API_KEY
-    });
-  }
+  try {
+    // Health check
+    if (url === '/api/health' || url === '/api/health/') {
+      return res.status(200).json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        replicate: !!process.env.REPLICATE_API_TOKEN,
+        openai: !!process.env.OPENAI_API_KEY
+      });
+    }
 
-  // Auth routes
-  if (url === '/api/auth/me') {
-    return res.status(200).json({
-      _id: 'user123',
-      name: 'Demo User',
-      email: 'demo@instamarketing.rs',
-      plan: 'Pro',
-      instagramConnected: false
-    });
-  }
-
-  if (url === '/api/auth/login' && req.method === 'POST') {
-    return res.status(200).json({
-      token: 'demo-token',
-      user: {
+    // Auth routes
+    if (url === '/api/auth/me') {
+      return res.status(200).json({
         _id: 'user123',
         name: 'Demo User',
         email: 'demo@instamarketing.rs',
-        plan: 'Pro'
-      }
-    });
-  }
+        plan: 'Pro',
+        instagramConnected: false
+      });
+    }
 
-  // Dashboard / Analytics routes
-  if (url === '/api/analytics/dashboard') {
-    return res.status(200).json({
-      account: { connected: false },
-      overview: {
-        posts: { total: 0, published: 0, scheduled: 0 },
-        reels: { total: 0, published: 0 },
-        campaigns: { total: 0, active: 0 }
-      },
-      contentMetrics: { likes: 0, comments: 0, shares: 0, saves: 0 }
-    });
-  }
+    if (url === '/api/auth/login' && req.method === 'POST') {
+      return res.status(200).json({
+        token: 'demo-token',
+        user: {
+          _id: 'user123',
+          name: 'Demo User',
+          email: 'demo@instamarketing.rs',
+          plan: 'Pro'
+        }
+      });
+    }
 
-  if (url === '/api/analytics/content') {
-    return res.status(200).json({ content: [] });
-  }
+    // Dashboard / Analytics routes
+    if (url === '/api/analytics/dashboard') {
+      return res.status(200).json({
+        account: { connected: false },
+        overview: {
+          posts: { total: 0, published: 0, scheduled: 0 },
+          reels: { total: 0, published: 0 },
+          campaigns: { total: 0, active: 0 }
+        },
+        contentMetrics: { likes: 0, comments: 0, shares: 0, saves: 0 }
+      });
+    }
 
-  if (url === '/api/analytics/best-times') {
-    return res.status(200).json({ bestTimes: [], timezone: 'Europe/Belgrade' });
-  }
+    if (url === '/api/analytics/content') {
+      return res.status(200).json({ content: [] });
+    }
 
-  // Posts, Reels, Campaigns routes
-  if (url === '/api/posts') {
-    return res.status(200).json({ posts: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } });
-  }
-  if (url === '/api/reels') {
-    return res.status(200).json({ reels: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } });
-  }
-  if (url === '/api/campaigns') {
-    return res.status(200).json({ campaigns: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } });
-  }
-  if (url === '/api/schedule' || url === '/api/schedule/calendar') {
-    return res.status(200).json({ scheduled: [], calendar: {} });
-  }
+    if (url === '/api/analytics/best-times') {
+      return res.status(200).json({ bestTimes: [], timezone: 'Europe/Belgrade' });
+    }
 
-  // ==================== AI VIDEO GENERATION ====================
-  
-  // Text to Video - Premium (Minimax)
-  if (url === '/api/ai-video/text-to-video' && req.method === 'POST') {
-    try {
+    // Posts, Reels, Campaigns routes
+    if (url === '/api/posts') {
+      return res.status(200).json({ posts: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } });
+    }
+    if (url === '/api/reels') {
+      return res.status(200).json({ reels: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } });
+    }
+    if (url === '/api/campaigns') {
+      return res.status(200).json({ campaigns: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } });
+    }
+    if (url === '/api/schedule' || url === '/api/schedule/calendar') {
+      return res.status(200).json({ scheduled: [], calendar: {} });
+    }
+
+    // My Videos
+    if (url === '/api/ai-video/my-videos') {
+      return res.status(200).json({ videos: [] });
+    }
+
+    // ==================== AI VIDEO GENERATION ====================
+    
+    // Text to Video - Premium (Minimax)
+    if (url === '/api/ai-video/text-to-video' && req.method === 'POST') {
       if (!process.env.REPLICATE_API_TOKEN) {
-        return res.status(500).json({ error: 'REPLICATE_API_TOKEN nije konfigurisan' });
+        return res.status(500).json({ error: 'REPLICATE_API_TOKEN nije konfigurisan u Vercel Environment Variables' });
       }
+
+      const Replicate = require('replicate');
+      const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { prompt, duration = 5, aspectRatio = '9:16' } = body;
+      const { prompt, duration = 5, aspectRatio = '9:16' } = body || {};
 
       if (!prompt) {
         return res.status(400).json({ error: 'Prompt je obavezan' });
@@ -127,29 +129,19 @@ module.exports = async (req, res) => {
           aspectRatio
         }
       });
-    } catch (error) {
-      console.error('❌ Video generation error:', error);
-      
-      if (error.message?.includes('Payment') || error.message?.includes('402') || error.message?.includes('billing')) {
-        return res.status(402).json({ 
-          error: 'Potrebna uplata na Replicate nalogu. Posetite replicate.com/account/billing',
-          requiresPayment: true
-        });
-      }
-      
-      return res.status(500).json({ error: error.message || 'Greška pri generisanju videa' });
     }
-  }
 
-  // Start async video generation
-  if (url === '/api/ai/video/start' && req.method === 'POST') {
-    try {
+    // Start async video generation
+    if (url === '/api/ai/video/start' && req.method === 'POST') {
       if (!process.env.REPLICATE_API_TOKEN) {
         return res.status(500).json({ error: 'REPLICATE_API_TOKEN nije konfigurisan' });
       }
 
+      const Replicate = require('replicate');
+      const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { prompt, numFrames = 16, fps = 8 } = body;
+      const { prompt } = body || {};
 
       if (!prompt) {
         return res.status(400).json({ error: 'Prompt je obavezan' });
@@ -157,7 +149,7 @@ module.exports = async (req, res) => {
 
       // Start prediction without waiting
       const prediction = await replicate.predictions.create({
-        version: "minimax/video-01",
+        model: "minimax/video-01",
         input: {
           prompt: prompt,
           prompt_optimizer: true
@@ -169,20 +161,18 @@ module.exports = async (req, res) => {
         predictionId: prediction.id,
         status: prediction.status
       });
-    } catch (error) {
-      console.error('Start video error:', error);
-      return res.status(500).json({ error: error.message });
     }
-  }
 
-  // Check video status
-  if (url.startsWith('/api/ai/video/status/') && req.method === 'GET') {
-    try {
+    // Check video status
+    if (url.startsWith('/api/ai/video/status/') && req.method === 'GET') {
       const predictionId = url.split('/').pop();
       
       if (!predictionId) {
         return res.status(400).json({ error: 'Prediction ID je obavezan' });
       }
+
+      const Replicate = require('replicate');
+      const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
       const prediction = await replicate.predictions.get(predictionId);
 
@@ -191,31 +181,21 @@ module.exports = async (req, res) => {
         output: prediction.output,
         error: prediction.error
       });
-    } catch (error) {
-      console.error('Status check error:', error);
-      return res.status(500).json({ error: error.message });
     }
-  }
 
-  // My Videos
-  if (url === '/api/ai-video/my-videos') {
-    return res.status(200).json({ videos: [] });
-  }
+    // ==================== AI TEXT GENERATION (OpenAI) ====================
 
-  // ==================== AI TEXT GENERATION (OpenAI) ====================
-
-  // Caption generation
-  if (url === '/api/ai/caption' && req.method === 'POST') {
-    try {
+    // Caption generation
+    if (url === '/api/ai/caption' && req.method === 'POST') {
       if (!process.env.OPENAI_API_KEY) {
-        return res.status(500).json({ error: 'OPENAI_API_KEY nije konfigurisan' });
+        return res.status(500).json({ error: 'OPENAI_API_KEY nije konfigurisan u Vercel Environment Variables' });
       }
 
       const OpenAI = require('openai');
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { topic, tone = 'engaging', includeEmojis = true, includeHashtags = true } = body;
+      const { topic, tone = 'engaging', includeEmojis = true, includeHashtags = true } = body || {};
 
       if (!topic) {
         return res.status(400).json({ error: 'Topic je obavezan' });
@@ -235,15 +215,10 @@ Caption treba biti engaging i pozivati na akciju.`
       });
 
       return res.status(200).json({ caption: completion.choices[0].message.content });
-    } catch (error) {
-      console.error('Caption error:', error);
-      return res.status(500).json({ error: error.message });
     }
-  }
 
-  // Hashtag generation
-  if (url === '/api/ai/hashtags' && req.method === 'POST') {
-    try {
+    // Hashtag generation
+    if (url === '/api/ai/hashtags' && req.method === 'POST') {
       if (!process.env.OPENAI_API_KEY) {
         return res.status(500).json({ error: 'OPENAI_API_KEY nije konfigurisan' });
       }
@@ -252,7 +227,7 @@ Caption treba biti engaging i pozivati na akciju.`
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { topic, count = 15 } = body;
+      const { topic, count = 15 } = body || {};
 
       if (!topic) {
         return res.status(400).json({ error: 'Topic je obavezan' });
@@ -275,15 +250,10 @@ Vrati samo hashtag-ove, svaki u novom redu, bez numerisanja.`
         .filter(h => h.startsWith('#'));
 
       return res.status(200).json({ hashtags });
-    } catch (error) {
-      console.error('Hashtags error:', error);
-      return res.status(500).json({ error: error.message });
     }
-  }
 
-  // Script generation
-  if (url === '/api/ai/script' && req.method === 'POST') {
-    try {
+    // Script generation
+    if (url === '/api/ai/script' && req.method === 'POST') {
       if (!process.env.OPENAI_API_KEY) {
         return res.status(500).json({ error: 'OPENAI_API_KEY nije konfigurisan' });
       }
@@ -292,7 +262,7 @@ Vrati samo hashtag-ove, svaki u novom redu, bez numerisanja.`
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { topic, duration = 30 } = body;
+      const { topic, duration = 30 } = body || {};
 
       if (!topic) {
         return res.status(400).json({ error: 'Topic je obavezan' });
@@ -312,15 +282,10 @@ Format: Samo tekst za voiceover, bez oznaka scena.`
       });
 
       return res.status(200).json({ script: completion.choices[0].message.content });
-    } catch (error) {
-      console.error('Script error:', error);
-      return res.status(500).json({ error: error.message });
     }
-  }
 
-  // Content ideas
-  if (url === '/api/ai/ideas' && req.method === 'POST') {
-    try {
+    // Content ideas
+    if (url === '/api/ai/ideas' && req.method === 'POST') {
       if (!process.env.OPENAI_API_KEY) {
         return res.status(500).json({ error: 'OPENAI_API_KEY nije konfigurisan' });
       }
@@ -329,7 +294,7 @@ Format: Samo tekst za voiceover, bez oznaka scena.`
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { niche, count = 5 } = body;
+      const { niche, count = 5 } = body || {};
 
       if (!niche) {
         return res.status(400).json({ error: 'Niche je obavezan' });
@@ -347,21 +312,28 @@ Za svaku ideju daj:
 
 Vrati kao JSON niz objekata sa poljima: title, description, format`
         }],
-        max_tokens: 800,
-        response_format: { type: "json_object" }
+        max_tokens: 800
       });
 
-      const content = JSON.parse(completion.choices[0].message.content);
-      return res.status(200).json({ ideas: content.ideas || content });
-    } catch (error) {
-      console.error('Ideas error:', error);
-      return res.status(500).json({ error: error.message });
-    }
-  }
+      let ideas;
+      try {
+        const content = completion.choices[0].message.content;
+        // Try to extract JSON from the response
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          ideas = JSON.parse(jsonMatch[0]);
+        } else {
+          ideas = JSON.parse(content);
+        }
+      } catch (e) {
+        ideas = [{ title: completion.choices[0].message.content, description: '', format: 'Post' }];
+      }
 
-  // AI Chat
-  if (url === '/api/ai/chat' && req.method === 'POST') {
-    try {
+      return res.status(200).json({ ideas });
+    }
+
+    // AI Chat
+    if (url === '/api/ai/chat' && req.method === 'POST') {
       if (!process.env.OPENAI_API_KEY) {
         return res.status(500).json({ error: 'OPENAI_API_KEY nije konfigurisan' });
       }
@@ -370,7 +342,7 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { message, history = [] } = body;
+      const { message, history = [] } = body || {};
 
       if (!message) {
         return res.status(400).json({ error: 'Message je obavezan' });
@@ -392,19 +364,29 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
       });
 
       return res.status(200).json({ response: completion.choices[0].message.content });
-    } catch (error) {
-      console.error('Chat error:', error);
-      return res.status(500).json({ error: error.message });
     }
-  }
 
-  // Default response
-  return res.status(200).json({ 
-    message: 'Route not configured',
-    path: url,
-    method: req.method
-  });
-};
-    hint: 'This demo deployment has limited API functionality'
-  });
+    // Default response
+    return res.status(200).json({ 
+      message: 'Route not configured',
+      path: url,
+      method: req.method
+    });
+
+  } catch (error) {
+    console.error('API Error:', error);
+    
+    // Check for payment required error
+    if (error.message?.includes('Payment') || error.message?.includes('402') || error.message?.includes('billing')) {
+      return res.status(402).json({ 
+        error: 'Potrebna uplata na Replicate nalogu. Posetite replicate.com/account/billing',
+        requiresPayment: true
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: error.message || 'Internal server error',
+      path: url
+    });
+  }
 };
