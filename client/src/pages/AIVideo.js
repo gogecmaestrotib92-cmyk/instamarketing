@@ -9,7 +9,8 @@ import {
   FiClock,
   FiTrash2,
   FiLoader,
-  FiZap
+  FiZap,
+  FiSave
 } from 'react-icons/fi';
 import { FaWandMagicSparkles } from 'react-icons/fa6';
 import SEO from '../components/SEO';
@@ -34,13 +35,58 @@ const AIVideo = () => {
 
   const fetchMyVideos = async () => {
     try {
-      const response = await api.get('/ai-video/my-videos');
-      setMyVideos(response.data.videos);
+      // Load from localStorage first (for saved videos)
+      const savedVideos = JSON.parse(localStorage.getItem('myAIVideos') || '[]');
+      setMyVideos(savedVideos);
+      
+      // Also try to fetch from API (if server is available)
+      try {
+        const response = await api.get('/ai-video/my-videos');
+        if (response.data.videos && response.data.videos.length > 0) {
+          // Merge API videos with local (avoiding duplicates)
+          const apiVideos = response.data.videos;
+          const allVideos = [...savedVideos];
+          apiVideos.forEach(v => {
+            if (!allVideos.find(sv => sv._id === v._id)) {
+              allVideos.push(v);
+            }
+          });
+          setMyVideos(allVideos);
+        }
+      } catch (apiError) {
+        // API not available, use localStorage only
+        console.log('Using localStorage for videos');
+      }
     } catch (error) {
       console.error('Error fetching videos:', error);
     } finally {
       setLoadingVideos(false);
     }
+  };
+
+  const saveVideoToLocal = (video) => {
+    const savedVideos = JSON.parse(localStorage.getItem('myAIVideos') || '[]');
+    const newVideo = {
+      _id: video.id || Date.now().toString(),
+      videoUrl: video.videoUrl,
+      prompt: video.prompt || prompt,
+      duration: video.duration || duration,
+      aspectRatio: video.aspectRatio || aspectRatio,
+      type: activeTab === 'text-to-video' ? 'Text-to-Video' : 'Image-to-Video',
+      createdAt: new Date().toISOString(),
+      postedToInstagram: false
+    };
+    
+    // Check if video already saved
+    if (savedVideos.find(v => v.videoUrl === newVideo.videoUrl)) {
+      toast.info('Video je već sačuvan');
+      return;
+    }
+    
+    savedVideos.unshift(newVideo);
+    localStorage.setItem('myAIVideos', JSON.stringify(savedVideos));
+    setMyVideos(savedVideos);
+    toast.success('✅ Video sačuvan u Moji Videi!');
   };
 
   const handleImageChange = (e) => {
@@ -134,9 +180,20 @@ const AIVideo = () => {
     if (!window.confirm('Da li ste sigurni da želite obrisati ovaj video?')) return;
 
     try {
-      await api.delete(`/ai-video/${videoId}`);
+      // Remove from localStorage
+      const savedVideos = JSON.parse(localStorage.getItem('myAIVideos') || '[]');
+      const updatedVideos = savedVideos.filter(v => v._id !== videoId);
+      localStorage.setItem('myAIVideos', JSON.stringify(updatedVideos));
+      setMyVideos(updatedVideos);
+      
+      // Also try to delete from API
+      try {
+        await api.delete(`/ai-video/${videoId}`);
+      } catch (apiError) {
+        // API delete failed, but localStorage is already updated
+      }
+      
       toast.success('Video obrisan');
-      setMyVideos(myVideos.filter(v => v._id !== videoId));
     } catch (error) {
       toast.error('Greška pri brisanju');
     }
@@ -327,6 +384,12 @@ const AIVideo = () => {
                 />
               </div>
               <div className="video-actions">
+                <button 
+                  className="btn btn-success"
+                  onClick={() => saveVideoToLocal(generatedVideo)}
+                >
+                  <FiSave /> Sačuvaj Video
+                </button>
                 <a 
                   href={generatedVideo.videoUrl} 
                   download 
@@ -382,6 +445,14 @@ const AIVideo = () => {
                       </div>
                     </div>
                     <div className="video-card-actions">
+                      <a 
+                        href={video.videoUrl}
+                        download
+                        className="btn btn-sm btn-secondary"
+                        title="Download"
+                      >
+                        <FiDownload />
+                      </a>
                       {!video.postedToInstagram && (
                         <button 
                           className="btn btn-sm btn-primary"
