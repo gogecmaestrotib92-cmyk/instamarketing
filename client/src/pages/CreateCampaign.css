@@ -1,0 +1,157 @@
+.create-campaign-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Steps Progress */
+.steps-progress {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.step:hover {
+  border-color: var(--text-muted);
+}
+
+.step.active {
+  border-color: var(--primary);
+  background: rgba(225, 48, 108, 0.1);
+}
+
+.step.completed {
+  border-color: var(--success);
+}
+
+.step.completed .step-number {
+  background: var(--success);
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.step.active .step-number {
+  background: var(--primary);
+}
+
+.step span {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.step.active span {
+  color: var(--primary);
+}
+
+/* Step Content */
+.step-content h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.step-content h2 svg {
+  color: var(--primary);
+}
+
+.step-description {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+/* Objectives Grid */
+.objectives-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.objective-card {
+  padding: 20px;
+  background: var(--bg-dark);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.objective-card:hover {
+  border-color: var(--text-muted);
+}
+
+.objective-card.selected {
+  border-color: var(--primary);
+  background: rgba(225, 48, 108, 0.1);
+}
+
+.objective-card h4 {
+  margin-bottom: 4px;
+}
+
+.objective-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Form Row */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Step Actions */
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+
+.step-actions .btn:only-child {
+  margin-left: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .steps-progress {
+    flex-wrap: wrap;
+  }
+
+  .step span {
+    display: none;
+  }
+
+  .objectives-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

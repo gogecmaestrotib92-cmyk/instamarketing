@@ -1,0 +1,90 @@
+{
+  "short_name": "InstaMarketing",
+  "name": "InstaMarketing - Automatizacija Instagram Marketinga",
+  "description": "Automatizujte Instagram marketing. Zakazujte objave i rilsove, vodite reklamne kampanje, analizirajte performanse i povećajte publiku 10x brže. Najbolji alat za Instagram marketing u Srbiji.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#E1306C",
+  "background_color": "#ffffff",
+  "categories": ["business", "productivity", "social"],
+  "lang": "sr-RS",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Kreiraj Objavu",
+      "short_name": "Nova Objava",
+      "description": "Kreirajte novu Instagram objavu",
+      "url": "/posts/create",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Zakaži Sadržaj",
+      "short_name": "Zakazivanje",
+      "description": "Pregledajte i upravljajte zakazanim sadržajem",
+      "url": "/scheduler",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Analitika",
+      "short_name": "Analitika",
+      "description": "Pogledajte analitiku performansi",
+      "url": "/analytics",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Alati",
+      "short_name": "AI Alati",
+      "description": "Koristite AI alate za kreiranje sadržaja",
+      "url": "/ai-tools",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Reklame",
+      "short_name": "Ads",
+      "description": "Upravljajte reklamnim kampanjama",
+      "url": "/ads",
+      "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshot-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Kontrolna tabla - Pregled svih Instagram metrika"
+    },
+    {
+      "src": "screenshot-ai-tools.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "AI Alati - Generišite sadržaj pomoću veštačke inteligencije"
+    }
+  ],
+  "related_applications": [],
+  "iarc_rating_id": "",
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

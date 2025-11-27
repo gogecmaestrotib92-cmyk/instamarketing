@@ -1,0 +1,272 @@
+.analytics-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.period-selector {
+  display: flex;
+  gap: 12px;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: #555;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.stat-icon-large {
+  font-size: 32px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  color: #E1306C;
+}
+
+.stat-data {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-data .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fff, #ccc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-data .stat-label {
+  font-size: 14px;
+  color: #a0a0a0;
+  font-weight: 500;
+}
+
+/* Analytics Grid */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.analytics-grid .card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.analytics-grid .card:hover {
+  border-color: #555;
+}
+
+.analytics-grid .card.full-width {
+  grid-column: 1 / -1;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.card-title svg {
+  color: #E1306C;
+}
+
+/* Chart Container */
+.chart-container {
+  height: 300px;
+  position: relative;
+}
+
+.chart-container.doughnut {
+  height: 250px;
+  display: flex;
+  justify-content: center;
+}
+
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #a0a0a0;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+}
+
+/* Recommendations */
+.recommendations {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #333;
+}
+
+.recommendations h4 {
+  font-size: 14px;
+  color: #a0a0a0;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recommendation-list {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Content Table */
+.content-table {
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 16px 24px;
+  background: #252525;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a0a0a0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #333;
+  align-items: center;
+  transition: background 0.2s ease;
+}
+
+.table-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.content-preview {
+  font-size: 14px;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.engagement-score {
+  font-weight: 700;
+  color: #10b981;
+}
+
+/* Best Days */
+.best-days {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.best-day {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.day-name {
+  width: 80px;
+  font-size: 14px;
+  color: #a0a0a0;
+  font-weight: 500;
+}
+
+.day-bar {
+  flex: 1;
+  height: 8px;
+  background: #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.day-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #E1306C, #F77737);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.day-engagement {
+  width: 50px;
+  text-align: right;
+  font-size: 14px;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-header, .table-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .table-header > *:nth-child(n+3),
+  .table-row > *:nth-child(n+3) {
+    display: none;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
