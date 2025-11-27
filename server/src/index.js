@@ -89,8 +89,11 @@ if (require.main === module) {
   });
 }
 
-// Export for Vercel
-module.exports = async (req, res) => {
+// Export for Vercel serverless
+module.exports = app;
+
+// Also export as handler for Vercel
+module.exports.default = async (req, res) => {
   await connectDB();
   return app(req, res);
 };
