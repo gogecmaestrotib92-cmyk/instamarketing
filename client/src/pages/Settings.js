@@ -16,6 +16,8 @@ const Settings = () => {
   const { user, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [showManualConnect, setShowManualConnect] = useState(false);
+  const [manualToken, setManualToken] = useState('');
   
   const [profile, setProfile] = useState({
     name: '',
@@ -27,7 +29,9 @@ const Settings = () => {
     connected: false,
     username: '',
     accountId: '',
-    pageId: ''
+    pageId: '',
+    followers: 0,
+    profilePicture: ''
   });
   
   const [notifications, setNotifications] = useState({
@@ -51,10 +55,12 @@ const Settings = () => {
         timezone: user.timezone || 'UTC'
       });
       setInstagram({
-        connected: !!user.instagramAccessToken,
-        username: user.instagramUsername || '',
-        accountId: user.instagramAccountId || '',
-        pageId: user.facebookPageId || ''
+        connected: user.instagramConnected || !!user.instagramAccessToken || !!user.instagram?.connected,
+        username: user.instagramUsername || user.instagram?.username || '',
+        accountId: user.instagramAccountId || user.instagram?.accountId || '',
+        pageId: user.facebookPageId || '',
+        followers: user.instagram?.followers || 0,
+        profilePicture: user.instagram?.profilePicture || ''
       });
     }
   }, [user]);
@@ -123,23 +129,42 @@ const Settings = () => {
       setInstagram({
         connected: true,
         username: response.instagram.username,
-        accountId: response.instagram.businessAccountId,
+        accountId: response.instagram.accountId || response.instagram.businessAccountId,
         followers: response.instagram.followers,
         profilePicture: response.instagram.profilePicture
       });
-      toast.success(`Connected to @${response.instagram.username}!`);
+      toast.success(`Povezano sa @${response.instagram.username}!`);
     } catch (error) {
-      // If auto-connect fails, fall back to OAuth flow
-      console.log('Auto-connect failed, trying OAuth flow...');
-      const appId = process.env.REACT_APP_FACEBOOK_APP_ID;
-      const redirectUri = encodeURIComponent(`${window.location.origin}/auth/instagram/callback`);
-      const scope = encodeURIComponent(
-        'instagram_business_basic,instagram_business_manage_messages,instagram_manage_comments,pages_show_list,pages_read_engagement'
-      );
-      
-      const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${appId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=code`;
-      
-      window.location.href = authUrl;
+      // If auto-connect fails, show manual connect option
+      console.log('Auto-connect failed:', error.response?.data?.error || error.message);
+      toast.info('Auto-povezivanje nije uspelo. Pokušajte sa ručnim unosom tokena.');
+      setShowManualConnect(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManualTokenConnect = async () => {
+    if (!manualToken.trim()) {
+      toast.error('Unesite Access Token');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await authAPI.connectInstagramWithToken({ accessToken: manualToken });
+      setInstagram({
+        connected: true,
+        username: response.data.instagram.username,
+        accountId: response.data.instagram.accountId,
+        followers: response.data.instagram.followers,
+        profilePicture: response.data.instagram.profilePicture
+      });
+      toast.success(`Povezano sa @${response.data.instagram.username}!`);
+      setShowManualConnect(false);
+      setManualToken('');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Greška pri povezivanju');
     } finally {
       setLoading(false);
     }
@@ -354,11 +379,11 @@ const Settings = () => {
               ) : (
                 <div className="connect-prompt">
                   <div className="connect-info">
-                    <h3>Requirements:</h3>
+                    <h3>Zahtevi:</h3>
                     <ul>
-                      <li>Instagram Business or Creator account</li>
-                      <li>Connected to a Facebook Page</li>
-                      <li>Admin access to the Facebook Page</li>
+                      <li>Instagram Business ili Creator nalog</li>
+                      <li>Povezan sa Facebook stranicom</li>
+                      <li>Admin pristup Facebook stranici</li>
                     </ul>
                   </div>
                   
@@ -367,8 +392,46 @@ const Settings = () => {
                     onClick={handleInstagramConnect}
                     disabled={loading}
                   >
-                    <FaInstagram /> Connect Instagram
+                    <FaInstagram /> {loading ? 'Povezivanje...' : 'Poveži Instagram'}
                   </button>
+
+                  {showManualConnect && (
+                    <div className="manual-connect-section" style={{ marginTop: '20px', padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+                      <h4 style={{ marginBottom: '10px' }}>Ručno povezivanje sa Access Token-om</h4>
+                      <p style={{ fontSize: '14px', color: '#888', marginBottom: '15px' }}>
+                        1. Idite na <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff88' }}>Facebook Graph API Explorer</a><br/>
+                        2. Izaberite vašu aplikaciju i dobijte token sa dozvolama: instagram_basic, pages_show_list, pages_read_engagement<br/>
+                        3. Kopirajte token i nalepite ga ovde
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                          type="text"
+                          value={manualToken}
+                          onChange={(e) => setManualToken(e.target.value)}
+                          placeholder="Unesite Access Token"
+                          className="form-control"
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          className="btn btn-primary"
+                          onClick={handleManualTokenConnect}
+                          disabled={loading}
+                        >
+                          {loading ? 'Povezivanje...' : 'Poveži'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: '15px' }}>
+                    <button 
+                      className="btn btn-link"
+                      onClick={() => setShowManualConnect(!showManualConnect)}
+                      style={{ fontSize: '14px' }}
+                    >
+                      {showManualConnect ? 'Sakrij ručno povezivanje' : 'Ručno povezivanje sa tokenom'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

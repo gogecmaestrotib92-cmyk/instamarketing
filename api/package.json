@@ -9,6 +9,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
     "replicate": "^0.25.2",
-    "openai": "^4.20.1"
+    "openai": "^4.20.1",
+    "node-fetch": "^2.7.0"
   }
 }
