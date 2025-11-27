@@ -27,5 +27,6 @@
       "src": "/(.*)",
       "dest": "/client/index.html"
     }
-  ]
+  ],
+  "public": true
 }
