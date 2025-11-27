@@ -29,6 +29,11 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "FACEBOOK_APP_ID": "2955016021354200",
+    "FACEBOOK_PAGE_ID": "928400333684435",
+    "INSTAGRAM_BUSINESS_ACCOUNT_ID": "17841478489499957",
+    "CLOUDINARY_CLOUD_NAME": "ddvtwoyxp",
+    "CLOUDINARY_API_KEY": "388346273598741"
   }
 }
