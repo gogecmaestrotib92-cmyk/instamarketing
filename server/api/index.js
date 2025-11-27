@@ -1,37 +1,33 @@
-const app = require('../src/index');
-const mongoose = require('mongoose');
-
-let isConnected = false;
-
-const connectDB = async () => {
-  if (isConnected || mongoose.connection.readyState === 1) {
-    return;
+// Minimal test handler first
+module.exports = async (req, res) => {
+  // Simple test to verify function works
+  if (req.url === '/api/health') {
+    return res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   }
   
+  // Try to load the full app
   try {
-    const mongoURI = process.env.MONGODB_URI;
-    if (!mongoURI) {
-      throw new Error('MONGODB_URI environment variable is not set');
+    const app = require('../src/index');
+    const mongoose = require('mongoose');
+    
+    // Connect to database if not connected
+    if (mongoose.connection.readyState === 0) {
+      const mongoURI = process.env.MONGODB_URI;
+      if (mongoURI) {
+        await mongoose.connect(mongoURI, {
+          serverSelectionTimeoutMS: 5000,
+        });
+        console.log('MongoDB connected');
+      }
     }
     
-    await mongoose.connect(mongoURI, {
-      serverSelectionTimeoutMS: 5000,
-      maxPoolSize: 10,
-    });
-    isConnected = true;
-    console.log('MongoDB connected for serverless');
-  } catch (error) {
-    console.error('MongoDB connection error:', error.message);
-    throw error;
-  }
-};
-
-module.exports = async (req, res) => {
-  try {
-    await connectDB();
     return app(req, res);
   } catch (error) {
-    console.error('Handler error:', error);
-    res.status(500).json({ error: 'Database connection failed', message: error.message });
+    console.error('Error loading app:', error);
+    return res.status(500).json({ 
+      error: 'Server initialization failed', 
+      message: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+    });
   }
 };
