@@ -174,7 +174,6 @@ const AIVideo = () => {
           <div className="card">
             <div className="card-header">
               <h3>Generiši Video</h3>
-              <span className="badge badge-info">Powered by Runway Gen-3</span>
             </div>
 
             {/* Tabs */}
