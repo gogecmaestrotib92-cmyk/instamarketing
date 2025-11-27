@@ -761,19 +761,122 @@
   color: #60a5fa;
 }
 
-/* Responsive */
+/* Responsive - Tablets */
 @media (max-width: 768px) {
+  .ai-tools-page {
+    padding: 12px;
+  }
+
+  .ai-tools-page .page-header h1 {
+    font-size: 22px;
+  }
+
   .ai-tabs {
     overflow-x: auto;
     flex-wrap: nowrap;
+    padding: 6px;
+    gap: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .ai-tab {
+    padding: 10px 14px;
+    font-size: 13px;
   }
   
   .ai-tab span {
     display: none;
   }
+
+  .ai-content {
+    padding: 20px 16px;
+    border-radius: 12px;
+  }
+
+  .ai-section h2 {
+    font-size: 18px;
+  }
+
+  .ai-section > p {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
   
   .form-row {
     flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 12px 14px;
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  .generate-btn {
+    max-width: 100%;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .result-box {
+    margin-top: 20px;
+  }
+
+  .result-header {
+    padding: 12px 14px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .result-header h3 {
+    font-size: 14px;
+  }
+
+  .result-header button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .result-content {
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  .hashtags-grid {
+    padding: 14px;
+    gap: 8px;
+  }
+
+  .hashtag-chip {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .ideas-list {
+    gap: 12px;
+  }
+
+  .idea-card {
+    padding: 14px;
+  }
+
+  .idea-card h3 {
+    font-size: 16px;
+  }
+
+  .idea-card p {
+    font-size: 13px;
   }
   
   .chat-message {
@@ -793,5 +896,274 @@
     flex-wrap: wrap;
     gap: 16px;
     justify-content: center;
+  }
+
+  .chat-section {
+    height: auto;
+    min-height: 400px;
+  }
+
+  .chat-input-area {
+    padding: 12px;
+  }
+
+  .chat-input {
+    padding: 10px 12px;
+  }
+}
+
+/* Responsive - Small Phones */
+@media (max-width: 480px) {
+  .ai-tools-page {
+    padding: 8px;
+  }
+
+  .ai-tools-page .page-header {
+    margin-bottom: 16px;
+  }
+
+  .ai-tools-page .page-header h1 {
+    font-size: 18px;
+    gap: 8px;
+  }
+
+  .ai-tools-page .page-header h1 svg {
+    font-size: 20px;
+  }
+
+  .ai-tools-page .page-header p {
+    font-size: 12px;
+  }
+
+  .ai-tabs {
+    margin: 16px 0;
+    padding: 4px;
+    border-radius: 8px;
+  }
+
+  .ai-tab {
+    padding: 8px 12px;
+    border-radius: 6px;
+  }
+
+  .ai-tab svg {
+    font-size: 16px;
+  }
+
+  .ai-content {
+    padding: 14px 12px;
+    border-radius: 10px;
+  }
+
+  .ai-section h2 {
+    font-size: 16px;
+    gap: 8px;
+  }
+
+  .ai-section h2 svg {
+    font-size: 18px;
+  }
+
+  .ai-section > p {
+    font-size: 12px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+
+  .form-group textarea {
+    min-height: 100px;
+  }
+
+  .form-group small {
+    font-size: 11px;
+  }
+
+  .checkbox-group label {
+    font-size: 13px;
+  }
+
+  .generate-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  .generate-btn svg {
+    font-size: 18px;
+  }
+
+  .result-box {
+    margin-top: 16px;
+    border-radius: 10px;
+  }
+
+  .result-header {
+    padding: 10px 12px;
+  }
+
+  .result-header h3 {
+    font-size: 13px;
+  }
+
+  .result-header button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .result-content {
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .script-content {
+    font-size: 12px;
+    padding: 12px;
+  }
+
+  .hashtags-grid {
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .hashtag-chip {
+    padding: 5px 10px;
+    font-size: 12px;
+    border-radius: 16px;
+  }
+
+  .ideas-list {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .idea-card {
+    padding: 12px;
+    border-radius: 10px;
+    border-left-width: 3px;
+  }
+
+  .idea-type {
+    padding: 3px 8px;
+    font-size: 10px;
+    margin-bottom: 8px;
+  }
+
+  .idea-card h3 {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .idea-card p {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .idea-hook {
+    margin-top: 10px;
+    padding: 8px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+  }
+
+  .audio-result {
+    padding: 14px;
+  }
+
+  .audio-result h3 {
+    font-size: 14px;
+  }
+
+  .download-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .chat-section {
+    min-height: 350px;
+  }
+
+  .chat-welcome {
+    padding: 24px 16px;
+  }
+
+  .chat-welcome svg {
+    font-size: 32px !important;
+  }
+
+  .chat-welcome h3 {
+    font-size: 16px;
+  }
+
+  .chat-welcome p {
+    font-size: 12px;
+  }
+
+  .chat-messages {
+    padding: 12px;
+  }
+
+  .chat-message {
+    max-width: 95%;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .chat-input-area {
+    padding: 10px;
+  }
+
+  .chat-input {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .send-btn {
+    padding: 10px 14px;
+  }
+
+  /* Video generator specific */
+  .video-preview {
+    max-height: 200px;
+  }
+
+  .video-actions {
+    gap: 8px;
+  }
+
+  .video-actions button {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .reel-workflow-info {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .workflow-step {
+    padding: 8px;
+    font-size: 11px;
+  }
+
+  .status-box {
+    padding: 12px;
+    font-size: 13px;
   }
 }
