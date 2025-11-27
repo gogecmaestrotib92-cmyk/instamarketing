@@ -654,7 +654,15 @@ const AdvancedVideoGenerator = () => {
           {enhancedVideo && (
             <div className="section result-section">
               <h3><FiVideo /> Poboljšani Video</h3>
-              <video controls src={enhancedVideo.output} style={{ maxWidth: '100%' }} />
+              <video 
+                controls 
+                src={enhancedVideo.output} 
+                style={{ maxWidth: '100%' }}
+                playsInline
+                crossOrigin="anonymous"
+                preload="auto"
+                onError={(e) => console.error('Enhanced video error:', e)}
+              />
               <div className="result-info">
                 <p>Primenjene obrade: {enhancedVideo.appliedEnhancements?.join(', ')}</p>
                 <a href={enhancedVideo.output} download className="btn-download">
@@ -676,7 +684,14 @@ const AdvancedVideoGenerator = () => {
             <div className="videos-grid">
               {generatedVideos.map((video, index) => (
                 <div key={index} className="video-card">
-                  <video controls src={video.videoUrl || video.output}>
+                  <video 
+                    controls 
+                    src={video.videoUrl || video.output}
+                    playsInline
+                    crossOrigin="anonymous"
+                    preload="auto"
+                    onError={(e) => console.error('Generated video error:', e)}
+                  >
                     Vaš pregledač ne podržava video tag.
                   </video>
                   <div className="video-info">
