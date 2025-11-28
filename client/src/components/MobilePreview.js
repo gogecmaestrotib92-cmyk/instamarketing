@@ -7,19 +7,9 @@ import './MobilePreview.css';
  * Uses object-fit: cover to fill the entire frame.
  * 
  * @param {string} videoUrl - URL of the video to display
- * @param {boolean} autoPlay - Whether to autoplay the video (default: false)
- * @param {boolean} loop - Whether to loop the video (default: true)
- * @param {boolean} muted - Whether to mute the video (default: false)
- * @param {boolean} controls - Whether to show video controls (default: true)
+ * @param {string} posterUrl - Poster image URL
  */
-const MobilePreview = ({ 
-  videoUrl, 
-  autoPlay = false, 
-  loop = true, 
-  muted = false,
-  controls = true,
-  poster = null
-}) => {
+const MobilePreview = ({ videoUrl, posterUrl }) => {
   if (!videoUrl) {
     return (
       <div className="mobile-preview mobile-preview--empty">
@@ -36,14 +26,10 @@ const MobilePreview = ({
   return (
     <div className="mobile-preview">
       <video 
-        src={videoUrl} 
-        controls={controls}
-        autoPlay={autoPlay}
-        loop={loop}
-        muted={muted}
-        poster={poster}
         className="mobile-preview__video"
-        playsInline
+        src={videoUrl} 
+        poster={posterUrl}
+        controls
       />
     </div>
   );

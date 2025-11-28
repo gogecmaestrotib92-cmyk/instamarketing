@@ -3,7 +3,6 @@ import { toast } from 'react-toastify';
 import { 
   FiVideo, 
   FiImage, 
-  FiPlay, 
   FiDownload, 
   FiInstagram,
   FiClock,
@@ -21,6 +20,7 @@ import {
 } from 'react-icons/fi';
 import { FaWandMagicSparkles } from 'react-icons/fa6';
 import SEO from '../components/SEO';
+import SavedVideosPanel from '../components/SavedVideosPanel';
 import api from '../services/api';
 import './AIVideo.css';
 
@@ -787,136 +787,24 @@ const AIVideo = () => {
           )}
         </section>
 
-        {/* My Videos Section */}
+        {/* My Videos Section - Using SavedVideosPanel */}
         <section className="my-videos-section" aria-labelledby="my-videos-heading">
-          <div className="card">
-            <div 
-              className="card-header clickable-header" 
-              onClick={() => setShowAllVideos(prev => !prev)}
-              style={{ cursor: 'pointer', userSelect: 'none' }}
-            >
-              <h3 id="my-videos-heading" style={{ pointerEvents: 'none' }}>Moji AI Videi</h3>
-              <span className="video-count" style={{ pointerEvents: 'none' }}>{myVideos.length} videa {showAllVideos ? '▲' : '▼'}</span>
+          {loadingVideos ? (
+            <div className="loading-placeholder" aria-label="Učitavanje videa">
+              <FiLoader className="spinner" aria-hidden="true" />
             </div>
-
-            {loadingVideos ? (
-              <div className="loading-placeholder" aria-label="Učitavanje videa">
-                <FiLoader className="spinner" aria-hidden="true" />
-              </div>
-            ) : myVideos.length === 0 ? (
-              <div className="empty-state">
-                <FiVideo size={48} aria-hidden="true" />
-                <p>Još nemate generisanih videa</p>
-              </div>
-            ) : (
-              <div className={`videos-grid ${showAllVideos ? 'expanded' : ''}`} role="list">
-                {(showAllVideos ? myVideos : myVideos.slice(0, 4)).map((video) => (
-                  <article 
-                    key={video._id} 
-                    className="video-card" 
-                    onClick={() => setSelectedVideo(video)}
-                    role="listitem"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        setSelectedVideo(video);
-                      }
-                    }}
-                    aria-label={`Video: ${video.prompt}`}
-                  >
-                    <div 
-                      className="video-thumbnail"
-                      style={{
-                        position: 'relative',
-                        width: '100%',
-                        height: 0,
-                        paddingBottom: '177.78%',
-                        background: '#000',
-                        borderRadius: '16px',
-                        overflow: 'hidden'
-                      }}
-                    >
-                      <video 
-                        src={video.videoUrl} 
-                        muted 
-                        loop 
-                        onMouseOver={e => e.target.play()} 
-                        onMouseOut={e => e.target.pause()} 
-                        aria-hidden="true"
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover'
-                        }}
-                      />
-                      <div className="video-overlay">
-                        <div className="overlay-content">
-                          <div className="play-icon" aria-hidden="true">
-                            <FiPlay size={40} />
-                          </div>
-                          <div className="overlay-actions">
-                            <a 
-                              href={video.videoUrl}
-                              download
-                              className="action-btn"
-                              title="Download"
-                              onClick={(e) => e.stopPropagation()}
-                              aria-label="Preuzmi video"
-                            >
-                              <FiDownload aria-hidden="true" />
-                            </a>
-                            {!video.postedToInstagram && (
-                              <button 
-                                className="action-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handlePostToInstagram(video._id);
-                                }}
-                                title="Objavi na Instagram"
-                                aria-label="Objavi na Instagram"
-                              >
-                                <FiInstagram aria-hidden="true" />
-                              </button>
-                            )}
-                            <button 
-                              className="action-btn delete-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(video._id);
-                              }}
-                              title="Obriši"
-                              aria-label="Obriši video"
-                            >
-                              <FiTrash2 aria-hidden="true" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <span className="video-duration">{video.duration}s</span>
-                      <span className={`status-badge ${video.postedToInstagram ? 'posted' : ''}`} aria-label={video.postedToInstagram ? "Objavljeno na Instagramu" : "Nije objavljeno"}>
-                        {video.postedToInstagram ? <FiInstagram aria-hidden="true" /> : <FiVideo aria-hidden="true" />}
-                      </span>
-                    </div>
-                    <div className="video-info">
-                      <p className="video-prompt">{video.prompt}</p>
-                      <span className="video-date">{new Date(video.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-            {myVideos.length > 4 && (
-              <button 
-                className="btn btn-show-more"
-                onClick={() => setShowAllVideos(!showAllVideos)}
-              >
-                {showAllVideos ? 'Prikaži manje ▲' : `Prikaži sve (${myVideos.length}) ▼`}
-              </button>
-            )}
-          </div>
+          ) : (
+            <SavedVideosPanel 
+              videos={myVideos.map(video => ({
+                id: video._id,
+                title: video.prompt || 'AI Video',
+                durationSeconds: video.duration || 5,
+                createdAt: new Date(video.createdAt).toLocaleDateString('sr-RS'),
+                thumbnailUrl: null,
+                videoUrl: video.videoUrl
+              }))}
+            />
+          )}
         </section>
       </div>
 

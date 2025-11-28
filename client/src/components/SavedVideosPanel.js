@@ -1,198 +1,119 @@
-import React, { useState } from 'react';
-import { FiPlay, FiClock, FiDownload, FiInstagram, FiTrash2 } from 'react-icons/fi';
+import React, { useState, useMemo } from 'react';
 import MobilePreview from './MobilePreview';
 import './SavedVideosPanel.css';
 
 /**
  * SavedVideosPanel Component
- * Displays a scrollable list of saved videos with a large mobile preview.
+ * Right column: scrollable list of saved videos + big mobile preview
  * 
  * @param {Array} videos - Array of SavedVideo objects
- * @param {Function} onDelete - Callback when delete is clicked
- * @param {Function} onPostToInstagram - Callback when post to Instagram is clicked
+ * 
+ * SavedVideo type:
+ * {
+ *   id: string;
+ *   title: string;
+ *   durationSeconds: number;
+ *   createdAt: string;       // e.g. "2025-11-28"
+ *   thumbnailUrl: string;
+ *   videoUrl: string;
+ * }
  */
 
-/*
-  SavedVideo type:
-  {
-    id: string;
-    title: string;
-    durationSeconds: number;
-    createdAt: string;
-    thumbnailUrl: string;
-    videoUrl: string;
-    postedToInstagram?: boolean;
-  }
-*/
+const formatDuration = (seconds) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m === 0) return `${s}s`;
+  return `${m}m ${s.toString().padStart(2, '0')}s`;
+};
 
-const SavedVideosPanel = ({ 
-  videos = [], 
-  onDelete, 
-  onPostToInstagram,
-  onDownload 
-}) => {
+const SavedVideosPanel = ({ videos = [] }) => {
   const [selectedVideoId, setSelectedVideoId] = useState(
     videos.length > 0 ? videos[0].id : null
   );
 
-  const selectedVideo = videos.find(v => v.id === selectedVideoId);
-
-  const formatDuration = (seconds) => {
-    if (!seconds) return '0s';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    if (mins > 0) {
-      return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${secs}s`;
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Danas';
-    if (diffDays === 1) return 'Juče';
-    if (diffDays < 7) return `Pre ${diffDays} dana`;
-    
-    return date.toLocaleDateString('sr-RS', { 
-      day: 'numeric', 
-      month: 'short' 
-    });
-  };
-
-  if (videos.length === 0) {
-    return (
-      <div className="saved-videos-panel saved-videos-panel--empty">
-        <div className="saved-videos-panel__empty-state">
-          <FiPlay size={48} />
-          <h4>Nema sačuvanih videa</h4>
-          <p>Generisani videi će se pojaviti ovde</p>
-        </div>
-      </div>
-    );
-  }
+  const selectedVideo = useMemo(
+    () => videos.find((v) => v.id === selectedVideoId) || null,
+    [videos, selectedVideoId]
+  );
 
   return (
-    <div className="saved-videos-panel">
-      {/* Header */}
-      <div className="saved-videos-panel__header">
-        <h3>Moji AI Videi</h3>
-        <span className="saved-videos-panel__count">{videos.length}</span>
-      </div>
+    <aside className="saved-videos">
+      <header className="saved-videos__header">
+        <div>
+          <h3 className="saved-videos__title">Moji AI Videi</h3>
+          <p className="saved-videos__subtitle">
+            Sačuvani AI Reels koje ste generisali
+          </p>
+        </div>
+        <span className="saved-videos__badge">
+          {videos.length} videa
+        </span>
+      </header>
 
-      {/* Video List (Scrollable) */}
-      <div className="saved-videos-panel__list">
-        {videos.map((video) => (
-          <div 
-            key={video.id}
-            className={`saved-video-item ${selectedVideoId === video.id ? 'saved-video-item--selected' : ''}`}
-            onClick={() => setSelectedVideoId(video.id)}
-          >
-            <div className="saved-video-item__thumbnail">
-              {video.thumbnailUrl ? (
-                <img src={video.thumbnailUrl} alt={video.title} />
-              ) : (
-                <video src={video.videoUrl} muted />
-              )}
-              <span className="saved-video-item__duration">
-                {formatDuration(video.durationSeconds)}
-              </span>
-              {video.postedToInstagram && (
-                <span className="saved-video-item__posted">
-                  <FiInstagram size={12} />
-                </span>
-              )}
+      <div className="saved-videos__body">
+        {/* list */}
+        <div className="saved-videos__list">
+          {videos.length === 0 && (
+            <div className="saved-videos__empty">
+              Još uvek nemate sačuvane videe.
             </div>
-            <div className="saved-video-item__info">
-              <p className="saved-video-item__title">{video.title}</p>
-              <span className="saved-video-item__date">
-                <FiClock size={12} /> {formatDate(video.createdAt)}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
+          )}
 
-      {/* Large Preview */}
-      <div className="saved-videos-panel__preview">
-        <MobilePreview 
-          videoUrl={selectedVideo?.videoUrl}
-          autoPlay={false}
-          controls={true}
-        />
-        
-        {/* Action Buttons */}
+          {videos.map((video) => {
+            const isActive = video.id === selectedVideoId;
+            return (
+              <button
+                key={video.id}
+                type="button"
+                onClick={() => setSelectedVideoId(video.id)}
+                className={
+                  'saved-videos__item' +
+                  (isActive ? ' saved-videos__item--active' : '')
+                }
+              >
+                <div className="saved-videos__thumb-wrapper">
+                  {video.thumbnailUrl ? (
+                    <img
+                      src={video.thumbnailUrl}
+                      alt={video.title}
+                      className="saved-videos__thumb"
+                    />
+                  ) : (
+                    <video 
+                      src={video.videoUrl} 
+                      muted 
+                      className="saved-videos__thumb"
+                    />
+                  )}
+                  <span className="saved-videos__duration">
+                    {formatDuration(video.durationSeconds || 0)}
+                  </span>
+                </div>
+                <div className="saved-videos__meta">
+                  <div className="saved-videos__item-title">
+                    {video.title}
+                  </div>
+                  <div className="saved-videos__item-date">
+                    {video.createdAt}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* preview */}
         {selectedVideo && (
-          <div className="saved-videos-panel__actions">
-            {onDownload && (
-              <a 
-                href={selectedVideo.videoUrl}
-                download
-                className="panel-action-btn"
-                title="Download"
-              >
-                <FiDownload />
-              </a>
-            )}
-            {onPostToInstagram && !selectedVideo.postedToInstagram && (
-              <button 
-                className="panel-action-btn panel-action-btn--primary"
-                onClick={() => onPostToInstagram(selectedVideo.id)}
-                title="Objavi na Instagram"
-              >
-                <FiInstagram />
-              </button>
-            )}
-            {onDelete && (
-              <button 
-                className="panel-action-btn panel-action-btn--danger"
-                onClick={() => onDelete(selectedVideo.id)}
-                title="Obriši"
-              >
-                <FiTrash2 />
-              </button>
-            )}
+          <div className="saved-videos__preview">
+            <MobilePreview
+              videoUrl={selectedVideo.videoUrl}
+              posterUrl={selectedVideo.thumbnailUrl}
+            />
           </div>
         )}
       </div>
-    </div>
+    </aside>
   );
 };
 
 export default SavedVideosPanel;
-
-// Example dummy data for testing:
-/*
-const DUMMY_VIDEOS = [
-  {
-    id: '1',
-    title: 'Cinematic sunset over mountains',
-    durationSeconds: 10,
-    createdAt: new Date().toISOString(),
-    thumbnailUrl: null,
-    videoUrl: 'https://example.com/video1.mp4',
-    postedToInstagram: false
-  },
-  {
-    id: '2',
-    title: 'Abstract liquid motion',
-    durationSeconds: 5,
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    thumbnailUrl: null,
-    videoUrl: 'https://example.com/video2.mp4',
-    postedToInstagram: true
-  },
-  {
-    id: '3',
-    title: 'Product showcase spin',
-    durationSeconds: 8,
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    thumbnailUrl: null,
-    videoUrl: 'https://example.com/video3.mp4',
-    postedToInstagram: false
-  }
-];
-*/
