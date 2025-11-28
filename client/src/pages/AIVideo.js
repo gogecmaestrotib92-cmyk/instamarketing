@@ -448,57 +448,63 @@ const AIVideo = () => {
             ) : (
               <div className="videos-grid">
                 {myVideos.map((video) => (
-                  <div key={video._id} className="video-card">
-                    <div 
-                      className="video-thumbnail" 
-                      onClick={() => setSelectedVideo(video)}
-                    >
-                      <video src={video.videoUrl} muted loop onMouseOver={e => e.target.play()} onMouseOut={e => e.target.pause()} />
+                  <div key={video._id} className="video-card" onClick={() => setSelectedVideo(video)}>
+                    <div className="video-thumbnail">
+                      <video 
+                        src={video.videoUrl} 
+                        muted 
+                        loop 
+                        onMouseOver={e => e.target.play()} 
+                        onMouseOut={e => e.target.pause()} 
+                      />
                       <div className="video-overlay">
-                        <FiPlay size={32} />
-                      </div>
-                      <span className="video-duration">{video.duration}s</span>
-                    </div>
-                    <div className="video-info">
-                      <p className="video-prompt" title={video.prompt}>{video.prompt}</p>
-                      <div className="video-meta">
-                        <span className={`badge ${video.postedToInstagram ? 'badge-success' : 'badge-secondary'}`}>
-                          {video.postedToInstagram ? 'Objavljeno' : video.type}
-                        </span>
-                        <div className="video-card-actions">
-                          <a 
-                            href={video.videoUrl}
-                            download
-                            className="btn btn-sm btn-secondary"
-                            title="Download"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <FiDownload />
-                          </a>
-                          {!video.postedToInstagram && (
+                        <div className="overlay-content">
+                          <div className="play-icon">
+                            <FiPlay size={40} />
+                          </div>
+                          <div className="overlay-actions">
+                            <a 
+                              href={video.videoUrl}
+                              download
+                              className="action-btn"
+                              title="Download"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <FiDownload />
+                            </a>
+                            {!video.postedToInstagram && (
+                              <button 
+                                className="action-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePostToInstagram(video._id);
+                                }}
+                                title="Objavi na Instagram"
+                              >
+                                <FiInstagram />
+                              </button>
+                            )}
                             <button 
-                              className="btn btn-sm btn-primary"
+                              className="action-btn delete-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handlePostToInstagram(video._id);
+                                handleDelete(video._id);
                               }}
-                              title="Objavi na Instagram"
+                              title="Obriši"
                             >
-                              <FiInstagram />
+                              <FiTrash2 />
                             </button>
-                          )}
-                          <button 
-                            className="btn btn-sm btn-danger"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(video._id);
-                            }}
-                            title="Obriši"
-                          >
-                            <FiTrash2 />
-                          </button>
+                          </div>
                         </div>
                       </div>
+                      <span className="video-duration">{video.duration}s</span>
+                      <span className={`status-badge ${video.postedToInstagram ? 'posted' : ''}`}>
+                        {video.postedToInstagram ? <FiInstagram /> : <FiVideo />}
+                      </span>
+                    </div>
+                    <div className="video-info">
+                      <p className="video-prompt">{video.prompt}</p>
+                      <span className="video-date">{new Date(video.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                 ))}
