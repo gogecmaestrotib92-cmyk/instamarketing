@@ -94,7 +94,7 @@ const Schedule = () => {
           key={day}
           className={`calendar-day ${isToday ? 'today' : ''} ${hasItems ? 'has-items' : ''} ${isSelected ? 'selected' : ''}`}
           onClick={() => setSelectedDate(dateStr)}
-          aria-label={`${day}. ${monthName}, ${hasItems ? `${items.length} zakazanih stavki` : 'nema zakazanih stavki'}`}
+          aria-label={`${day}. ${monthName}, ${hasItems ? `${items.length} scheduled items` : 'no scheduled items'}`}
           aria-pressed={isSelected}
           aria-current={isToday ? 'date' : undefined}
         >
@@ -123,44 +123,44 @@ const Schedule = () => {
   return (
     <main className="schedule-page">
       <SEO 
-        title="Zakazivanje Objava"
-        description="Zakazujte Instagram objave i rilsove unapred. Kalendarski prikaz, automatsko objavljivanje u optimalno vreme za maksimalan engagement."
-        keywords="zakazivanje instagram objava, instagram scheduler, automatsko postovanje, planer sadržaja, content calendar"
+        title="Content Scheduling"
+        description="Schedule Instagram posts and reels in advance. Calendar view, automatic publishing at optimal times for maximum engagement."
+        keywords="instagram post scheduling, instagram scheduler, automatic posting, content planner, content calendar"
         url="/scheduler"
         breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'Zakazivanje', url: '/scheduler' }
+          { name: 'Home', url: '/' },
+          { name: 'Schedule', url: '/scheduler' }
         ]}
         noindex={true}
       />
       <header className="page-header">
         <div>
-          <h1>Zakazivanje Sadržaja</h1>
-          <p className="page-subtitle">Pregledajte i upravljajte zakazanim objavama i rilsovima</p>
+          <h1>Content Scheduling</h1>
+          <p className="page-subtitle">View and manage your scheduled posts and reels</p>
         </div>
       </header>
 
       <div className="schedule-container">
         {/* Calendar */}
-        <section className="card calendar-card" aria-label="Kalendar">
+        <section className="card calendar-card" aria-label="Calendar">
           <div className="calendar-header">
-            <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth(-1)} aria-label="Prethodni mesec">
+            <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth(-1)} aria-label="Previous month">
               <FiChevronLeft aria-hidden="true" />
             </button>
-            <h3 aria-live="polite">{currentDate.toLocaleString('sr-RS', { month: 'long', year: 'numeric' })}</h3>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth(1)} aria-label="Sledeći mesec">
+            <h3 aria-live="polite">{currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h3>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth(1)} aria-label="Next month">
               <FiChevronRight aria-hidden="true" />
             </button>
           </div>
 
           <div className="calendar-weekdays" aria-hidden="true">
-            {['Ned', 'Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub'].map(day => (
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
               <div key={day} className="weekday">{day}</div>
             ))}
           </div>
 
           {loading ? (
-            <div className="loading-container" aria-label="Učitavanje kalendara">
+            <div className="loading-container" aria-label="Loading calendar">
               <div className="spinner" aria-hidden="true"></div>
             </div>
           ) : (
@@ -171,16 +171,16 @@ const Schedule = () => {
         </section>
 
         {/* Selected Date Details */}
-        <aside className="card schedule-details" aria-label="Detalji za izabrani datum">
+        <aside className="card schedule-details" aria-label="Details for selected date">
           <h3>
             <FiCalendar aria-hidden="true" />
             {selectedDate 
-              ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('sr-RS', { 
+              ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { 
                   weekday: 'long', 
                   month: 'long', 
                   day: 'numeric' 
                 })
-              : 'Izaberite datum'
+              : 'Select a date'
             }
           </h3>
 
@@ -217,7 +217,7 @@ const Schedule = () => {
                         <button 
                           className="btn btn-ghost btn-sm"
                           onClick={() => handleCancel(item._id)}
-                          aria-label="Otkaži zakazivanje"
+                          aria-label="Cancel schedule"
                         >
                           <FiX aria-hidden="true" />
                         </button>
@@ -227,7 +227,7 @@ const Schedule = () => {
                 ))
               ) : (
                 <div className="no-items">
-                  <p>Nema zakazanog sadržaja za ovaj datum</p>
+                  <p>No content scheduled for this date</p>
                 </div>
               )}
             </div>
@@ -235,7 +235,7 @@ const Schedule = () => {
 
           {!selectedDate && (
             <div className="no-items">
-              <p>Kliknite na datum da biste videli zakazani sadržaj</p>
+              <p>Click on a date to view scheduled content</p>
             </div>
           )}
         </aside>

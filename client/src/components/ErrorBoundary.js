@@ -62,7 +62,7 @@ class ErrorBoundary extends React.Component {
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
             }}>
-              Ups! Nešto je pošlo naopako
+              Oops! Something went wrong
             </h1>
             <p style={{
               color: '#a0a0a0',
@@ -70,8 +70,8 @@ class ErrorBoundary extends React.Component {
               marginBottom: '24px',
               lineHeight: '1.6'
             }}>
-              Došlo je do greške prilikom učitavanja stranice. 
-              Molimo pokušajte ponovo ili se vratite na početnu stranicu.
+              An error occurred while loading the page. 
+              Please try again or return to the home page.
             </p>
             
             <div style={{
@@ -106,7 +106,7 @@ class ErrorBoundary extends React.Component {
                   e.target.style.boxShadow = '0 4px 15px rgba(225, 48, 108, 0.3)';
                 }}
               >
-                <FiRefreshCw /> Pokušaj Ponovo
+                <FiRefreshCw /> Try Again
               </button>
               
               <button
@@ -134,7 +134,7 @@ class ErrorBoundary extends React.Component {
                   e.target.style.borderColor = '#333';
                 }}
               >
-                <FiHome /> Početna
+                <FiHome /> Home
               </button>
             </div>
             
@@ -152,7 +152,7 @@ class ErrorBoundary extends React.Component {
                   color: '#E1306C',
                   marginBottom: '8px'
                 }}>
-                  Detalji greške
+                  Error details
                 </summary>
                 <pre style={{
                   overflow: 'auto',

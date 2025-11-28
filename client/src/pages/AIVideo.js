@@ -84,14 +84,14 @@ const AIVideo = () => {
     
     // Check if video already saved
     if (savedVideos.find(v => v.videoUrl === newVideo.videoUrl)) {
-      toast.info('Video je već sačuvan');
+      toast.info('Video is already saved');
       return;
     }
     
     savedVideos.unshift(newVideo);
     localStorage.setItem('myAIVideos', JSON.stringify(savedVideos));
     setMyVideos(savedVideos);
-    toast.success('✅ Video sačuvan u Moji Videi!');
+    toast.success('✅ Video saved to My Videos!');
   };
 
   const handleImageChange = (e) => {
@@ -104,12 +104,12 @@ const AIVideo = () => {
 
   const handleGenerate = async () => {
     if (activeTab === 'text-to-video' && !prompt.trim()) {
-      toast.error('Unesite prompt za video');
+      toast.error('Enter a prompt for the video');
       return;
     }
 
     if (activeTab === 'image-to-video' && !imageFile) {
-      toast.error('Izaberite sliku za animaciju');
+      toast.error('Select an image to animate');
       return;
     }
 
@@ -142,21 +142,21 @@ const AIVideo = () => {
       }
 
       setGeneratedVideo(response.data.video);
-      toast.success('🎬 Video uspešno generisan!');
+      toast.success('🎬 Video generated successfully!');
       fetchMyVideos();
 
     } catch (error) {
       console.error('Generation error:', error);
-      const errorMsg = error.response?.data?.error || 'Greška pri generisanju videa';
+      const errorMsg = error.response?.data?.error || 'Error generating video';
       
       // Check if payment is required
       if (errorMsg.includes('Payment required') || errorMsg.includes('payment method') || errorMsg.includes('402')) {
         toast.error(
           <div>
-            <strong>💳 Potrebna uplata</strong>
+            <strong>💳 Payment Required</strong>
             <p style={{fontSize: '12px', marginTop: '5px'}}>
-              Dodajte način plaćanja na <a href="https://replicate.com/account/billing" target="_blank" rel="noopener noreferrer" style={{color: '#00ff88'}}>replicate.com/account/billing</a>
-              <br/>Cena: ~$0.01-0.05 po videu
+              Add a payment method at <a href="https://replicate.com/account/billing" target="_blank" rel="noopener noreferrer" style={{color: '#00ff88'}}>replicate.com/account/billing</a>
+              <br/>Cost: ~$0.01-0.05 per video
             </p>
           </div>,
           { autoClose: 10000 }
@@ -173,10 +173,10 @@ const AIVideo = () => {
     const video = myVideos.find(v => v._id === videoId);
     if (!video) return;
 
-    const caption = window.prompt('Unesite caption za Instagram Reel:');
+    const caption = window.prompt('Enter caption for Instagram Reel:');
     if (!caption) return;
 
-    const toastId = toast.loading('Objavljivanje na Instagram... (ovo može potrajati minut)');
+    const toastId = toast.loading('Posting to Instagram... (this may take a minute)');
 
     try {
       await api.post(`/ai-video/${videoId}/post-to-instagram`, {
@@ -186,7 +186,7 @@ const AIVideo = () => {
       });
       
       toast.update(toastId, { 
-        render: '🎉 Video objavljen na Instagram!', 
+        render: '🎉 Video posted to Instagram!', 
         type: 'success', 
         isLoading: false, 
         autoClose: 5000 
@@ -196,7 +196,7 @@ const AIVideo = () => {
     } catch (error) {
       console.error('Post error:', error);
       toast.update(toastId, { 
-        render: error.response?.data?.error || 'Greška pri objavljivanju', 
+        render: error.response?.data?.error || 'Error posting', 
         type: 'error', 
         isLoading: false, 
         autoClose: 5000 
@@ -215,7 +215,7 @@ const AIVideo = () => {
       <header className="page-header">
         <div>
           <h1><FaWandMagicSparkles aria-hidden="true" /> AI Video Generator</h1>
-          <p className="page-subtitle">Kreirajte neverovatne videe pomoću AI za Instagram Reels</p>
+          <p className="page-subtitle">Create amazing AI videos for Instagram Reels</p>
         </div>
       </header>
 
@@ -242,9 +242,9 @@ const AIVideo = () => {
 
           {/* Generated Video Preview */}
           {generatedVideo && (
-            <article className="card generated-preview" aria-label="Generisan video">
+            <article className="card generated-preview" aria-label="Generated video">
               <div className="card-header">
-                <h3>✨ Generisan Video</h3>
+                <h3>✨ Generated Video</h3>
               </div>
               <div className="video-preview">
                 <video 
@@ -253,7 +253,7 @@ const AIVideo = () => {
                   autoPlay 
                   loop
                   className={`aspect-${aspectRatio.replace(':', '-')}`}
-                  aria-label="Pregled generisanog videa"
+                  aria-label="Preview of generated video"
                 />
               </div>
               <div className="video-actions">
@@ -268,13 +268,13 @@ const AIVideo = () => {
                   className="btn btn-success"
                   onClick={() => saveVideoToLocal(generatedVideo)}
                 >
-                  <FiSave aria-hidden="true" /> Sačuvaj
+                  <FiSave aria-hidden="true" /> Save
                 </button>
                 <button 
                   className="btn btn-primary"
                   onClick={() => handlePostToInstagram(generatedVideo.id)}
                 >
-                  <FiInstagram aria-hidden="true" /> Objavi na Instagram
+                  <FiInstagram aria-hidden="true" /> Post to Instagram
                 </button>
               </div>
             </article>
@@ -284,7 +284,7 @@ const AIVideo = () => {
         {/* My Videos Section - Right Side */}
         <section className="my-videos-section" aria-labelledby="my-videos-heading">
           {loadingVideos ? (
-            <div className="loading-placeholder" aria-label="Učitavanje videa">
+            <div className="loading-placeholder" aria-label="Loading videos">
               <FiLoader className="spinner" aria-hidden="true" />
             </div>
           ) : (
@@ -293,7 +293,7 @@ const AIVideo = () => {
                 id: video._id,
                 title: video.prompt || 'AI Video',
                 durationSeconds: video.duration || 5,
-                createdAt: new Date(video.createdAt).toLocaleDateString('sr-RS'),
+                createdAt: new Date(video.createdAt).toLocaleDateString('en-US'),
                 thumbnailUrl: null,
                 videoUrl: video.videoUrl
               }))}
@@ -315,7 +315,7 @@ const AIVideo = () => {
             <button 
               className="video-modal-close" 
               onClick={() => setSelectedVideo(null)}
-              aria-label="Zatvori"
+              aria-label="Close"
             >
               ×
             </button>
@@ -329,7 +329,7 @@ const AIVideo = () => {
                 controls 
                 autoPlay 
                 className={`aspect-${selectedVideo.aspectRatio?.replace(':', '-') || '9-16'}`}
-                aria-label="Video plejer"
+                aria-label="Video player"
               />
             </div>
             <div className="video-modal-details">
@@ -346,7 +346,7 @@ const AIVideo = () => {
                   className="btn btn-primary"
                   onClick={() => handlePostToInstagram(selectedVideo._id)}
                 >
-                  <FiInstagram aria-hidden="true" /> Objavi na Instagram
+                  <FiInstagram aria-hidden="true" /> Post to Instagram
                 </button>
               </div>
             </div>

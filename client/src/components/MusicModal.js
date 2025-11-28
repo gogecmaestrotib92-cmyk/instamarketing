@@ -75,7 +75,7 @@ const LIBRARY_TRACKS = [
 ];
 
 // Genre categories for filtering
-const GENRES = ['Sve', 'Cinematic', 'Chill', 'Trap', 'EDM', 'Ambient'];
+const GENRES = ['All', 'Cinematic', 'Chill', 'Trap', 'EDM', 'Ambient'];
 
 // AI Music styles and moods
 const AI_STYLES = ['Cinematic', 'Trap', 'Lofi', 'Ambient', 'Synthwave', 'Afrobeat', 'Pop', 'Rock', 'Classical'];
@@ -143,7 +143,7 @@ const MusicModal = ({
   }, [open]);
 
   // Filter library tracks by genre
-  const filteredLibraryTracks = selectedGenre === 'Sve'
+  const filteredLibraryTracks = selectedGenre === 'All'
     ? libraryTracks
     : libraryTracks.filter(t => t.genre === selectedGenre);
 
@@ -205,10 +205,10 @@ const MusicModal = ({
       setUserTracks(prev => [newTrack, ...prev]);
       setSelectedTrack(newTrack);
       setEnabled(true);
-      toast.success('🎵 AI muzika uspešno generisana!');
+      toast.success('🎵 AI music generated successfully!');
       
     } catch (error) {
-      const errorMsg = error.response?.data?.error || error.message || 'Greška pri generisanju AI muzike';
+      const errorMsg = error.response?.data?.error || error.message || 'Error generating AI music';
       setAiError(errorMsg);
       console.error('AI music generation error:', error);
     } finally {
@@ -225,13 +225,13 @@ const MusicModal = ({
 
     // Validate file type
     if (!file.type.startsWith('audio/')) {
-      setUploadError('Molimo izaberite audio fajl');
+      setUploadError('Please select an audio file');
       return;
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      setUploadError('Fajl je prevelik (max 10MB)');
+      setUploadError('File is too large (max 10MB)');
       return;
     }
 
@@ -259,10 +259,10 @@ const MusicModal = ({
       setUserTracks(prev => [newTrack, ...prev]);
       setSelectedTrack(newTrack);
       setEnabled(true);
-      toast.success('🎵 Muzika uspešno uploadovana!');
+      toast.success('🎵 Music uploaded successfully!');
 
     } catch (error) {
-      const errorMsg = error.response?.data?.error || error.message || 'Greška pri uploadu';
+      const errorMsg = error.response?.data?.error || error.message || 'Error uploading';
       setUploadError(errorMsg);
       console.error('Upload error:', error);
     } finally {
@@ -289,7 +289,7 @@ const MusicModal = ({
   // ============================================================
   const handleApply = () => {
     if (enabled && !selectedTrack) {
-      toast.error('Izaberite muziku pre primene');
+      toast.error('Select music before applying');
       return;
     }
 
@@ -329,7 +329,7 @@ const MusicModal = ({
         {/* Header */}
         <div className="music-modal__header">
           <h2 className="music-modal__title">
-            <FiMusic /> Dodaj Pozadinsku Muziku
+            <FiMusic /> Add Background Music
           </h2>
           <button className="music-modal__close" onClick={onClose}>
             <FiX />
@@ -342,13 +342,13 @@ const MusicModal = ({
             className={`music-modal__tab ${activeTab === 'library' ? 'music-modal__tab--active' : ''}`}
             onClick={() => setActiveTab('library')}
           >
-            <FiDisc /> Biblioteka
+            <FiDisc /> Library
           </button>
           <button
             className={`music-modal__tab ${activeTab === 'ai' ? 'music-modal__tab--active' : ''}`}
             onClick={() => setActiveTab('ai')}
           >
-            <FiCpu /> AI Muzika
+            <FiCpu /> AI Music
           </button>
           <button
             className={`music-modal__tab ${activeTab === 'upload' ? 'music-modal__tab--active' : ''}`}
@@ -421,13 +421,13 @@ const MusicModal = ({
           {activeTab === 'ai' && (
             <div className="music-modal__ai">
               <p className="music-modal__ai-desc">
-                Generiši jedinstvenu AI muziku prilagođenu tvom videu
+                Generate unique AI music tailored to your video
               </p>
 
               <div className="music-modal__ai-form">
                 <div className="music-modal__ai-row">
                   <div className="music-modal__ai-field">
-                    <label>Stil</label>
+                    <label>Style</label>
                     <select
                       value={aiStyle}
                       onChange={(e) => setAiStyle(e.target.value)}
@@ -439,7 +439,7 @@ const MusicModal = ({
                     </select>
                   </div>
                   <div className="music-modal__ai-field">
-                    <label>Raspoloženje</label>
+                    <label>Mood</label>
                     <select
                       value={aiMood}
                       onChange={(e) => setAiMood(e.target.value)}
@@ -454,7 +454,7 @@ const MusicModal = ({
 
                 <div className="music-modal__ai-row">
                   <div className="music-modal__ai-field">
-                    <label>Dužina (sekunde)</label>
+                    <label>Duration (seconds)</label>
                     <input
                       type="number"
                       min="5"
@@ -465,7 +465,7 @@ const MusicModal = ({
                     />
                   </div>
                   <div className="music-modal__ai-field">
-                    <label>BPM (opciono)</label>
+                    <label>BPM (optional)</label>
                     <input
                       type="number"
                       min="60"
@@ -485,11 +485,11 @@ const MusicModal = ({
                   {aiLoading ? (
                     <>
                       <FiLoader className="music-modal__spinner" />
-                      Generisanje...
+                      Generating...
                     </>
                   ) : (
                     <>
-                      <FiCpu /> Generiši AI Muziku
+                      <FiCpu /> Generate AI Music
                     </>
                   )}
                 </button>
@@ -513,12 +513,12 @@ const MusicModal = ({
                 {uploadLoading ? (
                   <>
                     <FiLoader className="music-modal__spinner" size={32} />
-                    <span>Uploadovanje...</span>
+                    <span>Uploading...</span>
                   </>
                 ) : (
                   <>
                     <FiUpload size={32} />
-                    <span>Klikni za upload audio fajla</span>
+                    <span>Click to upload audio file</span>
                     <span className="music-modal__upload-hint">MP3, WAV, M4A (max 10MB)</span>
                   </>
                 )}
@@ -536,10 +536,10 @@ const MusicModal = ({
               )}
 
               <div className="music-modal__upload-disclaimer">
-                <strong>⚠️ Napomena o autorskim pravima:</strong>
+                <strong>⚠️ Copyright notice:</strong>
                 <p>
-                  Uploadovanjem sopstvene muzike, preuzimate odgovornost za autorska prava. 
-                  Instagram može ukloniti video sa zaštićenom muzikom.
+                  By uploading your own music, you take responsibility for copyrights. 
+                  Instagram may remove videos with copyrighted music.
                 </p>
               </div>
             </div>
@@ -551,7 +551,7 @@ const MusicModal = ({
         {/* ============================================================ */}
         {hasUserTracks && (
           <div className="music-modal__user-tracks">
-            <h4 className="music-modal__section-title">Moja muzika</h4>
+            <h4 className="music-modal__section-title">My music</h4>
             <div className="music-modal__user-list">
               {userTracks.map((track) => {
                 const isSelected = selectedTrack?.id === track.id;
@@ -592,7 +592,7 @@ const MusicModal = ({
         {/* ============================================================ */}
         {selectedTrack && (
           <div className="music-modal__selected-info">
-            <span className="music-modal__selected-label">Izabrano:</span>
+            <span className="music-modal__selected-label">Selected:</span>
             {getSourceIcon(selectedTrack.sourceType)}
             <span className="music-modal__selected-name">{selectedTrack.name}</span>
           </div>
@@ -603,7 +603,7 @@ const MusicModal = ({
         {/* ============================================================ */}
         <div className="music-modal__volume">
           <label className="music-modal__volume-label">
-            <FiVolume2 /> Glasnoća: {Math.round(volume * 100)}%
+            <FiVolume2 /> Volume: {Math.round(volume * 100)}%
           </label>
           <input
             type="range"
@@ -624,20 +624,20 @@ const MusicModal = ({
             className="music-modal__btn music-modal__btn--danger"
             onClick={handleRemoveMusic}
           >
-            <FiTrash2 /> Ukloni muziku
+            <FiTrash2 /> Remove music
           </button>
           <div className="music-modal__footer-right">
             <button
               className="music-modal__btn music-modal__btn--secondary"
               onClick={onClose}
             >
-              Otkaži
+              Cancel
             </button>
             <button
               className="music-modal__btn music-modal__btn--primary"
               onClick={handleApply}
             >
-              <FiCheck /> Primeni
+              <FiCheck /> Apply
             </button>
           </div>
         </div>
@@ -646,8 +646,8 @@ const MusicModal = ({
         {/* COPYRIGHT DISCLAIMER */}
         {/* ============================================================ */}
         <div className="music-modal__disclaimer">
-          Napomena: Korišćenjem sopstvenih audio fajlova, korisnik snosi odgovornost za autorska prava. 
-          Preporučujemo royalty-free ili AI generisanu muziku.
+          Note: By using your own audio files, you take responsibility for copyrights. 
+          We recommend royalty-free or AI generated music.
         </div>
       </div>
     </div>

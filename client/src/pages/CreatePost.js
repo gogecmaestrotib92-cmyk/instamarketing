@@ -129,7 +129,7 @@ const CreatePost = () => {
   return (
     <main className="create-content-page">
       <header className="page-header">
-        <button className="btn btn-ghost" onClick={() => navigate('/posts')} aria-label="Nazad na objave">
+        <button className="btn btn-ghost" onClick={() => navigate('/posts')} aria-label="Back to posts">
           <FiArrowLeft aria-hidden="true" /> Back
         </button>
         <h1>{isEditing ? 'Edit Post' : 'Create New Post'}</h1>

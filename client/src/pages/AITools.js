@@ -77,7 +77,7 @@ const AITools = () => {
 
   const handleGenerateCaption = async () => {
     if (!captionTopic.trim()) {
-      toast.error('Unesite temu za caption');
+      toast.error('Enter a topic for caption');
       return;
     }
     
@@ -90,9 +90,9 @@ const AITools = () => {
         includeHashtags
       });
       setGeneratedCaption(response.data.caption);
-      toast.success('Caption generisan! ✨');
+      toast.success('Caption generated! ✨');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri generisanju');
+      toast.error(error.response?.data?.error || 'Error generating');
     } finally {
       setLoading(false);
     }
@@ -100,7 +100,7 @@ const AITools = () => {
 
   const handleGenerateHashtags = async () => {
     if (!hashtagTopic.trim()) {
-      toast.error('Unesite temu za hashtag-ove');
+      toast.error('Enter a topic for hashtags');
       return;
     }
     
@@ -111,9 +111,9 @@ const AITools = () => {
         count: 20
       });
       setGeneratedHashtags(response.data.hashtags);
-      toast.success('Hashtag-ovi generisani! #️⃣');
+      toast.success('Hashtags generated! #️⃣');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri generisanju');
+      toast.error(error.response?.data?.error || 'Error generating');
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ const AITools = () => {
 
   const handleGenerateScript = async () => {
     if (!scriptTopic.trim()) {
-      toast.error('Unesite temu za script');
+      toast.error('Enter a topic for script');
       return;
     }
     
@@ -132,9 +132,9 @@ const AITools = () => {
         duration: scriptDuration
       });
       setGeneratedScript(response.data.script);
-      toast.success('Script generisan! 🎬');
+      toast.success('Script generated! 🎬');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri generisanju');
+      toast.error(error.response?.data?.error || 'Error generating');
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ const AITools = () => {
 
   const handleGenerateIdeas = async () => {
     if (!ideasNiche.trim()) {
-      toast.error('Unesite vašu nišu');
+      toast.error('Enter your niche');
       return;
     }
     
@@ -153,9 +153,9 @@ const AITools = () => {
         count: 5
       });
       setGeneratedIdeas(response.data.ideas);
-      toast.success('Ideje generisane! 💡');
+      toast.success('Ideas generated! 💡');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri generisanju');
+      toast.error(error.response?.data?.error || 'Error generating');
     } finally {
       setLoading(false);
     }
@@ -163,7 +163,7 @@ const AITools = () => {
 
   const handleGenerateVoiceover = async () => {
     if (!ttsText.trim()) {
-      toast.error('Unesite tekst za voiceover');
+      toast.error('Enter text for voiceover');
       return;
     }
     
@@ -174,9 +174,9 @@ const AITools = () => {
         style: voiceStyle
       });
       setAudioUrl(response.data.audioUrl);
-      toast.success('Voiceover generisan! 🎤');
+      toast.success('Voiceover generated! 🎤');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri generisanju');
+      toast.error(error.response?.data?.error || 'Error generating');
     } finally {
       setLoading(false);
     }
@@ -197,7 +197,7 @@ const AITools = () => {
       });
       setChatHistory(prev => [...prev, { role: 'assistant', content: response.data.response }]);
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška u chatu');
+      toast.error(error.response?.data?.error || 'Chat error');
     } finally {
       setLoading(false);
     }
@@ -206,12 +206,12 @@ const AITools = () => {
   // Video generation handler - async with polling
   const handleGenerateVideo = async () => {
     if (!videoPrompt.trim()) {
-      toast.error('Unesite opis za video');
+      toast.error('Enter a description for the video');
       return;
     }
     
     setVideoLoading(true);
-    setVideoStatus('Pokrećem generisanje...');
+    setVideoStatus('Starting generation...');
     setVideoUrl('');
     
     try {
@@ -228,8 +228,8 @@ const AITools = () => {
       
       const predictionId = startResponse.data.predictionId;
       setVideoPredictionId(predictionId);
-      setVideoStatus('Video se generiše... (može trajati 1-3 min)');
-      toast.info('Video generisanje pokrenuto! ⏳');
+      setVideoStatus('Video is generating... (may take 1-3 min)');
+      toast.info('Video generation started! ⏳');
       
       // Poll for status
       let attempts = 0;
@@ -237,7 +237,7 @@ const AITools = () => {
       
       const pollStatus = async () => {
         if (attempts >= maxAttempts) {
-          setVideoStatus('Timeout - pokušajte ponovo');
+          setVideoStatus('Timeout - please try again');
           setVideoLoading(false);
           return;
         }
@@ -250,13 +250,13 @@ const AITools = () => {
           
           if (status.status === 'succeeded') {
             setVideoUrl(status.output);
-            setVideoStatus('Video uspešno generisan! 🎉');
+            setVideoStatus('Video generated successfully! 🎉');
             setVideoLoading(false);
-            toast.success('Video je spreman! 🎬');
+            toast.success('Video is ready! 🎬');
           } else if (status.status === 'failed') {
-            setVideoStatus('Greška: ' + (status.error || 'Video generisanje nije uspelo'));
+            setVideoStatus('Error: ' + (status.error || 'Video generation failed'));
             setVideoLoading(false);
-            toast.error('Video generisanje nije uspelo');
+            toast.error('Video generation failed');
           } else {
             setVideoStatus(`Status: ${status.status} (${attempts}/${maxAttempts})`);
             setTimeout(pollStatus, 5000); // Poll every 5 seconds
@@ -272,7 +272,7 @@ const AITools = () => {
       
     } catch (error) {
       const errorMsg = error.response?.data?.error || error.message;
-      setVideoStatus('Greška: ' + errorMsg);
+      setVideoStatus('Error: ' + errorMsg);
       toast.error(errorMsg);
       setVideoLoading(false);
     }
@@ -281,13 +281,13 @@ const AITools = () => {
   // Reel Creator - Full workflow
   const handleCreateReel = async () => {
     if (!reelTopic.trim() && !reelVideoPrompt.trim()) {
-      toast.error('Unesite temu ili opis videa');
+      toast.error('Enter a topic or video description');
       return;
     }
 
     setReelLoading(true);
     setReelStep(1);
-    setReelStatus('Korak 1/4: Generisanje skripte...');
+    setReelStatus('Step 1/4: Generating script...');
     setReelScript('');
     setReelAudioUrl('');
     setReelVideoUrl('');
@@ -305,7 +305,7 @@ const AITools = () => {
       if (response.data.script) {
         setReelScript(response.data.script);
         setReelStep(2);
-        setReelStatus('Korak 2/4: Voiceover generisan!');
+        setReelStatus('Step 2/4: Voiceover generated!');
       }
 
       if (response.data.audioUrl) {
@@ -318,8 +318,8 @@ const AITools = () => {
       }
 
       setReelStep(3);
-      setReelStatus('Korak 3/4: Video se generiše... (1-3 min)');
-      toast.info('Reel kreiranje u toku! ⏳');
+      setReelStatus('Step 3/4: Video is generating... (1-3 min)');
+      toast.info('Reel creation in progress! ⏳');
 
       // Poll for video completion
       let attempts = 0;
@@ -327,7 +327,7 @@ const AITools = () => {
 
       const pollVideo = async () => {
         if (attempts >= maxAttempts) {
-          setReelStatus('Timeout - pokušajte ponovo');
+          setReelStatus('Timeout - please try again');
           setReelLoading(false);
           return;
         }
@@ -341,7 +341,7 @@ const AITools = () => {
           if (status.status === 'succeeded') {
             setReelVideoUrl(status.output);
             setReelStep(4);
-            setReelStatus('Korak 4/4: Kombinovanje video + audio + tekst...');
+            setReelStatus('Step 4/4: Combining video + audio + text...');
 
             // Finalize reel - combine video + audio + text
             try {
@@ -354,26 +354,26 @@ const AITools = () => {
 
               if (finalResponse.data.success) {
                 setReelFinalUrl(`http://localhost:5000${finalResponse.data.videoUrl}`);
-                setReelStatus('✅ Reel spreman za objavljivanje!');
-                toast.success('Reel je spreman! 🎬🎉');
+                setReelStatus('✅ Reel ready for posting!');
+                toast.success('Reel is ready! 🎬🎉');
               } else {
                 // If composition fails, still show the video without audio/text
                 setReelFinalUrl(status.output);
-                setReelStatus('Video spreman (bez audio/tekst overlay)');
+                setReelStatus('Video ready (without audio/text overlay)');
               }
             } catch (composeErr) {
               console.error('Compose error:', composeErr);
               setReelFinalUrl(status.output);
-              setReelStatus('Video spreman (kompozicija nije uspela)');
+              setReelStatus('Video ready (composition failed)');
             }
             
             setReelLoading(false);
           } else if (status.status === 'failed') {
-            setReelStatus('Greška: Video generisanje nije uspelo');
+            setReelStatus('Error: Video generation failed');
             setReelLoading(false);
-            toast.error('Video generisanje nije uspelo');
+            toast.error('Video generation failed');
           } else {
-            setReelStatus(`Korak 3/4: Video se generiše... (${attempts}/${maxAttempts})`);
+            setReelStatus(`Step 3/4: Video is generating... (${attempts}/${maxAttempts})`);
             setTimeout(pollVideo, 5000);
           }
         } catch (err) {
@@ -386,7 +386,7 @@ const AITools = () => {
 
     } catch (error) {
       const errorMsg = error.response?.data?.error || error.message;
-      setReelStatus('Greška: ' + errorMsg);
+      setReelStatus('Error: ' + errorMsg);
       toast.error(errorMsg);
       setReelLoading(false);
     }
@@ -394,14 +394,14 @@ const AITools = () => {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    toast.success('Kopirano! 📋');
+    toast.success('Copied! 📋');
   };
 
   const tabs = [
     { id: 'caption', icon: FiEdit3, label: 'Caption' },
     { id: 'hashtags', icon: FiHash, label: 'Hashtags' },
     { id: 'script', icon: FiFileText, label: 'Script' },
-    { id: 'ideas', icon: FiSun, label: 'Ideje' },
+    { id: 'ideas', icon: FiSun, label: 'Ideas' },
     { id: 'reel', icon: FiPlay, label: '🎬 Reel Creator' },
     { id: 'video', icon: FiVideo, label: 'AI Video' },
     { id: 'voiceover', icon: FiMic, label: 'Voiceover' },
@@ -411,38 +411,38 @@ const AITools = () => {
   return (
     <main className="ai-tools-page">
       <SEO 
-        title="AI Alati za Instagram"
-        description="Koristite veštačku inteligenciju za kreiranje Instagram sadržaja. AI Caption generator, hashtag predlozi, skripta za rilsove, AI video generisanje i voiceover. Najbolji AI alati za Instagram marketing u Srbiji."
-        keywords="AI instagram, generator captiona, hashtag generator, AI video, voiceover, skripta za rilsove, veštačka inteligencija marketing, instagram AI srbija"
+        title="AI Tools for Instagram"
+        description="Use artificial intelligence to create Instagram content. AI Caption generator, hashtag suggestions, reel scripts, AI video generation and voiceover. Best AI tools for Instagram marketing."
+        keywords="AI instagram, caption generator, hashtag generator, AI video, voiceover, reel scripts, AI marketing, instagram AI tools"
         url="/ai-tools"
         breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'AI Alati', url: '/ai-tools' }
+          { name: 'Home', url: '/' },
+          { name: 'AI Tools', url: '/ai-tools' }
         ]}
         faq={[
           {
-            question: 'Kako funkcioniše AI generisanje sadržaja?',
-            answer: 'Naši AI alati koriste napredne modele veštačke inteligencije (GPT-4) za generisanje captiona, hashtag-ova, skripti za video, pa čak i samog video sadržaja na osnovu vaših uputstava.'
+            question: 'How does AI content generation work?',
+            answer: 'Our AI tools use advanced artificial intelligence models (GPT-4) to generate captions, hashtags, video scripts, and even video content based on your instructions.'
           },
           {
-            question: 'Da li je AI sadržaj jedinstven?',
-            answer: 'Da, svaki generisani sadržaj je potpuno jedinstven i kreiran specijalno za vaše potrebe na osnovu teme i tona koji odaberete.'
+            question: 'Is AI content unique?',
+            answer: 'Yes, each generated content is completely unique and created specifically for your needs based on the topic and tone you choose.'
           },
           {
-            question: 'Koliko hashtag-ova mogu da generišem?',
-            answer: 'Možete generisati neograničen broj hashtag-ova. AI analizira vašu temu i predlaže najrelevantnije hashtag-ove za maksimalan reach.'
+            question: 'How many hashtags can I generate?',
+            answer: 'You can generate unlimited hashtags. AI analyzes your topic and suggests the most relevant hashtags for maximum reach.'
           }
         ]}
       />
 
       <header className="page-header">
         <div>
-          <h1><FaRobot aria-hidden="true" /> AI Alati</h1>
-          <p>Generiši sadržaj pomoću AI - caption-i, hashtag-ovi, script-ovi i voiceover</p>
+          <h1><FaRobot aria-hidden="true" /> AI Tools</h1>
+          <p>Generate content with AI - captions, hashtags, scripts and voiceover</p>
         </div>
       </header>
 
-      <nav className="ai-tabs" aria-label="AI Alati navigacija">
+      <nav className="ai-tabs" aria-label="AI Tools navigation">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -461,28 +461,28 @@ const AITools = () => {
         {activeTab === 'caption' && (
           <article className="ai-section" aria-labelledby="caption-heading">
             <h2 id="caption-heading"><FiEdit3 aria-hidden="true" /> Caption Generator</h2>
-            <p>Generiši engaging caption-e za svoje postove</p>
+            <p>Generate engaging captions for your posts</p>
             
             <div className="form-group">
-              <label htmlFor="captionTopic">Tema / Opis posta</label>
+              <label htmlFor="captionTopic">Topic / Post Description</label>
               <textarea
                 id="captionTopic"
                 value={captionTopic}
                 onChange={(e) => setCaptionTopic(e.target.value)}
-                placeholder="Npr: Novi proizvod za negu kože, prirodni sastojci, savršen za zimu..."
+                placeholder="E.g.: New skincare product, natural ingredients, perfect for winter..."
                 rows={3}
               />
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="captionTone">Ton</label>
+                <label htmlFor="captionTone">Tone</label>
                 <select id="captionTone" value={captionTone} onChange={(e) => setCaptionTone(e.target.value)}>
                   <option value="engaging">Engaging</option>
-                  <option value="professional">Profesionalan</option>
-                  <option value="funny">Smešan</option>
-                  <option value="inspirational">Inspirativan</option>
-                  <option value="casual">Opušten</option>
+                  <option value="professional">Professional</option>
+                  <option value="funny">Funny</option>
+                  <option value="inspirational">Inspirational</option>
+                  <option value="casual">Casual</option>
                 </select>
               </div>
               
@@ -493,7 +493,7 @@ const AITools = () => {
                     checked={includeEmojis} 
                     onChange={(e) => setIncludeEmojis(e.target.checked)} 
                   />
-                  Uključi emoji-je
+                  Include emojis
                 </label>
                 <label>
                   <input 
@@ -501,7 +501,7 @@ const AITools = () => {
                     checked={includeHashtags} 
                     onChange={(e) => setIncludeHashtags(e.target.checked)} 
                   />
-                  Uključi hashtag-ove
+                  Include hashtags
                 </label>
               </div>
             </div>
@@ -513,15 +513,15 @@ const AITools = () => {
               aria-busy={loading}
             >
               {loading ? <FiRefreshCw className="spin" aria-hidden="true" /> : <FaWandMagicSparkles aria-hidden="true" />}
-              {loading ? 'Generisanje...' : 'Generiši Caption'}
+              {loading ? 'Generating...' : 'Generate Caption'}
             </button>
 
             {generatedCaption && (
               <div className="result-box" aria-live="polite">
                 <div className="result-header">
-                  <h3>Generisani Caption</h3>
-                  <button onClick={() => copyToClipboard(generatedCaption)} aria-label="Kopiraj caption">
-                    <FiCopy aria-hidden="true" /> Kopiraj
+                  <h3>Generated Caption</h3>
+                  <button onClick={() => copyToClipboard(generatedCaption)} aria-label="Copy caption">
+                    <FiCopy aria-hidden="true" /> Copy
                   </button>
                 </div>
                 <div className="result-content">
@@ -536,16 +536,16 @@ const AITools = () => {
         {activeTab === 'hashtags' && (
           <article className="ai-section" aria-labelledby="hashtag-heading">
             <h2 id="hashtag-heading"><FiHash aria-hidden="true" /> Hashtag Generator</h2>
-            <p>Generiši relevantne hashtag-ove za veći reach</p>
+            <p>Generate relevant hashtags for greater reach</p>
             
             <div className="form-group">
-              <label htmlFor="hashtagTopic">Tema</label>
+              <label htmlFor="hashtagTopic">Topic</label>
               <input
                 id="hashtagTopic"
                 type="text"
                 value={hashtagTopic}
                 onChange={(e) => setHashtagTopic(e.target.value)}
-                placeholder="Npr: fitness, zdravlje, vežbanje kod kuće"
+                placeholder="E.g.: fitness, health, home workouts"
               />
             </div>
 
@@ -556,15 +556,15 @@ const AITools = () => {
               aria-busy={loading}
             >
               {loading ? <FiRefreshCw className="spin" aria-hidden="true" /> : <FiHash aria-hidden="true" />}
-              {loading ? 'Generisanje...' : 'Generiši Hashtag-ove'}
+              {loading ? 'Generating...' : 'Generate Hashtags'}
             </button>
 
             {generatedHashtags.length > 0 && (
               <div className="result-box" aria-live="polite">
                 <div className="result-header">
-                  <h3>Generisani Hashtag-ovi</h3>
-                  <button onClick={() => copyToClipboard(generatedHashtags.join(' '))} aria-label="Kopiraj sve hashtagove">
-                    <FiCopy aria-hidden="true" /> Kopiraj sve
+                  <h3>Generated Hashtags</h3>
+                  <button onClick={() => copyToClipboard(generatedHashtags.join(' '))} aria-label="Copy all hashtags">
+                    <FiCopy aria-hidden="true" /> Copy all
                   </button>
                 </div>
                 <div className="hashtags-grid">
@@ -573,7 +573,7 @@ const AITools = () => {
                       key={i} 
                       className="hashtag-chip"
                       onClick={() => copyToClipboard(tag)}
-                      aria-label={`Kopiraj hashtag ${tag}`}
+                      aria-label={`Copy hashtag ${tag}`}
                     >
                       {tag}
                     </button>
@@ -588,26 +588,26 @@ const AITools = () => {
         {activeTab === 'script' && (
           <article className="ai-section" aria-labelledby="script-heading">
             <h2 id="script-heading"><FiFileText aria-hidden="true" /> Reel Script Generator</h2>
-            <p>Generiši script za viralane Reels</p>
+            <p>Generate scripts for viral Reels</p>
             
             <div className="form-group">
-              <label htmlFor="scriptTopic">Tema Reel-a</label>
+              <label htmlFor="scriptTopic">Reel Topic</label>
               <textarea
                 id="scriptTopic"
                 value={scriptTopic}
                 onChange={(e) => setScriptTopic(e.target.value)}
-                placeholder="Npr: 5 saveta za produktivnost, jutarnja rutina, kako zaraditi online..."
+                placeholder="E.g.: 5 productivity tips, morning routine, how to make money online..."
                 rows={3}
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="scriptDuration">Trajanje (sekundi)</label>
+              <label htmlFor="scriptDuration">Duration (seconds)</label>
               <select id="scriptDuration" value={scriptDuration} onChange={(e) => setScriptDuration(Number(e.target.value))}>
-                <option value={15}>15 sekundi</option>
-                <option value={30}>30 sekundi</option>
-                <option value={60}>60 sekundi</option>
-                <option value={90}>90 sekundi</option>
+                <option value={15}>15 seconds</option>
+                <option value={30}>30 seconds</option>
+                <option value={60}>60 seconds</option>
+                <option value={90}>90 seconds</option>
               </select>
             </div>
 
@@ -618,15 +618,15 @@ const AITools = () => {
               aria-busy={loading}
             >
               {loading ? <FiRefreshCw className="spin" aria-hidden="true" /> : <FiZap aria-hidden="true" />}
-              {loading ? 'Generisanje...' : 'Generiši Script'}
+              {loading ? 'Generating...' : 'Generate Script'}
             </button>
 
             {generatedScript && (
               <div className="result-box" aria-live="polite">
                 <div className="result-header">
-                  <h3>Generisani Script</h3>
-                  <button onClick={() => copyToClipboard(generatedScript)} aria-label="Kopiraj script">
-                    <FiCopy aria-hidden="true" /> Kopiraj
+                  <h3>Generated Script</h3>
+                  <button onClick={() => copyToClipboard(generatedScript)} aria-label="Copy script">
+                    <FiCopy aria-hidden="true" /> Copy
                   </button>
                 </div>
                 <div className="result-content script-content">
@@ -640,17 +640,17 @@ const AITools = () => {
         {/* Ideas Generator */}
         {activeTab === 'ideas' && (
           <article className="ai-section" aria-labelledby="ideas-heading">
-            <h2 id="ideas-heading"><FiSun aria-hidden="true" /> Content Ideje</h2>
-            <p>Dobij kreativne ideje za sadržaj u tvojoj niši</p>
+            <h2 id="ideas-heading"><FiSun aria-hidden="true" /> Content Ideas</h2>
+            <p>Get creative content ideas for your niche</p>
             
             <div className="form-group">
-              <label htmlFor="ideasNiche">Tvoja Niša</label>
+              <label htmlFor="ideasNiche">Your Niche</label>
               <input
                 id="ideasNiche"
                 type="text"
                 value={ideasNiche}
                 onChange={(e) => setIdeasNiche(e.target.value)}
-                placeholder="Npr: fitness, moda, tehnologija, hrana, putovanja..."
+                placeholder="E.g.: fitness, fashion, technology, food, travel..."
               />
             </div>
 
@@ -661,7 +661,7 @@ const AITools = () => {
               aria-busy={loading}
             >
               {loading ? <FiRefreshCw className="spin" aria-hidden="true" /> : <FiSun aria-hidden="true" />}
-              {loading ? 'Generisanje...' : 'Generiši Ideje'}
+              {loading ? 'Generating...' : 'Generate Ideas'}
             </button>
 
             {generatedIdeas.length > 0 && (
@@ -683,9 +683,9 @@ const AITools = () => {
         {activeTab === 'reel' && (
           <article className="ai-section reel-creator" aria-labelledby="reel-heading">
             <h2 id="reel-heading"><FiPlay aria-hidden="true" /> 🎬 Reel Creator</h2>
-            <p>Kreiraj kompletan Reel sa AI videom, voiceover-om i tekstom!</p>
+            <p>Create a complete Reel with AI video, voiceover and text!</p>
             
-            <div className="reel-workflow-info" aria-label="Progres kreiranja Reela">
+            <div className="reel-workflow-info" aria-label="Reel creation progress">
               <div className={`workflow-step ${reelStep >= 1 ? 'active' : ''} ${reelStep > 1 ? 'done' : ''}`}>
                 <span className="step-number">1</span>
                 <span className="step-label">Script</span>
@@ -700,52 +700,52 @@ const AITools = () => {
               </div>
               <div className={`workflow-step ${reelStep >= 4 ? 'active' : ''}`}>
                 <span className="step-number">4</span>
-                <span className="step-label">Finalno</span>
+                <span className="step-label">Final</span>
               </div>
             </div>
 
             <div className="form-group">
-              <label htmlFor="reelTopic">Tema Reel-a (za script i voiceover)</label>
+              <label htmlFor="reelTopic">Reel Topic (for script and voiceover)</label>
               <input
                 id="reelTopic"
                 type="text"
                 value={reelTopic}
                 onChange={(e) => setReelTopic(e.target.value)}
-                placeholder="Npr: 5 saveta za produktivnost, Jutarnja rutina, Fitness motivacija..."
+                placeholder="E.g.: 5 productivity tips, Morning routine, Fitness motivation..."
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="reelVideoPrompt">Video Prompt (opis scene - engleski preporučen)</label>
+              <label htmlFor="reelVideoPrompt">Video Prompt (scene description - English recommended)</label>
               <textarea
                 id="reelVideoPrompt"
                 value={reelVideoPrompt}
                 onChange={(e) => setReelVideoPrompt(e.target.value)}
-                placeholder="Npr: Person working on laptop in modern office, morning light, cinematic..."
+                placeholder="E.g.: Person working on laptop in modern office, morning light, cinematic..."
                 rows={2}
               />
-              <small>Ako ostavite prazno, automatski će se generisati na osnovu teme</small>
+              <small>If left empty, it will be automatically generated based on the topic</small>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="reelVoiceStyle">Stil glasa</label>
+                <label htmlFor="reelVoiceStyle">Voice Style</label>
                 <select id="reelVoiceStyle" value={reelVoiceStyle} onChange={(e) => setReelVoiceStyle(e.target.value)}>
-                  <option value="energetic">Energičan</option>
-                  <option value="calm">Smiren</option>
-                  <option value="professional">Profesionalan</option>
-                  <option value="friendly">Prijateljski</option>
+                  <option value="energetic">Energetic</option>
+                  <option value="calm">Calm</option>
+                  <option value="professional">Professional</option>
+                  <option value="friendly">Friendly</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label htmlFor="reelTextOverlay">Tekst overlay (opciono)</label>
+                <label htmlFor="reelTextOverlay">Text overlay (optional)</label>
                 <input
                   id="reelTextOverlay"
                   type="text"
                   value={reelTextOverlay}
                   onChange={(e) => setReelTextOverlay(e.target.value)}
-                  placeholder="Tekst koji će se prikazati na videu"
+                  placeholder="Text to display on the video"
                 />
               </div>
             </div>
@@ -757,7 +757,7 @@ const AITools = () => {
               aria-busy={reelLoading}
             >
               {reelLoading ? <FiRefreshCw className="spin" aria-hidden="true" /> : <FaWandMagicSparkles aria-hidden="true" />}
-              {reelLoading ? 'Kreiranje...' : '✨ Kreiraj Reel'}
+              {reelLoading ? 'Creating...' : '✨ Create Reel'}
             </button>
 
             {reelStatus && (
@@ -769,10 +769,10 @@ const AITools = () => {
             {/* Show progress */}
             {reelScript && (
               <div className="reel-progress-item">
-                <h4>📝 Generisani Script:</h4>
+                <h4>📝 Generated Script:</h4>
                 <p>{reelScript}</p>
-                <button className="copy-btn small" onClick={() => copyToClipboard(reelScript)} aria-label="Kopiraj script">
-                  <FiCopy aria-hidden="true" /> Kopiraj
+                <button className="copy-btn small" onClick={() => copyToClipboard(reelScript)} aria-label="Copy script">
+                  <FiCopy aria-hidden="true" /> Copy
                 </button>
               </div>
             )}
@@ -787,7 +787,7 @@ const AITools = () => {
             {/* Final Result */}
             {reelFinalUrl && (
               <div className="video-result reel-result">
-                <h3>🎬 Tvoj Reel je spreman!</h3>
+                <h3>🎬 Your Reel is ready!</h3>
                 <video 
                   src={reelFinalUrl} 
                   controls 
@@ -802,16 +802,16 @@ const AITools = () => {
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="download-btn"
-                    aria-label="Preuzmi Reel"
+                    aria-label="Download Reel"
                   >
-                    <FiDownload aria-hidden="true" /> Preuzmi Reel
+                    <FiDownload aria-hidden="true" /> Download Reel
                   </a>
                   <button 
                     className="copy-btn"
                     onClick={() => copyToClipboard(reelFinalUrl)}
-                    aria-label="Kopiraj URL Reela"
+                    aria-label="Copy Reel URL"
                   >
-                    <FiCopy aria-hidden="true" /> Kopiraj URL
+                    <FiCopy aria-hidden="true" /> Copy URL
                   </button>
                 </div>
               </div>
@@ -823,26 +823,26 @@ const AITools = () => {
         {activeTab === 'video' && (
           <article className="ai-section" aria-labelledby="video-heading">
             <h2 id="video-heading"><FiVideo aria-hidden="true" /> AI Video Generator</h2>
-            <p>Generiši kratke video klipove pomoću AI - savršeno za Reels!</p>
+            <p>Generate short video clips with AI - perfect for Reels!</p>
             
             <div className="form-group">
-              <label htmlFor="videoPrompt">Opis videa (engleski daje bolje rezultate)</label>
+              <label htmlFor="videoPrompt">Video Description (English gives better results)</label>
               <textarea
                 id="videoPrompt"
                 value={videoPrompt}
                 onChange={(e) => setVideoPrompt(e.target.value)}
-                placeholder="Npr: A beautiful sunset over the ocean with gentle waves, cinematic, 4K quality"
+                placeholder="E.g.: A beautiful sunset over the ocean with gentle waves, cinematic, 4K quality"
                 rows={3}
               />
             </div>
 
             <div className="info-box">
-              <p>💡 <strong>Saveti za bolje rezultate:</strong></p>
+              <p>💡 <strong>Tips for better results:</strong></p>
               <ul>
-                <li>Koristite engleski jezik za opise</li>
-                <li>Budite što detaljniji u opisu scene</li>
-                <li>Dodajte stil: "cinematic", "4K", "slow motion"</li>
-                <li>Generisanje traje 1-3 minuta</li>
+                <li>Use English for descriptions</li>
+                <li>Be as detailed as possible describing the scene</li>
+                <li>Add style: "cinematic", "4K", "slow motion"</li>
+                <li>Generation takes 1-3 minutes</li>
               </ul>
             </div>
 
@@ -853,7 +853,7 @@ const AITools = () => {
               aria-busy={videoLoading}
             >
               {videoLoading ? <FiRefreshCw className="spin" aria-hidden="true" /> : <FiVideo aria-hidden="true" />}
-              {videoLoading ? 'Generisanje...' : 'Generiši Video'}
+              {videoLoading ? 'Generating...' : 'Generate Video'}
             </button>
 
             {videoStatus && (
@@ -878,16 +878,16 @@ const AITools = () => {
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="download-btn"
-                    aria-label="Preuzmi video"
+                    aria-label="Download video"
                   >
-                    <FiDownload aria-hidden="true" /> Preuzmi Video
+                    <FiDownload aria-hidden="true" /> Download Video
                   </a>
                   <button 
                     className="copy-btn"
                     onClick={() => copyToClipboard(videoUrl)}
-                    aria-label="Kopiraj URL videa"
+                    aria-label="Copy video URL"
                   >
-                    <FiCopy aria-hidden="true" /> Kopiraj URL
+                    <FiCopy aria-hidden="true" /> Copy URL
                   </button>
                 </div>
               </div>
@@ -899,27 +899,27 @@ const AITools = () => {
         {activeTab === 'voiceover' && (
           <article className="ai-section" aria-labelledby="voiceover-heading">
             <h2 id="voiceover-heading"><FiMic aria-hidden="true" /> Voiceover Generator</h2>
-            <p>Pretvori tekst u prirodni govor za Reels</p>
+            <p>Convert text to natural speech for Reels</p>
             
             <div className="form-group">
-              <label htmlFor="ttsText">Tekst za voiceover</label>
+              <label htmlFor="ttsText">Text for voiceover</label>
               <textarea
                 id="ttsText"
                 value={ttsText}
                 onChange={(e) => setTtsText(e.target.value)}
-                placeholder="Unesite tekst koji želite da pretvorite u govor..."
+                placeholder="Enter the text you want to convert to speech..."
                 rows={5}
               />
-              <small>{ttsText.length}/5000 karaktera</small>
+              <small>{ttsText.length}/5000 characters</small>
             </div>
 
             <div className="form-group">
-              <label htmlFor="voiceStyle">Stil glasa</label>
+              <label htmlFor="voiceStyle">Voice Style</label>
               <select id="voiceStyle" value={voiceStyle} onChange={(e) => setVoiceStyle(e.target.value)}>
-                <option value="energetic">Energičan (za Reels)</option>
-                <option value="calm">Smiren</option>
-                <option value="professional">Profesionalan</option>
-                <option value="friendly">Prijateljski</option>
+                <option value="energetic">Energetic (for Reels)</option>
+                <option value="calm">Calm</option>
+                <option value="professional">Professional</option>
+                <option value="friendly">Friendly</option>
               </select>
             </div>
 
@@ -930,12 +930,12 @@ const AITools = () => {
               aria-busy={loading}
             >
               {loading ? <FiRefreshCw className="spin" aria-hidden="true" /> : <FiVolume2 aria-hidden="true" />}
-              {loading ? 'Generisanje...' : 'Generiši Voiceover'}
+              {loading ? 'Generating...' : 'Generate Voiceover'}
             </button>
 
             {audioUrl && (
               <div className="result-box audio-result">
-                <h3>Generisani Audio</h3>
+                <h3>Generated Audio</h3>
                 <audio controls src={`http://localhost:5000${audioUrl}`}>
                   Your browser does not support the audio element.
                 </audio>
@@ -943,9 +943,9 @@ const AITools = () => {
                   href={`http://localhost:5000${audioUrl}`} 
                   download 
                   className="download-btn"
-                  aria-label="Preuzmi MP3"
+                  aria-label="Download MP3"
                 >
-                  <FiPlay aria-hidden="true" /> Preuzmi MP3
+                  <FiPlay aria-hidden="true" /> Download MP3
                 </a>
               </div>
             )}
@@ -955,22 +955,22 @@ const AITools = () => {
         {/* AI Chat */}
         {activeTab === 'chat' && (
           <article className="ai-section chat-section" aria-labelledby="chat-heading">
-            <h2 id="chat-heading"><FiMessageSquare aria-hidden="true" /> AI Marketing Asistent</h2>
-            <p>Pitaj AI za savete o Instagram marketingu</p>
+            <h2 id="chat-heading"><FiMessageSquare aria-hidden="true" /> AI Marketing Assistant</h2>
+            <p>Ask AI for Instagram marketing advice</p>
             
             <div className="chat-container">
               <div className="chat-messages" aria-live="polite">
                 {chatHistory.length === 0 && (
                   <div className="chat-welcome">
                     <FaRobot size={48} aria-hidden="true" />
-                    <h3>Zdravo! 👋</h3>
-                    <p>Ja sam tvoj AI marketing asistent. Pitaj me bilo šta o:</p>
+                    <h3>Hello! 👋</h3>
+                    <p>I'm your AI marketing assistant. Ask me anything about:</p>
                     <ul>
-                      <li>📝 Content strategiji</li>
-                      <li>📈 Rastu pratilaca</li>
-                      <li>#️⃣ Hashtag strategiji</li>
-                      <li>🎬 Idejama za Reels</li>
-                      <li>💡 Engagement tipsovima</li>
+                      <li>📝 Content strategy</li>
+                      <li>📈 Follower growth</li>
+                      <li>#️⃣ Hashtag strategy</li>
+                      <li>🎬 Ideas for Reels</li>
+                      <li>💡 Engagement tips</li>
                     </ul>
                   </div>
                 )}
@@ -983,23 +983,23 @@ const AITools = () => {
                   <div className="chat-message assistant">
                     <div className="message-content typing">
                       <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
-                      <span className="sr-only">AI kuca...</span>
+                      <span className="sr-only">AI is typing...</span>
                     </div>
                   </div>
                 )}
               </div>
               
               <div className="chat-input">
-                <label htmlFor="chatMessage" className="sr-only">Tvoja poruka</label>
+                <label htmlFor="chatMessage" className="sr-only">Your message</label>
                 <input
                   id="chatMessage"
                   type="text"
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
-                  placeholder="Pitaj nešto..."
+                  placeholder="Ask something..."
                   onKeyPress={(e) => e.key === 'Enter' && handleChat()}
                 />
-                <button onClick={handleChat} disabled={loading || !chatMessage.trim()} aria-label="Pošalji poruku">
+                <button onClick={handleChat} disabled={loading || !chatMessage.trim()} aria-label="Send message">
                   <FiZap aria-hidden="true" />
                 </button>
               </div>

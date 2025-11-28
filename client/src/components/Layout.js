@@ -30,16 +30,16 @@ const Layout = () => {
   };
 
   const navItems = [
-    { path: '/app/dashboard', icon: FiHome, label: 'Kontrolna Tabla' },
-    { path: '/app/posts', icon: FiImage, label: 'Objave' },
-    { path: '/app/reels', icon: FiFilm, label: 'Rilsovi' },
-    { path: '/app/ai-video', icon: FiZap, label: 'AI Video', badge: 'NOVO' },
-    { path: '/app/ai-tools', icon: FiCpu, label: 'AI Alati', badge: 'NOVO' },
-    { path: '/app/advanced-video', icon: FiVideo, label: 'Napredni Video', badge: 'PRO' },
-    { path: '/app/campaigns', icon: FiTarget, label: 'Kampanje' },
-    { path: '/app/schedule', icon: FiCalendar, label: 'Zakazivanje' },
-    { path: '/app/analytics', icon: FiBarChart2, label: 'Analitika' },
-    { path: '/app/settings', icon: FiSettings, label: 'Podešavanja' }
+    { path: '/app/dashboard', icon: FiHome, label: 'Dashboard' },
+    { path: '/app/posts', icon: FiImage, label: 'Posts' },
+    { path: '/app/reels', icon: FiFilm, label: 'Reels' },
+    { path: '/app/ai-video', icon: FiZap, label: 'AI Video', badge: 'NEW' },
+    { path: '/app/ai-tools', icon: FiCpu, label: 'AI Tools', badge: 'NEW' },
+    { path: '/app/advanced-video', icon: FiVideo, label: 'Advanced Video', badge: 'PRO' },
+    { path: '/app/campaigns', icon: FiTarget, label: 'Campaigns' },
+    { path: '/app/schedule', icon: FiCalendar, label: 'Schedule' },
+    { path: '/app/analytics', icon: FiBarChart2, label: 'Analytics' },
+    { path: '/app/settings', icon: FiSettings, label: 'Settings' }
   ];
 
   return (
@@ -49,25 +49,25 @@ const Layout = () => {
         <button 
           className="menu-toggle" 
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          aria-label={sidebarOpen ? "Zatvori meni" : "Otvori meni"}
+          aria-label={sidebarOpen ? "Close menu" : "Open menu"}
           aria-expanded={sidebarOpen}
         >
           {sidebarOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
         </button>
         <div className="mobile-logo">
           <FaInstagram className="logo-icon" aria-hidden="true" />
-          <span>InstaMarketing</span>
+          <span>AIInstaMarketing</span>
         </div>
       </header>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} aria-label="Bočna traka">
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} aria-label="Sidebar">
         <div className="sidebar-header">
           <FaInstagram className="logo-icon" aria-hidden="true" />
-          <span className="logo-text">InstaMarketing</span>
+          <span className="logo-text">AIInstaMarketing</span>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Glavna navigacija">
+        <nav className="sidebar-nav" aria-label="Main navigation">
           {navItems.map(item => (
             <NavLink
               key={item.path}
@@ -96,7 +96,7 @@ const Layout = () => {
               <span className="user-plan">{user?.plan || 'Free'} Plan</span>
             </div>
           </div>
-          <button className="logout-btn" onClick={handleLogout} aria-label="Odjavi se">
+          <button className="logout-btn" onClick={handleLogout} aria-label="Log out">
             <FiLogOut aria-hidden="true" />
           </button>
         </div>

@@ -5,62 +5,62 @@ import './About.css';
 
 const About = () => {
   const stats = [
-    { number: '10k+', label: 'Korisnika' },
-    { number: '1M+', label: 'Objava' },
-    { number: '50+', label: 'Zemalja' },
-    { number: '24/7', label: 'Podrška' }
+    { number: '10k+', label: 'Users' },
+    { number: '1M+', label: 'Posts' },
+    { number: '50+', label: 'Countries' },
+    { number: '24/7', label: 'Support' }
   ];
 
   const values = [
     {
       icon: FiUsers,
-      title: 'Korisnik na prvom mestu',
-      description: 'Sve što radimo, radimo sa ciljem da pomognemo našim korisnicima da uspeju.'
+      title: 'Customer First',
+      description: 'Everything we do, we do with the goal of helping our users succeed.'
     },
     {
       icon: FiTarget,
-      title: 'Inovacija',
-      description: 'Stalno unapređujemo našu platformu najnovijim AI tehnologijama.'
+      title: 'Innovation',
+      description: 'We constantly improve our platform with the latest AI technologies.'
     },
     {
       icon: FiAward,
-      title: 'Kvalitet',
-      description: 'Ne pravimo kompromise kada je u pitanju kvalitet i pouzdanost naših alata.'
+      title: 'Quality',
+      description: 'We don\'t compromise when it comes to quality and reliability of our tools.'
     },
     {
       icon: FiTrendingUp,
-      title: 'Rast',
-      description: 'Posvećeni smo rastu vašeg biznisa kroz pametnu automatizaciju.'
+      title: 'Growth',
+      description: 'We are dedicated to growing your business through smart automation.'
     }
   ];
 
   return (
     <main className="about-page">
       <SEO 
-        title="O Nama - InstaMarketing"
-        description="Upoznajte tim koji stoji iza InstaMarketing platforme. Naša misija je da demokratizujemo pristup naprednim marketinškim alatima."
-        keywords="o nama, instamarketing tim, misija, vizija, instagram marketing srbija"
+        title="About Us - InstaMarketing"
+        description="Meet the team behind the InstaMarketing platform. Our mission is to democratize access to advanced marketing tools."
+        keywords="about us, instamarketing team, mission, vision, instagram marketing"
         url="/about"
         breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'O Nama', url: '/about' }
+          { name: 'Home', url: '/' },
+          { name: 'About Us', url: '/about' }
         ]}
       />
 
       {/* Hero Section */}
       <header className="about-hero">
         <div className="hero-content">
-          <h1>Naša Misija je Vaš Uspeh</h1>
+          <h1>Our Mission is Your Success</h1>
           <p>
-            InstaMarketing je nastao sa jednostavnom idejom: učiniti profesionalne 
-            marketinške alate dostupnim svima. Danas pomažemo hiljadama biznisa 
-            da rastu na društvenim mrežama.
+            InstaMarketing was created with a simple idea: make professional 
+            marketing tools accessible to everyone. Today we help thousands of businesses 
+            grow on social media.
           </p>
         </div>
       </header>
 
       {/* Stats Section */}
-      <section className="stats-section" aria-label="Statistika">
+      <section className="stats-section" aria-label="Statistics">
         <div className="stats-grid">
           {stats.map((stat, index) => (
             <div key={index} className="stat-item">
@@ -74,15 +74,15 @@ const About = () => {
       {/* Story Section */}
       <section className="story-section">
         <div className="story-content">
-          <h2>Naša Priča</h2>
+          <h2>Our Story</h2>
           <p>
-            Osnovani 2024. godine u Beogradu, prepoznali smo potrebu za alatom koji bi 
-            ujedinio kreiranje sadržaja, zakazivanje i analitiku na jednom mestu.
+            Founded in 2024 in Belgrade, we recognized the need for a tool that would 
+            unify content creation, scheduling and analytics in one place.
           </p>
           <p>
-            Danas, naš tim inženjera i marketara radi neumorno na integraciji najnovijih 
-            AI tehnologija kako bi vam uštedeli vreme i poboljšali rezultate. Verujemo 
-            da budućnost marketinga leži u simbiozi ljudske kreativnosti i veštačke inteligencije.
+            Today, our team of engineers and marketers works tirelessly to integrate the latest 
+            AI technologies to save you time and improve results. We believe 
+            that the future of marketing lies in the symbiosis of human creativity and artificial intelligence.
           </p>
         </div>
         <div className="story-image" aria-hidden="true">
@@ -93,7 +93,7 @@ const About = () => {
 
       {/* Values Section */}
       <section className="values-section" aria-labelledby="values-heading">
-        <h2 id="values-heading">Naše Vrednosti</h2>
+        <h2 id="values-heading">Our Values</h2>
         <div className="values-grid">
           {values.map((value, index) => (
             <article key={index} className="value-card">

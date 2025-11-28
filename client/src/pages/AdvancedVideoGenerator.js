@@ -196,11 +196,11 @@ const AdvancedVideoGenerator = () => {
 
   const handleSelectMusic = (musicUrl) => {
     setFinalizeData(prev => ({ ...prev, musicUrl }));
-    toast.success('Muzika izabrana!');
+    toast.success('Music selected!');
   };
 
   const handleGenerateVoiceover = async () => {
-    if (!voiceoverScript) return toast.error('Unesite tekst za voiceover');
+    if (!voiceoverScript) return toast.error('Enter text for voiceover');
     setIsGeneratingVoice(true);
     try {
       const token = localStorage.getItem('token');
@@ -210,9 +210,9 @@ const AdvancedVideoGenerator = () => {
       }, { headers: { Authorization: `Bearer ${token}` }});
       
       setFinalizeData(prev => ({ ...prev, voiceoverUrl: res.data.audioUrl }));
-      toast.success('Voiceover generisan!');
+      toast.success('Voiceover generated!');
     } catch (err) {
-      toast.error('Greška pri generisanju voiceover-a');
+      toast.error('Error generating voiceover');
     } finally {
       setIsGeneratingVoice(false);
     }
@@ -232,13 +232,13 @@ const AdvancedVideoGenerator = () => {
           setGeneratedVideos(prev => prev.map(v => 
             v.predictionId === predictionId ? { ...v, videoUrl: output, status: 'succeeded' } : v
           ));
-          toast.success('Video je spreman!');
+          toast.success('Video is ready!');
           setLoading(false);
         } else if (status === 'failed' || status === 'canceled') {
           setGeneratedVideos(prev => prev.map(v => 
             v.predictionId === predictionId ? { ...v, status: 'failed' } : v
           ));
-          toast.error('Generisanje nije uspelo.');
+          toast.error('Generation failed.');
           setLoading(false);
         } else {
           setTimeout(checkStatus, 3000);
@@ -269,13 +269,13 @@ const AdvancedVideoGenerator = () => {
             }
             return v;
           }));
-          toast.success('Varijacije su spremne!');
+          toast.success('Variations are ready!');
           setLoading(false);
         } else if (status === 'failed') {
            setGeneratedVideos(prev => prev.map(v => 
             v.jobId === jobId ? { ...v, status: 'failed' } : v
           ));
-          toast.error('Generisanje varijacija nije uspelo.');
+          toast.error('Variations generation failed.');
           setLoading(false);
         } else {
           setTimeout(checkStatus, 3000);
@@ -290,7 +290,7 @@ const AdvancedVideoGenerator = () => {
 
   const handleGenerateSingle = async () => {
     if (!formData.subject && !formData.customPrompt) {
-      toast.error('Unesite subjekat ili prilagođeni prompt');
+      toast.error('Enter a subject or custom prompt');
       return;
     }
 
@@ -312,16 +312,16 @@ const AdvancedVideoGenerator = () => {
       
       pollStatus(res.data.predictionId);
       
-      toast.info('Generisanje započeto. Molimo sačekajte...');
+      toast.info('Generation started. Please wait...');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri generisanju');
+      toast.error(error.response?.data?.error || 'Error generating video');
       setLoading(false);
     }
   };
 
   const handleGenerateBracketed = async () => {
     if (!formData.subject && !formData.customPrompt) {
-      toast.error('Unesite subjekat ili prilagođeni prompt');
+      toast.error('Enter a subject or custom prompt');
       return;
     }
 
@@ -347,16 +347,16 @@ const AdvancedVideoGenerator = () => {
       
       pollBracketedStatus(jobId);
       
-      toast.info(`Generisanje ${variations.length} varijacija započeto...`);
+      toast.info(`Generating ${variations.length} variations started...`);
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri generisanju');
+      toast.error(error.response?.data?.error || 'Error generating video');
       setLoading(false);
     }
   };
 
   const handleEnhance = async () => {
     if (!enhanceData.videoUrl) {
-      toast.error('Unesite URL videa');
+      toast.error('Enter video URL');
       return;
     }
 
@@ -368,9 +368,9 @@ const AdvancedVideoGenerator = () => {
       });
 
       setEnhancedVideo(res.data);
-      toast.success('Video uspešno poboljšan!');
+      toast.success('Video successfully enhanced!');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri poboljšanju');
+      toast.error(error.response?.data?.error || 'Error enhancing video');
     } finally {
       setLoading(false);
     }
@@ -378,7 +378,7 @@ const AdvancedVideoGenerator = () => {
 
   const handleFinalize = async () => {
     if (!finalizeData.videoUrl) {
-      toast.error('Unesite URL videa');
+      toast.error('Enter video URL');
       return;
     }
 
@@ -390,9 +390,9 @@ const AdvancedVideoGenerator = () => {
       });
 
       setFinalizedVideo(res.data.url);
-      toast.success('Video uspešno finalizovan!');
+      toast.success('Video successfully finalized!');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri finalizaciji');
+      toast.error(error.response?.data?.error || 'Error finalizing video');
     } finally {
       setLoading(false);
     }
@@ -456,13 +456,13 @@ const AdvancedVideoGenerator = () => {
   return (
     <main className="advanced-video-generator">
       <SEO 
-        title="Napredni Video Generator"
-        description="Profesionalno AI generisanje videa sa naprednim opcijama"
+        title="Advanced Video Generator"
+        description="Professional AI video generation with advanced options"
       />
 
       <header className="page-header">
-        <h1><FiVideo className="header-icon" aria-hidden="true" /> Napredni AI Video Generator</h1>
-        <p>Kreirajte profesionalne videe sa naprednim AI opcijama</p>
+        <h1><FiVideo className="header-icon" aria-hidden="true" /> Advanced AI Video Generator</h1>
+        <p>Create professional videos with advanced AI options</p>
       </header>
 
       <nav className="tabs" role="tablist" aria-label="Generator tabs">
@@ -472,7 +472,7 @@ const AdvancedVideoGenerator = () => {
           role="tab"
           aria-selected={activeTab === 'generate'}
         >
-          <FiVideo aria-hidden="true" /> Generisanje
+          <FiVideo aria-hidden="true" /> Generate
         </button>
         <button 
           className={`tab ${activeTab === 'enhance' ? 'active' : ''}`}
@@ -480,7 +480,7 @@ const AdvancedVideoGenerator = () => {
           role="tab"
           aria-selected={activeTab === 'enhance'}
         >
-          <FiZap aria-hidden="true" /> Poboljšanje
+          <FiZap aria-hidden="true" /> Enhance
         </button>
         <button 
           className={`tab ${activeTab === 'finalize' ? 'active' : ''}`}
@@ -488,7 +488,7 @@ const AdvancedVideoGenerator = () => {
           role="tab"
           aria-selected={activeTab === 'finalize'}
         >
-          <FiCheckCircle aria-hidden="true" /> Finalizacija
+          <FiCheckCircle aria-hidden="true" /> Finalize
         </button>
         <button 
           className={`tab ${activeTab === 'results' ? 'active' : ''}`}
@@ -496,7 +496,7 @@ const AdvancedVideoGenerator = () => {
           role="tab"
           aria-selected={activeTab === 'results'}
         >
-          <FiFolder aria-hidden="true" /> Rezultati ({generatedVideos.length})
+          <FiFolder aria-hidden="true" /> Results ({generatedVideos.length})
         </button>
       </nav>
 
@@ -505,7 +505,7 @@ const AdvancedVideoGenerator = () => {
         <div className="generate-section" role="tabpanel">
           {/* Templates */}
           <section className="section templates-section">
-            <h3><FiLayers aria-hidden="true" /> Brzi Šabloni</h3>
+            <h3><FiLayers aria-hidden="true" /> Quick Templates</h3>
             <div className="templates-grid">
               {presets?.templates?.map(template => (
                 <button
@@ -525,80 +525,80 @@ const AdvancedVideoGenerator = () => {
             {/* Left Column - Basic */}
             <div className="form-column">
               <section className="section">
-                <h3><FiTarget aria-hidden="true" /> Osnovni Sadržaj</h3>
+                <h3><FiTarget aria-hidden="true" /> Basic Content</h3>
                 
                 <div className="form-group">
-                  <label htmlFor="subject">Subjekat *</label>
+                  <label htmlFor="subject">Subject *</label>
                   <input
                     id="subject"
                     type="text"
                     name="subject"
                     value={formData.subject}
                     onChange={handleInputChange}
-                    placeholder="npr. elegantna žena, moderni telefon, šolja kafe"
+                    placeholder="e.g. elegant woman, modern phone, coffee cup"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="action">Akcija</label>
+                  <label htmlFor="action">Action</label>
                   <input
                     id="action"
                     type="text"
                     name="action"
                     value={formData.action}
                     onChange={handleInputChange}
-                    placeholder="npr. hoda kroz ulicu, rotira se, svetluca"
+                    placeholder="e.g. walking down the street, rotating, sparkling"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="setting">Lokacija/Okruženje</label>
+                  <label htmlFor="setting">Location/Environment</label>
                   <input
                     id="setting"
                     type="text"
                     name="setting"
                     value={formData.setting}
                     onChange={handleInputChange}
-                    placeholder="npr. moderna kancelarija, plaža pri zalasku"
+                    placeholder="e.g. modern office, beach at sunset"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="mood">Raspoloženje/Atmosfera</label>
+                  <label htmlFor="mood">Mood/Atmosphere</label>
                   <input
                     id="mood"
                     type="text"
                     name="mood"
                     value={formData.mood}
                     onChange={handleInputChange}
-                    placeholder="npr. energična, mirna, misteriozna"
+                    placeholder="e.g. energetic, calm, mysterious"
                   />
                 </div>
               </section>
 
               {/* Advanced Prompt */}
               <section className="section">
-                <h3><FiEdit3 aria-hidden="true" /> Prilagođeni Prompt</h3>
+                <h3><FiEdit3 aria-hidden="true" /> Custom Prompt</h3>
                 <div className="form-group">
                   <textarea
                     id="customPrompt"
                     name="customPrompt"
                     value={formData.customPrompt}
                     onChange={handleInputChange}
-                    placeholder="Ili unesite potpuno prilagođeni prompt ovde..."
+                    placeholder="Or enter a fully custom prompt here..."
                     rows={4}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="negatives"><FiSlash aria-hidden="true" /> Negativni Promptovi</label>
+                  <label htmlFor="negatives"><FiSlash aria-hidden="true" /> Negative Prompts</label>
                   <input
                     id="negatives"
                     type="text"
                     name="negatives"
                     value={formData.negatives}
                     onChange={handleInputChange}
-                    placeholder="blurry, low quality, distorted (odvojeno zarezom)"
+                    placeholder="blurry, low quality, distorted (comma separated)"
                   />
                 </div>
               </section>
@@ -607,11 +607,11 @@ const AdvancedVideoGenerator = () => {
             {/* Right Column - Technical */}
             <div className="form-column">
               <section className="section">
-                <h3><FiAperture aria-hidden="true" /> Vizuelni Stil</h3>
+                <h3><FiAperture aria-hidden="true" /> Visual Style</h3>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="shotType">Kadar</label>
+                    <label htmlFor="shotType">Shot Type</label>
                     <select id="shotType" name="shotType" value={formData.shotType} onChange={handleInputChange}>
                       {presets?.shotTypes?.map(shot => (
                         <option key={shot.id} value={shot.id}>{shot.name}</option>
@@ -620,7 +620,7 @@ const AdvancedVideoGenerator = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="style">Stil</label>
+                    <label htmlFor="style">Style</label>
                     <select id="style" name="style" value={formData.style} onChange={handleInputChange}>
                       {presets?.styles?.map(style => (
                         <option key={style.id} value={style.id}>{style.name}</option>
@@ -631,7 +631,7 @@ const AdvancedVideoGenerator = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="cameraMovement">Pokret Kamere</label>
+                    <label htmlFor="cameraMovement">Camera Movement</label>
                     <select id="cameraMovement" name="cameraMovement" value={formData.cameraMovement} onChange={handleInputChange}>
                       {presets?.cameraMovements?.map(move => (
                         <option key={move.id} value={move.id}>{move.name}</option>
@@ -640,7 +640,7 @@ const AdvancedVideoGenerator = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="lighting">Osvetljenje</label>
+                    <label htmlFor="lighting">Lighting</label>
                     <select id="lighting" name="lighting" value={formData.lighting} onChange={handleInputChange}>
                       {presets?.lighting?.map(light => (
                         <option key={light.id} value={light.id}>{light.name}</option>
@@ -651,7 +651,7 @@ const AdvancedVideoGenerator = () => {
               </section>
 
               <section className="section">
-                <h3><FiSettings aria-hidden="true" /> Tehnički Parametri</h3>
+                <h3><FiSettings aria-hidden="true" /> Technical Parameters</h3>
 
                 <div className="form-row">
                   <div className="form-group">
@@ -663,10 +663,10 @@ const AdvancedVideoGenerator = () => {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="numVariations">Broj Varijacija</label>
+                    <label htmlFor="numVariations">Number of Variations</label>
                     <select id="numVariations" name="numVariations" value={formData.numVariations} onChange={handleInputChange}>
                       <option value={1}>1</option>
-                      <option value={3}>3 (preporučeno)</option>
+                      <option value={3}>3 (recommended)</option>
                       <option value={5}>5</option>
                     </select>
                   </div>
@@ -674,7 +674,7 @@ const AdvancedVideoGenerator = () => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="numFrames">Broj Frejmova</label>
+                    <label htmlFor="numFrames">Number of Frames</label>
                     <input
                       id="numFrames"
                       type="number"
@@ -709,7 +709,7 @@ const AdvancedVideoGenerator = () => {
                     max={20}
                     step={0.5}
                   />
-                  <small>Viša vrednost = striktnije praćenje prompta</small>
+                  <small>Higher value = stricter prompt adherence</small>
                 </div>
               </section>
             </div>
@@ -717,9 +717,9 @@ const AdvancedVideoGenerator = () => {
 
           {/* Prompt Preview */}
           <section className="section prompt-preview">
-            <h3><FiEye aria-hidden="true" /> Pregled Prompta</h3>
+            <h3><FiEye aria-hidden="true" /> Prompt Preview</h3>
             <div className="preview-box">
-              {formData.customPrompt || promptPreview || 'Vaš prompt će se pojaviti ovde...'}
+              {formData.customPrompt || promptPreview || 'Your prompt will appear here...'}
             </div>
           </section>
 
@@ -730,14 +730,14 @@ const AdvancedVideoGenerator = () => {
               onClick={handleGenerateSingle}
               disabled={loading}
             >
-              {loading ? <><FiClock className="spin" /> Generisanje...</> : <><FiVideo /> Generiši Video</>}
+              {loading ? <><FiClock className="spin" /> Generating...</> : <><FiVideo /> Generate Video</>}
             </button>
             <button 
               className="btn-secondary"
               onClick={handleGenerateBracketed}
               disabled={loading}
             >
-              {loading ? <><FiClock className="spin" /> Generisanje...</> : <><FiLayers /> Generiši {formData.numVariations} Varijacije</>}
+              {loading ? <><FiClock className="spin" /> Generating...</> : <><FiLayers /> Generate {formData.numVariations} Variations</>}
             </button>
           </div>
         </div>
@@ -747,7 +747,7 @@ const AdvancedVideoGenerator = () => {
       {activeTab === 'enhance' && (
         <div className="enhance-section" role="tabpanel">
           <section className="section">
-            <h3><FiVideo aria-hidden="true" /> Izvorni Video</h3>
+            <h3><FiVideo aria-hidden="true" /> Source Video</h3>
             <div className="form-group">
               <label htmlFor="enhanceVideoUrl">Video URL</label>
               <input
@@ -772,11 +772,11 @@ const AdvancedVideoGenerator = () => {
                   checked={enhanceData.upscale}
                   onChange={handleEnhanceInputChange}
                 />
-                <label htmlFor="upscale">Omogući Upscaling</label>
+                <label htmlFor="upscale">Enable Upscaling</label>
               </div>
               {enhanceData.upscale && (
                 <div className="form-group">
-                  <label htmlFor="upscaleScale">Skaliranje</label>
+                  <label htmlFor="upscaleScale">Scaling</label>
                   <select id="upscaleScale" name="upscaleScale" value={enhanceData.upscaleScale} onChange={handleEnhanceInputChange}>
                     <option value={2}>2x</option>
                     <option value={4}>4x</option>
@@ -795,11 +795,11 @@ const AdvancedVideoGenerator = () => {
                   checked={enhanceData.interpolate}
                   onChange={handleEnhanceInputChange}
                 />
-                <label htmlFor="interpolate">Omogući Interpolaciju</label>
+                <label htmlFor="interpolate">Enable Interpolation</label>
               </div>
               {enhanceData.interpolate && (
                 <div className="form-group">
-                  <label htmlFor="targetFps">Ciljani FPS</label>
+                  <label htmlFor="targetFps">Target FPS</label>
                   <select id="targetFps" name="targetFps" value={enhanceData.targetFps} onChange={handleEnhanceInputChange}>
                     <option value={24}>24 FPS</option>
                     <option value={30}>30 FPS</option>
@@ -819,15 +819,15 @@ const AdvancedVideoGenerator = () => {
                   checked={enhanceData.denoise}
                   onChange={handleEnhanceInputChange}
                 />
-                <label htmlFor="denoise">Omogući Denoising</label>
+                <label htmlFor="denoise">Enable Denoising</label>
               </div>
               {enhanceData.denoise && (
                 <div className="form-group">
-                  <label htmlFor="denoiseStrength">Jačina</label>
+                  <label htmlFor="denoiseStrength">Strength</label>
                   <select id="denoiseStrength" name="denoiseStrength" value={enhanceData.denoiseStrength} onChange={handleEnhanceInputChange}>
-                    <option value="light">Lagana</option>
-                    <option value="medium">Srednja</option>
-                    <option value="strong">Jaka</option>
+                    <option value="light">Light</option>
+                    <option value="medium">Medium</option>
+                    <option value="strong">Strong</option>
                   </select>
                 </div>
               )}
@@ -838,7 +838,7 @@ const AdvancedVideoGenerator = () => {
               <div className="form-group">
                 <label htmlFor="colorGrade">Preset</label>
                 <select id="colorGrade" name="colorGrade" value={enhanceData.colorGrade} onChange={handleEnhanceInputChange}>
-                  <option value="">Bez promene</option>
+                  <option value="">No change</option>
                   {presets?.colorGrades?.map(grade => (
                     <option key={grade.id} value={grade.id}>{grade.name}</option>
                   ))}
@@ -847,7 +847,7 @@ const AdvancedVideoGenerator = () => {
             </section>
 
             <section className="section">
-              <h3><FiClock aria-hidden="true" /> Temporalna Stabilnost</h3>
+              <h3><FiClock aria-hidden="true" /> Temporal Stability</h3>
               <div className="checkbox-group">
                 <input
                   id="temporalEnhance"
@@ -856,7 +856,7 @@ const AdvancedVideoGenerator = () => {
                   checked={enhanceData.temporalEnhance}
                   onChange={handleEnhanceInputChange}
                 />
-                <label htmlFor="temporalEnhance">Poboljšaj Konzistentnost</label>
+                <label htmlFor="temporalEnhance">Improve Consistency</label>
               </div>
             </section>
           </div>
@@ -867,18 +867,18 @@ const AdvancedVideoGenerator = () => {
               onClick={handleEnhance}
               disabled={loading || !enhanceData.videoUrl}
             >
-              {loading ? <><FiClock className="spin" /> Poboljšavanje...</> : <><FiZap /> Pokreni Poboljšanje</>}
+              {loading ? <><FiClock className="spin" /> Enhancing...</> : <><FiZap /> Start Enhancement</>}
             </button>
           </div>
 
           {enhancedVideo && (
             <section className="section result-section">
-              <h3><FiVideo aria-hidden="true" /> Poboljšani Video</h3>
+              <h3><FiVideo aria-hidden="true" /> Enhanced Video</h3>
               <video controls src={enhancedVideo.output} style={{ maxWidth: '100%' }} />
               <div className="result-info">
-                <p>Primenjene obrade: {enhancedVideo.appliedEnhancements?.join(', ')}</p>
+                <p>Applied enhancements: {enhancedVideo.appliedEnhancements?.join(', ')}</p>
                 <a href={enhancedVideo.output} download className="btn-download">
-                  <FiDownload /> Preuzmi
+                  <FiDownload /> Download
                 </a>
               </div>
             </section>
@@ -890,7 +890,7 @@ const AdvancedVideoGenerator = () => {
       {activeTab === 'finalize' && (
         <div className="finalize-section" role="tabpanel">
           <section className="section">
-            <h3><FiVideo aria-hidden="true" /> Izvorni Video</h3>
+            <h3><FiVideo aria-hidden="true" /> Source Video</h3>
             <div className="form-group">
               <label htmlFor="finalizeVideoUrl">Video URL *</label>
               <input
@@ -902,7 +902,7 @@ const AdvancedVideoGenerator = () => {
                 placeholder="https://example.com/video.mp4"
               />
             </div>
-            <p className="hint">Unesite URL generisanog videa ili izaberite iz Rezultata taba</p>
+            <p className="hint">Enter generated video URL or select from Results tab</p>
           </section>
 
           <div className="form-grid">
@@ -923,31 +923,31 @@ const AdvancedVideoGenerator = () => {
                   />
                 </div>
 
-                <div className="divider">ili generiši novi</div>
+                <div className="divider">or generate new</div>
 
                 <div className="form-group">
-                  <label htmlFor="voiceoverScript">Tekst za Voiceover</label>
+                  <label htmlFor="voiceoverScript">Text for Voiceover</label>
                   <textarea
                     id="voiceoverScript"
                     value={voiceoverScript}
                     onChange={(e) => setVoiceoverScript(e.target.value)}
-                    placeholder="Unesite tekst koji će biti izgovoren..."
+                    placeholder="Enter text that will be spoken..."
                     rows={3}
                   />
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="voiceoverStyle">Stil Glasa</label>
+                    <label htmlFor="voiceoverStyle">Voice Style</label>
                     <select 
                       id="voiceoverStyle" 
                       value={voiceoverStyle} 
                       onChange={(e) => setVoiceoverStyle(e.target.value)}
                     >
-                      <option value="energetic">Energičan</option>
-                      <option value="calm">Miran</option>
-                      <option value="professional">Profesionalan</option>
-                      <option value="friendly">Prijateljski</option>
+                      <option value="energetic">Energetic</option>
+                      <option value="calm">Calm</option>
+                      <option value="professional">Professional</option>
+                      <option value="friendly">Friendly</option>
                     </select>
                   </div>
                   <button 
@@ -955,13 +955,13 @@ const AdvancedVideoGenerator = () => {
                     onClick={handleGenerateVoiceover}
                     disabled={isGeneratingVoice || !voiceoverScript}
                   >
-                    {isGeneratingVoice ? <FiClock className="spin" /> : <FiMic />} Generiši
+                    {isGeneratingVoice ? <FiClock className="spin" /> : <FiMic />} Generate
                   </button>
                 </div>
               </section>
 
               <section className="section">
-                <h3><FiMusic aria-hidden="true" /> Pozadinska Muzika</h3>
+                <h3><FiMusic aria-hidden="true" /> Background Music</h3>
                 
                 <div className="form-group">
                   <label htmlFor="musicUrl">Music URL (MP3)</label>
@@ -975,7 +975,7 @@ const AdvancedVideoGenerator = () => {
                   />
                 </div>
 
-                <div className="divider">ili izaberi iz biblioteke</div>
+                <div className="divider">or select from library</div>
 
                 <div className="stock-music-list">
                   {stockMusic.map((track, index) => (
@@ -999,12 +999,12 @@ const AdvancedVideoGenerator = () => {
             {/* Subtitles Section */}
             <div className="form-column">
               <section className="section">
-                <h3><FiType aria-hidden="true" /> Tekstualni Titlovi (Subtitles)</h3>
-                <p className="section-desc">Dodajte tekst koji će se pojaviti na videu u određeno vreme</p>
+                <h3><FiType aria-hidden="true" /> Text Subtitles</h3>
+                <p className="section-desc">Add text that will appear on the video at specific times</p>
                 
                 <div className="overlays-list">
                   {finalizeData.overlays.length === 0 ? (
-                    <p className="empty-hint">Nema dodatih titlova. Dodajte prvi ispod.</p>
+                    <p className="empty-hint">No subtitles added. Add first below.</p>
                   ) : (
                     finalizeData.overlays.map((overlay, index) => (
                       <div key={index} className="overlay-item">
@@ -1015,7 +1015,7 @@ const AdvancedVideoGenerator = () => {
                         <button 
                           className="btn-icon-small"
                           onClick={() => handleRemoveOverlay(index)}
-                          aria-label="Ukloni"
+                          aria-label="Remove"
                         >
                           <FiTrash2 />
                         </button>
@@ -1026,18 +1026,18 @@ const AdvancedVideoGenerator = () => {
 
                 <div className="add-overlay-form">
                   <div className="form-group">
-                    <label htmlFor="overlayText">Tekst Titla</label>
+                    <label htmlFor="overlayText">Subtitle Text</label>
                     <input
                       id="overlayText"
                       type="text"
                       value={newOverlay.text}
                       onChange={(e) => setNewOverlay({...newOverlay, text: e.target.value})}
-                      placeholder="Unesite tekst koji će se prikazati..."
+                      placeholder="Enter text to display..."
                     />
                   </div>
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="overlayStart">Početak (sekunde)</label>
+                      <label htmlFor="overlayStart">Start (seconds)</label>
                       <input
                         id="overlayStart"
                         type="number"
@@ -1048,7 +1048,7 @@ const AdvancedVideoGenerator = () => {
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="overlayEnd">Kraj (sekunde)</label>
+                      <label htmlFor="overlayEnd">End (seconds)</label>
                       <input
                         id="overlayEnd"
                         type="number"
@@ -1064,7 +1064,7 @@ const AdvancedVideoGenerator = () => {
                     onClick={handleAddOverlay}
                     disabled={!newOverlay.text}
                   >
-                    <FiPlus /> Dodaj Titl
+                    <FiPlus /> Add Subtitle
                   </button>
                 </div>
               </section>
@@ -1077,17 +1077,17 @@ const AdvancedVideoGenerator = () => {
               onClick={handleFinalize}
               disabled={loading || !finalizeData.videoUrl}
             >
-              {loading ? <><FiClock className="spin" /> Finalizacija...</> : <><FiCheckCircle /> Finalizuj Video</>}
+              {loading ? <><FiClock className="spin" /> Finalizing...</> : <><FiCheckCircle /> Finalize Video</>}
             </button>
           </div>
 
           {finalizedVideo && (
             <section className="section result-section">
-              <h3><FiVideo aria-hidden="true" /> Finalni Video</h3>
+              <h3><FiVideo aria-hidden="true" /> Final Video</h3>
               <video controls src={finalizedVideo} style={{ maxWidth: '100%' }} />
               <div className="result-info">
                 <a href={finalizedVideo} download className="btn-download">
-                  <FiDownload /> Preuzmi Finalni Video
+                  <FiDownload /> Download Final Video
                 </a>
               </div>
             </section>
@@ -1101,7 +1101,7 @@ const AdvancedVideoGenerator = () => {
           {generatedVideos.length === 0 ? (
             <div className="empty-state">
               <FiVideo size={48} />
-              <p>Nema generisanih videa. Idite na tab "Generisanje" da kreirate video.</p>
+              <p>No generated videos. Go to "Generate" tab to create a video.</p>
             </div>
           ) : (
             <div className="videos-grid">
@@ -1110,29 +1110,29 @@ const AdvancedVideoGenerator = () => {
                   {video.status === 'processing' ? (
                     <div className="video-placeholder processing">
                       <FiClock className="spin" />
-                      <p>Generisanje u toku...</p>
+                      <p>Generation in progress...</p>
                     </div>
                   ) : video.status === 'failed' ? (
                     <div className="video-placeholder error">
                       <FiSlash />
-                      <p>Generisanje nije uspelo</p>
+                      <p>Generation failed</p>
                     </div>
                   ) : (
                     <video controls src={video.videoUrl || video.output}>
-                      Vaš pregledač ne podržava video tag.
+                      Your browser does not support the video tag.
                     </video>
                   )}
                   <div className="video-info">
                     {video.seed && <span className="seed">Seed: {video.seed}</span>}
                     {video.qualityScore && (
-                      <span className="quality">Kvalitet: {(video.qualityScore * 100).toFixed(0)}%</span>
+                      <span className="quality">Quality: {(video.qualityScore * 100).toFixed(0)}%</span>
                     )}
                     <div className="video-actions">
                       <a 
                         href={video.videoUrl || video.output} 
                         download 
                         className="btn-small"
-                        aria-label="Preuzmi"
+                        aria-label="Download"
                       >
                         <FiDownload />
                       </a>
@@ -1145,7 +1145,7 @@ const AdvancedVideoGenerator = () => {
                           }));
                           setActiveTab('enhance');
                         }}
-                        aria-label="Poboljšaj"
+                        aria-label="Enhance"
                       >
                         <FiZap />
                       </button>
@@ -1158,7 +1158,7 @@ const AdvancedVideoGenerator = () => {
                           }));
                           setActiveTab('finalize');
                         }}
-                        aria-label="Finalizuj"
+                        aria-label="Finalize"
                       >
                         <FiCheckCircle />
                       </button>

@@ -12,9 +12,9 @@ import './DashboardHeader.css';
 const DashboardHeader = ({ userName = 'User' }) => {
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Dobro jutro';
-    if (hour < 18) return 'Dobar dan';
-    return 'Dobro veče';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
   const firstName = userName?.split(' ')[0] || 'User';
@@ -23,13 +23,13 @@ const DashboardHeader = ({ userName = 'User' }) => {
     <header className="dash-header">
       <div className="dash-header-left">
         <h1>{getGreeting()}, {firstName}</h1>
-        <p>Pregled vašeg Instagram naloga</p>
+        <p>Your Instagram account overview</p>
       </div>
       
       <div className="dash-header-actions">
         <Link to="/posts/create" className="header-btn header-btn-ghost">
           <FiImage />
-          <span>Objava</span>
+          <span>Post</span>
         </Link>
         <Link to="/reels/create" className="header-btn header-btn-ghost">
           <FiFilm />
@@ -41,7 +41,7 @@ const DashboardHeader = ({ userName = 'User' }) => {
         </Link>
         <Link to="/posts/create" className="header-btn header-btn-primary">
           <FiPlus />
-          <span>Nova Objava</span>
+          <span>New Post</span>
         </Link>
       </div>
     </header>

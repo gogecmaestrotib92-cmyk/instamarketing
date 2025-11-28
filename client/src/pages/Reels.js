@@ -83,33 +83,33 @@ const Reels = () => {
   return (
     <main className="posts-page">
       <SEO 
-        title="Instagram Rilsovi"
-        description="Kreirajte virusne Instagram rilsove pomoću AI tehnologije. Automatsko generisanje videa, dodavanje muzike, titlova i efekata. Video marketing za vaš brend."
-        keywords="instagram reels, rilsovi, video marketing, kratki video sadržaj, viral video, AI video generator, instagram video"
+        title="Instagram Reels"
+        description="Create viral Instagram reels with AI technology. Automatic video generation, add music, captions and effects. Video marketing for your brand."
+        keywords="instagram reels, video marketing, short video content, viral video, AI video generator, instagram video"
         url="/reels"
         breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'Rilsovi', url: '/reels' }
+          { name: 'Home', url: '/' },
+          { name: 'Reels', url: '/reels' }
         ]}
         noindex={true}
       />
       <header className="page-header">
         <div>
-          <h1>Rilsovi</h1>
-          <p className="page-subtitle">Kreirajte i zakazujte zanimljiv video sadržaj</p>
+          <h1>Reels</h1>
+          <p className="page-subtitle">Create and schedule engaging video content</p>
         </div>
-        <Link to="/reels/create" className="btn btn-primary" aria-label="Kreiraj novi rils">
-          <FiPlus aria-hidden="true" /> Kreiraj Rils
+        <Link to="/reels/create" className="btn btn-primary" aria-label="Create new reel">
+          <FiPlus aria-hidden="true" /> Create Reel
         </Link>
       </header>
 
-      <nav className="filters" aria-label="Filteri za rilsove">
+      <nav className="filters" aria-label="Reel filters">
         {[
-          { key: 'all', label: 'Svi' },
-          { key: 'draft', label: 'Nacrti' },
-          { key: 'scheduled', label: 'Zakazano' },
-          { key: 'published', label: 'Objavljeno' },
-          { key: 'failed', label: 'Neuspelo' }
+          { key: 'all', label: 'All' },
+          { key: 'draft', label: 'Drafts' },
+          { key: 'scheduled', label: 'Scheduled' },
+          { key: 'published', label: 'Published' },
+          { key: 'failed', label: 'Failed' }
         ].map(status => (
           <button
             key={status.key}
@@ -124,15 +124,15 @@ const Reels = () => {
 
       {loading ? (
         <div className="loading-container" aria-live="polite">
-          <div className="spinner" aria-label="Učitavanje..."></div>
+          <div className="spinner" aria-label="Loading..."></div>
         </div>
       ) : reels.length === 0 ? (
         <div className="empty-state-large">
           <FiFilm className="empty-icon" aria-hidden="true" />
-          <h3>Nema rilsova</h3>
-          <p>Kreirajte vaš prvi rils da biste počeli</p>
+          <h3>No reels</h3>
+          <p>Create your first reel to get started</p>
           <Link to="/reels/create" className="btn btn-primary">
-            <FiPlus aria-hidden="true" /> Kreiraj Rils
+            <FiPlus aria-hidden="true" /> Create Reel
           </Link>
         </div>
       ) : (
@@ -148,7 +148,7 @@ const Reels = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="no-media" aria-label="Nema videa">
+                  <div className="no-media" aria-label="No video">
                     <FiFilm aria-hidden="true" />
                   </div>
                 )}
@@ -165,10 +165,10 @@ const Reels = () => {
                 </p>
 
                 {reel.status === 'published' && (
-                  <div className="post-metrics" aria-label="Metrike">
-                    <span aria-label={`${reel.metrics?.plays || 0} pregleda`}><FiPlay aria-hidden="true" /> {reel.metrics?.plays || 0}</span>
-                    <span aria-label={`${reel.metrics?.likes || 0} lajkova`}><FiHeart aria-hidden="true" /> {reel.metrics?.likes || 0}</span>
-                    <span aria-label={`${reel.metrics?.comments || 0} komentara`}><FiMessageCircle aria-hidden="true" /> {reel.metrics?.comments || 0}</span>
+                  <div className="post-metrics" aria-label="Metrics">
+                    <span aria-label={`${reel.metrics?.plays || 0} views`}><FiPlay aria-hidden="true" /> {reel.metrics?.plays || 0}</span>
+                    <span aria-label={`${reel.metrics?.likes || 0} likes`}><FiHeart aria-hidden="true" /> {reel.metrics?.likes || 0}</span>
+                    <span aria-label={`${reel.metrics?.comments || 0} comments`}><FiMessageCircle aria-hidden="true" /> {reel.metrics?.comments || 0}</span>
                   </div>
                 )}
 
@@ -181,13 +181,13 @@ const Reels = () => {
                 <div className="post-actions">
                   {['draft', 'scheduled'].includes(reel.status) && (
                     <>
-                      <Link to={`/reels/edit/${reel._id}`} className="btn btn-ghost btn-sm" aria-label="Izmeni rils">
+                      <Link to={`/reels/edit/${reel._id}`} className="btn btn-ghost btn-sm" aria-label="Edit reel">
                         <FiEdit2 aria-hidden="true" /> Edit
                       </Link>
                       <button 
                         className="btn btn-primary btn-sm"
                         onClick={() => handlePublish(reel._id)}
-                        aria-label="Objavi rils"
+                        aria-label="Publish reel"
                       >
                         <FiSend aria-hidden="true" /> Publish
                       </button>
@@ -196,7 +196,7 @@ const Reels = () => {
                   <button 
                     className="btn btn-ghost btn-sm danger"
                     onClick={() => handleDelete(reel._id)}
-                    aria-label="Obriši rils"
+                    aria-label="Delete reel"
                   >
                     <FiTrash2 aria-hidden="true" />
                   </button>

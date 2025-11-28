@@ -54,22 +54,22 @@ const PublishToInstagramModal = ({
   // Validate form
   const validate = () => {
     if (!accountId) {
-      setError('Izaberite Instagram nalog');
+      setError('Select an Instagram account');
       return false;
     }
     if (!caption.trim() || caption.trim().length < 3) {
-      setError('Caption mora imati najmanje 3 karaktera');
+      setError('Caption must have at least 3 characters');
       return false;
     }
     if (mode === 'schedule' && !scheduledAt) {
-      setError('Izaberite datum i vreme za zakazivanje');
+      setError('Select date and time for scheduling');
       return false;
     }
     if (mode === 'schedule') {
       const selectedDate = new Date(scheduledAt);
       const now = new Date();
       if (selectedDate <= now) {
-        setError('Datum zakazivanja mora biti u budućnosti');
+        setError('Scheduled date must be in the future');
         return false;
       }
     }
@@ -98,7 +98,7 @@ const PublishToInstagramModal = ({
       await onSubmit(payload);
       // Success - modal will be closed by parent
     } catch (err) {
-      setError(err.message || 'Greška pri slanju na Instagram');
+      setError(err.message || 'Error posting to Instagram');
       setSubmitting(false);
     }
   };
@@ -119,12 +119,12 @@ const PublishToInstagramModal = ({
             {mode === 'now' ? (
               <>
                 <FiInstagram className="publish-modal__icon publish-modal__icon--instagram" />
-                Objavi na Instagram odmah
+                Post to Instagram now
               </>
             ) : (
               <>
                 <FiCalendar className="publish-modal__icon publish-modal__icon--schedule" />
-                Zakaži objavu na Instagramu
+                Schedule post to Instagram
               </>
             )}
           </div>
@@ -149,7 +149,7 @@ const PublishToInstagramModal = ({
           {/* Account Select */}
           <div className="publish-modal__field">
             <label className="publish-modal__label">
-              <FiInstagram /> Instagram Nalog
+              <FiInstagram /> Instagram Account
             </label>
             {accounts.length > 0 ? (
               <select
@@ -166,8 +166,8 @@ const PublishToInstagramModal = ({
               </select>
             ) : (
               <div className="publish-modal__no-accounts">
-                <FiAlertCircle /> Nema povezanih Instagram naloga.
-                <a href="/settings" className="publish-modal__link">Povežite nalog</a>
+                <FiAlertCircle /> No connected Instagram accounts.
+                <a href="/settings" className="publish-modal__link">Connect account</a>
               </div>
             )}
           </div>
@@ -179,7 +179,7 @@ const PublishToInstagramModal = ({
             </label>
             <textarea
               className="publish-modal__textarea"
-              placeholder="Napišite opis za vaš Reel..."
+              placeholder="Write a description for your Reel..."
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               rows={4}
@@ -205,7 +205,7 @@ const PublishToInstagramModal = ({
               disabled={submitting}
             />
             <div className="publish-modal__hint">
-              Odvojite hashtagove razmakom ili zarezom
+              Separate hashtags with space or comma
             </div>
           </div>
 
@@ -213,7 +213,7 @@ const PublishToInstagramModal = ({
           {mode === 'schedule' && (
             <div className="publish-modal__field">
               <label className="publish-modal__label">
-                <FiCalendar /> Datum i vreme objave
+                <FiCalendar /> Post date and time
               </label>
               <input
                 type="datetime-local"
@@ -241,7 +241,7 @@ const PublishToInstagramModal = ({
             onClick={onClose}
             disabled={submitting}
           >
-            Otkaži
+            Cancel
           </button>
           <button
             className="publish-modal__btn publish-modal__btn--submit"
@@ -251,12 +251,12 @@ const PublishToInstagramModal = ({
             {submitting ? (
               <>
                 <FiLoader className="publish-modal__spinner" />
-                {mode === 'now' ? 'Objavljujem...' : 'Zakažujem...'}
+                {mode === 'now' ? 'Publishing...' : 'Scheduling...'}
               </>
             ) : (
               <>
                 <FiSend />
-                {mode === 'now' ? 'Objavi odmah' : 'Zakaži objavu'}
+                {mode === 'now' ? 'Post now' : 'Schedule post'}
               </>
             )}
           </button>

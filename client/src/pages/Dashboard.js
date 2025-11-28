@@ -29,11 +29,11 @@ import './Dashboard.css';
 const PLACEHOLDER_DATA = {
   user: { name: 'Goran' },
   kpis: [
-    { id: 'posts', label: 'Objave', value: '128', change: '+12', trend: 'up', icon: 'image' },
-    { id: 'followers', label: 'Pratilaca', value: '24.5K', change: '+842', trend: 'up', icon: 'users' },
-    { id: 'engagement', label: 'Angažovanje', value: '5.4%', change: '+0.8%', trend: 'up', icon: 'trending' },
-    { id: 'reach', label: 'Domet', value: '128K', change: '-2.1K', trend: 'down', icon: 'eye' },
-    { id: 'saves', label: 'Sačuvano', value: '2.1K', change: '+156', trend: 'up', icon: 'bookmark' }
+    { id: 'posts', label: 'Posts', value: '128', change: '+12', trend: 'up', icon: 'image' },
+    { id: 'followers', label: 'Followers', value: '24.5K', change: '+842', trend: 'up', icon: 'users' },
+    { id: 'engagement', label: 'Engagement', value: '5.4%', change: '+0.8%', trend: 'up', icon: 'trending' },
+    { id: 'reach', label: 'Reach', value: '128K', change: '-2.1K', trend: 'down', icon: 'eye' },
+    { id: 'saves', label: 'Saves', value: '2.1K', change: '+156', trend: 'up', icon: 'bookmark' }
   ],
   engagement: {
     likes: 45200,
@@ -42,13 +42,13 @@ const PLACEHOLDER_DATA = {
     saves: 2100
   },
   chartData: [
-    { day: 'Pon', value: 65, label: '6.5K' },
-    { day: 'Uto', value: 45, label: '4.5K' },
-    { day: 'Sre', value: 75, label: '7.5K' },
-    { day: 'Čet', value: 55, label: '5.5K' },
-    { day: 'Pet', value: 85, label: '8.5K' },
-    { day: 'Sub', value: 60, label: '6.0K' },
-    { day: 'Ned', value: 70, label: '7.0K' }
+    { day: 'Mon', value: 65, label: '6.5K' },
+    { day: 'Tue', value: 45, label: '4.5K' },
+    { day: 'Wed', value: 75, label: '7.5K' },
+    { day: 'Thu', value: 55, label: '5.5K' },
+    { day: 'Fri', value: 85, label: '8.5K' },
+    { day: 'Sat', value: 60, label: '6.0K' },
+    { day: 'Sun', value: 70, label: '7.0K' }
   ],
   account: {
     connected: true,
@@ -116,7 +116,7 @@ const Dashboard = () => {
   };
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('sr-RS', {
+    return new Date(dateStr).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -135,8 +135,8 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <SEO 
-        title="Kontrolna Tabla"
-        description="Upravljajte Instagram marketingom sa jedne kontrolne table."
+        title="Dashboard"
+        description="Manage your Instagram marketing from a single dashboard."
         url="/dashboard"
         noindex={true}
       />
@@ -169,10 +169,10 @@ const Dashboard = () => {
             <div className="card-header">
               <div className="card-title">
                 <FiBarChart2 className="card-icon" />
-                <h2>Pregled Angažovanja</h2>
+                <h2>Engagement Overview</h2>
               </div>
               <Link to="/analytics" className="card-link">
-                Analitika <FiExternalLink />
+                Analytics <FiExternalLink />
               </Link>
             </div>
             <div className="engagement-grid">
@@ -180,28 +180,28 @@ const Dashboard = () => {
                 <FiHeart className="engagement-icon red" />
                 <div>
                   <span className="engagement-value">{formatNumber(data?.engagement?.likes)}</span>
-                  <span className="engagement-label">Lajkova</span>
+                  <span className="engagement-label">Likes</span>
                 </div>
               </div>
               <div className="engagement-item">
                 <FiMessageCircle className="engagement-icon blue" />
                 <div>
                   <span className="engagement-value">{formatNumber(data?.engagement?.comments)}</span>
-                  <span className="engagement-label">Komentara</span>
+                  <span className="engagement-label">Comments</span>
                 </div>
               </div>
               <div className="engagement-item">
                 <FiTrendingUp className="engagement-icon green" />
                 <div>
                   <span className="engagement-value">{formatNumber(data?.engagement?.shares)}</span>
-                  <span className="engagement-label">Deljenja</span>
+                  <span className="engagement-label">Shares</span>
                 </div>
               </div>
               <div className="engagement-item">
                 <FiBookmark className="engagement-icon purple" />
                 <div>
                   <span className="engagement-value">{formatNumber(data?.engagement?.saves)}</span>
-                  <span className="engagement-label">Sačuvano</span>
+                  <span className="engagement-label">Saves</span>
                 </div>
               </div>
             </div>
@@ -212,9 +212,9 @@ const Dashboard = () => {
             <div className="card-header">
               <div className="card-title">
                 <FiTrendingUp className="card-icon" />
-                <h2>Nedeljni Pregled</h2>
+                <h2>Weekly Overview</h2>
               </div>
-              <span className="chart-period">Poslednjih 7 dana</span>
+              <span className="chart-period">Last 7 days</span>
             </div>
             <div className="chart-wrapper">
               {data?.chartData?.map((item, i) => (
@@ -237,10 +237,10 @@ const Dashboard = () => {
             <div className="card-header">
               <div className="card-title">
                 <FaInstagram className="card-icon instagram" />
-                <h2>Instagram Nalog</h2>
+                <h2>Instagram Account</h2>
               </div>
               <span className={`badge ${data?.account?.connected ? 'badge-success' : 'badge-error'}`}>
-                <FiCheckCircle /> {data?.account?.connected ? 'Povezan' : 'Nepovezan'}
+                <FiCheckCircle /> {data?.account?.connected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
 
@@ -257,8 +257,8 @@ const Dashboard = () => {
                   <div className="profile-info">
                     <span className="profile-username">@{data.account.username}</span>
                     <div className="profile-stats">
-                      <span><strong>{formatNumber(data.account.followers)}</strong> pratilaca</span>
-                      <span><strong>{data.account.posts}</strong> objava</span>
+                      <span><strong>{formatNumber(data.account.followers)}</strong> followers</span>
+                      <span><strong>{data.account.posts}</strong> posts</span>
                     </div>
                   </div>
                 </div>
@@ -269,8 +269,8 @@ const Dashboard = () => {
               </>
             ) : (
               <div className="connect-prompt">
-                <p>Povežite Instagram Business nalog</p>
-                <Link to="/settings" className="btn btn-primary btn-sm">Poveži</Link>
+                <p>Connect your Instagram Business account</p>
+                <Link to="/settings" className="btn btn-primary btn-sm">Connect</Link>
               </div>
             )}
           </section>
@@ -280,10 +280,10 @@ const Dashboard = () => {
             <div className="card-header">
               <div className="card-title">
                 <FiClock className="card-icon" />
-                <h2>Zakazane Objave</h2>
+                <h2>Scheduled Posts</h2>
               </div>
               <Link to="/schedule" className="card-link">
-                Sve <FiExternalLink />
+                All <FiExternalLink />
               </Link>
             </div>
 
@@ -298,7 +298,7 @@ const Dashboard = () => {
                     <span className="post-time">{formatDate(post.scheduledFor)}</span>
                   </div>
                   <span className={`post-badge ${post.status}`}>
-                    {post.status === 'scheduled' ? 'Zakazano' : 'Nacrt'}
+                    {post.status === 'scheduled' ? 'Scheduled' : 'Draft'}
                   </span>
                 </div>
               ))}
@@ -307,7 +307,7 @@ const Dashboard = () => {
             {(!data?.scheduledPosts?.length) && (
               <div className="empty-box">
                 <FiCalendar />
-                <p>Nema zakazanih objava</p>
+                <p>No scheduled posts</p>
               </div>
             )}
           </section>

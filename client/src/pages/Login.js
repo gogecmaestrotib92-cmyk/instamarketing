@@ -26,7 +26,7 @@ const Login = () => {
     setLoading(true);
     try {
       await login(email, password);
-      toast.success('Dobrodošli nazad!');
+      toast.success('Welcome back!');
       navigate('/app/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Login failed');
@@ -38,16 +38,16 @@ const Login = () => {
   return (
     <main className="auth-container">
       <SEO 
-        title="Prijava"
-        description="Prijavite se na InstaMarketing platformu i automatizujte vaš Instagram marketing. Zakazujte objave, vodite reklamne kampanje i povećajte vašu publiku."
-        keywords="prijava, login, instamarketing prijava, instagram marketing login"
+        title="Login"
+        description="Sign in to InstaMarketing platform and automate your Instagram marketing. Schedule posts, run ad campaigns and grow your audience."
+        keywords="login, sign in, instamarketing login, instagram marketing login"
         url="/login"
       />
       <section className="auth-card" aria-labelledby="login-heading">
         <header className="auth-header">
           <FaInstagram className="auth-logo" aria-hidden="true" />
           <h1 id="login-heading">InstaMarketing</h1>
-          <p>Prijavite se na vaš nalog</p>
+          <p>Sign in to your account</p>
         </header>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -59,7 +59,7 @@ const Login = () => {
                 id="email"
                 type="email"
                 className="input"
-                placeholder="Unesite vaš email"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -70,14 +70,14 @@ const Login = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password" className="label">Lozinka</label>
+            <label htmlFor="password" className="label">Password</label>
             <div className="input-wrapper">
               <FiLock className="input-icon" aria-hidden="true" />
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 className="input"
-                placeholder="Unesite vašu lozinku"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -88,7 +88,7 @@ const Login = () => {
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <FiEyeOff aria-hidden="true" /> : <FiEye aria-hidden="true" />}
               </button>
@@ -101,22 +101,22 @@ const Login = () => {
             disabled={loading}
             aria-busy={loading}
           >
-            {loading ? 'Prijavljivanje...' : 'Prijavi se'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <footer className="auth-footer">
-          <p>Nemate nalog? <Link to="/register">Registrujte se</Link></p>
+          <p>Don't have an account? <Link to="/register">Sign Up</Link></p>
         </footer>
       </section>
 
       <section className="auth-features" aria-labelledby="features-heading">
-        <h2 id="features-heading">Automatizujte Vaš Instagram Marketing</h2>
+        <h2 id="features-heading">Automate Your Instagram Marketing</h2>
         <ul>
-          <li><span aria-hidden="true">📱</span> Zakazujte objave i rilsove</li>
-          <li><span aria-hidden="true">🎯</span> Kreirajte i upravljajte reklamnim kampanjama</li>
-          <li><span aria-hidden="true">📊</span> Pratite analitiku performansi</li>
-          <li><span aria-hidden="true">🚀</span> Automatski povećavajte publiku</li>
+          <li><span aria-hidden="true">📱</span> Schedule posts and reels</li>
+          <li><span aria-hidden="true">🎯</span> Create and manage ad campaigns</li>
+          <li><span aria-hidden="true">📊</span> Track performance analytics</li>
+          <li><span aria-hidden="true">🚀</span> Automatically grow your audience</li>
         </ul>
       </section>
     </main>

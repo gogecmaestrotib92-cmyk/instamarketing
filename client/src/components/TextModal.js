@@ -3,11 +3,11 @@ import { FiType, FiX, FiPlus, FiTrash2, FiClock } from "react-icons/fi";
 import "./TextModal.css";
 
 /**
- * TextModal - Modal za dodavanje overlay teksta i vremenskih titlova
+ * TextModal - Modal for adding overlay text and timed captions
  * 
  * Props:
- * - open: boolean - da li je modal otvoren
- * - durationSeconds: number - trajanje videa (za validaciju)
+ * - open: boolean - whether modal is open
+ * - durationSeconds: number - video duration (for validation)
  * - initialConfig: { overlayText: string, captions: CaptionSegment[] }
  * - onApply: (config) => void
  * - onClose: () => void
@@ -62,7 +62,7 @@ const TextModal = ({
     setError(null);
 
     if (!newText.trim()) {
-      setError("Unesite tekst titla.");
+      setError("Enter caption text.");
       return;
     }
 
@@ -70,22 +70,22 @@ const TextModal = ({
     const end = parseFloat(newEnd);
 
     if (isNaN(start) || isNaN(end)) {
-      setError("Start i end moraju biti brojevi (sekunde).");
+      setError("Start and end must be numbers (seconds).");
       return;
     }
 
     if (start < 0) {
-      setError("Start vreme mora biti pozitivan broj.");
+      setError("Start time must be a positive number.");
       return;
     }
 
     if (end <= start) {
-      setError("End vreme mora biti veće od start vremena.");
+      setError("End time must be greater than start time.");
       return;
     }
 
     if (durationSeconds && (start > durationSeconds || end > durationSeconds)) {
-      setError(`Titl mora biti unutar trajanja videa (0–${durationSeconds}s).`);
+      setError(`Caption must be within video duration (0–${durationSeconds}s).`);
       return;
     }
 
@@ -142,13 +142,13 @@ const TextModal = ({
             <span className="text-modal__icon">
               <FiType />
             </span>
-            <h2 className="text-modal__title">Dodaj Tekst i Titlove</h2>
+            <h2 className="text-modal__title">Add Text and Captions</h2>
           </div>
           <button
             type="button"
             className="text-modal__close"
             onClick={onClose}
-            aria-label="Zatvori"
+            aria-label="Close"
           >
             <FiX />
           </button>
@@ -157,11 +157,11 @@ const TextModal = ({
         {/* Overlay tekst sekcija */}
         <section className="text-modal__section">
           <h3 className="text-modal__section-title">
-            Overlay tekst (prikazan tokom celog videa)
+            Overlay text (displayed throughout entire video)
           </h3>
           <textarea
             className="text-modal__textarea"
-            placeholder="Unesite tekst za prikaz na videu..."
+            placeholder="Enter text to display on video..."
             value={overlayText}
             onChange={(e) => setOverlayText(e.target.value)}
             rows={3}
@@ -170,17 +170,17 @@ const TextModal = ({
 
         {/* Divider */}
         <div className="text-modal__divider">
-          <span>Vremenski titlovi</span>
+          <span>Timed captions</span>
         </div>
 
         {/* Form za novi titl */}
         <section className="text-modal__section">
           <div className="text-modal__row">
             <div className="text-modal__field text-modal__field--wide">
-              <label className="text-modal__label">Tekst titla</label>
+              <label className="text-modal__label">Caption text</label>
               <input
                 className="text-modal__input"
-                placeholder="Unesite tekst titla..."
+                placeholder="Enter caption text..."
                 value={newText}
                 onChange={(e) => setNewText(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -222,7 +222,7 @@ const TextModal = ({
                 className="text-modal__add-btn"
                 onClick={handleAddCaption}
               >
-                <FiPlus /> Dodaj
+                <FiPlus /> Add
               </button>
             </div>
           </div>
@@ -241,9 +241,9 @@ const TextModal = ({
           {captions.length === 0 ? (
             <div className="text-modal__empty">
               <FiType className="text-modal__empty-icon" />
-              <p>Još nema dodatih titlova</p>
+              <p>No captions added yet</p>
               <p className="text-modal__empty-hint">
-                Dodajte titlove sa vremenskim oznakama iznad
+                Add captions with time stamps above
               </p>
             </div>
           ) : (
@@ -260,7 +260,7 @@ const TextModal = ({
                     type="button"
                     className="text-modal__caption-remove"
                     onClick={() => handleRemoveCaption(c.id)}
-                    aria-label="Ukloni titl"
+                    aria-label="Remove caption"
                   >
                     <FiTrash2 />
                   </button>
@@ -277,7 +277,7 @@ const TextModal = ({
             className="text-modal__btn text-modal__btn--danger"
             onClick={handleRemoveAll}
           >
-            Ukloni sve
+            Remove all
           </button>
           <div className="text-modal__footer-right">
             <button
@@ -285,7 +285,7 @@ const TextModal = ({
               className="text-modal__btn text-modal__btn--ghost"
               onClick={onClose}
             >
-              Otkaži
+              Cancel
             </button>
             <button
               type="button"
@@ -293,7 +293,7 @@ const TextModal = ({
               onClick={handleApply}
               disabled={!hasContent}
             >
-              ✓ Primeni
+              ✓ Apply
             </button>
           </div>
         </footer>

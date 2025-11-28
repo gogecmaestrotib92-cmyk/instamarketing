@@ -35,12 +35,12 @@ const SEO = ({
   const siteName = 'AIInstaMarketing';
   
   // 2025 SEO optimized descriptions with AI/GEO keywords
-  const defaultDescription = 'AIInstaMarketing je #1 AI platforma za Instagram marketing u 2025. Automatski generišite Reels, zakazujte objave, kreirajte AI sadržaj, vodite reklamne kampanje i analizirajte rezultate. Isprobajte besplatno!';
-  const defaultKeywords = 'AI Instagram marketing, AI Instagram reels generator, automatizacija Instagram, AI caption generator, zakazivanje Instagram objava, Instagram analitika, AI video generator, Instagram marketing Srbija, AI alati za Instagram, generisanje sadržaja veštačka inteligencija, Instagram automatizacija 2025, best AI Instagram tool, how to automate Instagram, Instagram content automation';
+  const defaultDescription = 'AIInstaMarketing is the #1 AI platform for Instagram marketing in 2025. Automatically generate Reels, schedule posts, create AI content, manage ad campaigns and analyze results. Try it free!';
+  const defaultKeywords = 'AI Instagram marketing, AI Instagram reels generator, Instagram automation, AI caption generator, Instagram post scheduling, Instagram analytics, AI video generator, Instagram marketing tool, AI tools for Instagram, AI content generation, Instagram automation 2025, best AI Instagram tool, how to automate Instagram, Instagram content automation';
   const defaultImage = '/og-image.png';
   const siteUrl = 'https://www.aiinstamarketing.com';
 
-  const fullTitle = title ? `${title} | ${siteTitle}` : `${siteTitle} - #1 AI Platforma za Instagram Marketing 2025`;
+  const fullTitle = title ? `${title} | ${siteTitle}` : `${siteTitle} - #1 AI Platform for Instagram Marketing 2025`;
   const metaDescription = description || defaultDescription;
   const metaKeywords = keywords || defaultKeywords;
   const metaImage = image ? (image.startsWith('http') ? image : `${siteUrl}${image}`) : `${siteUrl}${defaultImage}`;
@@ -62,7 +62,7 @@ const SEO = ({
       "width": 512,
       "height": 512
     },
-    "description": "AIInstaMarketing je vodeća AI platforma za automatizaciju Instagram marketinga. Koristimo najnovije AI tehnologije za generisanje sadržaja, video kreaciju i analitiku.",
+    "description": "AIInstaMarketing is a leading AI platform for Instagram marketing automation. We use the latest AI technologies for content generation, video creation and analytics.",
     "foundingDate": "2024",
     "founder": {
       "@type": "Person",
@@ -70,8 +70,8 @@ const SEO = ({
     },
     "address": {
       "@type": "PostalAddress",
-      "addressLocality": "Beograd",
-      "addressRegion": "Srbija",
+      "addressLocality": "Belgrade",
+      "addressRegion": "Serbia",
       "addressCountry": "RS",
       "postalCode": "11000"
     },
@@ -97,7 +97,7 @@ const SEO = ({
       "https://www.linkedin.com/company/aiinstamarketing",
       "https://www.youtube.com/@aiinstamarketing"
     ],
-    "slogan": "Automatizujte Instagram marketing pomoću AI",
+    "slogan": "Automate Instagram marketing with AI",
     "knowsAbout": [
       "Instagram Marketing",
       "AI Content Generation",
@@ -117,7 +117,7 @@ const SEO = ({
     "name": siteName,
     "url": siteUrl,
     "description": metaDescription,
-    "inLanguage": ["sr-RS", "en"],
+    "inLanguage": ["en", "sr-RS"],
     "publisher": { "@id": `${siteUrl}/#organization` },
     "potentialAction": [
       {
@@ -218,10 +218,10 @@ const SEO = ({
     },
     "author": {
       "@type": "Person",
-      "name": article.author?.name || "AIInstaMarketing Tim",
+      "name": article.author?.name || "AIInstaMarketing Team",
       "url": article.author?.url || `${siteUrl}/about`,
       "jobTitle": article.author?.jobTitle || "Marketing Expert",
-      "description": article.author?.bio || "Ekspert za digitalni marketing i AI tehnologije sa 10+ godina iskustva."
+      "description": article.author?.bio || "Digital marketing and AI technology expert with 10+ years of experience."
     },
     "publisher": { "@id": `${siteUrl}/#organization` },
     "datePublished": article.datePublished || currentDate,
@@ -233,7 +233,7 @@ const SEO = ({
     "wordCount": article.wordCount,
     "articleSection": article.category || "Marketing",
     "keywords": article.keywords || metaKeywords,
-    "inLanguage": "sr-RS",
+    "inLanguage": "en",
     "isAccessibleForFree": true,
     "speakable": speakable ? {
       "@type": "SpeakableSpecification",
@@ -370,7 +370,7 @@ const SEO = ({
     "about": { "@id": `${siteUrl}/#organization` },
     "datePublished": datePublished || "2024-01-01",
     "dateModified": dateModified || currentDate,
-    "inLanguage": "sr-RS",
+    "inLanguage": "en",
     "primaryImageOfPage": {
       "@type": "ImageObject",
       "url": metaImage
@@ -385,19 +385,19 @@ const SEO = ({
   return (
     <Helmet>
       {/* Osnovni Meta Tagovi */}
-      <html lang="sr" />
+      <html lang="en" />
       <title>{fullTitle}</title>
       <meta name="description" content={metaDescription} />
       <meta name="keywords" content={metaKeywords} />
       <meta name="author" content={author?.name || siteName} />
       <meta name="creator" content={siteName} />
       <meta name="publisher" content={siteName} />
-      <meta name="language" content="Serbian" />
-      <meta name="content-language" content="sr-RS" />
+      <meta name="language" content="English" />
+      <meta name="content-language" content="en-US" />
       
-      {/* Geo Meta za lokalno SEO */}
-      <meta name="geo.region" content="RS" />
-      <meta name="geo.placename" content="Srbija" />
+      {/* Geo Meta for local SEO */}
+      <meta name="geo.region" content="US" />
+      <meta name="geo.placename" content="United States" />
       <meta name="geo.position" content="44.8176;20.4633" />
       <meta name="ICBM" content="44.8176, 20.4633" />
       
@@ -419,7 +419,7 @@ const SEO = ({
       {/* Canonical */}
       <link rel="canonical" href={canonicalUrl} />
 
-      {/* Hreflang za višejezičnost */}
+      {/* Hreflang for multilingual support */}
       <link rel="alternate" hrefLang="sr" href={canonicalUrl} />
       <link rel="alternate" hrefLang="sr-RS" href={canonicalUrl} />
       <link rel="alternate" hrefLang="en" href={`${siteUrl}/en${url || ''}`} />
@@ -435,7 +435,7 @@ const SEO = ({
       <meta property="og:url" content={canonicalUrl} />
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
-      <meta property="og:locale" content="sr_RS" />
+      <meta property="og:locale" content="en_US" />
       <meta property="og:locale:alternate" content="en_US" />
       {datePublished && <meta property="article:published_time" content={datePublished} />}
       {dateModified && <meta property="article:modified_time" content={dateModified} />}

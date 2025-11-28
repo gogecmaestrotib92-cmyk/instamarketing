@@ -170,17 +170,17 @@ const CaptionEditor = ({
             className="btn-action"
             onClick={handleExport}
             disabled={captionCount === 0}
-            title="Izvezi SRT"
+            title="Export SRT"
           >
-            <FiDownload /> Izvezi
+            <FiDownload /> Export
           </button>
           {captionCount > 0 && (
             <button 
               className="btn-action danger"
               onClick={clearAllCaptions}
-              title="Obriši sve"
+              title="Delete all"
             >
-              <FiTrash2 /> Obriši sve
+              <FiTrash2 /> Delete all
             </button>
           )}
         </div>
@@ -275,31 +275,31 @@ const CaptionEditor = ({
             className="coverage-fill"
             style={{ width: `${coveragePercentage}%` }}
           />
-          <span className="coverage-label">{coveragePercentage}% pokrivenost</span>
+          <span className="coverage-label">{coveragePercentage}% coverage</span>
         </div>
       </div>
 
       {/* Add New Caption Form */}
       <div className="add-caption-form">
-        <h4>Dodaj novi titl</h4>
+        <h4>Add new caption</h4>
         
         {error && <div className="error-message">{error}</div>}
         
         <div className="form-row">
           <div className="form-group flex-grow">
-            <label>Tekst</label>
+            <label>Text</label>
             <input
               type="text"
               value={newCaption.text}
               onChange={(e) => updateNewCaption('text', e.target.value)}
-              placeholder="Unesite tekst titla..."
+              placeholder="Enter caption text..."
             />
           </div>
         </div>
 
         <div className="form-row">
           <div className="form-group">
-            <label>Početak (s)</label>
+            <label>Start (s)</label>
             <input
               type="number"
               step="0.5"
@@ -310,7 +310,7 @@ const CaptionEditor = ({
             />
           </div>
           <div className="form-group">
-            <label>Kraj (s)</label>
+            <label>End (s)</label>
             <input
               type="number"
               step="0.5"
@@ -321,7 +321,7 @@ const CaptionEditor = ({
             />
           </div>
           <div className="form-group">
-            <label>Stil</label>
+            <label>Style</label>
             <div className="style-dropdown">
               <button 
                 className="style-btn"
@@ -363,7 +363,7 @@ const CaptionEditor = ({
             onClick={handleAddCaption}
             disabled={!newCaption.text.trim()}
           >
-            <FiPlus /> Dodaj
+            <FiPlus /> Add
           </button>
         </div>
       </div>
@@ -371,7 +371,7 @@ const CaptionEditor = ({
       {/* Captions List */}
       {captionCount > 0 && (
         <div className="captions-list">
-          <h4>Dodati titlovi</h4>
+          <h4>Added captions</h4>
           {captions.map((caption, index) => (
             <div 
               key={caption.id} 
@@ -420,28 +420,28 @@ const CaptionEditor = ({
                     <button 
                       className="btn-icon"
                       onClick={() => setPreviewTime(caption.start)}
-                      title="Pregled"
+                      title="Preview"
                     >
                       <FiPlay />
                     </button>
                     <button 
                       className="btn-icon"
                       onClick={() => startEditing(caption.id)}
-                      title="Uredi"
+                      title="Edit"
                     >
                       <FiEdit2 />
                     </button>
                     <button 
                       className="btn-icon"
                       onClick={() => duplicateCaption(caption.id)}
-                      title="Dupliraj"
+                      title="Duplicate"
                     >
                       <FiCopy />
                     </button>
                     <button 
                       className="btn-icon danger"
                       onClick={() => removeCaption(caption.id)}
-                      title="Obriši"
+                      title="Delete"
                     >
                       <FiTrash2 />
                     </button>

@@ -66,19 +66,19 @@ const NewVideoForm = ({
       {/* Image Upload (for image-to-video) */}
       {activeTab === 'image-to-video' && (
         <section className="section">
-          <label className="label">Izaberite sliku za animaciju</label>
+          <label className="label">Select image to animate</label>
           <div className="image-upload-area">
             {imagePreview ? (
               <div className="image-preview-container">
                 <img src={imagePreview} alt="Preview" className="image-preview-img" />
                 <button className="image-remove-btn" onClick={onImageRemove}>
-                  Ukloni
+                  Remove
                 </button>
               </div>
             ) : (
               <label className="upload-placeholder">
                 <span className="upload-icon">🖼️</span>
-                <span>Kliknite za upload slike</span>
+                <span>Click to upload image</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -95,14 +95,14 @@ const NewVideoForm = ({
       <section className="section">
         <label className="label">
           {activeTab === 'text-to-video' 
-            ? 'Opišite video koji želite' 
-            : 'Opišite željenu animaciju (opciono)'}
+            ? 'Describe the video you want' 
+            : 'Describe the desired animation (optional)'}
         </label>
         <textarea
           className="textarea"
           placeholder={activeTab === 'text-to-video'
-            ? "Npr: Cinematic drone shot of sunset over ocean waves, golden hour lighting, 4K kvalitet..."
-            : "Npr: Slow zoom in with gentle movement, cinematic feel..."
+            ? "E.g.: Cinematic drone shot of sunset over ocean waves, golden hour lighting, 4K quality..."
+            : "E.g.: Slow zoom in with gentle movement, cinematic feel..."
           }
           value={prompt}
           onChange={(e) => onPromptChange?.(e.target.value)}
@@ -112,7 +112,7 @@ const NewVideoForm = ({
       {/* Suggestions */}
       {activeTab === 'text-to-video' && (
         <section className="section">
-          <label className="label">Predlozi</label>
+          <label className="label">Suggestions</label>
           <div className="chips">
             {SUGGESTIONS.map((suggestion, index) => (
               <button 
@@ -130,14 +130,14 @@ const NewVideoForm = ({
       {/* Duration + Format */}
       <section className="row">
         <div className="section half">
-          <label className="label">Trajanje</label>
+          <label className="label">Duration</label>
           <select 
             className="select"
             value={duration}
             onChange={(e) => onDurationChange?.(Number(e.target.value))}
           >
-            <option value={5}>5 sekundi</option>
-            <option value={10}>10 sekundi</option>
+            <option value={5}>5 seconds</option>
+            <option value={10}>10 seconds</option>
           </select>
         </div>
 
@@ -153,13 +153,13 @@ const NewVideoForm = ({
           className={`addon-btn ${hasMusicConfig ? 'addon-btn--active' : ''}`}
           onClick={onMusicClick}
         >
-          <FiMusic /> {hasMusicConfig ? 'Muzika ✓' : 'Dodaj Muziku'}
+          <FiMusic /> {hasMusicConfig ? 'Music ✓' : 'Add Music'}
         </button>
         <button 
           className={`addon-btn ${hasTextConfig ? 'addon-btn--active' : ''}`}
           onClick={onTextClick}
         >
-          <FiType /> {hasTextConfig ? 'Tekst ✓' : 'Dodaj Tekst'}
+          <FiType /> {hasTextConfig ? 'Text ✓' : 'Add Text'}
         </button>
       </section>
 
@@ -170,15 +170,15 @@ const NewVideoForm = ({
         disabled={loading}
       >
         {loading ? (
-          <>⏳ Generisanje u toku... (1-3 min)</>
+          <>⏳ Generating... (1-3 min)</>
         ) : (
-          <>⚡ Generiši Video</>
+          <>⚡ Generate Video</>
         )}
       </button>
 
       {/* Cost Info */}
       <p className="cost-info">
-        Procenjeno vreme: 1-3 minuta | Cena: ~$0.25-0.50 po videu
+        Estimated time: 1-3 minutes | Cost: ~$0.25-0.50 per video
       </p>
     </div>
   );

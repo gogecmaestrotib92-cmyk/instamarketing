@@ -91,7 +91,7 @@ const SavedVideosPanel = ({ videos = [] }) => {
     link.click();
     document.body.removeChild(link);
     
-    toast.success('⬇️ Preuzimanje započeto!');
+    toast.success('⬇️ Download started!');
   };
 
   // Handle modal close
@@ -112,7 +112,7 @@ const SavedVideosPanel = ({ videos = [] }) => {
           caption: payload.caption,
           hashtags: payload.hashtags,
         });
-        toast.success('🎉 Video uspešno objavljen na Instagram!');
+        toast.success('🎉 Video successfully posted to Instagram!');
       } else {
         // Schedule mode
         // TODO: Prilagodi endpoint prema tvom backendu
@@ -124,12 +124,12 @@ const SavedVideosPanel = ({ videos = [] }) => {
           hashtags: payload.hashtags,
           scheduledAt: payload.scheduledAt,
         });
-        toast.success('📅 Objava zakazana!');
+        toast.success('📅 Post scheduled!');
       }
       
       handleCloseModal();
     } catch (error) {
-      const errorMsg = error.response?.data?.error || error.message || 'Greška pri slanju';
+      const errorMsg = error.response?.data?.error || error.message || 'Error posting';
       throw new Error(errorMsg);
     }
   };
@@ -138,13 +138,13 @@ const SavedVideosPanel = ({ videos = [] }) => {
     <aside className="saved-videos">
       <header className="saved-videos__header">
         <div>
-          <h3 className="saved-videos__title">Moji AI Videi</h3>
+          <h3 className="saved-videos__title">My AI Videos</h3>
           <p className="saved-videos__subtitle">
-            Sačuvani AI Reels koje ste generisali
+            Saved AI Reels you've generated
           </p>
         </div>
         <span className="saved-videos__badge">
-          {videos.length} videa
+          {videos.length} videos
         </span>
       </header>
 
@@ -153,7 +153,7 @@ const SavedVideosPanel = ({ videos = [] }) => {
         <div className="saved-videos__list">
           {videos.length === 0 && (
             <div className="saved-videos__empty">
-              🎬 Još uvek nemate sačuvane videe
+              🎬 You don't have any saved videos yet
             </div>
           )}
 
@@ -217,14 +217,14 @@ const SavedVideosPanel = ({ videos = [] }) => {
               onClick={handlePublishNow}
               disabled={loadingAccounts}
             >
-              <FiInstagram /> Objavi na Instagram
+              <FiInstagram /> Post to Instagram
             </button>
             <button
               className="saved-videos__action-btn saved-videos__action-btn--secondary"
               onClick={handleSchedule}
               disabled={loadingAccounts}
             >
-              <FiCalendar /> Zakaži
+              <FiCalendar /> Schedule
             </button>
             <button
               className="saved-videos__action-btn saved-videos__action-btn--neutral"

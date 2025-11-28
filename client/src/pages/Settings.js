@@ -133,11 +133,11 @@ const Settings = () => {
         followers: response.instagram.followers,
         profilePicture: response.instagram.profilePicture
       });
-      toast.success(`Povezano sa @${response.instagram.username}!`);
+      toast.success(`Connected to @${response.instagram.username}!`);
     } catch (error) {
       // If auto-connect fails, show manual connect option
       console.log('Auto-connect failed:', error.response?.data?.error || error.message);
-      toast.info('Auto-povezivanje nije uspelo. Pokušajte sa ručnim unosom tokena.');
+      toast.info('Auto-connect failed. Try manual token entry.');
       setShowManualConnect(true);
     } finally {
       setLoading(false);
@@ -146,7 +146,7 @@ const Settings = () => {
 
   const handleManualTokenConnect = async () => {
     if (!manualToken.trim()) {
-      toast.error('Unesite Access Token');
+      toast.error('Enter Access Token');
       return;
     }
 
@@ -160,11 +160,11 @@ const Settings = () => {
         followers: response.data.instagram.followers,
         profilePicture: response.data.instagram.profilePicture
       });
-      toast.success(`Povezano sa @${response.data.instagram.username}!`);
+      toast.success(`Connected to @${response.data.instagram.username}!`);
       setShowManualConnect(false);
       setManualToken('');
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri povezivanju');
+      toast.error(error.response?.data?.error || 'Connection error');
     } finally {
       setLoading(false);
     }
@@ -237,18 +237,18 @@ const Settings = () => {
   return (
     <main className="settings-page">
       <SEO 
-        title="Podešavanja"
-        description="Podesite vaš InstaMarketing nalog. Povezivanje Instagram naloga, notifikacije, bezbednost i preferencije naloga."
-        keywords="podešavanja, konfiguracija naloga, instagram povezivanje, bezbednost naloga, profil podešavanja"
+        title="Settings"
+        description="Configure your InstaMarketing account. Instagram connection, notifications, security and account preferences."
+        keywords="settings, account configuration, instagram connection, account security, profile settings"
         url="/settings"
         breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'Podešavanja', url: '/settings' }
+          { name: 'Home', url: '/' },
+          { name: 'Settings', url: '/settings' }
         ]}
         noindex={true}
       />
       <header className="page-header">
-        <h1>⚙️ Podešavanja</h1>
+        <h1>⚙️ Settings</h1>
       </header>
 
       <div className="settings-layout">
@@ -258,7 +258,7 @@ const Settings = () => {
             onClick={() => setActiveTab('profile')}
             aria-current={activeTab === 'profile' ? 'page' : undefined}
           >
-            <FiUser className="tab-icon" aria-hidden="true" /> Profil
+            <FiUser className="tab-icon" aria-hidden="true" /> Profile
           </button>
           <button
             className={`settings-tab ${activeTab === 'instagram' ? 'active' : ''}`}
@@ -272,21 +272,21 @@ const Settings = () => {
             onClick={() => setActiveTab('notifications')}
             aria-current={activeTab === 'notifications' ? 'page' : undefined}
           >
-            <FiBell className="tab-icon" aria-hidden="true" /> Obaveštenja
+            <FiBell className="tab-icon" aria-hidden="true" /> Notifications
           </button>
           <button
             className={`settings-tab ${activeTab === 'security' ? 'active' : ''}`}
             onClick={() => setActiveTab('security')}
             aria-current={activeTab === 'security' ? 'page' : undefined}
           >
-            <FiLock className="tab-icon" aria-hidden="true" /> Bezbednost
+            <FiLock className="tab-icon" aria-hidden="true" /> Security
           </button>
           <button
             className={`settings-tab ${activeTab === 'danger' ? 'active' : ''}`}
             onClick={() => setActiveTab('danger')}
             aria-current={activeTab === 'danger' ? 'page' : undefined}
           >
-            <FiAlertTriangle className="tab-icon" aria-hidden="true" /> Opasna Zona
+            <FiAlertTriangle className="tab-icon" aria-hidden="true" /> Danger Zone
           </button>
         </nav>
 
@@ -294,9 +294,9 @@ const Settings = () => {
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <section className="settings-panel" aria-labelledby="profile-heading">
-              <h2 id="profile-heading">Podešavanja Profila</h2>
+              <h2 id="profile-heading">Profile Settings</h2>
               <p className="panel-description">
-                Upravljajte informacijama o nalogu i preferencijama.
+                Manage your account information and preferences.
               </p>
               
               <form onSubmit={handleProfileUpdate}>
@@ -389,11 +389,11 @@ const Settings = () => {
               ) : (
                 <div className="connect-prompt">
                   <div className="connect-info">
-                    <h3>Zahtevi:</h3>
+                    <h3>Requirements:</h3>
                     <ul>
-                      <li>Instagram Business ili Creator nalog</li>
-                      <li>Povezan sa Facebook stranicom</li>
-                      <li>Admin pristup Facebook stranici</li>
+                      <li>Instagram Business or Creator account</li>
+                      <li>Connected to a Facebook Page</li>
+                      <li>Admin access to Facebook Page</li>
                     </ul>
                   </div>
                   
@@ -402,16 +402,16 @@ const Settings = () => {
                     onClick={handleInstagramConnect}
                     disabled={loading}
                   >
-                    <FaInstagram aria-hidden="true" /> {loading ? 'Povezivanje...' : 'Poveži Instagram'}
+                    <FaInstagram aria-hidden="true" /> {loading ? 'Connecting...' : 'Connect Instagram'}
                   </button>
 
                   {showManualConnect && (
                     <div className="manual-connect-section" style={{ marginTop: '20px', padding: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
-                      <h4 style={{ marginBottom: '10px' }}>Ručno povezivanje sa Access Token-om</h4>
+                      <h4 style={{ marginBottom: '10px' }}>Manual connection with Access Token</h4>
                       <p style={{ fontSize: '14px', color: '#888', marginBottom: '15px' }}>
-                        1. Idite na <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff88' }}>Facebook Graph API Explorer</a><br/>
-                        2. Izaberite vašu aplikaciju i dobijte token sa dozvolama: instagram_basic, pages_show_list, pages_read_engagement<br/>
-                        3. Kopirajte token i nalepite ga ovde
+                        1. Go to <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" style={{ color: '#00ff88' }}>Facebook Graph API Explorer</a><br/>
+                        2. Select your app and get a token with permissions: instagram_basic, pages_show_list, pages_read_engagement<br/>
+                        3. Copy the token and paste it here
                       </p>
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <label htmlFor="manualToken" className="sr-only">Access Token</label>
@@ -420,7 +420,7 @@ const Settings = () => {
                           type="text"
                           value={manualToken}
                           onChange={(e) => setManualToken(e.target.value)}
-                          placeholder="Unesite Access Token"
+                          placeholder="Enter Access Token"
                           className="form-control"
                           style={{ flex: 1 }}
                         />
@@ -429,7 +429,7 @@ const Settings = () => {
                           onClick={handleManualTokenConnect}
                           disabled={loading}
                         >
-                          {loading ? 'Povezivanje...' : 'Poveži'}
+                          {loading ? 'Connecting...' : 'Connect'}
                         </button>
                       </div>
                     </div>
@@ -441,7 +441,7 @@ const Settings = () => {
                       onClick={() => setShowManualConnect(!showManualConnect)}
                       style={{ fontSize: '14px' }}
                     >
-                      {showManualConnect ? 'Sakrij ručno povezivanje' : 'Ručno povezivanje sa tokenom'}
+                      {showManualConnect ? 'Hide manual connection' : 'Manual connection with token'}
                     </button>
                   </div>
                 </div>

@@ -103,7 +103,7 @@ const CreateReel = () => {
   return (
     <main className="create-content-page">
       <header className="page-header">
-        <button className="btn btn-ghost" onClick={() => navigate('/reels')} aria-label="Nazad na reels">
+        <button className="btn btn-ghost" onClick={() => navigate('/reels')} aria-label="Back to reels">
           <FiArrowLeft aria-hidden="true" /> Back
         </button>
         <h1>Create New Reel</h1>

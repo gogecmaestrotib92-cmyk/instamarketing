@@ -172,7 +172,7 @@ const MusicSelector = ({
               <FiSearch />
               <input 
                 type="text"
-                placeholder="Pretraži muziku..."
+                placeholder="Search music..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -230,10 +230,10 @@ const MusicSelector = ({
           onDragOver={(e) => e.preventDefault()}
         >
           <FiUpload size={40} />
-          <p>Prevucite audio fajl ovde</p>
-          <span>ili</span>
+          <p>Drag and drop audio file here</p>
+          <span>or</span>
           <label className="upload-btn">
-            Izaberite fajl
+            Select file
             <input 
               type="file" 
               accept="audio/*"
@@ -264,11 +264,11 @@ const MusicSelector = ({
               onClick={handleUrlSubmit}
               disabled={!urlInput}
             >
-              <FiCheck /> Primeni
+              <FiCheck /> Apply
             </button>
           </div>
           {!isUrlValid && (
-            <span className="error-text">Unesite validan URL</span>
+            <span className="error-text">Enter a valid URL</span>
           )}
         </div>
       )}
@@ -285,7 +285,7 @@ const MusicSelector = ({
               </div>
             </div>
             <button className="btn-clear" onClick={clearSelection}>
-              <FiX /> Ukloni
+              <FiX /> Remove
             </button>
           </div>
 

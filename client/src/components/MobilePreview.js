@@ -17,7 +17,7 @@ const MobilePreview = ({ videoUrl, posterUrl }) => {
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <polygon points="5 3 19 12 5 21 5 3"></polygon>
           </svg>
-          <span>Izaberite video</span>
+          <span>Select video</span>
         </div>
       </div>
     );

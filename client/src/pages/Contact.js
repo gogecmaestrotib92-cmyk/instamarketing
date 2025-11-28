@@ -24,10 +24,10 @@ const Contact = () => {
     // Simulate API call
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success('Poruka uspešno poslata! Javićemo vam se uskoro.');
+      toast.success('Message sent successfully! We\'ll get back to you soon.');
       setFormData({ name: '', email: '', subject: '', message: '' });
     } catch (error) {
-      toast.error('Došlo je do greške. Molimo pokušajte ponovo.');
+      toast.error('An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -36,29 +36,29 @@ const Contact = () => {
   return (
     <main className="contact-page">
       <SEO 
-        title="Kontaktirajte Nas"
-        description="Imate pitanja? Kontaktirajte InstaMarketing tim. Tu smo da vam pomognemo oko automatizacije vašeg Instagram marketinga."
-        keywords="kontakt instamarketing, podrska, pomoc, instagram marketing srbija"
+        title="Contact Us"
+        description="Have questions? Contact the InstaMarketing team. We're here to help you automate your Instagram marketing."
+        keywords="contact instamarketing, support, help, instagram marketing"
         url="/contact"
         breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'Kontakt', url: '/contact' }
+          { name: 'Home', url: '/' },
+          { name: 'Contact', url: '/contact' }
         ]}
       />
 
       <header className="page-header center">
-        <h1>Kontaktirajte Nas</h1>
-        <p>Tu smo da odgovorimo na sva vaša pitanja</p>
+        <h1>Contact Us</h1>
+        <p>We're here to answer all your questions</p>
       </header>
 
       <div className="contact-container">
         <div className="contact-grid">
           {/* Contact Info */}
           <section className="contact-info" aria-labelledby="info-heading">
-            <h2 id="info-heading" className="sr-only">Kontakt Informacije</h2>
+            <h2 id="info-heading" className="sr-only">Contact Information</h2>
             
             <div className="info-card">
-              <h3>Informacije</h3>
+              <h3>Information</h3>
               <div className="info-item">
                 <div className="icon-box"><FiMail aria-hidden="true" /></div>
                 <div>
@@ -69,21 +69,21 @@ const Contact = () => {
               <div className="info-item">
                 <div className="icon-box"><FiPhone aria-hidden="true" /></div>
                 <div>
-                  <span className="label">Telefon</span>
+                  <span className="label">Phone</span>
                   <a href="tel:+381111234567">+381 11 123 4567</a>
                 </div>
               </div>
               <div className="info-item">
                 <div className="icon-box"><FiMapPin aria-hidden="true" /></div>
                 <div>
-                  <span className="label">Lokacija</span>
-                  <address>Knez Mihailova 1, Beograd, Srbija</address>
+                  <span className="label">Location</span>
+                  <address>Knez Mihailova 1, Belgrade, Serbia</address>
                 </div>
               </div>
             </div>
 
             <div className="social-card">
-              <h3>Pratite Nas</h3>
+              <h3>Follow Us</h3>
               <div className="social-links">
                 <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                   <FiInstagram aria-hidden="true" />
@@ -103,10 +103,10 @@ const Contact = () => {
 
           {/* Contact Form */}
           <section className="contact-form-section" aria-labelledby="form-heading">
-            <h2 id="form-heading">Pošaljite nam poruku</h2>
+            <h2 id="form-heading">Send us a message</h2>
             <form onSubmit={handleSubmit} className="contact-form">
               <div className="form-group">
-                <label htmlFor="name">Ime i Prezime</label>
+                <label htmlFor="name">Full Name</label>
                 <input
                   type="text"
                   id="name"
@@ -114,12 +114,12 @@ const Contact = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
-                  placeholder="Vaše ime"
+                  placeholder="Your name"
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="email">Email Adresa</label>
+                <label htmlFor="email">Email Address</label>
                 <input
                   type="email"
                   id="email"
@@ -127,12 +127,12 @@ const Contact = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  placeholder="vas@email.com"
+                  placeholder="your@email.com"
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="subject">Naslov</label>
+                <label htmlFor="subject">Subject</label>
                 <input
                   type="text"
                   id="subject"
@@ -140,12 +140,12 @@ const Contact = () => {
                   value={formData.subject}
                   onChange={handleChange}
                   required
-                  placeholder="Kako vam možemo pomoći?"
+                  placeholder="How can we help you?"
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="message">Poruka</label>
+                <label htmlFor="message">Message</label>
                 <textarea
                   id="message"
                   name="message"
@@ -153,7 +153,7 @@ const Contact = () => {
                   onChange={handleChange}
                   required
                   rows={5}
-                  placeholder="Napišite vašu poruku ovde..."
+                  placeholder="Write your message here..."
                 />
               </div>
 
@@ -163,7 +163,7 @@ const Contact = () => {
                 disabled={loading}
                 aria-busy={loading}
               >
-                {loading ? 'Slanje...' : <><FiSend aria-hidden="true" /> Pošalji Poruku</>}
+                {loading ? 'Sending...' : <><FiSend aria-hidden="true" /> Send Message</>}
               </button>
             </form>
           </section>

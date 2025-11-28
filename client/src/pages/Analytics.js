@@ -117,22 +117,22 @@ const Analytics = () => {
   return (
     <main className="analytics-page">
       <SEO 
-        title="Instagram Analitika"
-        description="Dubinska analiza Instagram performansi. Pratite engagement rate, reach, impressions, rast pratilaca i ROI reklamnih kampanja. Detaljni izveštaji i statistika."
-        keywords="instagram analitika, instagram statistika, engagement rate, reach analiza, ROI praćenje, izveštaji instagram, performanse instagram"
+        title="Instagram Analytics"
+        description="In-depth Instagram performance analysis. Track engagement rate, reach, impressions, follower growth and ad campaign ROI. Detailed reports and statistics."
+        keywords="instagram analytics, instagram statistics, engagement rate, reach analysis, ROI tracking, instagram reports, instagram performance"
         url="/analytics"
         breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'Analitika', url: '/analytics' }
+          { name: 'Home', url: '/' },
+          { name: 'Analytics', url: '/analytics' }
         ]}
         noindex={true}
       />
       <header className="page-header">
         <div>
-          <h1>Analitika</h1>
-          <p className="page-subtitle">Pratite performanse vašeg Instagram-a</p>
+          <h1>Analytics</h1>
+          <p className="page-subtitle">Track your Instagram performance</p>
         </div>
-        <nav className="period-selector" aria-label="Izbor perioda">
+        <nav className="period-selector" aria-label="Period selection">
           {['7d', '30d', '90d'].map(p => (
             <button
               key={p}
@@ -140,14 +140,14 @@ const Analytics = () => {
               onClick={() => setPeriod(p)}
               aria-current={period === p ? 'page' : undefined}
             >
-              {p === '7d' ? '7 Dana' : p === '30d' ? '30 Dana' : '90 Dana'}
+              {p === '7d' ? '7 Days' : p === '30d' ? '30 Days' : '90 Days'}
             </button>
           ))}
         </nav>
       </header>
 
       {/* Overview Stats */}
-      <section className="stats-grid" aria-label="Pregled statistike">
+      <section className="stats-grid" aria-label="Statistics overview">
         <article className="stat-card">
           <FiHeart className="stat-icon-large" style={{ color: 'var(--error)' }} aria-hidden="true" />
           <div className="stat-data">
@@ -182,7 +182,7 @@ const Analytics = () => {
         {/* Engagement Breakdown */}
         <section className="card" aria-labelledby="engagement-heading">
           <h3 id="engagement-heading" className="card-title">Engagement Breakdown</h3>
-          <div className="chart-container doughnut" aria-label="Grafikon raspodele interakcija">
+          <div className="chart-container doughnut" aria-label="Engagement breakdown chart">
             <Doughnut 
               data={engagementData} 
               options={{
@@ -205,7 +205,7 @@ const Analytics = () => {
             <FiClock aria-hidden="true" /> Best Posting Times
           </h3>
           {bestTimesData ? (
-            <div className="chart-container" aria-label="Grafikon najboljih vremena za objavljivanje">
+            <div className="chart-container" aria-label="Best posting times chart">
               <Line 
                 data={bestTimesData}
                 options={{

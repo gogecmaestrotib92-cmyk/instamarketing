@@ -110,33 +110,33 @@ const Campaigns = () => {
   return (
     <main className="campaigns-page">
       <SEO 
-        title="Reklamne Kampanje"
-        description="Upravljajte Instagram reklamnim kampanjama. A/B testiranje, targetiranje publike, praćenje konverzija i optimizacija budžeta za maksimalan ROI."
-        keywords="instagram reklame, reklamne kampanje, instagram ads, targetiranje, konverzije, ROI reklama, facebook ads"
+        title="Ad Campaigns"
+        description="Manage Instagram ad campaigns. A/B testing, audience targeting, conversion tracking and budget optimization for maximum ROI."
+        keywords="instagram ads, ad campaigns, instagram advertising, targeting, conversions, ad ROI, facebook ads"
         url="/campaigns"
         breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'Kampanje', url: '/campaigns' }
+          { name: 'Home', url: '/' },
+          { name: 'Campaigns', url: '/campaigns' }
         ]}
         noindex={true}
       />
       <header className="page-header">
         <div>
-          <h1>Reklamne Kampanje</h1>
-          <p className="page-subtitle">Kreirajte i upravljajte vašim Instagram reklamnim kampanjama</p>
+          <h1>Ad Campaigns</h1>
+          <p className="page-subtitle">Create and manage your Instagram ad campaigns</p>
         </div>
-        <Link to="/campaigns/create" className="btn btn-primary" aria-label="Kreiraj novu kampanju">
-          <FiPlus aria-hidden="true" /> Kreiraj Kampanju
+        <Link to="/campaigns/create" className="btn btn-primary" aria-label="Create new campaign">
+          <FiPlus aria-hidden="true" /> Create Campaign
         </Link>
       </header>
 
-      <div className="filters" role="group" aria-label="Filteri kampanja">
+      <div className="filters" role="group" aria-label="Campaign filters">
         {[
-          { key: 'all', label: 'Sve' },
-          { key: 'draft', label: 'Nacrti' },
-          { key: 'active', label: 'Aktivne' },
-          { key: 'paused', label: 'Pauzirane' },
-          { key: 'completed', label: 'Završene' }
+          { key: 'all', label: 'All' },
+          { key: 'draft', label: 'Drafts' },
+          { key: 'active', label: 'Active' },
+          { key: 'paused', label: 'Paused' },
+          { key: 'completed', label: 'Completed' }
         ].map(status => (
           <button
             key={status.key}
@@ -151,19 +151,19 @@ const Campaigns = () => {
 
       {loading ? (
         <div className="loading-container" aria-live="polite">
-          <div className="spinner" aria-label="Učitavanje kampanja..."></div>
+          <div className="spinner" aria-label="Loading campaigns..."></div>
         </div>
       ) : campaigns.length === 0 ? (
         <div className="empty-state-large">
           <FiTarget className="empty-icon" aria-hidden="true" />
-          <h3>Nema kampanja</h3>
-          <p>Kreirajte vašu prvu reklamnu kampanju da biste dosegli više ljudi</p>
+          <h3>No campaigns</h3>
+          <p>Create your first ad campaign to reach more people</p>
           <Link to="/campaigns/create" className="btn btn-primary">
-            <FiPlus aria-hidden="true" /> Kreiraj Kampanju
+            <FiPlus aria-hidden="true" /> Create Campaign
           </Link>
         </div>
       ) : (
-        <section className="campaigns-list" aria-label="Lista kampanja">
+        <section className="campaigns-list" aria-label="Campaign list">
           {campaigns.map(campaign => (
             <article key={campaign._id} className="campaign-card">
               <header className="campaign-header">
@@ -226,13 +226,13 @@ const Campaigns = () => {
               <footer className="campaign-actions">
                 {campaign.status === 'draft' && (
                   <>
-                    <Link to={`/campaigns/edit/${campaign._id}`} className="btn btn-ghost btn-sm" aria-label={`Izmeni kampanju ${campaign.name}`}>
+                    <Link to={`/campaigns/edit/${campaign._id}`} className="btn btn-ghost btn-sm" aria-label={`Edit campaign ${campaign.name}`}>
                       <FiEdit2 aria-hidden="true" /> Edit
                     </Link>
                     <button 
                       className="btn btn-primary btn-sm"
                       onClick={() => handleLaunch(campaign._id)}
-                      aria-label={`Pokreni kampanju ${campaign.name}`}
+                      aria-label={`Launch campaign ${campaign.name}`}
                     >
                       <FiPlay aria-hidden="true" /> Launch
                     </button>
@@ -242,20 +242,20 @@ const Campaigns = () => {
                   <button 
                     className="btn btn-secondary btn-sm"
                     onClick={() => handlePause(campaign._id)}
-                    aria-label={`Pauziraj kampanju ${campaign.name}`}
+                    aria-label={`Pause campaign ${campaign.name}`}
                   >
                     <FiPause aria-hidden="true" /> Pause
                   </button>
                 )}
                 {campaign.status === 'paused' && (
                   <>
-                    <Link to={`/campaigns/edit/${campaign._id}`} className="btn btn-ghost btn-sm" aria-label={`Izmeni kampanju ${campaign.name}`}>
+                    <Link to={`/campaigns/edit/${campaign._id}`} className="btn btn-ghost btn-sm" aria-label={`Edit campaign ${campaign.name}`}>
                       <FiEdit2 aria-hidden="true" /> Edit
                     </Link>
                     <button 
                       className="btn btn-primary btn-sm"
                       onClick={() => handleResume(campaign._id)}
-                      aria-label={`Nastavi kampanju ${campaign.name}`}
+                      aria-label={`Resume campaign ${campaign.name}`}
                     >
                       <FiPlay aria-hidden="true" /> Resume
                     </button>
@@ -264,7 +264,7 @@ const Campaigns = () => {
                 <button 
                   className="btn btn-ghost btn-sm danger"
                   onClick={() => handleDelete(campaign._id)}
-                  aria-label={`Obriši kampanju ${campaign.name}`}
+                  aria-label={`Delete campaign ${campaign.name}`}
                 >
                   <FiTrash2 aria-hidden="true" />
                 </button>

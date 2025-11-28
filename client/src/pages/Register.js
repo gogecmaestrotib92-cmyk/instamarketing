@@ -45,7 +45,7 @@ const Register = () => {
     setLoading(true);
     try {
       await register(formData.name, formData.email, formData.password, formData.company);
-      toast.success('Nalog uspešno kreiran!');
+      toast.success('Account created successfully!');
       navigate('/app/dashboard');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Registration failed');
@@ -57,21 +57,21 @@ const Register = () => {
   return (
     <main className="auth-container">
       <SEO 
-        title="Registracija - Kreirajte Besplatan Nalog"
-        description="Kreirajte besplatan InstaMarketing nalog. Započnite automatizaciju vašeg Instagram marketinga već danas - zakazujte objave, vodite reklamne kampanje i povećajte publiku."
+        title="Sign Up - Create Free Account"
+        description="Create a free InstaMarketing account. Start automating your Instagram marketing today - schedule posts, run ad campaigns and grow your audience."
         url="/register"
-        keywords="registracija InstaMarketing, kreiranje naloga, instagram automatizacija besplatno, social media marketing srbija"
+        keywords="register InstaMarketing, create account, instagram automation free, social media marketing platform"
       />
       <section className="auth-card" aria-labelledby="register-heading">
         <header className="auth-header">
           <FaInstagram className="auth-logo" aria-hidden="true" />
           <h1 id="register-heading">InstaMarketing</h1>
-          <p>Kreirajte vaš nalog</p>
+          <p>Create your account</p>
         </header>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="name" className="label">Ime i Prezime *</label>
+            <label htmlFor="name" className="label">Full Name *</label>
             <div className="input-wrapper">
               <FiUser className="input-icon" aria-hidden="true" />
               <input
@@ -79,7 +79,7 @@ const Register = () => {
                 type="text"
                 name="name"
                 className="input"
-                placeholder="Unesite vaše ime"
+                placeholder="Enter your name"
                 value={formData.name}
                 onChange={handleChange}
                 required
@@ -98,7 +98,7 @@ const Register = () => {
                 type="email"
                 name="email"
                 className="input"
-                placeholder="Unesite vaš email"
+                placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -109,7 +109,7 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="company" className="label">Kompanija (Opciono)</label>
+            <label htmlFor="company" className="label">Company (Optional)</label>
             <div className="input-wrapper">
               <FiBriefcase className="input-icon" aria-hidden="true" />
               <input
@@ -117,7 +117,7 @@ const Register = () => {
                 type="text"
                 name="company"
                 className="input"
-                placeholder="Unesite ime kompanije"
+                placeholder="Enter company name"
                 value={formData.company}
                 onChange={handleChange}
                 autoComplete="organization"
@@ -126,7 +126,7 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password" className="label">Lozinka *</label>
+            <label htmlFor="password" className="label">Password *</label>
             <div className="input-wrapper">
               <FiLock className="input-icon" aria-hidden="true" />
               <input
@@ -134,7 +134,7 @@ const Register = () => {
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 className="input"
-                placeholder="Kreirajte lozinku"
+                placeholder="Create a password"
                 value={formData.password}
                 onChange={handleChange}
                 required
@@ -145,7 +145,7 @@ const Register = () => {
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <FiEyeOff aria-hidden="true" /> : <FiEye aria-hidden="true" />}
               </button>
@@ -153,7 +153,7 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword" className="label">Potvrdite Lozinku *</label>
+            <label htmlFor="confirmPassword" className="label">Confirm Password *</label>
             <div className="input-wrapper">
               <FiLock className="input-icon" aria-hidden="true" />
               <input
@@ -161,7 +161,7 @@ const Register = () => {
                 type={showPassword ? 'text' : 'password'}
                 name="confirmPassword"
                 className="input"
-                placeholder="Potvrdite vašu lozinku"
+                placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
@@ -177,22 +177,22 @@ const Register = () => {
             disabled={loading}
             aria-busy={loading}
           >
-            {loading ? 'Kreiranje naloga...' : 'Kreiraj Nalog'}
+            {loading ? 'Creating account...' : 'Create Account'}
           </button>
         </form>
 
         <footer className="auth-footer">
-          <p>Već imate nalog? <Link to="/login">Prijavite se</Link></p>
+          <p>Already have an account? <Link to="/login">Sign In</Link></p>
         </footer>
       </section>
 
       <section className="auth-features" aria-labelledby="features-heading">
-        <h2 id="features-heading">Počnite Sa Rastom Vašeg Instagram-a Danas</h2>
+        <h2 id="features-heading">Start Growing Your Instagram Today</h2>
         <ul>
-          <li><span aria-hidden="true">✨</span> Besplatan plan dostupan</li>
-          <li><span aria-hidden="true">📱</span> Neograničeno zakazivanje objava</li>
-          <li><span aria-hidden="true">🎯</span> Moćno upravljanje reklamama</li>
-          <li><span aria-hidden="true">📊</span> Detaljna analitika</li>
+          <li><span aria-hidden="true">✨</span> Free plan available</li>
+          <li><span aria-hidden="true">📱</span> Unlimited post scheduling</li>
+          <li><span aria-hidden="true">🎯</span> Powerful ad management</li>
+          <li><span aria-hidden="true">📊</span> Detailed analytics</li>
         </ul>
       </section>
     </main>

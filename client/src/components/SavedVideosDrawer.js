@@ -44,7 +44,7 @@ const SavedVideosDrawer = ({
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('sr-RS', { 
+    return date.toLocaleDateString('en-US', { 
       day: 'numeric', 
       month: 'short',
       year: 'numeric'
@@ -71,12 +71,12 @@ const SavedVideosDrawer = ({
       >
         {/* Header */}
         <div className="drawer-header">
-          <h2 id="drawer-title">Moji AI Videi</h2>
-          <span className="drawer-count">{videos.length} videa</span>
+          <h2 id="drawer-title">My AI Videos</h2>
+          <span className="drawer-count">{videos.length} videos</span>
           <button 
             className="drawer-close" 
             onClick={onClose}
-            aria-label="Zatvori"
+            aria-label="Close"
           >
             <FiX />
           </button>
@@ -87,8 +87,8 @@ const SavedVideosDrawer = ({
           {videos.length === 0 ? (
             <div className="drawer-empty">
               <FiPlay size={48} />
-              <h4>Nema sačuvanih videa</h4>
-              <p>Generisani videi će se pojaviti ovde</p>
+              <h4>No saved videos</h4>
+              <p>Generated videos will appear here</p>
             </div>
           ) : (
             <div className="drawer-layout">
@@ -142,7 +142,7 @@ const SavedVideosDrawer = ({
                   <div className="drawer-preview-info">
                     <h4>{selectedVideo.title}</h4>
                     <p className="drawer-preview-date">
-                      Kreirano: {formatDate(selectedVideo.createdAt)}
+                      Created: {formatDate(selectedVideo.createdAt)}
                     </p>
                   </div>
 
@@ -159,7 +159,7 @@ const SavedVideosDrawer = ({
                         className="drawer-action-btn drawer-action-btn--primary"
                         onClick={() => onPostToInstagram(selectedVideo.id)}
                       >
-                        <FiInstagram /> Objavi
+                        <FiInstagram /> Post
                       </button>
                     )}
                     {onDelete && (
@@ -173,7 +173,7 @@ const SavedVideosDrawer = ({
                           setSelectedVideoId(next?.id || null);
                         }}
                       >
-                        <FiTrash2 /> Obriši
+                        <FiTrash2 /> Delete
                       </button>
                     )}
                   </div>
