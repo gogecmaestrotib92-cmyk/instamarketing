@@ -1,12 +1,25 @@
-const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('ffmpeg-static');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 
-// Set FFmpeg path
-ffmpeg.setFfmpegPath(ffmpegPath);
+// Lazy load FFmpeg to prevent Vercel cold start issues
+let ffmpeg = null;
+let ffmpegPath = null;
+
+const loadFFmpeg = () => {
+  if (!ffmpeg) {
+    try {
+      ffmpeg = require('fluent-ffmpeg');
+      ffmpegPath = require('ffmpeg-static');
+      ffmpeg.setFfmpegPath(ffmpegPath);
+    } catch (error) {
+      console.error('Failed to load FFmpeg:', error);
+      throw new Error('Video processing is not available in this environment');
+    }
+  }
+  return ffmpeg;
+};
 
 /**
  * Video Composer Service
@@ -19,10 +32,14 @@ class VideoComposerService {
     
     // Ensure directories exist
     if (!fs.existsSync(this.tempDir)) {
-      fs.mkdirSync(this.tempDir, { recursive: true });
+      try {
+        fs.mkdirSync(this.tempDir, { recursive: true });
+      } catch (e) { console.log('Temp dir creation skipped (read-only fs?)'); }
     }
     if (!fs.existsSync(this.outputDir)) {
-      fs.mkdirSync(this.outputDir, { recursive: true });
+      try {
+        fs.mkdirSync(this.outputDir, { recursive: true });
+      } catch (e) { console.log('Output dir creation skipped (read-only fs?)'); }
     }
   }
 
@@ -31,7 +48,9 @@ class VideoComposerService {
    * Handles both remote URLs and local paths
    */
   async downloadFile(urlOrPath, filename) {
-    const filePath = path.join(this.tempDir, filename);
+    // On Vercel, we can only write to /tmp
+    const tempDir = process.env.VERCEL ? '/tmp' : this.tempDir;
+    const filePath = path.join(tempDir, filename);
     
     // Check if it's a remote URL
     if (urlOrPath.startsWith('http://') || urlOrPath.startsWith('https://')) {
@@ -73,8 +92,9 @@ class VideoComposerService {
    * Add audio to video
    */
   async addAudioToVideo(videoPath, audioPath, outputPath) {
+    const ffmpegInstance = loadFFmpeg();
     return new Promise((resolve, reject) => {
-      ffmpeg()
+      ffmpegInstance()
         .input(videoPath)
         .input(audioPath)
         .outputOptions([
@@ -95,6 +115,7 @@ class VideoComposerService {
    * Add text overlay to video
    */
   async addTextOverlay(videoPath, text, options = {}) {
+    const ffmpegInstance = loadFFmpeg();
     const {
       position = 'center',      // top, center, bottom
       fontSize = 48,
@@ -103,7 +124,9 @@ class VideoComposerService {
       padding = 20
     } = options;
 
-    const outputPath = path.join(this.outputDir, `text_${uuidv4()}.mp4`);
+    // On Vercel, use /tmp
+    const outputDir = process.env.VERCEL ? '/tmp' : this.outputDir;
+    const outputPath = path.join(outputDir, `text_${uuidv4()}.mp4`);
     
     // Calculate Y position
     let yPos = '(h-text_h)/2';  // center
@@ -111,7 +134,7 @@ class VideoComposerService {
     if (position === 'bottom') yPos = `h-text_h-${padding}`;
 
     return new Promise((resolve, reject) => {
-      ffmpeg()
+      ffmpegInstance()
         .input(videoPath)
         .videoFilters([
           {
@@ -162,7 +185,8 @@ class VideoComposerService {
       if (audioUrl) {
         console.log('🎵 Adding audio...');
         const audioPath = await this.downloadFile(audioUrl, `audio_${jobId}.mp3`);
-        const withAudioPath = path.join(this.tempDir, `with_audio_${jobId}.mp4`);
+        const tempDir = process.env.VERCEL ? '/tmp' : this.tempDir;
+        const withAudioPath = path.join(tempDir, `with_audio_${jobId}.mp4`);
         currentPath = await this.addAudioToVideo(videoPath, audioPath, withAudioPath);
         
         // Clean up audio file
@@ -186,7 +210,8 @@ class VideoComposerService {
 
       // Move final video to output
       const outputFilename = `composed_${jobId}.mp4`;
-      const finalOutputPath = path.join(this.outputDir, outputFilename);
+      const outputDir = process.env.VERCEL ? '/tmp' : this.outputDir;
+      const finalOutputPath = path.join(outputDir, outputFilename);
       
       if (currentPath !== finalOutputPath) {
         fs.renameSync(currentPath, finalOutputPath);
@@ -219,8 +244,10 @@ class VideoComposerService {
    * Create video with multiple text segments (captions)
    */
   async addCaptions(videoPath, captions) {
+    const ffmpegInstance = loadFFmpeg();
     // captions = [{ text: 'Hello', start: 0, end: 2 }, ...]
-    const outputPath = path.join(this.outputDir, `captioned_${uuidv4()}.mp4`);
+    const outputDir = process.env.VERCEL ? '/tmp' : this.outputDir;
+    const outputPath = path.join(outputDir, `captioned_${uuidv4()}.mp4`);
     
     // Build drawtext filter for each caption
     const filters = captions.map((caption, i) => ({
@@ -239,7 +266,7 @@ class VideoComposerService {
     }));
 
     return new Promise((resolve, reject) => {
-      ffmpeg()
+      ffmpegInstance()
         .input(videoPath)
         .videoFilters(filters)
         .outputOptions(['-c:a copy'])
@@ -254,14 +281,15 @@ class VideoComposerService {
    * Loop video to match audio duration
    */
   async loopVideoToAudioLength(videoPath, audioPath, outputPath) {
+    const ffmpegInstance = loadFFmpeg();
     return new Promise((resolve, reject) => {
       // First get audio duration
-      ffmpeg.ffprobe(audioPath, (err, metadata) => {
+      ffmpegInstance.ffprobe(audioPath, (err, metadata) => {
         if (err) return reject(err);
         
         const audioDuration = metadata.format.duration;
         
-        ffmpeg()
+        ffmpegInstance()
           .input(videoPath)
           .inputOptions(['-stream_loop -1'])  // Loop video infinitely
           .input(audioPath)
@@ -283,9 +311,12 @@ class VideoComposerService {
    * Clean up temp files
    */
   cleanupTempFiles() {
-    const files = fs.readdirSync(this.tempDir);
+    const tempDir = process.env.VERCEL ? '/tmp' : this.tempDir;
+    if (!fs.existsSync(tempDir)) return;
+    
+    const files = fs.readdirSync(tempDir);
     files.forEach(file => {
-      const filePath = path.join(this.tempDir, file);
+      const filePath = path.join(tempDir, file);
       const stats = fs.statSync(filePath);
       // Delete files older than 1 hour
       if (Date.now() - stats.mtime.getTime() > 3600000) {
