@@ -18,6 +18,22 @@
   background: linear-gradient(180deg, #0a0a0a 0%, #0d1117 50%, #161b22 100%);
   color: var(--landing-text);
   overflow-x: hidden;
+  width: 100%;
+}
+
+/* Override global styles inside landing page */
+.landing-page * {
+  box-sizing: border-box;
+}
+
+.landing-page h1,
+.landing-page h2,
+.landing-page h3,
+.landing-page h4,
+.landing-page h5,
+.landing-page h6 {
+  margin-bottom: 0;
+  color: #ffffff;
 }
 
 /* Hero Section */
@@ -165,8 +181,8 @@
   gap: 6px;
 }
 
-/* Buttons */
-.btn {
+/* Buttons - Override global styles */
+.landing-page .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -181,15 +197,18 @@
   border: none;
   position: relative;
   overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+  letter-spacing: 0;
 }
 
-.btn-primary {
+.landing-page .btn-primary {
   background: var(--landing-gradient);
   color: #fff;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-.btn-primary::before {
+.landing-page .btn-primary::before {
   content: '';
   position: absolute;
   top: 0;
@@ -200,51 +219,51 @@
   transition: left 0.5s ease;
 }
 
-.btn-primary:hover::before {
+.landing-page .btn-primary:hover::before {
   left: 100%;
 }
 
-.btn-primary:hover {
+.landing-page .btn-primary:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
 }
 
-.btn-outline {
+.landing-page .btn-outline {
   background: transparent;
   border: 2px solid rgba(102, 126, 234, 0.5);
   color: #fff;
 }
 
-.btn-outline:hover {
+.landing-page .btn-outline:hover {
   background: rgba(102, 126, 234, 0.15);
   border-color: var(--landing-primary);
   transform: translateY(-3px);
 }
 
-.btn-lg {
+.landing-page .btn-lg {
   padding: 18px 36px;
   font-size: 1.1rem;
   border-radius: 14px;
 }
 
-.btn-sm {
+.landing-page .btn-sm {
   padding: 10px 20px;
   font-size: 0.9rem;
 }
 
-.btn-full {
+.landing-page .btn-full {
   width: 100%;
 }
 
-/* Sections */
-section {
+/* Sections - Scoped to landing page */
+.landing-page section {
   padding: 100px 20px;
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
 }
 
-section h2 {
+.landing-page section h2 {
   font-size: clamp(1.8rem, 3vw, 2.5rem);
   text-align: center;
   margin-bottom: 16px;
@@ -252,7 +271,7 @@ section h2 {
   letter-spacing: -0.02em;
 }
 
-.section-subtitle {
+.landing-page .section-subtitle {
   text-align: center;
   color: var(--landing-text-muted);
   font-size: 1.15rem;
@@ -1923,11 +1942,11 @@ section h2 {
     gap: 12px;
   }
   
-  section {
+  .landing-page section {
     padding: 80px 20px;
   }
 
-  section h2 {
+  .landing-page section h2 {
     font-size: 1.6rem;
   }
   
@@ -2001,7 +2020,7 @@ section h2 {
     flex-direction: column;
   }
 
-  .btn-lg {
+  .landing-page .btn-lg {
     padding: 16px 28px;
     font-size: 1rem;
     width: 100%;
