@@ -35,11 +35,6 @@ const SavedVideosPanel = ({ videos = [] }) => {
     [videos, selectedVideoId]
   );
 
-  const handleVideoClick = (videoId) => {
-    console.log('Selecting video:', videoId);
-    setSelectedVideoId(videoId);
-  };
-
   return (
     <aside className="saved-videos">
       <header className="saved-videos__header">

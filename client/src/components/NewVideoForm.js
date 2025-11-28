@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FiMusic, FiType } from 'react-icons/fi';
 import './NewVideoForm.css';
 

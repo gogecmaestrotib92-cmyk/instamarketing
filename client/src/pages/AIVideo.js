@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { 
-  FiVideo, 
   FiDownload, 
   FiInstagram,
   FiClock,
@@ -327,7 +326,6 @@ const AIVideo = () => {
   const [myVideos, setMyVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const [showAllVideos, setShowAllVideos] = useState(true); // Default to expanded
   
   // Music and Text states
   const [musicConfig, setMusicConfig] = useState(null);
@@ -527,17 +525,6 @@ const AIVideo = () => {
       toast.error('Greška pri brisanju');
     }
   };
-
-  const promptSuggestions = [
-    "Cinematic drone shot flying over beautiful mountains at sunset",
-    "Abstract colorful liquid flowing in slow motion",
-    "Futuristic city with flying cars and neon lights at night",
-    "Ocean waves crashing on rocks, golden hour lighting",
-    "Product showcase with elegant spinning motion, studio lighting",
-    "Fashion model walking on runway, dramatic lighting",
-    "Food preparation in slow motion, steam rising",
-    "Nature timelapse of flowers blooming"
-  ];
 
   return (
     <main className="ai-video-page">
