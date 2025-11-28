@@ -67,14 +67,16 @@
 
 /* Image Upload */
 .image-upload-area {
-  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border: 2px dashed var(--glass-border);
   border-radius: 12px;
   overflow: hidden;
   transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .image-upload-area:hover {
-  border-color: var(--primary-color);
+  border-color: #E1306C;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .upload-placeholder {
@@ -90,7 +92,7 @@
 }
 
 .upload-placeholder:hover {
-  color: var(--primary-color);
+  color: #E1306C;
 }
 
 .image-preview {
@@ -157,7 +159,7 @@
 .suggestion-chip {
   padding: 6px 12px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
   border-radius: 20px;
   color: var(--text-secondary);
   font-size: 12px;
@@ -166,8 +168,8 @@
 }
 
 .suggestion-chip:hover {
-  background: var(--primary-color);
-  border-color: var(--primary-color);
+  background: var(--gradient);
+  border-color: transparent;
   color: white;
 }
 
@@ -182,7 +184,7 @@
   width: 100%;
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 14px;
@@ -191,7 +193,12 @@
 
 .select:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: #E1306C;
+}
+
+.select option {
+  background: #1a1a1a;
+  color: var(--text-primary);
 }
 
 /* Generate Button */
@@ -206,11 +213,21 @@
   color: white;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-generate:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(225, 48, 108, 0.4);
+}
+
+.btn-generate:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-generate .spinner {
@@ -458,7 +475,7 @@
 }
 
 .status-badge.posted {
-  background: var(--gradient-instagram);
+  background: var(--gradient);
 }
 
 .video-info {
@@ -605,7 +622,7 @@
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
@@ -636,7 +653,7 @@
 
 .video-modal-header {
   padding: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--glass-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -645,6 +662,7 @@
 .video-modal-header h3 {
   margin: 0;
   font-size: 18px;
+  color: var(--text-primary);
 }
 
 .video-date {
