@@ -18,6 +18,7 @@ const mediaRoutes = require('./routes/media');
 const aiVideoRoutes = require('./routes/ai-video');
 const aiRoutes = require('./routes/ai');
 const advancedVideoRoutes = require('./routes/advancedVideo');
+const instagramRoutes = require('./routes/instagram');
 
 // Import scheduler
 const { initScheduler } = require('./services/scheduler');
@@ -43,6 +44,7 @@ app.use('/api/media', mediaRoutes);
 app.use('/api/ai-video', aiVideoRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/video', advancedVideoRoutes);
+app.use('/api/instagram', instagramRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

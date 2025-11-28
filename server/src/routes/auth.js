@@ -311,6 +311,7 @@ router.post('/connect/instagram/token', auth, async (req, res) => {
     };
 
     await user.save();
+    console.log('Instagram connected (token) for user:', user._id, 'Username:', user.instagram.username);
 
     res.json({ 
       message: 'Instagram account connected successfully!',
@@ -372,6 +373,7 @@ router.post('/connect/instagram/auto', auth, async (req, res) => {
     };
 
     await user.save();
+    console.log('Instagram connected (auto) for user:', user._id, 'Username:', user.instagram.username);
 
     res.json({ 
       message: 'Instagram account connected successfully!',

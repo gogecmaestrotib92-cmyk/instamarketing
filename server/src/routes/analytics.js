@@ -102,6 +102,38 @@ router.get('/dashboard', auth, async (req, res) => {
       campaignMetrics.totalConversions += campaign.metrics?.conversions || 0;
     });
 
+    // Check connection status (DB or Env fallback)
+    let accountStatus = { connected: false };
+    
+    // Debug logging
+    console.log('Dashboard Analytics - User ID:', userId);
+    console.log('User Instagram Data:', JSON.stringify(req.user.instagram));
+    
+    if (req.user.instagram && req.user.instagram.connected) {
+      console.log('Using DB connection');
+      accountStatus = {
+        username: req.user.instagram.username,
+        followers: req.user.instagram.followersCount,
+        connected: true
+      };
+    } else if (process.env.INSTAGRAM_ACCESS_TOKEN && process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID) {
+      console.log('Using Env connection fallback');
+      // Fallback to env vars for single-user mode
+      accountStatus = {
+        username: 'Instagram User', // We might not have the username if only in env
+        connected: true,
+        isEnvConnection: true
+      };
+      
+      // Try to get username if we have the token
+      try {
+        // This is async but we don't want to block the dashboard load too much
+        // Ideally we should cache this or store it in DB on startup
+      } catch (e) {}
+    } else {
+      console.log('No connection found');
+    }
+
     res.json({
       overview: {
         posts: {
@@ -124,11 +156,7 @@ router.get('/dashboard', auth, async (req, res) => {
         posts: recentPosts,
         reels: recentReels
       },
-      account: req.user.instagram?.connected ? {
-        username: req.user.instagram.username,
-        followers: req.user.instagram.followersCount,
-        connected: true
-      } : { connected: false }
+      account: accountStatus
     });
   } catch (error) {
     console.error('Dashboard analytics error:', error);

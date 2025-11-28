@@ -249,19 +249,26 @@ router.get('/info/models', auth, async (req, res) => {
  */
 router.post('/:id/post-to-instagram', auth, async (req, res) => {
   try {
-    const { caption, hashtags } = req.body;
+    const { caption, hashtags, videoUrl: providedVideoUrl } = req.body;
 
-    const video = await GeneratedVideo.findOne({ 
-      _id: req.params.id, 
-      user: req.userId 
-    });
+    let video = null;
+    
+    // Try to find by ID if it's a valid ObjectId
+    if (req.params.id && req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+      video = await GeneratedVideo.findOne({ 
+        _id: req.params.id, 
+        user: req.userId 
+      });
+    }
 
-    if (!video) {
-      return res.status(404).json({ error: 'Video not found' });
+    // Use DB video URL or fallback to provided URL
+    let videoUrl = video ? video.videoUrl : providedVideoUrl;
+
+    if (!videoUrl) {
+      return res.status(404).json({ error: 'Video not found and no URL provided' });
     }
 
     // Upload to Cloudinary if not already there
-    let videoUrl = video.videoUrl;
     if (!videoUrl.includes('cloudinary')) {
       const cloudinaryResult = await uploadToCloudinary(videoUrl, {
         folder: 'instamarketing/reels',
@@ -270,8 +277,10 @@ router.post('/:id/post-to-instagram', auth, async (req, res) => {
 
       if (cloudinaryResult.success) {
         videoUrl = cloudinaryResult.url;
-        video.cloudinaryUrl = videoUrl;
-        await video.save();
+        if (video) {
+          video.cloudinaryUrl = videoUrl;
+          await video.save();
+        }
       }
     }
 
@@ -328,10 +337,12 @@ router.post('/:id/post-to-instagram', auth, async (req, res) => {
       { params: { creation_id: containerId, access_token: accessToken } }
     );
 
-    // Update video record
-    video.postedToInstagram = true;
-    video.instagramPostId = publishResponse.data.id;
-    await video.save();
+    // Update video record if it exists
+    if (video) {
+      video.postedToInstagram = true;
+      video.instagramPostId = publishResponse.data.id;
+      await video.save();
+    }
 
     res.json({
       success: true,
