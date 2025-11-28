@@ -12,7 +12,8 @@ import {
   FiCheck,
   FiUpload,
   FiVolume2,
-  FiPlus
+  FiPlus,
+  FiTrash2
 } from 'react-icons/fi';
 import { FaWandMagicSparkles } from 'react-icons/fa6';
 import SEO from '../components/SEO';
