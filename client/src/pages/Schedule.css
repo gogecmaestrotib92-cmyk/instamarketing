@@ -13,9 +13,10 @@
 /* Calendar */
 .calendar-card {
   padding: 32px;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
+  backdrop-filter: blur(12px);
 }
 
 .calendar-header {
@@ -27,7 +28,7 @@
 
 .calendar-header h3 {
   font-size: 24px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .calendar-weekdays {
@@ -41,7 +42,7 @@
   text-align: center;
   font-size: 13px;
   font-weight: 600;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   padding: 8px;
   text-transform: uppercase;
 }
@@ -55,18 +56,18 @@
 .calendar-day {
   aspect-ratio: 1;
   padding: 12px;
-  background: #0f0f0f;
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
-  border: 1px solid #333;
+  border: 1px solid var(--glass-border);
 }
 
 .calendar-day:hover {
-  background: #252525;
-  border-color: #555;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--text-muted);
 }
 
 .calendar-day.empty {
@@ -86,13 +87,13 @@
 }
 
 .calendar-day.has-items {
-  background: #1f1f1f;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .day-number {
   font-size: 14px;
   font-weight: 600;
-  color: #e0e0e0;
+  color: var(--text-primary);
 }
 
 .day-items {
@@ -124,16 +125,17 @@
 
 .more-items {
   font-size: 10px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
 }
 
 /* Schedule Details */
 .schedule-details {
   padding: 32px;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   height: fit-content;
+  backdrop-filter: blur(12px);
 }
 
 .schedule-details h3 {
@@ -143,8 +145,8 @@
   font-size: 18px;
   margin-bottom: 24px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #333;
-  color: #fff;
+  border-bottom: 1px solid var(--glass-border);
+  color: var(--text-primary);
 }
 
 .scheduled-items {
@@ -158,22 +160,23 @@
   align-items: flex-start;
   gap: 16px;
   padding: 16px;
-  background: #0f0f0f;
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
-  border: 1px solid #333;
+  border: 1px solid var(--glass-border);
   transition: all 0.2s ease;
 }
 
 .scheduled-item:hover {
-  border-color: #555;
+  border-color: var(--text-muted);
   transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .item-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #E1306C, #F77737);
+  background: var(--gradient);
   color: white;
   display: flex;
   align-items: center;
@@ -190,7 +193,7 @@
   font-weight: 600;
   text-transform: capitalize;
   display: block;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .item-time {
@@ -198,13 +201,13 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 
 .item-caption {
   font-size: 13px;
-  color: #e0e0e0;
+  color: var(--text-primary);
   margin-top: 8px;
   line-height: 1.5;
 }
@@ -218,9 +221,10 @@
 .no-items {
   text-align: center;
   padding: 60px 20px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
+  border: 1px solid var(--glass-border);
 }
 
 /* Responsive */
