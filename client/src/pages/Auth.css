@@ -4,48 +4,78 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  gap: 60px;
+  gap: 80px;
+  background: radial-gradient(circle at top left, rgba(225, 48, 108, 0.15), transparent 40%),
+              radial-gradient(circle at bottom right, rgba(131, 58, 180, 0.15), transparent 40%);
 }
 
 .auth-card {
   background: var(--bg-card);
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  padding: 40px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid var(--glass-border);
+  padding: 48px;
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 40px;
 }
 
 .auth-logo {
-  font-size: 48px;
+  font-size: 56px;
   background: var(--gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 4px 10px rgba(225, 48, 108, 0.3));
 }
 
 .auth-header h1 {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 800;
   margin-bottom: 8px;
-  background: var(--gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
 }
 
 .auth-header p {
   color: var(--text-secondary);
+  font-size: 16px;
 }
 
 .auth-form {
+  margin-bottom: 32px;
+}
+
+.form-group {
   margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  margin-left: 4px;
 }
 
 .input-wrapper {
@@ -53,21 +83,41 @@
 }
 
 .input-wrapper .input {
-  padding-left: 44px;
+  width: 100%;
+  padding: 14px 16px 14px 48px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper .input:focus {
+  outline: none;
+  border-color: rgba(225, 48, 108, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 4px rgba(225, 48, 108, 0.1);
 }
 
 .input-icon {
   position: absolute;
-  left: 14px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted);
-  font-size: 18px;
+  font-size: 20px;
+  transition: color 0.2s;
+}
+
+.input-wrapper .input:focus + .input-icon,
+.input-wrapper .input:focus ~ .input-icon {
+  color: var(--primary);
 }
 
 .password-toggle {
   position: absolute;
-  right: 12px;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
   background: transparent;
@@ -75,35 +125,48 @@
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
+  transition: color 0.2s;
 }
 
 .password-toggle:hover {
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .btn-full {
   width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  margin-top: 8px;
 }
 
 .auth-footer {
   text-align: center;
   color: var(--text-secondary);
+  font-size: 15px;
 }
 
 .auth-footer a {
   color: var(--primary);
-  font-weight: 500;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
 }
 
 .auth-features {
-  max-width: 400px;
+  max-width: 480px;
 }
 
 .auth-features h2 {
-  font-size: 32px;
-  font-weight: 700;
-  margin-bottom: 24px;
-  background: var(--gradient);
+  font-size: 42px;
+  font-weight: 800;
+  margin-bottom: 32px;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #fff 0%, #ccc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -111,23 +174,36 @@
 
 .auth-features ul {
   list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .auth-features li {
   font-size: 18px;
   color: var(--text-secondary);
-  margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
 }
 
 @media (max-width: 900px) {
   .auth-container {
     flex-direction: column;
+    padding: 20px;
+    gap: 40px;
   }
 
   .auth-features {
     display: none;
+  }
+  
+  .auth-card {
+    padding: 32px;
   }
 }

@@ -25,9 +25,11 @@
   display: flex;
   gap: 8px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   margin-bottom: 16px;
+  backdrop-filter: blur(10px);
 }
 
 .generator-tabs .tab {
@@ -40,10 +42,10 @@
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .generator-tabs .tab:hover {
@@ -52,8 +54,9 @@
 }
 
 .generator-tabs .tab.active {
-  background: var(--gradient-instagram);
+  background: var(--gradient);
   color: white;
+  box-shadow: 0 4px 12px rgba(225, 48, 108, 0.3);
 }
 
 .generator-form {
@@ -109,21 +112,24 @@
 /* Prompt Input */
 .prompt-input {
   width: 100%;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 15px;
   resize: vertical;
-  min-height: 100px;
+  min-height: 120px;
   font-family: inherit;
+  transition: all 0.2s ease;
+  line-height: 1.6;
 }
 
 .prompt-input:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(225, 48, 108, 0.1);
+  border-color: rgba(225, 48, 108, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 4px rgba(225, 48, 108, 0.1);
 }
 
 .prompt-input::placeholder {
@@ -190,10 +196,21 @@
 
 /* Generate Button */
 .btn-generate {
-  padding: 16px 24px;
+  padding: 18px 24px;
   font-size: 16px;
-  font-weight: 600;
-  gap: 8px;
+  font-weight: 700;
+  gap: 10px;
+  border-radius: 14px;
+  background: var(--gradient);
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
+}
+
+.btn-generate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(225, 48, 108, 0.4);
 }
 
 .btn-generate .spinner {
@@ -264,19 +281,20 @@
 }
 
 .my-videos-section .card-header {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 20px;
-  border-radius: 16px;
+  background: transparent;
+  padding: 0 0 16px 0;
+  border-radius: 0;
   margin-bottom: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .video-count {
   font-size: 12px;
-  color: var(--text-secondary);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 10px;
-  border-radius: 12px;
+  color: white;
+  background: var(--gradient);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 700;
 }
 
 .videos-grid {
@@ -484,23 +502,29 @@
 
 /* Card styles */
 .card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 32px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
 }
 
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .card-header h3 {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   margin: 0;
+  color: var(--text-primary);
 }
 
 /* Form group */
