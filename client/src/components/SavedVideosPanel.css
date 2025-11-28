@@ -6,31 +6,35 @@
 .saved-videos {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  background: #10131c;
-  border-radius: 18px;
-  padding: 16px;
-  border: 1px solid #1f2533;
+  gap: 16px;
+  background: linear-gradient(180deg, #12151f 0%, #0d0f17 100%);
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid #1e2433;
   color: #e5e7eb;
   box-sizing: border-box;
+  min-height: 600px;
 }
 
 .saved-videos__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1e2433;
 }
 
 .saved-videos__title {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
+  color: #f3f4f6;
 }
 
 .saved-videos__subtitle {
-  margin: 2px 0 0;
-  font-size: 12px;
-  color: #9ca3af;
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6b7280;
 }
 
 .saved-videos__badge {
@@ -45,17 +49,18 @@
 .saved-videos__body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  flex: 1;
 }
 
 /* List */
 .saved-videos__list {
-  max-height: 210px;
+  max-height: 180px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding-right: 4px;
+  padding-right: 6px;
 }
 
 /* Custom scrollbar */
@@ -85,28 +90,32 @@
 
 .saved-videos__item {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  padding: 6px 8px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
   border: 1px solid transparent;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
   text-align: left;
   color: inherit;
   width: 100%;
-  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  transition: all 0.15s ease;
 }
 
 .saved-videos__item:hover {
-  background: #151927;
-  border-color: #262f43;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #2a3142;
 }
 
 .saved-videos__item--active {
-  background: #1d2336;
+  background: rgba(79, 70, 229, 0.15);
   border-color: #4f46e5;
-  transform: translateY(-1px);
+}
+
+.saved-videos__item--active:hover {
+  background: rgba(79, 70, 229, 0.2);
+  border-color: #6366f1;
 }
 
 .saved-videos__thumb-wrapper {
@@ -159,7 +168,12 @@
 
 /* Preview */
 .saved-videos__preview {
-  margin-top: 4px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 16px 0;
 }
 
 /* Responsive */

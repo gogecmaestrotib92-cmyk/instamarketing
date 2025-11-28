@@ -1,40 +1,44 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import MobilePreview from './MobilePreview';
 import './SavedVideosPanel.css';
 
 /**
  * SavedVideosPanel Component
  * Right column: scrollable list of saved videos + big mobile preview
- * 
- * @param {Array} videos - Array of SavedVideo objects
- * 
- * SavedVideo type:
- * {
- *   id: string;
- *   title: string;
- *   durationSeconds: number;
- *   createdAt: string;       // e.g. "2025-11-28"
- *   thumbnailUrl: string;
- *   videoUrl: string;
- * }
  */
 
 const formatDuration = (seconds) => {
+  if (!seconds) return '5s';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   if (m === 0) return `${s}s`;
-  return `${m}m ${s.toString().padStart(2, '0')}s`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
 const SavedVideosPanel = ({ videos = [] }) => {
-  const [selectedVideoId, setSelectedVideoId] = useState(
-    videos.length > 0 ? videos[0].id : null
-  );
+  const [selectedVideoId, setSelectedVideoId] = useState(null);
+
+  // Auto-select first video when videos change
+  useEffect(() => {
+    if (videos.length > 0) {
+      const exists = videos.find(v => v.id === selectedVideoId);
+      if (!selectedVideoId || !exists) {
+        setSelectedVideoId(videos[0].id);
+      }
+    } else {
+      setSelectedVideoId(null);
+    }
+  }, [videos, selectedVideoId]);
 
   const selectedVideo = useMemo(
     () => videos.find((v) => v.id === selectedVideoId) || null,
     [videos, selectedVideoId]
   );
+
+  const handleVideoClick = (videoId) => {
+    console.log('Selecting video:', videoId);
+    setSelectedVideoId(videoId);
+  };
 
   return (
     <aside className="saved-videos">
@@ -55,7 +59,7 @@ const SavedVideosPanel = ({ videos = [] }) => {
         <div className="saved-videos__list">
           {videos.length === 0 && (
             <div className="saved-videos__empty">
-              Još uvek nemate sačuvane videe.
+              🎬 Još uvek nemate sačuvane videe
             </div>
           )}
 
@@ -91,7 +95,8 @@ const SavedVideosPanel = ({ videos = [] }) => {
                 </div>
                 <div className="saved-videos__meta">
                   <div className="saved-videos__item-title">
-                    {video.title}
+                    {video.title?.substring(0, 30) || 'AI Video'}
+                    {video.title?.length > 30 ? '...' : ''}
                   </div>
                   <div className="saved-videos__item-date">
                     {video.createdAt}
@@ -102,15 +107,13 @@ const SavedVideosPanel = ({ videos = [] }) => {
           })}
         </div>
 
-        {/* preview */}
-        {selectedVideo && (
-          <div className="saved-videos__preview">
-            <MobilePreview
-              videoUrl={selectedVideo.videoUrl}
-              posterUrl={selectedVideo.thumbnailUrl}
-            />
-          </div>
-        )}
+        {/* preview - always show */}
+        <div className="saved-videos__preview">
+          <MobilePreview
+            videoUrl={selectedVideo?.videoUrl}
+            posterUrl={selectedVideo?.thumbnailUrl}
+          />
+        </div>
       </div>
     </aside>
   );
