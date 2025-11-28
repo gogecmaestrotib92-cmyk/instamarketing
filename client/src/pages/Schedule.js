@@ -78,7 +78,7 @@ const Schedule = () => {
 
     // Empty cells for days before the first day of the month
     for (let i = 0; i < startingDay; i++) {
-      days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+      days.push(<div key={`empty-${i}`} className="calendar-day empty" aria-hidden="true"></div>);
     }
 
     // Days of the month
@@ -87,16 +87,20 @@ const Schedule = () => {
       const items = calendar[dateStr] || [];
       const isToday = dateStr === today;
       const hasItems = items.length > 0;
+      const isSelected = selectedDate === dateStr;
 
       days.push(
-        <div
+        <button
           key={day}
-          className={`calendar-day ${isToday ? 'today' : ''} ${hasItems ? 'has-items' : ''} ${selectedDate === dateStr ? 'selected' : ''}`}
+          className={`calendar-day ${isToday ? 'today' : ''} ${hasItems ? 'has-items' : ''} ${isSelected ? 'selected' : ''}`}
           onClick={() => setSelectedDate(dateStr)}
+          aria-label={`${day}. ${monthName}, ${hasItems ? `${items.length} zakazanih stavki` : 'nema zakazanih stavki'}`}
+          aria-pressed={isSelected}
+          aria-current={isToday ? 'date' : undefined}
         >
           <span className="day-number">{day}</span>
           {hasItems && (
-            <div className="day-items">
+            <div className="day-items" aria-hidden="true">
               {items.slice(0, 3).map((item, idx) => (
                 <div key={idx} className={`item-indicator ${item.contentType}`}>
                   {item.contentType === 'post' ? <FiImage /> : <FiFilm />}
@@ -107,7 +111,7 @@ const Schedule = () => {
               )}
             </div>
           )}
-        </div>
+        </button>
       );
     }
 
@@ -117,7 +121,7 @@ const Schedule = () => {
   const selectedItems = selectedDate ? (calendar[selectedDate] || []) : [];
 
   return (
-    <div className="schedule-page">
+    <main className="schedule-page">
       <SEO 
         title="Zakazivanje Objava"
         description="Zakazujte Instagram objave i rilsove unapred. Kalendarski prikaz, automatsko objavljivanje u optimalno vreme za maksimalan engagement."
@@ -129,54 +133,54 @@ const Schedule = () => {
         ]}
         noindex={true}
       />
-      <div className="page-header">
+      <header className="page-header">
         <div>
           <h1>Zakazivanje Sadržaja</h1>
           <p className="page-subtitle">Pregledajte i upravljajte zakazanim objavama i rilsovima</p>
         </div>
-      </div>
+      </header>
 
       <div className="schedule-container">
         {/* Calendar */}
-        <div className="card calendar-card">
+        <section className="card calendar-card" aria-label="Kalendar">
           <div className="calendar-header">
-            <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth(-1)}>
-              <FiChevronLeft />
+            <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth(-1)} aria-label="Prethodni mesec">
+              <FiChevronLeft aria-hidden="true" />
             </button>
-            <h3>{currentDate.toLocaleString('sr-RS', { month: 'long', year: 'numeric' })}</h3>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth(1)}>
-              <FiChevronRight />
+            <h3 aria-live="polite">{currentDate.toLocaleString('sr-RS', { month: 'long', year: 'numeric' })}</h3>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigateMonth(1)} aria-label="Sledeći mesec">
+              <FiChevronRight aria-hidden="true" />
             </button>
           </div>
 
-          <div className="calendar-weekdays">
+          <div className="calendar-weekdays" aria-hidden="true">
             {['Ned', 'Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub'].map(day => (
               <div key={day} className="weekday">{day}</div>
             ))}
           </div>
 
           {loading ? (
-            <div className="loading-container">
-              <div className="spinner"></div>
+            <div className="loading-container" aria-label="Učitavanje kalendara">
+              <div className="spinner" aria-hidden="true"></div>
             </div>
           ) : (
             <div className="calendar-grid">
               {renderCalendarDays()}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Selected Date Details */}
-        <div className="card schedule-details">
+        <aside className="card schedule-details" aria-label="Detalji za izabrani datum">
           <h3>
-            <FiCalendar />
+            <FiCalendar aria-hidden="true" />
             {selectedDate 
-              ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('default', { 
+              ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('sr-RS', { 
                   weekday: 'long', 
                   month: 'long', 
                   day: 'numeric' 
                 })
-              : 'Select a date'
+              : 'Izaberite datum'
             }
           </h3>
 
@@ -184,18 +188,20 @@ const Schedule = () => {
             <div className="scheduled-items">
               {selectedItems.length > 0 ? (
                 selectedItems.map((item, index) => (
-                  <div key={index} className="scheduled-item">
-                    <div className="item-icon">
+                  <article key={index} className="scheduled-item">
+                    <div className="item-icon" aria-hidden="true">
                       {item.contentType === 'post' ? <FiImage /> : <FiFilm />}
                     </div>
                     <div className="item-info">
                       <span className="item-type">{item.contentType}</span>
                       <span className="item-time">
-                        <FiClock />
-                        {new Date(item.scheduledFor).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
+                        <FiClock aria-hidden="true" />
+                        <time dateTime={item.scheduledFor}>
+                          {new Date(item.scheduledFor).toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </time>
                       </span>
                       {item.content?.caption && (
                         <p className="item-caption">
@@ -211,16 +217,17 @@ const Schedule = () => {
                         <button 
                           className="btn btn-ghost btn-sm"
                           onClick={() => handleCancel(item._id)}
+                          aria-label="Otkaži zakazivanje"
                         >
-                          <FiX />
+                          <FiX aria-hidden="true" />
                         </button>
                       )}
                     </div>
-                  </div>
+                  </article>
                 ))
               ) : (
                 <div className="no-items">
-                  <p>No scheduled content for this date</p>
+                  <p>Nema zakazanog sadržaja za ovaj datum</p>
                 </div>
               )}
             </div>
@@ -228,12 +235,12 @@ const Schedule = () => {
 
           {!selectedDate && (
             <div className="no-items">
-              <p>Click on a date to view scheduled content</p>
+              <p>Kliknite na datum da biste videli zakazani sadržaj</p>
             </div>
           )}
-        </div>
+        </aside>
       </div>
-    </div>
+    </main>
   );
 };
 

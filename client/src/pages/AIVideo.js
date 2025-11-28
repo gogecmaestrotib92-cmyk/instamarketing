@@ -231,49 +231,57 @@ const AIVideo = () => {
   ];
 
   return (
-    <div className="ai-video-page">
+    <main className="ai-video-page">
       <SEO 
         title="AI Video Generator"
         description="Generate stunning AI videos for Instagram Reels with Runway ML Gen-3"
         noindex={true}
       />
 
-      <div className="page-header">
+      <header className="page-header">
         <div>
-          <h1><FaWandMagicSparkles /> AI Video Generator</h1>
+          <h1><FaWandMagicSparkles aria-hidden="true" /> AI Video Generator</h1>
           <p className="page-subtitle">Kreirajte neverovatne videe pomoću AI za Instagram Reels</p>
         </div>
-      </div>
+      </header>
 
       <div className="ai-video-container">
         {/* Generator Section */}
-        <div className="generator-section">
+        <section className="generator-section" aria-labelledby="generator-heading">
           <div className="card">
             <div className="card-header">
-              <h3>Generiši Video</h3>
+              <h3 id="generator-heading">Generiši Video</h3>
             </div>
 
             {/* Tabs */}
-            <div className="generator-tabs">
+            <div className="generator-tabs" role="tablist" aria-label="Tip generisanja">
               <button 
                 className={`tab ${activeTab === 'text-to-video' ? 'active' : ''}`}
                 onClick={() => setActiveTab('text-to-video')}
+                role="tab"
+                aria-selected={activeTab === 'text-to-video'}
+                aria-controls="generator-panel"
+                id="tab-text-to-video"
               >
-                <FiVideo /> Text to Video
+                <FiVideo aria-hidden="true" /> Text to Video
               </button>
               <button 
                 className={`tab ${activeTab === 'image-to-video' ? 'active' : ''}`}
                 onClick={() => setActiveTab('image-to-video')}
+                role="tab"
+                aria-selected={activeTab === 'image-to-video'}
+                aria-controls="generator-panel"
+                id="tab-image-to-video"
               >
-                <FiImage /> Image to Video
+                <FiImage aria-hidden="true" /> Image to Video
               </button>
             </div>
 
-            <div className="generator-form">
+            <div className="generator-form" role="tabpanel" id="generator-panel" aria-labelledby={`tab-${activeTab}`}>
               {/* Image upload for image-to-video */}
               {activeTab === 'image-to-video' && (
                 <div className="form-group">
-                  <label>Izaberite sliku za animaciju</label>
+                  <label htmlFor="image-upload">Izaberite sliku za animaciju</label>
                   <div className="image-upload-area">
                     {imagePreview ? (
                       <div className="image-preview">
@@ -281,15 +289,17 @@ const AIVideo = () => {
                         <button 
                           className="btn btn-sm btn-secondary"
                           onClick={() => { setImageFile(null); setImagePreview(null); }}
+                          aria-label="Ukloni sliku"
                         >
                           Ukloni
                         </button>
                       </div>
                     ) : (
-                      <label className="upload-placeholder">
-                        <FiImage size={48} />
+                      <label className="upload-placeholder" htmlFor="image-upload">
+                        <FiImage size={48} aria-hidden="true" />
                         <span>Kliknite za upload slike</span>
                         <input 
+                          id="image-upload"
                           type="file" 
                           accept="image/*" 
                           onChange={handleImageChange}
@@ -303,10 +313,11 @@ const AIVideo = () => {
 
               {/* Prompt */}
               <div className="form-group">
-                <label>
+                <label htmlFor="prompt-input">
                   {activeTab === 'text-to-video' ? 'Opišite video koji želite' : 'Opišite željenu animaciju (opciono)'}
                 </label>
                 <textarea
+                  id="prompt-input"
                   className="prompt-input"
                   placeholder={activeTab === 'text-to-video' 
                     ? "Npr: Cinematic drone shot of sunset over ocean waves, golden hour lighting, 4K quality..."
@@ -321,13 +332,14 @@ const AIVideo = () => {
               {/* Prompt Suggestions */}
               {activeTab === 'text-to-video' && (
                 <div className="prompt-suggestions">
-                  <label>Predlozi:</label>
+                  <span className="label-text">Predlozi:</span>
                   <div className="suggestions-list">
                     {promptSuggestions.slice(0, 4).map((suggestion, index) => (
                       <button 
                         key={index}
                         className="suggestion-chip"
                         onClick={() => setPrompt(suggestion)}
+                        aria-label={`Koristi predlog: ${suggestion}`}
                       >
                         {suggestion.substring(0, 40)}...
                       </button>
@@ -339,8 +351,9 @@ const AIVideo = () => {
               {/* Options */}
               <div className="options-row">
                 <div className="form-group">
-                  <label>Trajanje</label>
+                  <label htmlFor="duration-select">Trajanje</label>
                   <select 
+                    id="duration-select"
                     value={duration} 
                     onChange={(e) => setDuration(Number(e.target.value))}
                     className="select"
@@ -351,8 +364,9 @@ const AIVideo = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Format</label>
+                  <label htmlFor="aspect-select">Format</label>
                   <select 
+                    id="aspect-select"
                     value={aspectRatio} 
                     onChange={(e) => setAspectRatio(e.target.value)}
                     className="select"
@@ -369,28 +383,29 @@ const AIVideo = () => {
                 className="btn btn-primary btn-full btn-generate"
                 onClick={handleGenerate}
                 disabled={loading}
+                aria-busy={loading}
               >
                 {loading ? (
                   <>
-                    <FiLoader className="spinner" /> Generisanje u toku... (1-3 min)
+                    <FiLoader className="spinner" aria-hidden="true" /> Generisanje u toku... (1-3 min)
                   </>
                 ) : (
                   <>
-                    <FiZap /> Generiši Video
+                    <FiZap aria-hidden="true" /> Generiši Video
                   </>
                 )}
               </button>
 
               {/* Cost Info */}
               <p className="cost-info">
-                <FiClock /> Procenjeno vreme: 1-3 minuta | Cena: ~$0.25-0.50 po videu
+                <FiClock aria-hidden="true" /> Procenjeno vreme: 1-3 minuta | Cena: ~$0.25-0.50 po videu
               </p>
             </div>
           </div>
 
           {/* Generated Video Preview */}
           {generatedVideo && (
-            <div className="card generated-preview">
+            <article className="card generated-preview" aria-label="Generisan video">
               <div className="card-header">
                 <h3>✨ Generisan Video</h3>
               </div>
@@ -401,6 +416,7 @@ const AIVideo = () => {
                   autoPlay 
                   loop
                   className={`aspect-${aspectRatio.replace(':', '-')}`}
+                  aria-label="Pregled generisanog videa"
                 />
               </div>
               <div className="video-actions">
@@ -408,47 +424,59 @@ const AIVideo = () => {
                   className="btn btn-success"
                   onClick={() => saveVideoToLocal(generatedVideo)}
                 >
-                  <FiSave /> Sačuvaj Video
+                  <FiSave aria-hidden="true" /> Sačuvaj Video
                 </button>
                 <a 
                   href={generatedVideo.videoUrl} 
                   download 
                   className="btn btn-secondary"
                 >
-                  <FiDownload /> Download
+                  <FiDownload aria-hidden="true" /> Download
                 </a>
                 <button 
                   className="btn btn-primary"
                   onClick={() => handlePostToInstagram(generatedVideo.id)}
                 >
-                  <FiInstagram /> Objavi na Instagram
+                  <FiInstagram aria-hidden="true" /> Objavi na Instagram
                 </button>
               </div>
-            </div>
+            </article>
           )}
-        </div>
+        </section>
 
         {/* My Videos Section */}
-        <div className="my-videos-section">
+        <section className="my-videos-section" aria-labelledby="my-videos-heading">
           <div className="card">
             <div className="card-header">
-              <h3>Moji AI Videi</h3>
+              <h3 id="my-videos-heading">Moji AI Videi</h3>
               <span className="video-count">{myVideos.length} videa</span>
             </div>
 
             {loadingVideos ? (
-              <div className="loading-placeholder">
-                <FiLoader className="spinner" />
+              <div className="loading-placeholder" aria-label="Učitavanje videa">
+                <FiLoader className="spinner" aria-hidden="true" />
               </div>
             ) : myVideos.length === 0 ? (
               <div className="empty-state">
-                <FiVideo size={48} />
+                <FiVideo size={48} aria-hidden="true" />
                 <p>Još nemate generisanih videa</p>
               </div>
             ) : (
-              <div className="videos-grid">
+              <div className="videos-grid" role="list">
                 {myVideos.map((video) => (
-                  <div key={video._id} className="video-card" onClick={() => setSelectedVideo(video)}>
+                  <article 
+                    key={video._id} 
+                    className="video-card" 
+                    onClick={() => setSelectedVideo(video)}
+                    role="listitem"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setSelectedVideo(video);
+                      }
+                    }}
+                    aria-label={`Video: ${video.prompt}`}
+                  >
                     <div className="video-thumbnail">
                       <video 
                         src={video.videoUrl} 
@@ -456,10 +484,11 @@ const AIVideo = () => {
                         loop 
                         onMouseOver={e => e.target.play()} 
                         onMouseOut={e => e.target.pause()} 
+                        aria-hidden="true"
                       />
                       <div className="video-overlay">
                         <div className="overlay-content">
-                          <div className="play-icon">
+                          <div className="play-icon" aria-hidden="true">
                             <FiPlay size={40} />
                           </div>
                           <div className="overlay-actions">
@@ -469,8 +498,9 @@ const AIVideo = () => {
                               className="action-btn"
                               title="Download"
                               onClick={(e) => e.stopPropagation()}
+                              aria-label="Preuzmi video"
                             >
-                              <FiDownload />
+                              <FiDownload aria-hidden="true" />
                             </a>
                             {!video.postedToInstagram && (
                               <button 
@@ -480,8 +510,9 @@ const AIVideo = () => {
                                   handlePostToInstagram(video._id);
                                 }}
                                 title="Objavi na Instagram"
+                                aria-label="Objavi na Instagram"
                               >
-                                <FiInstagram />
+                                <FiInstagram aria-hidden="true" />
                               </button>
                             )}
                             <button 
@@ -491,36 +522,49 @@ const AIVideo = () => {
                                 handleDelete(video._id);
                               }}
                               title="Obriši"
+                              aria-label="Obriši video"
                             >
-                              <FiTrash2 />
+                              <FiTrash2 aria-hidden="true" />
                             </button>
                           </div>
                         </div>
                       </div>
                       <span className="video-duration">{video.duration}s</span>
-                      <span className={`status-badge ${video.postedToInstagram ? 'posted' : ''}`}>
-                        {video.postedToInstagram ? <FiInstagram /> : <FiVideo />}
+                      <span className={`status-badge ${video.postedToInstagram ? 'posted' : ''}`} aria-label={video.postedToInstagram ? "Objavljeno na Instagramu" : "Nije objavljeno"}>
+                        {video.postedToInstagram ? <FiInstagram aria-hidden="true" /> : <FiVideo aria-hidden="true" />}
                       </span>
                     </div>
                     <div className="video-info">
                       <p className="video-prompt">{video.prompt}</p>
                       <span className="video-date">{new Date(video.createdAt).toLocaleDateString()}</span>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
             )}
           </div>
-        </div>
+        </section>
       </div>
 
       {/* Video Modal */}
       {selectedVideo && (
-        <div className="video-modal-overlay" onClick={() => setSelectedVideo(null)}>
+        <div 
+          className="video-modal-overlay" 
+          onClick={() => setSelectedVideo(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
           <div className="video-modal-content" onClick={e => e.stopPropagation()}>
-            <button className="video-modal-close" onClick={() => setSelectedVideo(null)}>×</button>
+            <button 
+              className="video-modal-close" 
+              onClick={() => setSelectedVideo(null)}
+              aria-label="Zatvori"
+            >
+              ×
+            </button>
             <div className="video-modal-header">
-              <h3>{selectedVideo.type}</h3>
+              <h3 id="modal-title">{selectedVideo.type}</h3>
               <span className="video-date">{new Date(selectedVideo.createdAt).toLocaleDateString()}</span>
             </div>
             <div className="video-modal-player">
@@ -529,6 +573,7 @@ const AIVideo = () => {
                 controls 
                 autoPlay 
                 className={`aspect-${selectedVideo.aspectRatio?.replace(':', '-') || '9-16'}`}
+                aria-label="Video plejer"
               />
             </div>
             <div className="video-modal-details">
@@ -539,20 +584,20 @@ const AIVideo = () => {
                   download 
                   className="btn btn-secondary"
                 >
-                  <FiDownload /> Download
+                  <FiDownload aria-hidden="true" /> Download
                 </a>
                 <button 
                   className="btn btn-primary"
                   onClick={() => handlePostToInstagram(selectedVideo._id)}
                 >
-                  <FiInstagram /> Objavi na Instagram
+                  <FiInstagram aria-hidden="true" /> Objavi na Instagram
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 };
 

@@ -51,7 +51,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="dashboard">
+    <main className="dashboard">
       <SEO 
         title="Kontrolna Tabla"
         description="Upravljajte Instagram marketingom sa jedne kontrolne table. Pratite analitiku, zakazane objave i performanse kampanja u realnom vremenu."
@@ -63,127 +63,127 @@ const Dashboard = () => {
         ]}
         noindex={true}
       />
-      <div className="page-header">
+      <header className="page-header">
         <div>
           <h1 className="gradient-text">Dobrodošli nazad, {user?.name?.split(' ')[0]}!</h1>
           <p className="page-subtitle">Evo šta se dešava sa vašim Instagram-om</p>
         </div>
         <div className="header-actions">
-          <Link to="/posts/create" className="btn btn-primary">
-            <FiPlus /> Kreiraj Objavu
+          <Link to="/posts/create" className="btn btn-primary" aria-label="Kreiraj novu objavu">
+            <FiPlus aria-hidden="true" /> Kreiraj Objavu
           </Link>
         </div>
-      </div>
+      </header>
 
       {/* Instagram Connection Status */}
       {!data?.account?.connected && (
-        <div className="alert alert-warning">
-          <FiAlertCircle />
+        <section className="alert alert-warning" aria-label="Upozorenje o povezivanju naloga">
+          <FiAlertCircle aria-hidden="true" />
           <div>
             <strong>Povežite Vaš Instagram Nalog</strong>
             <p>Povežite vaš Instagram Business nalog da biste počeli sa objavljivanjem i praćenjem analitike.</p>
           </div>
           <Link to="/settings" className="btn btn-secondary btn-sm">Poveži Sada</Link>
-        </div>
+        </section>
       )}
 
       {/* Stats Grid */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon posts">
+      <section className="stats-grid" aria-label="Statistika">
+        <article className="stat-card">
+          <div className="stat-icon posts" aria-hidden="true">
             <FiImage />
           </div>
           <div className="stat-content">
             <span className="stat-value">{data?.overview?.posts?.total || 0}</span>
-            <span className="stat-label">Total Posts</span>
+            <h2 className="stat-label">Total Posts</h2>
           </div>
           <div className="stat-meta">
             <span className="badge badge-success">{data?.overview?.posts?.published || 0} Published</span>
           </div>
-        </div>
+        </article>
 
-        <div className="stat-card">
-          <div className="stat-icon reels">
+        <article className="stat-card">
+          <div className="stat-icon reels" aria-hidden="true">
             <FiFilm />
           </div>
           <div className="stat-content">
             <span className="stat-value">{data?.overview?.reels?.total || 0}</span>
-            <span className="stat-label">Total Reels</span>
+            <h2 className="stat-label">Total Reels</h2>
           </div>
           <div className="stat-meta">
             <span className="badge badge-success">{data?.overview?.reels?.published || 0} Published</span>
           </div>
-        </div>
+        </article>
 
-        <div className="stat-card">
-          <div className="stat-icon campaigns">
+        <article className="stat-card">
+          <div className="stat-icon campaigns" aria-hidden="true">
             <FiTarget />
           </div>
           <div className="stat-content">
             <span className="stat-value">{data?.overview?.campaigns?.total || 0}</span>
-            <span className="stat-label">Campaigns</span>
+            <h2 className="stat-label">Campaigns</h2>
           </div>
           <div className="stat-meta">
             <span className="badge badge-info">{data?.overview?.campaigns?.active || 0} Active</span>
           </div>
-        </div>
+        </article>
 
-        <div className="stat-card">
-          <div className="stat-icon scheduled">
+        <article className="stat-card">
+          <div className="stat-icon scheduled" aria-hidden="true">
             <FiCalendar />
           </div>
           <div className="stat-content">
             <span className="stat-value">{data?.overview?.posts?.scheduled || 0}</span>
-            <span className="stat-label">Scheduled</span>
+            <h2 className="stat-label">Scheduled</h2>
           </div>
           <div className="stat-meta">
             <span className="badge badge-warning">Upcoming</span>
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
       {/* Main Content Grid */}
       <div className="dashboard-grid">
         {/* Engagement Overview */}
-        <div className="card engagement-card">
+        <section className="card engagement-card" aria-labelledby="engagement-heading">
           <div className="card-header">
-            <h3 className="card-title">Engagement Overview</h3>
-            <FiTrendingUp className="card-icon" />
+            <h2 id="engagement-heading" className="card-title">Engagement Overview</h2>
+            <FiTrendingUp className="card-icon" aria-hidden="true" />
           </div>
           <div className="engagement-stats">
             <div className="engagement-item">
-              <FiHeart className="engagement-icon likes" />
+              <FiHeart className="engagement-icon likes" aria-hidden="true" />
               <div className="engagement-data">
                 <span className="engagement-value">{data?.contentMetrics?.likes?.toLocaleString() || 0}</span>
                 <span className="engagement-label">Likes</span>
               </div>
             </div>
             <div className="engagement-item">
-              <FiMessageCircle className="engagement-icon comments" />
+              <FiMessageCircle className="engagement-icon comments" aria-hidden="true" />
               <div className="engagement-data">
                 <span className="engagement-value">{data?.contentMetrics?.comments?.toLocaleString() || 0}</span>
                 <span className="engagement-label">Comments</span>
               </div>
             </div>
             <div className="engagement-item">
-              <FiEye className="engagement-icon reach" />
+              <FiEye className="engagement-icon reach" aria-hidden="true" />
               <div className="engagement-data">
                 <span className="engagement-value">{data?.contentMetrics?.reach?.toLocaleString() || 0}</span>
                 <span className="engagement-label">Reach</span>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Account Info */}
-        <div className="card account-card">
+        <section className="card account-card" aria-labelledby="account-heading">
           <div className="card-header">
-            <h3 className="card-title">Instagram Account</h3>
-            <FaInstagram className="card-icon instagram" />
+            <h2 id="account-heading" className="card-title">Instagram Account</h2>
+            <FaInstagram className="card-icon instagram" aria-hidden="true" />
           </div>
           {data?.account?.connected ? (
             <div className="account-info">
-              <div className="account-avatar">
+              <div className="account-avatar" aria-hidden="true">
                 {data.account.username?.charAt(0).toUpperCase() || 'I'}
               </div>
               <div className="account-details">
@@ -200,12 +200,12 @@ const Dashboard = () => {
               <Link to="/settings" className="btn btn-secondary btn-sm">Connect Account</Link>
             </div>
           )}
-        </div>
+        </section>
 
         {/* Campaign Performance */}
-        <div className="card campaign-card">
+        <section className="card campaign-card" aria-labelledby="campaign-heading">
           <div className="card-header">
-            <h3 className="card-title">Campaign Performance</h3>
+            <h2 id="campaign-heading" className="card-title">Campaign Performance</h2>
             <Link to="/campaigns" className="btn btn-ghost btn-sm">View All</Link>
           </div>
           <div className="campaign-stats">
@@ -226,45 +226,45 @@ const Dashboard = () => {
               <span className="campaign-label">Conversions</span>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Quick Actions */}
-        <div className="card quick-actions-card">
+        <nav className="card quick-actions-card" aria-labelledby="actions-heading">
           <div className="card-header">
-            <h3 className="card-title">Quick Actions</h3>
+            <h2 id="actions-heading" className="card-title">Quick Actions</h2>
           </div>
           <div className="quick-actions">
             <Link to="/posts/create" className="quick-action">
-              <FiImage />
+              <FiImage aria-hidden="true" />
               <span>New Post</span>
             </Link>
             <Link to="/reels/create" className="quick-action">
-              <FiFilm />
+              <FiFilm aria-hidden="true" />
               <span>New Reel</span>
             </Link>
             <Link to="/campaigns/create" className="quick-action">
-              <FiTarget />
+              <FiTarget aria-hidden="true" />
               <span>New Campaign</span>
             </Link>
             <Link to="/schedule" className="quick-action">
-              <FiCalendar />
+              <FiCalendar aria-hidden="true" />
               <span>View Schedule</span>
             </Link>
           </div>
-        </div>
+        </nav>
       </div>
 
       {/* Recent Content */}
-      <div className="card recent-content-card">
+      <section className="card recent-content-card" aria-labelledby="recent-heading">
         <div className="card-header">
-          <h3 className="card-title">Recent Published Content</h3>
+          <h2 id="recent-heading" className="card-title">Recent Published Content</h2>
           <Link to="/posts" className="btn btn-ghost btn-sm">View All</Link>
         </div>
         <div className="recent-content-list">
           {data?.recentContent?.posts?.length > 0 ? (
             data.recentContent.posts.map((post, index) => (
-              <div key={index} className="recent-item">
-                <div className="recent-item-icon">
+              <article key={index} className="recent-item">
+                <div className="recent-item-icon" aria-hidden="true">
                   <FiImage />
                 </div>
                 <div className="recent-item-content">
@@ -277,10 +277,10 @@ const Dashboard = () => {
                   </span>
                 </div>
                 <div className="recent-item-stats">
-                  <span><FiHeart /> {post.metrics?.likes || 0}</span>
-                  <span><FiMessageCircle /> {post.metrics?.comments || 0}</span>
+                  <span aria-label={`${post.metrics?.likes || 0} likes`}><FiHeart aria-hidden="true" /> {post.metrics?.likes || 0}</span>
+                  <span aria-label={`${post.metrics?.comments || 0} comments`}><FiMessageCircle aria-hidden="true" /> {post.metrics?.comments || 0}</span>
                 </div>
-              </div>
+              </article>
             ))
           ) : (
             <div className="empty-state">
@@ -289,8 +289,8 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 

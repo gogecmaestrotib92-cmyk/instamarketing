@@ -109,13 +109,15 @@ const CreateCampaign = () => {
     switch (step) {
       case 1:
         return (
-          <div className="step-content">
-            <h2><FiTarget /> Campaign Objective</h2>
+          <fieldset className="step-content">
+            <legend className="sr-only">Campaign Objective</legend>
+            <h2><FiTarget aria-hidden="true" /> Campaign Objective</h2>
             <p className="step-description">What do you want to achieve?</p>
             
             <div className="form-group">
-              <label className="label">Campaign Name</label>
+              <label htmlFor="campaignName" className="label">Campaign Name</label>
               <input
+                id="campaignName"
                 type="text"
                 className="input"
                 placeholder="Enter campaign name"
@@ -124,31 +126,41 @@ const CreateCampaign = () => {
               />
             </div>
 
-            <div className="objectives-grid">
+            <div className="objectives-grid" role="radiogroup" aria-label="Campaign Objectives">
               {objectives.map(obj => (
                 <div
                   key={obj.value}
                   className={`objective-card ${formData.objective === obj.value ? 'selected' : ''}`}
                   onClick={() => setFormData({ ...formData, objective: obj.value })}
+                  role="radio"
+                  aria-checked={formData.objective === obj.value}
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      setFormData({ ...formData, objective: obj.value });
+                    }
+                  }}
                 >
                   <h4>{obj.label}</h4>
                   <p>{obj.desc}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </fieldset>
         );
 
       case 2:
         return (
-          <div className="step-content">
-            <h2><FiDollarSign /> Budget & Schedule</h2>
+          <fieldset className="step-content">
+            <legend className="sr-only">Budget & Schedule</legend>
+            <h2><FiDollarSign aria-hidden="true" /> Budget & Schedule</h2>
             <p className="step-description">Set your budget and schedule</p>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="label">Budget Type</label>
+                <label htmlFor="budgetType" className="label">Budget Type</label>
                 <select
+                  id="budgetType"
                   className="input"
                   value={formData.budget.type}
                   onChange={(e) => setFormData({
@@ -161,8 +173,9 @@ const CreateCampaign = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label className="label">Amount (USD)</label>
+                <label htmlFor="budgetAmount" className="label">Amount (USD)</label>
                 <input
+                  id="budgetAmount"
                   type="number"
                   className="input"
                   min="1"
@@ -177,8 +190,9 @@ const CreateCampaign = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="label">Start Date</label>
+                <label htmlFor="startDate" className="label">Start Date</label>
                 <input
+                  id="startDate"
                   type="date"
                   className="input"
                   value={formData.schedule.startDate}
@@ -189,8 +203,9 @@ const CreateCampaign = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="label">End Date (Optional)</label>
+                <label htmlFor="endDate" className="label">End Date (Optional)</label>
                 <input
+                  id="endDate"
                   type="date"
                   className="input"
                   value={formData.schedule.endDate}
@@ -201,19 +216,21 @@ const CreateCampaign = () => {
                 />
               </div>
             </div>
-          </div>
+          </fieldset>
         );
 
       case 3:
         return (
-          <div className="step-content">
-            <h2><FiUsers /> Targeting</h2>
+          <fieldset className="step-content">
+            <legend className="sr-only">Targeting</legend>
+            <h2><FiUsers aria-hidden="true" /> Targeting</h2>
             <p className="step-description">Define your target audience</p>
 
             <div className="form-row">
               <div className="form-group">
-                <label className="label">Minimum Age</label>
+                <label htmlFor="minAge" className="label">Minimum Age</label>
                 <input
+                  id="minAge"
                   type="number"
                   className="input"
                   min="13"
@@ -229,8 +246,9 @@ const CreateCampaign = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="label">Maximum Age</label>
+                <label htmlFor="maxAge" className="label">Maximum Age</label>
                 <input
+                  id="maxAge"
                   type="number"
                   className="input"
                   min="13"
@@ -248,8 +266,9 @@ const CreateCampaign = () => {
             </div>
 
             <div className="form-group">
-              <label className="label">Gender</label>
+              <label htmlFor="gender" className="label">Gender</label>
               <select
+                id="gender"
                 className="input"
                 value={formData.targeting.genders[0]}
                 onChange={(e) => setFormData({
@@ -264,8 +283,9 @@ const CreateCampaign = () => {
             </div>
 
             <div className="form-group">
-              <label className="label">Interests (comma separated)</label>
+              <label htmlFor="interests" className="label">Interests (comma separated)</label>
               <input
+                id="interests"
                 type="text"
                 className="input"
                 placeholder="fitness, fashion, technology"
@@ -278,35 +298,37 @@ const CreateCampaign = () => {
                 })}
               />
             </div>
-          </div>
+          </fieldset>
         );
 
       case 4:
         return (
-          <div className="step-content">
-            <h2><FiUpload /> Ad Creative</h2>
+          <fieldset className="step-content">
+            <legend className="sr-only">Ad Creative</legend>
+            <h2><FiUpload aria-hidden="true" /> Ad Creative</h2>
             <p className="step-description">Create your ad content</p>
 
-            <div {...getRootProps()} className="dropzone">
+            <div {...getRootProps()} className="dropzone" role="button" aria-label="Upload media" tabIndex={0}>
               <input {...getInputProps()} />
-              <FiUpload className="dropzone-icon" />
+              <FiUpload className="dropzone-icon" aria-hidden="true" />
               <p>Add images or videos for your ad</p>
             </div>
 
             {mediaFiles.length > 0 && (
-              <div className="media-preview-grid">
+              <div className="media-preview-grid" aria-label="Uploaded media previews">
                 {mediaFiles.map((file, index) => (
                   <div key={index} className="media-preview-item">
                     {file.type.startsWith('video') ? (
-                      <video src={file.preview} />
+                      <video src={file.preview} aria-label={`Video preview ${index + 1}`} />
                     ) : (
-                      <img src={file.preview} alt="" />
+                      <img src={file.preview} alt={`Preview ${index + 1}`} />
                     )}
                     <button 
                       className="remove-media"
                       onClick={() => setMediaFiles(prev => prev.filter((_, i) => i !== index))}
+                      aria-label={`Remove media ${index + 1}`}
                     >
-                      <FiX />
+                      <FiX aria-hidden="true" />
                     </button>
                   </div>
                 ))}
@@ -314,8 +336,9 @@ const CreateCampaign = () => {
             )}
 
             <div className="form-group">
-              <label className="label">Headline</label>
+              <label htmlFor="headline" className="label">Headline</label>
               <input
+                id="headline"
                 type="text"
                 className="input"
                 placeholder="Catchy headline for your ad"
@@ -328,8 +351,9 @@ const CreateCampaign = () => {
             </div>
 
             <div className="form-group">
-              <label className="label">Primary Text</label>
+              <label htmlFor="primaryText" className="label">Primary Text</label>
               <textarea
+                id="primaryText"
                 className="input textarea"
                 placeholder="Main ad copy"
                 value={formData.adCreative.primaryText}
@@ -342,8 +366,9 @@ const CreateCampaign = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="label">Call to Action</label>
+                <label htmlFor="callToAction" className="label">Call to Action</label>
                 <select
+                  id="callToAction"
                   className="input"
                   value={formData.adCreative.callToAction}
                   onChange={(e) => setFormData({
@@ -357,8 +382,9 @@ const CreateCampaign = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label className="label">Destination URL</label>
+                <label htmlFor="destinationUrl" className="label">Destination URL</label>
                 <input
+                  id="destinationUrl"
                   type="url"
                   className="input"
                   placeholder="https://yourwebsite.com"
@@ -370,7 +396,7 @@ const CreateCampaign = () => {
                 />
               </div>
             </div>
-          </div>
+          </fieldset>
         );
 
       default:
@@ -379,53 +405,57 @@ const CreateCampaign = () => {
   };
 
   return (
-    <div className="create-campaign-page">
-      <div className="page-header">
-        <button className="btn btn-ghost" onClick={() => navigate('/campaigns')}>
-          <FiArrowLeft /> Back
+    <main className="create-campaign-page">
+      <header className="page-header">
+        <button className="btn btn-ghost" onClick={() => navigate('/campaigns')} aria-label="Go back to campaigns">
+          <FiArrowLeft aria-hidden="true" /> Back
         </button>
         <h1>Create Ad Campaign</h1>
-      </div>
+      </header>
 
       {/* Progress Steps */}
-      <div className="steps-progress">
-        {[1, 2, 3, 4].map(s => (
-          <div 
-            key={s} 
-            className={`step ${step === s ? 'active' : ''} ${step > s ? 'completed' : ''}`}
-            onClick={() => setStep(s)}
-          >
-            <div className="step-number">{s}</div>
-            <span>{['Objective', 'Budget', 'Targeting', 'Creative'][s-1]}</span>
-          </div>
-        ))}
-      </div>
+      <nav aria-label="Progress">
+        <ol className="steps-progress">
+          {[1, 2, 3, 4].map(s => (
+            <li 
+              key={s} 
+              className={`step ${step === s ? 'active' : ''} ${step > s ? 'completed' : ''}`}
+              onClick={() => setStep(s)}
+              aria-current={step === s ? 'step' : undefined}
+            >
+              <div className="step-number">{s}</div>
+              <span>{['Objective', 'Budget', 'Targeting', 'Creative'][s-1]}</span>
+            </li>
+          ))}
+        </ol>
+      </nav>
 
-      <div className="card">
+      <form className="card" onSubmit={(e) => e.preventDefault()}>
         {renderStep()}
 
         <div className="step-actions">
           {step > 1 && (
-            <button className="btn btn-secondary" onClick={() => setStep(step - 1)}>
-              <FiArrowLeft /> Previous
+            <button type="button" className="btn btn-secondary" onClick={() => setStep(step - 1)}>
+              <FiArrowLeft aria-hidden="true" /> Previous
             </button>
           )}
           {step < 4 ? (
-            <button className="btn btn-primary" onClick={() => setStep(step + 1)}>
-              Next <FiArrowRight />
+            <button type="button" className="btn btn-primary" onClick={() => setStep(step + 1)}>
+              Next <FiArrowRight aria-hidden="true" />
             </button>
           ) : (
             <button 
+              type="button"
               className="btn btn-primary" 
               onClick={handleSubmit}
               disabled={loading}
             >
-              <FiSave /> {loading ? 'Creating...' : 'Create Campaign'}
+              <FiSave aria-hidden="true" /> {loading ? 'Creating...' : 'Create Campaign'}
             </button>
           )}
         </div>
-      </div>
-    </div>
+      </form>
+    </main>
   );
 };
 

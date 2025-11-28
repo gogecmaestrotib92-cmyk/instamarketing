@@ -64,8 +64,8 @@ const InstagramCallback = () => {
   }, [searchParams, navigate]);
 
   return (
-    <div className="auth-container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
-      <div className="auth-card" style={{ textAlign: 'center', background: '#1a1a1a', padding: '40px', borderRadius: '16px', maxWidth: '420px' }}>
+    <main className="auth-container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a' }}>
+      <article className="auth-card" style={{ textAlign: 'center', background: '#1a1a1a', padding: '40px', borderRadius: '16px', maxWidth: '420px' }}>
         <h2 style={{ marginBottom: '20px' }}>📷 Instagram Connection</h2>
         
         <div style={{ margin: '30px 0' }}>
@@ -79,13 +79,13 @@ const InstagramCallback = () => {
                 borderRadius: '50%',
                 animation: 'spin 1s linear infinite',
                 margin: '0 auto 20px'
-              }}></div>
+              }} role="status" aria-label="Loading"></div>
               <p style={{ color: '#fff' }}>{status}</p>
             </>
           ) : (
             <>
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>❌</div>
-              <p style={{ color: '#ff4757' }}>{error}</p>
+              <div style={{ fontSize: '48px', marginBottom: '20px' }} role="img" aria-label="Error">❌</div>
+              <p style={{ color: '#ff4757' }} role="alert">{error}</p>
               <p style={{ color: '#888', marginTop: '10px' }}>Redirecting to settings...</p>
             </>
           )}
@@ -97,8 +97,8 @@ const InstagramCallback = () => {
             100% { transform: rotate(360deg); }
           }
         `}</style>
-      </div>
-    </div>
+      </article>
+    </main>
   );
 };
 

@@ -9,6 +9,8 @@ import Layout from './components/Layout';
 import SEO from './components/SEO';
 import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
+import About from './pages/About';
+import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -79,6 +81,8 @@ function AppRoutes() {
     <Routes>
       {/* Public Landing Page */}
       <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
       
       {/* Public routes */}
       <Route path="/login" element={

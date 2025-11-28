@@ -46,23 +46,28 @@ const Layout = () => {
     <div className="layout">
       {/* Mobile header */}
       <header className="mobile-header">
-        <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-          {sidebarOpen ? <FiX /> : <FiMenu />}
+        <button 
+          className="menu-toggle" 
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          aria-label={sidebarOpen ? "Zatvori meni" : "Otvori meni"}
+          aria-expanded={sidebarOpen}
+        >
+          {sidebarOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
         </button>
         <div className="mobile-logo">
-          <FaInstagram className="logo-icon" />
+          <FaInstagram className="logo-icon" aria-hidden="true" />
           <span>InstaMarketing</span>
         </div>
       </header>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} aria-label="Bočna traka">
         <div className="sidebar-header">
-          <FaInstagram className="logo-icon" />
+          <FaInstagram className="logo-icon" aria-hidden="true" />
           <span className="logo-text">InstaMarketing</span>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Glavna navigacija">
           {navItems.map(item => (
             <NavLink
               key={item.path}
@@ -70,7 +75,7 @@ const Layout = () => {
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
               onClick={() => setSidebarOpen(false)}
             >
-              <item.icon className="nav-icon" />
+              <item.icon className="nav-icon" aria-hidden="true" />
               <span>{item.label}</span>
               {item.badge && <span className="nav-badge">{item.badge}</span>}
             </NavLink>
@@ -79,7 +84,7 @@ const Layout = () => {
 
         <div className="sidebar-footer">
           <div className="user-info">
-            <div className="user-avatar">
+            <div className="user-avatar" aria-hidden="true">
               {user?.name?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div className="user-details">
@@ -87,19 +92,23 @@ const Layout = () => {
               <span className="user-plan">{user?.plan || 'Free'} Plan</span>
             </div>
           </div>
-          <button className="logout-btn" onClick={handleLogout}>
-            <FiLogOut />
+          <button className="logout-btn" onClick={handleLogout} aria-label="Odjavi se">
+            <FiLogOut aria-hidden="true" />
           </button>
         </div>
       </aside>
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
-        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setSidebarOpen(false)} 
+          aria-hidden="true"
+        />
       )}
 
       {/* Main content */}
-      <main className="main-content">
+      <main className="main-content" id="main-content">
         <Outlet />
       </main>
     </div>

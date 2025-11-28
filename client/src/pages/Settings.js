@@ -235,7 +235,7 @@ const Settings = () => {
   ];
 
   return (
-    <div className="settings-page">
+    <main className="settings-page">
       <SEO 
         title="Podešavanja"
         description="Podesite vaš InstaMarketing nalog. Povezivanje Instagram naloga, notifikacije, bezbednost i preferencije naloga."
@@ -247,75 +247,85 @@ const Settings = () => {
         ]}
         noindex={true}
       />
-      <div className="page-header">
+      <header className="page-header">
         <h1>⚙️ Podešavanja</h1>
-      </div>
+      </header>
 
       <div className="settings-layout">
-        <div className="settings-sidebar">
+        <nav className="settings-sidebar" aria-label="Settings navigation">
           <button
             className={`settings-tab ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
+            aria-current={activeTab === 'profile' ? 'page' : undefined}
           >
-            <FiUser className="tab-icon" /> Profil
+            <FiUser className="tab-icon" aria-hidden="true" /> Profil
           </button>
           <button
             className={`settings-tab ${activeTab === 'instagram' ? 'active' : ''}`}
             onClick={() => setActiveTab('instagram')}
+            aria-current={activeTab === 'instagram' ? 'page' : undefined}
           >
-            <FaInstagram className="tab-icon" /> Instagram
+            <FaInstagram className="tab-icon" aria-hidden="true" /> Instagram
           </button>
           <button
             className={`settings-tab ${activeTab === 'notifications' ? 'active' : ''}`}
             onClick={() => setActiveTab('notifications')}
+            aria-current={activeTab === 'notifications' ? 'page' : undefined}
           >
-            <FiBell className="tab-icon" /> Obaveštenja
+            <FiBell className="tab-icon" aria-hidden="true" /> Obaveštenja
           </button>
           <button
             className={`settings-tab ${activeTab === 'security' ? 'active' : ''}`}
             onClick={() => setActiveTab('security')}
+            aria-current={activeTab === 'security' ? 'page' : undefined}
           >
-            <FiLock className="tab-icon" /> Bezbednost
+            <FiLock className="tab-icon" aria-hidden="true" /> Bezbednost
           </button>
           <button
             className={`settings-tab ${activeTab === 'danger' ? 'active' : ''}`}
             onClick={() => setActiveTab('danger')}
+            aria-current={activeTab === 'danger' ? 'page' : undefined}
           >
-            <FiAlertTriangle className="tab-icon" /> Opasna Zona
+            <FiAlertTriangle className="tab-icon" aria-hidden="true" /> Opasna Zona
           </button>
-        </div>
+        </nav>
 
         <div className="settings-content">
           {/* Profile Tab */}
           {activeTab === 'profile' && (
-            <div className="settings-panel">
-              <h2>Podešavanja Profila</h2>
+            <section className="settings-panel" aria-labelledby="profile-heading">
+              <h2 id="profile-heading">Podešavanja Profila</h2>
               <p className="panel-description">
                 Upravljajte informacijama o nalogu i preferencijama.
               </p>
               
               <form onSubmit={handleProfileUpdate}>
                 <div className="form-group">
-                  <label>Full Name</label>
+                  <label htmlFor="fullName">Full Name</label>
                   <input
+                    id="fullName"
                     type="text"
                     value={profile.name}
                     onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    autoComplete="name"
                   />
                 </div>
                 
                 <div className="form-group">
-                  <label>Email Address</label>
+                  <label htmlFor="email">Email Address</label>
                   <input
+                    id="email"
                     type="email"
                     value={profile.email}
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                    autoComplete="email"
                   />
                 </div>
                 
                 <div className="form-group">
-                  <label>Timezone</label>
+                  <label htmlFor="timezone">Timezone</label>
                   <select
+                    id="timezone"
                     value={profile.timezone}
                     onChange={(e) => setProfile({ ...profile, timezone: e.target.value })}
                   >
@@ -329,20 +339,20 @@ const Settings = () => {
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>
               </form>
-            </div>
+            </section>
           )}
 
           {/* Instagram Tab */}
           {activeTab === 'instagram' && (
-            <div className="settings-panel">
-              <h2>Instagram Connection</h2>
+            <section className="settings-panel" aria-labelledby="instagram-heading">
+              <h2 id="instagram-heading">Instagram Connection</h2>
               <p className="panel-description">
                 Connect your Instagram Business or Creator account to enable posting and analytics.
               </p>
               
               <div className="connection-status">
                 <div className={`status-indicator ${instagram.connected ? 'connected' : 'disconnected'}`}>
-                  <span className="status-dot"></span>
+                  <span className="status-dot" aria-hidden="true"></span>
                   {instagram.connected ? 'Connected' : 'Not Connected'}
                 </div>
               </div>
@@ -350,7 +360,7 @@ const Settings = () => {
               {instagram.connected ? (
                 <div className="connected-account">
                   <div className="account-info">
-                    <div className="account-avatar"><FaInstagram /></div>
+                    <div className="account-avatar" aria-hidden="true"><FaInstagram /></div>
                     <div className="account-details">
                       <h3>@{instagram.username}</h3>
                       <p>Instagram Business Account</p>
@@ -392,7 +402,7 @@ const Settings = () => {
                     onClick={handleInstagramConnect}
                     disabled={loading}
                   >
-                    <FaInstagram /> {loading ? 'Povezivanje...' : 'Poveži Instagram'}
+                    <FaInstagram aria-hidden="true" /> {loading ? 'Povezivanje...' : 'Poveži Instagram'}
                   </button>
 
                   {showManualConnect && (
@@ -404,7 +414,9 @@ const Settings = () => {
                         3. Kopirajte token i nalepite ga ovde
                       </p>
                       <div style={{ display: 'flex', gap: '10px' }}>
+                        <label htmlFor="manualToken" className="sr-only">Access Token</label>
                         <input
+                          id="manualToken"
                           type="text"
                           value={manualToken}
                           onChange={(e) => setManualToken(e.target.value)}
@@ -434,13 +446,13 @@ const Settings = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </section>
           )}
 
           {/* Notifications Tab */}
           {activeTab === 'notifications' && (
-            <div className="settings-panel">
-              <h2>Notification Preferences</h2>
+            <section className="settings-panel" aria-labelledby="notifications-heading">
+              <h2 id="notifications-heading">Notification Preferences</h2>
               <p className="panel-description">
                 Choose which notifications you want to receive.
               </p>
@@ -448,10 +460,10 @@ const Settings = () => {
               <div className="notification-options">
                 <div className="notification-item">
                   <div className="notification-info">
-                    <h4>Email Notifications</h4>
+                    <h4 id="email-notif-label">Email Notifications</h4>
                     <p>Receive notifications via email</p>
                   </div>
-                  <label className="toggle">
+                  <label className="toggle" aria-labelledby="email-notif-label">
                     <input
                       type="checkbox"
                       checked={notifications.emailNotifications}
@@ -466,10 +478,10 @@ const Settings = () => {
                 
                 <div className="notification-item">
                   <div className="notification-info">
-                    <h4>Post Published</h4>
+                    <h4 id="post-notif-label">Post Published</h4>
                     <p>Get notified when your scheduled posts are published</p>
                   </div>
-                  <label className="toggle">
+                  <label className="toggle" aria-labelledby="post-notif-label">
                     <input
                       type="checkbox"
                       checked={notifications.postPublished}
@@ -484,10 +496,10 @@ const Settings = () => {
                 
                 <div className="notification-item">
                   <div className="notification-info">
-                    <h4>Campaign Updates</h4>
+                    <h4 id="campaign-notif-label">Campaign Updates</h4>
                     <p>Receive updates about your ad campaign performance</p>
                   </div>
-                  <label className="toggle">
+                  <label className="toggle" aria-labelledby="campaign-notif-label">
                     <input
                       type="checkbox"
                       checked={notifications.campaignUpdates}
@@ -502,10 +514,10 @@ const Settings = () => {
                 
                 <div className="notification-item">
                   <div className="notification-info">
-                    <h4>Weekly Report</h4>
+                    <h4 id="report-notif-label">Weekly Report</h4>
                     <p>Receive a weekly summary of your account performance</p>
                   </div>
-                  <label className="toggle">
+                  <label className="toggle" aria-labelledby="report-notif-label">
                     <input
                       type="checkbox"
                       checked={notifications.weeklyReport}
@@ -526,13 +538,13 @@ const Settings = () => {
               >
                 {loading ? 'Saving...' : 'Save Preferences'}
               </button>
-            </div>
+            </section>
           )}
 
           {/* Security Tab */}
           {activeTab === 'security' && (
-            <div className="settings-panel">
-              <h2>Security Settings</h2>
+            <section className="settings-panel" aria-labelledby="security-heading">
+              <h2 id="security-heading">Security Settings</h2>
               <p className="panel-description">
                 Manage your password and account security.
               </p>
@@ -541,34 +553,40 @@ const Settings = () => {
                 <h3>Change Password</h3>
                 
                 <div className="form-group">
-                  <label>Current Password</label>
+                  <label htmlFor="currentPassword">Current Password</label>
                   <input
+                    id="currentPassword"
                     type="password"
                     value={password.current}
                     onChange={(e) => setPassword({ ...password, current: e.target.value })}
                     required
+                    autoComplete="current-password"
                   />
                 </div>
                 
                 <div className="form-group">
-                  <label>New Password</label>
+                  <label htmlFor="newPassword">New Password</label>
                   <input
+                    id="newPassword"
                     type="password"
                     value={password.new}
                     onChange={(e) => setPassword({ ...password, new: e.target.value })}
                     required
                     minLength={6}
+                    autoComplete="new-password"
                   />
                 </div>
                 
                 <div className="form-group">
-                  <label>Confirm New Password</label>
+                  <label htmlFor="confirmNewPassword">Confirm New Password</label>
                   <input
+                    id="confirmNewPassword"
                     type="password"
                     value={password.confirm}
                     onChange={(e) => setPassword({ ...password, confirm: e.target.value })}
                     required
                     minLength={6}
+                    autoComplete="new-password"
                   />
                 </div>
                 
@@ -586,13 +604,13 @@ const Settings = () => {
                   <li>Regularly review your connected apps</li>
                 </ul>
               </div>
-            </div>
+            </section>
           )}
 
           {/* Danger Zone Tab */}
           {activeTab === 'danger' && (
-            <div className="settings-panel danger">
-              <h2>⚠️ Danger Zone</h2>
+            <section className="settings-panel danger" aria-labelledby="danger-heading">
+              <h2 id="danger-heading">⚠️ Danger Zone</h2>
               <p className="panel-description">
                 These actions are irreversible. Please proceed with caution.
               </p>
@@ -614,11 +632,11 @@ const Settings = () => {
                   Delete My Account
                 </button>
               </div>
-            </div>
+            </section>
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 

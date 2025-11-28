@@ -36,76 +36,90 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <main className="auth-container">
       <SEO 
         title="Prijava"
         description="Prijavite se na InstaMarketing platformu i automatizujte vaš Instagram marketing. Zakazujte objave, vodite reklamne kampanje i povećajte vašu publiku."
         keywords="prijava, login, instamarketing prijava, instagram marketing login"
         url="/login"
       />
-      <div className="auth-card">
-        <div className="auth-header">
-          <FaInstagram className="auth-logo" />
-          <h1>InstaMarketing</h1>
+      <section className="auth-card" aria-labelledby="login-heading">
+        <header className="auth-header">
+          <FaInstagram className="auth-logo" aria-hidden="true" />
+          <h1 id="login-heading">InstaMarketing</h1>
           <p>Prijavite se na vaš nalog</p>
-        </div>
+        </header>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label className="label">Email</label>
+            <label htmlFor="email" className="label">Email</label>
             <div className="input-wrapper">
-              <FiMail className="input-icon" />
+              <FiMail className="input-icon" aria-hidden="true" />
               <input
+                id="email"
                 type="email"
                 className="input"
                 placeholder="Unesite vaš email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
+                aria-required="true"
+                autoComplete="email"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="label">Lozinka</label>
+            <label htmlFor="password" className="label">Lozinka</label>
             <div className="input-wrapper">
-              <FiLock className="input-icon" />
+              <FiLock className="input-icon" aria-hidden="true" />
               <input
+                id="password"
                 type={showPassword ? 'text' : 'password'}
                 className="input"
                 placeholder="Unesite vašu lozinku"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                required
+                aria-required="true"
+                autoComplete="current-password"
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
               >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
+                {showPassword ? <FiEyeOff aria-hidden="true" /> : <FiEye aria-hidden="true" />}
               </button>
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+          <button 
+            type="submit" 
+            className="btn btn-primary btn-full" 
+            disabled={loading}
+            aria-busy={loading}
+          >
             {loading ? 'Prijavljivanje...' : 'Prijavi se'}
           </button>
         </form>
 
-        <div className="auth-footer">
+        <footer className="auth-footer">
           <p>Nemate nalog? <Link to="/register">Registrujte se</Link></p>
-        </div>
-      </div>
+        </footer>
+      </section>
 
-      <div className="auth-features">
-        <h2>Automatizujte Vaš Instagram Marketing</h2>
+      <section className="auth-features" aria-labelledby="features-heading">
+        <h2 id="features-heading">Automatizujte Vaš Instagram Marketing</h2>
         <ul>
-          <li>📱 Zakazujte objave i rilsove</li>
-          <li>🎯 Kreirajte i upravljajte reklamnim kampanjama</li>
-          <li>📊 Pratite analitiku performansi</li>
-          <li>🚀 Automatski povećavajte publiku</li>
+          <li><span aria-hidden="true">📱</span> Zakazujte objave i rilsove</li>
+          <li><span aria-hidden="true">🎯</span> Kreirajte i upravljajte reklamnim kampanjama</li>
+          <li><span aria-hidden="true">📊</span> Pratite analitiku performansi</li>
+          <li><span aria-hidden="true">🚀</span> Automatski povećavajte publiku</li>
         </ul>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 

@@ -55,123 +55,147 @@ const Register = () => {
   };
 
   return (
-    <div className="auth-container">
+    <main className="auth-container">
       <SEO 
         title="Registracija - Kreirajte Besplatan Nalog"
         description="Kreirajte besplatan InstaMarketing nalog. Započnite automatizaciju vašeg Instagram marketinga već danas - zakazujte objave, vodite reklamne kampanje i povećajte publiku."
         url="/register"
         keywords="registracija InstaMarketing, kreiranje naloga, instagram automatizacija besplatno, social media marketing srbija"
       />
-      <div className="auth-card">
-        <div className="auth-header">
-          <FaInstagram className="auth-logo" />
-          <h1>InstaMarketing</h1>
+      <section className="auth-card" aria-labelledby="register-heading">
+        <header className="auth-header">
+          <FaInstagram className="auth-logo" aria-hidden="true" />
+          <h1 id="register-heading">InstaMarketing</h1>
           <p>Kreirajte vaš nalog</p>
-        </div>
+        </header>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label className="label">Ime i Prezime *</label>
+            <label htmlFor="name" className="label">Ime i Prezime *</label>
             <div className="input-wrapper">
-              <FiUser className="input-icon" />
+              <FiUser className="input-icon" aria-hidden="true" />
               <input
+                id="name"
                 type="text"
                 name="name"
                 className="input"
                 placeholder="Unesite vaše ime"
                 value={formData.name}
                 onChange={handleChange}
+                required
+                aria-required="true"
+                autoComplete="name"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="label">Email *</label>
+            <label htmlFor="email" className="label">Email *</label>
             <div className="input-wrapper">
-              <FiMail className="input-icon" />
+              <FiMail className="input-icon" aria-hidden="true" />
               <input
+                id="email"
                 type="email"
                 name="email"
                 className="input"
                 placeholder="Unesite vaš email"
                 value={formData.email}
                 onChange={handleChange}
+                required
+                aria-required="true"
+                autoComplete="email"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="label">Kompanija (Opciono)</label>
+            <label htmlFor="company" className="label">Kompanija (Opciono)</label>
             <div className="input-wrapper">
-              <FiBriefcase className="input-icon" />
+              <FiBriefcase className="input-icon" aria-hidden="true" />
               <input
+                id="company"
                 type="text"
                 name="company"
                 className="input"
                 placeholder="Unesite ime kompanije"
                 value={formData.company}
                 onChange={handleChange}
+                autoComplete="organization"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="label">Lozinka *</label>
+            <label htmlFor="password" className="label">Lozinka *</label>
             <div className="input-wrapper">
-              <FiLock className="input-icon" />
+              <FiLock className="input-icon" aria-hidden="true" />
               <input
+                id="password"
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 className="input"
                 placeholder="Kreirajte lozinku"
                 value={formData.password}
                 onChange={handleChange}
+                required
+                aria-required="true"
+                autoComplete="new-password"
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Sakrij lozinku" : "Prikaži lozinku"}
               >
-                {showPassword ? <FiEyeOff /> : <FiEye />}
+                {showPassword ? <FiEyeOff aria-hidden="true" /> : <FiEye aria-hidden="true" />}
               </button>
             </div>
           </div>
 
           <div className="form-group">
-            <label className="label">Potvrdite Lozinku *</label>
+            <label htmlFor="confirmPassword" className="label">Potvrdite Lozinku *</label>
             <div className="input-wrapper">
-              <FiLock className="input-icon" />
+              <FiLock className="input-icon" aria-hidden="true" />
               <input
+                id="confirmPassword"
                 type={showPassword ? 'text' : 'password'}
                 name="confirmPassword"
                 className="input"
                 placeholder="Potvrdite vašu lozinku"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                required
+                aria-required="true"
+                autoComplete="new-password"
               />
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+          <button 
+            type="submit" 
+            className="btn btn-primary btn-full" 
+            disabled={loading}
+            aria-busy={loading}
+          >
             {loading ? 'Kreiranje naloga...' : 'Kreiraj Nalog'}
           </button>
         </form>
 
-        <div className="auth-footer">
+        <footer className="auth-footer">
           <p>Već imate nalog? <Link to="/login">Prijavite se</Link></p>
-        </div>
-      </div>
+        </footer>
+      </section>
 
-      <div className="auth-features">
-        <h2>Počnite Sa Rastom Vašeg Instagram-a Danas</h2>
+      <section className="auth-features" aria-labelledby="features-heading">
+        <h2 id="features-heading">Počnite Sa Rastom Vašeg Instagram-a Danas</h2>
         <ul>
-          <li>✨ Besplatan plan dostupan</li>
-          <li>📱 Neograničeno zakazivanje objava</li>
-          <li>🎯 Moćno upravljanje reklamama</li>
-          <li>📊 Detaljna analitika</li>
+          <li><span aria-hidden="true">✨</span> Besplatan plan dostupan</li>
+          <li><span aria-hidden="true">📱</span> Neograničeno zakazivanje objava</li>
+          <li><span aria-hidden="true">🎯</span> Moćno upravljanje reklamama</li>
+          <li><span aria-hidden="true">📊</span> Detaljna analitika</li>
         </ul>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 

@@ -82,7 +82,8 @@ const Home = () => {
         'Custom integracije'
       ],
       cta: 'Kontaktirajte Nas',
-      popular: false
+      popular: false,
+      link: '/contact'
     }
   ];
 
@@ -114,7 +115,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="home-page">
+    <main className="home-page">
       <SEO 
         title="Automatizacija Instagram Marketinga"
         description="Automatizujte Instagram marketing pomoću AI tehnologije. Zakazujte objave, kreirajte rilsove, vodite reklamne kampanje i analizirajte rezultate. #1 alat u Srbiji."
@@ -124,7 +125,7 @@ const Home = () => {
       />
 
       {/* Hero Section */}
-      <section className="hero">
+      <header className="hero">
         <div className="hero-content">
           <div className="hero-badge">🇷🇸 #1 u Srbiji</div>
           <h1>
@@ -135,10 +136,10 @@ const Home = () => {
             povećajte vašu publiku 10x brže sa InstaMarketing platformom.
           </p>
           <div className="hero-cta">
-            <Link to="/register" className="btn btn-primary btn-lg">
-              Započnite Besplatno <FiArrowRight />
+            <Link to="/register" className="btn btn-primary btn-lg" aria-label="Započnite besplatno sa InstaMarketingom">
+              Započnite Besplatno <FiArrowRight aria-hidden="true" />
             </Link>
-            <Link to="/login" className="btn btn-outline btn-lg">
+            <Link to="/login" className="btn btn-outline btn-lg" aria-label="Prijavite se na platformu">
               Prijavite Se
             </Link>
           </div>
@@ -157,64 +158,64 @@ const Home = () => {
             </div>
           </div>
         </div>
-        <div className="hero-image">
+        <div className="hero-image" aria-hidden="true">
           <FaInstagram className="instagram-icon" />
         </div>
-      </section>
+      </header>
 
       {/* Features Section */}
-      <section className="features-section" id="features">
+      <section className="features-section" id="features" aria-labelledby="features-heading">
         <div className="section-header">
-          <h2>Sve Što Vam Treba za Instagram Uspeh</h2>
+          <h2 id="features-heading">Sve Što Vam Treba za Instagram Uspeh</h2>
           <p>Moćni alati za kreiranje, zakazivanje i analizu vašeg Instagram sadržaja</p>
         </div>
         <div className="features-grid">
           {features.map((feature, index) => (
-            <div key={index} className="feature-card">
-              <div className="feature-icon">
+            <article key={index} className="feature-card">
+              <div className="feature-icon" aria-hidden="true">
                 <feature.icon />
               </div>
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
-            </div>
+            </article>
           ))}
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="how-it-works">
+      <section className="how-it-works" aria-labelledby="how-it-works-heading">
         <div className="section-header">
-          <h2>Kako Funkcioniše?</h2>
+          <h2 id="how-it-works-heading">Kako Funkcioniše?</h2>
           <p>Počnite sa automatizacijom u samo 3 koraka</p>
         </div>
-        <div className="steps">
-          <div className="step">
-            <div className="step-number">1</div>
+        <ol className="steps">
+          <li className="step">
+            <div className="step-number" aria-hidden="true">1</div>
             <h3>Registrujte Se</h3>
             <p>Kreirajte besplatan nalog za par minuta</p>
-          </div>
-          <div className="step">
-            <div className="step-number">2</div>
+          </li>
+          <li className="step">
+            <div className="step-number" aria-hidden="true">2</div>
             <h3>Povežite Instagram</h3>
             <p>Povežite vaš Instagram Business nalog</p>
-          </div>
-          <div className="step">
-            <div className="step-number">3</div>
+          </li>
+          <li className="step">
+            <div className="step-number" aria-hidden="true">3</div>
             <h3>Automatizujte</h3>
             <p>Zakazujte objave i koristite AI alate</p>
-          </div>
-        </div>
+          </li>
+        </ol>
       </section>
 
       {/* Pricing Section */}
-      <section className="pricing-section" id="pricing">
+      <section className="pricing-section" id="pricing" aria-labelledby="pricing-heading">
         <div className="section-header">
-          <h2>Jednostavne Cene</h2>
+          <h2 id="pricing-heading">Jednostavne Cene</h2>
           <p>Izaberite plan koji odgovara vašim potrebama</p>
         </div>
         <div className="pricing-grid">
           {pricingPlans.map((plan, index) => (
-            <div key={index} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
+            <article key={index} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
               {plan.popular && <div className="popular-badge">Najpopularniji</div>}
               <h3>{plan.name}</h3>
               <div className="price">
@@ -225,40 +226,40 @@ const Home = () => {
               <ul className="features-list">
                 {plan.features.map((feature, idx) => (
                   <li key={idx}>
-                    <FiCheck /> {feature}
+                    <FiCheck aria-hidden="true" /> {feature}
                   </li>
                 ))}
               </ul>
-              <Link to="/register" className={`btn ${plan.popular ? 'btn-primary' : 'btn-outline'} btn-full`}>
+              <Link to={plan.link || "/register"} className={`btn ${plan.popular ? 'btn-primary' : 'btn-outline'} btn-full`} aria-label={`Izaberite ${plan.name} plan`}>
                 {plan.cta}
               </Link>
-            </div>
+            </article>
           ))}
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section className="faq-section" id="faq">
+      <section className="faq-section" id="faq" aria-labelledby="faq-heading">
         <div className="section-header">
-          <h2>Često Postavljana Pitanja</h2>
+          <h2 id="faq-heading">Često Postavljana Pitanja</h2>
           <p>Odgovori na najčešća pitanja o InstaMarketing platformi</p>
         </div>
         <div className="faq-grid">
           {faqs.map((faq, index) => (
-            <div key={index} className="faq-item">
+            <article key={index} className="faq-item">
               <h3>{faq.question}</h3>
               <p>{faq.answer}</p>
-            </div>
+            </article>
           ))}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="cta-section">
-        <h2>Spremni da Povećate Vaš Instagram?</h2>
+      <section className="cta-section" aria-labelledby="cta-heading">
+        <h2 id="cta-heading">Spremni da Povećate Vaš Instagram?</h2>
         <p>Pridružite se hiljadama zadovoljnih korisnika u Srbiji</p>
         <Link to="/register" className="btn btn-primary btn-lg">
-          Započnite Besplatno Danas <FiArrowRight />
+          Započnite Besplatno Danas <FiArrowRight aria-hidden="true" />
         </Link>
       </section>
 
@@ -266,22 +267,23 @@ const Home = () => {
       <footer className="home-footer">
         <div className="footer-content">
           <div className="footer-brand">
-            <FaInstagram className="footer-logo" />
+            <FaInstagram className="footer-logo" aria-hidden="true" />
             <span>InstaMarketing</span>
           </div>
-          <div className="footer-links">
+          <nav className="footer-links" aria-label="Footer navigacija">
             <a href="#features">Funkcije</a>
             <a href="#pricing">Cene</a>
-            <a href="#faq">FAQ</a>
+            <Link to="/about">O Nama</Link>
+            <Link to="/contact">Kontakt</Link>
             <Link to="/login">Prijava</Link>
             <Link to="/register">Registracija</Link>
-          </div>
+          </nav>
           <div className="footer-bottom">
             <p>© 2024 InstaMarketing. Sva prava zadržana. 🇷🇸 Napravljeno u Srbiji</p>
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 };
 

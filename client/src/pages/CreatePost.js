@@ -127,77 +127,90 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="create-content-page">
-      <div className="page-header">
-        <button className="btn btn-ghost" onClick={() => navigate('/posts')}>
-          <FiArrowLeft /> Back
+    <main className="create-content-page">
+      <header className="page-header">
+        <button className="btn btn-ghost" onClick={() => navigate('/posts')} aria-label="Nazad na objave">
+          <FiArrowLeft aria-hidden="true" /> Back
         </button>
         <h1>{isEditing ? 'Edit Post' : 'Create New Post'}</h1>
-      </div>
+      </header>
 
       <div className="create-content-grid">
         {/* Media Upload */}
-        <div className="card">
-          <h3 className="card-title">Media</h3>
+        <section className="card" aria-labelledby="media-heading">
+          <h3 id="media-heading" className="card-title">Media</h3>
           
-          <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`}>
+          <div 
+            {...getRootProps()} 
+            className={`dropzone ${isDragActive ? 'active' : ''}`}
+            role="button"
+            aria-label="Upload media area"
+            tabIndex={0}
+          >
             <input {...getInputProps()} />
-            <FiUpload className="dropzone-icon" />
+            <FiUpload className="dropzone-icon" aria-hidden="true" />
             <p>Drag & drop images or videos here</p>
             <span>or click to browse</span>
           </div>
 
           {/* Preview */}
           {(existingMedia.length > 0 || files.length > 0) && (
-            <div className="media-preview-grid">
+            <div className="media-preview-grid" aria-label="Media previews">
               {existingMedia.map((media, index) => (
                 <div key={`existing-${index}`} className="media-preview-item">
-                  <img src={media.url} alt="" />
+                  <img src={media.url} alt={`Existing media ${index + 1}`} />
                   <button 
                     className="remove-media" 
                     onClick={() => removeExistingMedia(index)}
+                    aria-label={`Remove existing media ${index + 1}`}
                   >
-                    <FiX />
+                    <FiX aria-hidden="true" />
                   </button>
                 </div>
               ))}
               {files.map((file, index) => (
                 <div key={`new-${index}`} className="media-preview-item">
                   {file.type.startsWith('video') ? (
-                    <video src={file.preview} />
+                    <video src={file.preview} aria-label={`New video ${index + 1}`} />
                   ) : (
-                    <img src={file.preview} alt="" />
+                    <img src={file.preview} alt={`New image ${index + 1}`} />
                   )}
-                  <button className="remove-media" onClick={() => removeFile(index)}>
-                    <FiX />
+                  <button 
+                    className="remove-media" 
+                    onClick={() => removeFile(index)}
+                    aria-label={`Remove new media ${index + 1}`}
+                  >
+                    <FiX aria-hidden="true" />
                   </button>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Post Details */}
-        <div className="card">
-          <h3 className="card-title">Post Details</h3>
+        <section className="card" aria-labelledby="details-heading">
+          <h3 id="details-heading" className="card-title">Post Details</h3>
 
           <div className="form-group">
-            <label className="label">Caption</label>
+            <label htmlFor="caption" className="label">Caption</label>
             <textarea
+              id="caption"
               className="input textarea"
               placeholder="Write your caption..."
               value={formData.caption}
               onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
               maxLength={2200}
             />
-            <span className="char-count">{formData.caption.length}/2200</span>
+            <span className="char-count" aria-live="polite">{formData.caption.length}/2200</span>
           </div>
 
           <div className="form-group">
-            <label className="label">
-              <FiHash /> Hashtags
+            <label htmlFor="hashtags" className="label">
+              <FiHash aria-hidden="true" /> Hashtags
             </label>
             <input
+              id="hashtags"
               type="text"
               className="input"
               placeholder="fitness, motivation, workout (comma separated)"
@@ -207,8 +220,9 @@ const CreatePost = () => {
           </div>
 
           <div className="form-group">
-            <label className="label">Post Type</label>
+            <label htmlFor="postType" className="label">Post Type</label>
             <select
+              id="postType"
               className="input"
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -220,10 +234,11 @@ const CreatePost = () => {
           </div>
 
           <div className="form-group">
-            <label className="label">
-              <FiCalendar /> Schedule (Optional)
+            <label htmlFor="scheduledFor" className="label">
+              <FiCalendar aria-hidden="true" /> Schedule (Optional)
             </label>
             <input
+              id="scheduledFor"
               type="datetime-local"
               className="input"
               value={formData.scheduledFor}
@@ -237,20 +252,22 @@ const CreatePost = () => {
               className="btn btn-secondary"
               onClick={() => handleSubmit(false)}
               disabled={loading}
+              aria-busy={loading}
             >
-              <FiSave /> {formData.scheduledFor ? 'Schedule' : 'Save Draft'}
+              <FiSave aria-hidden="true" /> {formData.scheduledFor ? 'Schedule' : 'Save Draft'}
             </button>
             <button 
               className="btn btn-primary"
               onClick={() => handleSubmit(true)}
               disabled={loading || publishing}
+              aria-busy={publishing}
             >
-              <FiSend /> {publishing ? 'Publishing...' : 'Publish Now'}
+              <FiSend aria-hidden="true" /> {publishing ? 'Publishing...' : 'Publish Now'}
             </button>
           </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 };
 

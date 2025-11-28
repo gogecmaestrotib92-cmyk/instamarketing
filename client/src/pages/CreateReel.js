@@ -101,31 +101,37 @@ const CreateReel = () => {
   };
 
   return (
-    <div className="create-content-page">
-      <div className="page-header">
-        <button className="btn btn-ghost" onClick={() => navigate('/reels')}>
-          <FiArrowLeft /> Back
+    <main className="create-content-page">
+      <header className="page-header">
+        <button className="btn btn-ghost" onClick={() => navigate('/reels')} aria-label="Nazad na reels">
+          <FiArrowLeft aria-hidden="true" /> Back
         </button>
         <h1>Create New Reel</h1>
-      </div>
+      </header>
 
       <div className="create-content-grid">
         {/* Video Upload */}
-        <div className="card">
-          <h3 className="card-title">Video</h3>
+        <section className="card" aria-labelledby="video-heading">
+          <h3 id="video-heading" className="card-title">Video</h3>
           
           {!videoFile ? (
-            <div {...getVideoProps()} className="dropzone">
+            <div 
+              {...getVideoProps()} 
+              className="dropzone"
+              role="button"
+              aria-label="Upload video area"
+              tabIndex={0}
+            >
               <input {...getVideoInput()} />
-              <FiFilm className="dropzone-icon" />
+              <FiFilm className="dropzone-icon" aria-hidden="true" />
               <p>Drag & drop your video here</p>
               <span>MP4, MOV, AVI, WebM - Max 60 seconds</span>
             </div>
           ) : (
             <div className="video-preview">
-              <video src={videoFile.preview} controls />
-              <button className="remove-video" onClick={() => setVideoFile(null)}>
-                <FiX /> Remove
+              <video src={videoFile.preview} controls aria-label="Video preview" />
+              <button className="remove-video" onClick={() => setVideoFile(null)} aria-label="Remove video">
+                <FiX aria-hidden="true" /> Remove
               </button>
             </div>
           )}
@@ -133,42 +139,50 @@ const CreateReel = () => {
           <h4 style={{ marginTop: 24, marginBottom: 12 }}>Cover Image (Optional)</h4>
           
           {!coverImage ? (
-            <div {...getCoverProps()} className="dropzone small">
+            <div 
+              {...getCoverProps()} 
+              className="dropzone small"
+              role="button"
+              aria-label="Upload cover image area"
+              tabIndex={0}
+            >
               <input {...getCoverInput()} />
-              <FiUpload className="dropzone-icon small" />
+              <FiUpload className="dropzone-icon small" aria-hidden="true" />
               <p>Add cover image</p>
             </div>
           ) : (
             <div className="cover-preview">
-              <img src={coverImage.preview} alt="Cover" />
-              <button className="remove-media" onClick={() => setCoverImage(null)}>
-                <FiX />
+              <img src={coverImage.preview} alt="Cover preview" />
+              <button className="remove-media" onClick={() => setCoverImage(null)} aria-label="Remove cover image">
+                <FiX aria-hidden="true" />
               </button>
             </div>
           )}
-        </div>
+        </section>
 
         {/* Reel Details */}
-        <div className="card">
-          <h3 className="card-title">Reel Details</h3>
+        <section className="card" aria-labelledby="details-heading">
+          <h3 id="details-heading" className="card-title">Reel Details</h3>
 
           <div className="form-group">
-            <label className="label">Caption</label>
+            <label htmlFor="caption" className="label">Caption</label>
             <textarea
+              id="caption"
               className="input textarea"
               placeholder="Write your caption..."
               value={formData.caption}
               onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
               maxLength={2200}
             />
-            <span className="char-count">{formData.caption.length}/2200</span>
+            <span className="char-count" aria-live="polite">{formData.caption.length}/2200</span>
           </div>
 
           <div className="form-group">
-            <label className="label">
-              <FiHash /> Hashtags
+            <label htmlFor="hashtags" className="label">
+              <FiHash aria-hidden="true" /> Hashtags
             </label>
             <input
+              id="hashtags"
               type="text"
               className="input"
               placeholder="reels, viral, trending (comma separated)"
@@ -178,10 +192,11 @@ const CreateReel = () => {
           </div>
 
           <div className="form-group">
-            <label className="label">
-              <FiCalendar /> Schedule (Optional)
+            <label htmlFor="scheduledFor" className="label">
+              <FiCalendar aria-hidden="true" /> Schedule (Optional)
             </label>
             <input
+              id="scheduledFor"
               type="datetime-local"
               className="input"
               value={formData.scheduledFor}
@@ -195,20 +210,22 @@ const CreateReel = () => {
               className="btn btn-secondary"
               onClick={() => handleSubmit(false)}
               disabled={loading}
+              aria-busy={loading}
             >
-              <FiSave /> {formData.scheduledFor ? 'Schedule' : 'Save Draft'}
+              <FiSave aria-hidden="true" /> {formData.scheduledFor ? 'Schedule' : 'Save Draft'}
             </button>
             <button 
               className="btn btn-primary"
               onClick={() => handleSubmit(true)}
               disabled={loading || publishing}
+              aria-busy={publishing}
             >
-              <FiSend /> {publishing ? 'Publishing...' : 'Publish Now'}
+              <FiSend aria-hidden="true" /> {publishing ? 'Publishing...' : 'Publish Now'}
             </button>
           </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 };
 

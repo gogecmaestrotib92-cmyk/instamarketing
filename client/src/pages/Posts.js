@@ -81,7 +81,7 @@ const Posts = () => {
   };
 
   return (
-    <div className="posts-page">
+    <main className="posts-page">
       <SEO 
         title="Instagram Objave"
         description="Kreirajte, upravljajte i optimizujte Instagram objave. AI asistent za pisanje captiona, izbor hashtag-ova i analiza performansi svake objave."
@@ -93,18 +93,18 @@ const Posts = () => {
         ]}
         noindex={true}
       />
-      <div className="page-header">
+      <header className="page-header">
         <div>
           <h1>Objave</h1>
           <p className="page-subtitle">Upravljajte i zakazujte vaše Instagram objave</p>
         </div>
-        <Link to="/posts/create" className="btn btn-primary">
-          <FiPlus /> Kreiraj Objavu
+        <Link to="/posts/create" className="btn btn-primary" aria-label="Kreiraj novu objavu">
+          <FiPlus aria-hidden="true" /> Kreiraj Objavu
         </Link>
-      </div>
+      </header>
 
       {/* Filters */}
-      <div className="filters">
+      <nav className="filters" aria-label="Filteri objava">
         {[
           { key: 'all', label: 'Sve' },
           { key: 'draft', label: 'Nacrti' },
@@ -116,52 +116,53 @@ const Posts = () => {
             key={status.key}
             className={`filter-btn ${filter === status.key ? 'active' : ''}`}
             onClick={() => setFilter(status.key)}
+            aria-current={filter === status.key ? 'page' : undefined}
           >
             {status.label}
           </button>
         ))}
-      </div>
+      </nav>
 
       {/* Posts Grid */}
       {loading ? (
-        <div className="loading-container">
-          <div className="spinner"></div>
+        <div className="loading-container" aria-label="Učitavanje objava">
+          <div className="spinner" aria-hidden="true"></div>
         </div>
       ) : posts.length === 0 ? (
         <div className="empty-state-large">
-          <FiImage className="empty-icon" />
+          <FiImage className="empty-icon" aria-hidden="true" />
           <h3>Nema objava</h3>
           <p>Kreirajte vašu prvu objavu da biste počeli</p>
           <Link to="/posts/create" className="btn btn-primary">
-            <FiPlus /> Kreiraj Objavu
+            <FiPlus aria-hidden="true" /> Kreiraj Objavu
           </Link>
         </div>
       ) : (
-        <div className="posts-grid">
+        <section className="posts-grid" aria-label="Lista objava">
           {posts.map(post => (
-            <div key={post._id} className="post-card">
-              <div className="post-media">
+            <article key={post._id} className="post-card">
+              <figure className="post-media">
                 {post.media?.[0] ? (
                   <img 
                     src={post.media[0].url} 
-                    alt="Post preview" 
+                    alt={post.caption ? `Preview for post: ${post.caption.substring(0, 20)}...` : "Post preview"} 
                     onError={(e) => e.target.src = '/placeholder-image.png'}
                   />
                 ) : (
-                  <div className="no-media">
-                    <FiImage />
+                  <div className="no-media" aria-label="Nema slike">
+                    <FiImage aria-hidden="true" />
                   </div>
                 )}
                 {post.media?.length > 1 && (
-                  <span className="media-count">{post.media.length} images</span>
+                  <figcaption className="media-count">{post.media.length} images</figcaption>
                 )}
-              </div>
+              </figure>
               
               <div className="post-content">
-                <div className="post-header">
+                <header className="post-header">
                   {getStatusBadge(post.status)}
                   <span className="post-type">{post.type}</span>
-                </div>
+                </header>
                 
                 <p className="post-caption">
                   {post.caption?.substring(0, 100) || 'No caption'}
@@ -169,52 +170,54 @@ const Posts = () => {
                 </p>
 
                 {post.status === 'published' && (
-                  <div className="post-metrics">
-                    <span><FiHeart /> {post.metrics?.likes || 0}</span>
-                    <span><FiMessageCircle /> {post.metrics?.comments || 0}</span>
+                  <div className="post-metrics" aria-label="Metrike objave">
+                    <span aria-label={`${post.metrics?.likes || 0} lajkova`}><FiHeart aria-hidden="true" /> {post.metrics?.likes || 0}</span>
+                    <span aria-label={`${post.metrics?.comments || 0} komentara`}><FiMessageCircle aria-hidden="true" /> {post.metrics?.comments || 0}</span>
                   </div>
                 )}
 
                 {post.scheduledFor && post.status === 'scheduled' && (
                   <p className="post-scheduled">
-                    <FiClock /> {new Date(post.scheduledFor).toLocaleString()}
+                    <FiClock aria-hidden="true" /> <time dateTime={post.scheduledFor}>{new Date(post.scheduledFor).toLocaleString()}</time>
                   </p>
                 )}
 
-                <div className="post-actions">
+                <footer className="post-actions">
                   {['draft', 'scheduled'].includes(post.status) && (
                     <>
-                      <Link to={`/posts/edit/${post._id}`} className="btn btn-ghost btn-sm">
-                        <FiEdit2 /> Edit
+                      <Link to={`/posts/edit/${post._id}`} className="btn btn-ghost btn-sm" aria-label={`Izmeni objavu ${post.caption?.substring(0, 10)}`}>
+                        <FiEdit2 aria-hidden="true" /> Edit
                       </Link>
                       <button 
                         className="btn btn-primary btn-sm"
                         onClick={() => handlePublish(post._id)}
+                        aria-label={`Objavi odmah ${post.caption?.substring(0, 10)}`}
                       >
-                        <FiSend /> Publish
+                        <FiSend aria-hidden="true" /> Publish
                       </button>
                     </>
                   )}
                   <button 
                     className="btn btn-ghost btn-sm danger"
                     onClick={() => handleDelete(post._id)}
+                    aria-label={`Obriši objavu ${post.caption?.substring(0, 10)}`}
                   >
-                    <FiTrash2 />
+                    <FiTrash2 aria-hidden="true" />
                   </button>
-                </div>
+                </footer>
               </div>
-            </div>
+            </article>
           ))}
-        </div>
+        </section>
       )}
 
       {/* Pagination */}
       {pagination.pages > 1 && (
-        <div className="pagination">
+        <nav className="pagination" aria-label="Navigacija stranica">
           <span>Page {pagination.page} of {pagination.pages}</span>
-        </div>
+        </nav>
       )}
-    </div>
+    </main>
   );
 };
 

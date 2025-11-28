@@ -81,7 +81,7 @@ const Reels = () => {
   };
 
   return (
-    <div className="posts-page">
+    <main className="posts-page">
       <SEO 
         title="Instagram Rilsovi"
         description="Kreirajte virusne Instagram rilsove pomoću AI tehnologije. Automatsko generisanje videa, dodavanje muzike, titlova i efekata. Video marketing za vaš brend."
@@ -93,17 +93,17 @@ const Reels = () => {
         ]}
         noindex={true}
       />
-      <div className="page-header">
+      <header className="page-header">
         <div>
           <h1>Rilsovi</h1>
           <p className="page-subtitle">Kreirajte i zakazujte zanimljiv video sadržaj</p>
         </div>
-        <Link to="/reels/create" className="btn btn-primary">
-          <FiPlus /> Kreiraj Rils
+        <Link to="/reels/create" className="btn btn-primary" aria-label="Kreiraj novi rils">
+          <FiPlus aria-hidden="true" /> Kreiraj Rils
         </Link>
-      </div>
+      </header>
 
-      <div className="filters">
+      <nav className="filters" aria-label="Filteri za rilsove">
         {[
           { key: 'all', label: 'Svi' },
           { key: 'draft', label: 'Nacrti' },
@@ -115,40 +115,41 @@ const Reels = () => {
             key={status.key}
             className={`filter-btn ${filter === status.key ? 'active' : ''}`}
             onClick={() => setFilter(status.key)}
+            aria-current={filter === status.key ? 'page' : undefined}
           >
             {status.label}
           </button>
         ))}
-      </div>
+      </nav>
 
       {loading ? (
-        <div className="loading-container">
-          <div className="spinner"></div>
+        <div className="loading-container" aria-live="polite">
+          <div className="spinner" aria-label="Učitavanje..."></div>
         </div>
       ) : reels.length === 0 ? (
         <div className="empty-state-large">
-          <FiFilm className="empty-icon" />
+          <FiFilm className="empty-icon" aria-hidden="true" />
           <h3>Nema rilsova</h3>
           <p>Kreirajte vaš prvi rils da biste počeli</p>
           <Link to="/reels/create" className="btn btn-primary">
-            <FiPlus /> Kreiraj Rils
+            <FiPlus aria-hidden="true" /> Kreiraj Rils
           </Link>
         </div>
       ) : (
         <div className="posts-grid">
           {reels.map(reel => (
-            <div key={reel._id} className="post-card">
+            <article key={reel._id} className="post-card">
               <div className="post-media reel-media">
                 {reel.video?.url ? (
                   <>
-                    <video src={reel.video.url} />
-                    <div className="play-overlay">
+                    <video src={reel.video.url} aria-label="Video preview" />
+                    <div className="play-overlay" aria-hidden="true">
                       <FiPlay />
                     </div>
                   </>
                 ) : (
-                  <div className="no-media">
-                    <FiFilm />
+                  <div className="no-media" aria-label="Nema videa">
+                    <FiFilm aria-hidden="true" />
                   </div>
                 )}
               </div>
@@ -164,46 +165,48 @@ const Reels = () => {
                 </p>
 
                 {reel.status === 'published' && (
-                  <div className="post-metrics">
-                    <span><FiPlay /> {reel.metrics?.plays || 0}</span>
-                    <span><FiHeart /> {reel.metrics?.likes || 0}</span>
-                    <span><FiMessageCircle /> {reel.metrics?.comments || 0}</span>
+                  <div className="post-metrics" aria-label="Metrike">
+                    <span aria-label={`${reel.metrics?.plays || 0} pregleda`}><FiPlay aria-hidden="true" /> {reel.metrics?.plays || 0}</span>
+                    <span aria-label={`${reel.metrics?.likes || 0} lajkova`}><FiHeart aria-hidden="true" /> {reel.metrics?.likes || 0}</span>
+                    <span aria-label={`${reel.metrics?.comments || 0} komentara`}><FiMessageCircle aria-hidden="true" /> {reel.metrics?.comments || 0}</span>
                   </div>
                 )}
 
                 {reel.scheduledFor && reel.status === 'scheduled' && (
                   <p className="post-scheduled">
-                    <FiClock /> {new Date(reel.scheduledFor).toLocaleString()}
+                    <FiClock aria-hidden="true" /> {new Date(reel.scheduledFor).toLocaleString()}
                   </p>
                 )}
 
                 <div className="post-actions">
                   {['draft', 'scheduled'].includes(reel.status) && (
                     <>
-                      <Link to={`/reels/edit/${reel._id}`} className="btn btn-ghost btn-sm">
-                        <FiEdit2 /> Edit
+                      <Link to={`/reels/edit/${reel._id}`} className="btn btn-ghost btn-sm" aria-label="Izmeni rils">
+                        <FiEdit2 aria-hidden="true" /> Edit
                       </Link>
                       <button 
                         className="btn btn-primary btn-sm"
                         onClick={() => handlePublish(reel._id)}
+                        aria-label="Objavi rils"
                       >
-                        <FiSend /> Publish
+                        <FiSend aria-hidden="true" /> Publish
                       </button>
                     </>
                   )}
                   <button 
                     className="btn btn-ghost btn-sm danger"
                     onClick={() => handleDelete(reel._id)}
+                    aria-label="Obriši rils"
                   >
-                    <FiTrash2 />
+                    <FiTrash2 aria-hidden="true" />
                   </button>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       )}
-    </div>
+    </main>
   );
 };
 

@@ -115,7 +115,7 @@ const Analytics = () => {
   const topContent = contentData.slice(0, 5);
 
   return (
-    <div className="analytics-page">
+    <main className="analytics-page">
       <SEO 
         title="Instagram Analitika"
         description="Dubinska analiza Instagram performansi. Pratite engagement rate, reach, impressions, rast pratilaca i ROI reklamnih kampanja. Detaljni izveštaji i statistika."
@@ -127,61 +127,62 @@ const Analytics = () => {
         ]}
         noindex={true}
       />
-      <div className="page-header">
+      <header className="page-header">
         <div>
           <h1>Analitika</h1>
           <p className="page-subtitle">Pratite performanse vašeg Instagram-a</p>
         </div>
-        <div className="period-selector">
+        <nav className="period-selector" aria-label="Izbor perioda">
           {['7d', '30d', '90d'].map(p => (
             <button
               key={p}
               className={`btn btn-sm ${period === p ? 'btn-primary' : 'btn-ghost'}`}
               onClick={() => setPeriod(p)}
+              aria-current={period === p ? 'page' : undefined}
             >
               {p === '7d' ? '7 Dana' : p === '30d' ? '30 Dana' : '90 Dana'}
             </button>
           ))}
-        </div>
-      </div>
+        </nav>
+      </header>
 
       {/* Overview Stats */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <FiHeart className="stat-icon-large" style={{ color: 'var(--error)' }} />
+      <section className="stats-grid" aria-label="Pregled statistike">
+        <article className="stat-card">
+          <FiHeart className="stat-icon-large" style={{ color: 'var(--error)' }} aria-hidden="true" />
           <div className="stat-data">
             <span className="stat-value">{metrics.likes?.toLocaleString() || 0}</span>
-            <span className="stat-label">Total Likes</span>
+            <h2 className="stat-label">Total Likes</h2>
           </div>
-        </div>
-        <div className="stat-card">
-          <FiMessageCircle className="stat-icon-large" style={{ color: 'var(--info)' }} />
+        </article>
+        <article className="stat-card">
+          <FiMessageCircle className="stat-icon-large" style={{ color: 'var(--info)' }} aria-hidden="true" />
           <div className="stat-data">
             <span className="stat-value">{metrics.comments?.toLocaleString() || 0}</span>
-            <span className="stat-label">Total Comments</span>
+            <h2 className="stat-label">Total Comments</h2>
           </div>
-        </div>
-        <div className="stat-card">
-          <FiEye className="stat-icon-large" style={{ color: 'var(--success)' }} />
+        </article>
+        <article className="stat-card">
+          <FiEye className="stat-icon-large" style={{ color: 'var(--success)' }} aria-hidden="true" />
           <div className="stat-data">
             <span className="stat-value">{metrics.reach?.toLocaleString() || 0}</span>
-            <span className="stat-label">Total Reach</span>
+            <h2 className="stat-label">Total Reach</h2>
           </div>
-        </div>
-        <div className="stat-card">
-          <FiBookmark className="stat-icon-large" style={{ color: 'var(--warning)' }} />
+        </article>
+        <article className="stat-card">
+          <FiBookmark className="stat-icon-large" style={{ color: 'var(--warning)' }} aria-hidden="true" />
           <div className="stat-data">
             <span className="stat-value">{metrics.saves?.toLocaleString() || 0}</span>
-            <span className="stat-label">Total Saves</span>
+            <h2 className="stat-label">Total Saves</h2>
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
       <div className="analytics-grid">
         {/* Engagement Breakdown */}
-        <div className="card">
-          <h3 className="card-title">Engagement Breakdown</h3>
-          <div className="chart-container doughnut">
+        <section className="card" aria-labelledby="engagement-heading">
+          <h3 id="engagement-heading" className="card-title">Engagement Breakdown</h3>
+          <div className="chart-container doughnut" aria-label="Grafikon raspodele interakcija">
             <Doughnut 
               data={engagementData} 
               options={{
@@ -196,15 +197,15 @@ const Analytics = () => {
               }}
             />
           </div>
-        </div>
+        </section>
 
         {/* Best Posting Times */}
-        <div className="card">
-          <h3 className="card-title">
-            <FiClock /> Best Posting Times
+        <section className="card" aria-labelledby="times-heading">
+          <h3 id="times-heading" className="card-title">
+            <FiClock aria-hidden="true" /> Best Posting Times
           </h3>
           {bestTimesData ? (
-            <div className="chart-container">
+            <div className="chart-container" aria-label="Grafikon najboljih vremena za objavljivanje">
               <Line 
                 data={bestTimesData}
                 options={{
@@ -242,48 +243,54 @@ const Analytics = () => {
               </div>
             </div>
           )}
-        </div>
+        </section>
 
         {/* Top Performing Content */}
-        <div className="card full-width">
-          <h3 className="card-title">
-            <FiTrendingUp /> Top Performing Content
+        <section className="card full-width" aria-labelledby="top-content-heading">
+          <h3 id="top-content-heading" className="card-title">
+            <FiTrendingUp aria-hidden="true" /> Top Performing Content
           </h3>
           {topContent.length > 0 ? (
-            <div className="content-table">
-              <div className="table-header">
-                <span>Content</span>
-                <span>Type</span>
-                <span>Likes</span>
-                <span>Comments</span>
-                <span>Engagement</span>
-              </div>
-              {topContent.map((item, idx) => (
-                <div key={idx} className="table-row">
-                  <span className="content-preview">
-                    {item.caption?.substring(0, 40) || 'No caption'}...
-                  </span>
-                  <span className="badge badge-default">{item.contentType}</span>
-                  <span>{item.metrics?.likes || 0}</span>
-                  <span>{item.metrics?.comments || 0}</span>
-                  <span className="engagement-score">{item.engagement}</span>
-                </div>
-              ))}
+            <div className="table-responsive">
+              <table className="content-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Content</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Likes</th>
+                    <th scope="col">Comments</th>
+                    <th scope="col">Engagement</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topContent.map((item, idx) => (
+                    <tr key={idx}>
+                      <td className="content-preview-cell">
+                        {item.caption?.substring(0, 40) || 'No caption'}...
+                      </td>
+                      <td><span className="badge badge-default">{item.contentType}</span></td>
+                      <td>{item.metrics?.likes || 0}</td>
+                      <td>{item.metrics?.comments || 0}</td>
+                      <td className="engagement-score">{item.engagement}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <p className="no-data">No published content yet</p>
           )}
-        </div>
+        </section>
 
         {/* Best Days */}
         {bestTimes?.recommendations?.bestDays?.length > 0 && (
-          <div className="card">
-            <h3 className="card-title">Best Days to Post</h3>
+          <section className="card" aria-labelledby="best-days-heading">
+            <h3 id="best-days-heading" className="card-title">Best Days to Post</h3>
             <div className="best-days">
               {bestTimes.recommendations.bestDays.map((day, idx) => (
                 <div key={idx} className="best-day">
                   <span className="day-name">{day.day}</span>
-                  <div className="day-bar">
+                  <div className="day-bar" role="progressbar" aria-valuenow={Math.round(day.averageEngagement)} aria-valuemin="0" aria-valuemax={Math.round(bestTimes.recommendations.bestDays[0].averageEngagement)}>
                     <div 
                       className="day-bar-fill" 
                       style={{ 
@@ -295,10 +302,10 @@ const Analytics = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
       </div>
-    </div>
+    </main>
   );
 };
 

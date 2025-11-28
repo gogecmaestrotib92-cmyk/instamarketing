@@ -3,6 +3,7 @@ const router = express.Router();
 const { auth } = require('../middleware/auth');
 const advancedVideoGenerator = require('../services/advancedVideoGenerator');
 const videoEnhancer = require('../services/videoEnhancer');
+const videoProcessor = require('../services/videoProcessor');
 
 /**
  * @route   POST /api/video/generate
@@ -461,6 +462,37 @@ router.get('/presets', auth, async (req, res) => {
   };
 
   res.json(presets);
+});
+
+/**
+ * @route   POST /api/video/finalize
+ * @desc    Add audio and subtitles to video
+ * @access  Private
+ */
+router.post('/finalize', auth, async (req, res) => {
+  try {
+    const { videoUrl, voiceoverUrl, musicUrl, overlays } = req.body;
+
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'Video URL is required' });
+    }
+
+    const finalVideoUrl = await videoProcessor.processVideo({
+      videoUrl,
+      voiceoverUrl,
+      musicUrl,
+      overlays
+    });
+
+    res.json({
+      success: true,
+      url: finalVideoUrl
+    });
+
+  } catch (error) {
+    console.error('Video finalization error:', error);
+    res.status(500).json({ error: error.message || 'Failed to finalize video' });
+  }
 });
 
 module.exports = router;
