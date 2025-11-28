@@ -18,28 +18,34 @@
 }
 
 .stat-card {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
   padding: 24px;
   display: flex;
   align-items: center;
   gap: 20px;
   transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-card:hover {
-  border-color: #555;
+  border-color: rgba(225, 48, 108, 0.3);
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(225, 48, 108, 0.15);
 }
 
 .stat-icon-large {
   font-size: 32px;
   padding: 16px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  border-radius: 16px;
   color: #E1306C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .stat-data {
@@ -59,7 +65,7 @@
 
 .stat-data .stat-label {
   font-size: 14px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
@@ -71,15 +77,18 @@
 }
 
 .analytics-grid .card {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
   padding: 24px;
   transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-md);
 }
 
 .analytics-grid .card:hover {
-  border-color: #555;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .analytics-grid .card.full-width {
@@ -93,7 +102,7 @@
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 24px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .card-title svg {
@@ -115,21 +124,22 @@
 .no-data {
   text-align: center;
   padding: 60px 20px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
+  border-radius: 16px;
+  border: 1px dashed var(--glass-border);
 }
 
 /* Recommendations */
 .recommendations {
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--glass-border);
 }
 
 .recommendations h4 {
   font-size: 14px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -145,9 +155,10 @@
 .content-table {
   display: flex;
   flex-direction: column;
-  background: #1a1a1a;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
   overflow: hidden;
+  border: 1px solid var(--glass-border);
 }
 
 .table-header {
@@ -155,10 +166,10 @@
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 16px;
   padding: 16px 24px;
-  background: #252525;
+  background: rgba(255, 255, 255, 0.05);
   font-size: 12px;
   font-weight: 600;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -168,13 +179,13 @@
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
   gap: 16px;
   padding: 20px 24px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--glass-border);
   align-items: center;
   transition: background 0.2s ease;
 }
 
 .table-row:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .table-row:last-child {
@@ -183,7 +194,7 @@
 
 .content-preview {
   font-size: 14px;
-  color: #fff;
+  color: var(--text-primary);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -211,21 +222,21 @@
 .day-name {
   width: 80px;
   font-size: 14px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .day-bar {
   flex: 1;
   height: 8px;
-  background: #333;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   overflow: hidden;
 }
 
 .day-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #E1306C, #F77737);
+  background: var(--gradient);
   border-radius: 4px;
   transition: width 0.5s ease;
 }
@@ -234,7 +245,7 @@
   width: 50px;
   text-align: right;
   font-size: 14px;
-  color: #fff;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
