@@ -173,7 +173,7 @@ const CreatePost = () => {
                   {file.type.startsWith('video') ? (
                     <video src={file.preview} aria-label={`New video ${index + 1}`} />
                   ) : (
-                    <img src={file.preview} alt={`New image ${index + 1}`} />
+                    <img src={file.preview} alt={`Upload preview ${index + 1}`} />
                   )}
                   <button 
                     className="remove-media" 

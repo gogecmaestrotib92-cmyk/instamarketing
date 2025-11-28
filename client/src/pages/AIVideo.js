@@ -320,7 +320,7 @@ const AIVideo = () => {
   const [activeTab, setActiveTab] = useState('text-to-video');
   const [prompt, setPrompt] = useState('');
   const [duration, setDuration] = useState(5);
-  const [aspectRatio, setAspectRatio] = useState('9:16'); // Always 9:16 for TikTok/Reels
+  const [aspectRatio] = useState('9:16'); // Always 9:16 for TikTok/Reels
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
