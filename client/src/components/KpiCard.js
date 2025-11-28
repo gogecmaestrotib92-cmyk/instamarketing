@@ -2,38 +2,53 @@ import React from 'react';
 import './KpiCard.css';
 
 /**
- * Modern SaaS-style KPI Card Component
+ * Premium SaaS-style KPI Card
+ * Clean, minimal design - no icons, subtle borders
  * 
- * @param {string} label - Small uppercase label text
- * @param {string|number} value - Large bold number/value
- * @param {React.ReactNode} icon - Icon component (e.g., from react-icons)
- * @param {string} iconColor - Color class: 'blue' | 'purple' | 'pink' | 'orange' | 'green' | 'red'
- * @param {string} subtitle - Optional small text below the value
+ * @param {string} label - Small uppercase label
+ * @param {string|number} value - Large bold number
+ * @param {string} change - Optional change indicator (e.g., "+12%")
+ * @param {string} trend - 'up' | 'down' | 'neutral'
  */
-const KpiCard = ({ label, value, icon, iconColor = 'blue', subtitle }) => {
+const KpiCard = ({ label, value, change, trend = 'neutral' }) => {
   return (
-    <div className="kpi-card-modern">
-      <div className={`kpi-card-icon ${iconColor}`}>
-        {icon}
-      </div>
-      <div className="kpi-card-content">
-        <span className="kpi-card-label">{label}</span>
-        <span className="kpi-card-value">{value}</span>
-        {subtitle && <span className="kpi-card-subtitle">{subtitle}</span>}
+    <div className="kpi">
+      <span className="kpi-label">{label}</span>
+      <div className="kpi-value-row">
+        <span className="kpi-value">{value}</span>
+        {change && (
+          <span className={`kpi-change ${trend}`}>{change}</span>
+        )}
       </div>
     </div>
   );
 };
 
 /**
- * Responsive grid container for KPI cards
+ * KPI Row - Responsive grid of 4-5 KPI cards
+ * Use as: <KpiRow data={[{ label, value, change, trend }]} />
  */
-export const KpiGrid = ({ children }) => {
+export const KpiRow = ({ data = [] }) => {
   return (
-    <div className="kpi-grid-modern">
-      {children}
+    <div className="kpi-row">
+      {data.map((item, index) => (
+        <KpiCard
+          key={index}
+          label={item.label}
+          value={item.value}
+          change={item.change}
+          trend={item.trend}
+        />
+      ))}
     </div>
   );
+};
+
+/**
+ * @deprecated Use KpiRow instead
+ */
+export const KpiGrid = ({ children }) => {
+  return <div className="kpi-row">{children}</div>;
 };
 
 export default KpiCard;

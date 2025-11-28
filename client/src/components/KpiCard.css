@@ -1,123 +1,91 @@
 /* ================================================
-   KPI CARD - Modern SaaS Style
+   KPI CARD - Premium SaaS Style
+   Clean, Minimal, No Icons, Subtle Borders
    ================================================ */
 
-/* Responsive Grid */
-.kpi-grid-modern {
+/* Responsive Row - 4-5 cards */
+.kpi-row {
   display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* 5-card layout when needed */
+.kpi-row:has(:nth-child(5)) {
   grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
 }
 
-@media (max-width: 1280px) {
-  .kpi-grid-modern {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 900px) {
-  .kpi-grid-modern {
+@media (max-width: 1024px) {
+  .kpi-row,
+  .kpi-row:has(:nth-child(5)) {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 540px) {
-  .kpi-grid-modern {
+  .kpi-row,
+  .kpi-row:has(:nth-child(5)) {
     grid-template-columns: 1fr;
   }
 }
 
-/* Card Base */
-.kpi-card-modern {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+/* Card - Clean minimal design */
+.kpi {
+  padding: 16px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  transition: background 0.15s, border-color 0.15s;
 }
 
-/* Soft hover state */
-.kpi-card-modern:hover {
-  border-color: #334155;
-  background: #0f1729;
+/* Light hover state */
+.kpi:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Icon Container - Dimmed versions */
-.kpi-card-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  flex-shrink: 0;
-}
-
-/* Icon color variants - dimmed/muted backgrounds */
-.kpi-card-icon.blue {
-  background: rgba(59, 130, 246, 0.12);
-  color: #60a5fa;
-}
-
-.kpi-card-icon.purple {
-  background: rgba(139, 92, 246, 0.12);
-  color: #a78bfa;
-}
-
-.kpi-card-icon.pink {
-  background: rgba(236, 72, 153, 0.12);
-  color: #f472b6;
-}
-
-.kpi-card-icon.orange {
-  background: rgba(249, 115, 22, 0.12);
-  color: #fb923c;
-}
-
-.kpi-card-icon.green {
-  background: rgba(34, 197, 94, 0.12);
-  color: #4ade80;
-}
-
-.kpi-card-icon.red {
-  background: rgba(239, 68, 68, 0.12);
-  color: #f87171;
-}
-
-/* Content area */
-.kpi-card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-/* Label - small uppercase */
-.kpi-card-label {
+/* Label - uppercase, small */
+.kpi-label {
+  display: block;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  margin-bottom: 6px;
 }
 
-/* Value - large bold (text-3xl = 1.875rem/30px) */
-.kpi-card-value {
+/* Value row with change indicator */
+.kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+/* Big number - text-3xl, font-bold */
+.kpi-value {
   font-size: 1.875rem;
   font-weight: 700;
   color: #f1f5f9;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-/* Optional subtitle */
-.kpi-card-subtitle {
+/* Change indicator */
+.kpi-change {
   font-size: 12px;
-  color: #475569;
-  margin-top: 2px;
+  font-weight: 500;
+}
+
+.kpi-change.up {
+  color: #22c55e;
+}
+
+.kpi-change.down {
+  color: #ef4444;
+}
+
+.kpi-change.neutral {
+  color: #64748b;
 }

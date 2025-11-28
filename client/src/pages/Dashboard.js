@@ -1,27 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-// import { analyticsAPI } from '../services/api'; // TODO: Uncomment when connecting backend
 import { 
   FiImage, 
   FiFilm, 
-  FiTarget, 
-  FiCalendar,
   FiTrendingUp,
   FiHeart,
   FiMessageCircle,
   FiEye,
   FiPlus,
-  FiUsers,
   FiCheckCircle,
   FiClock,
   FiExternalLink,
   FiSettings,
-  FiArrowUpRight,
-  FiArrowDownRight
+  FiCalendar
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import SEO from '../components/SEO';
+import { KpiRow } from '../components/KpiCard';
+import '../components/KpiCard.css';
 import './Dashboard.css';
 
 // ============================================================
@@ -32,10 +29,10 @@ const PLACEHOLDER_DATA = {
     name: 'Goran'
   },
   kpis: [
-    { label: 'Ukupno Objava', value: '128', change: '+12%', trend: 'up', icon: 'posts' },
-    { label: 'Pratilaca', value: '24.5K', change: '+8.2%', trend: 'up', icon: 'followers' },
-    { label: 'Angažovanje', value: '5.4%', change: '+1.2%', trend: 'up', icon: 'engagement' },
-    { label: 'Domet', value: '128K', change: '-3%', trend: 'down', icon: 'reach' }
+    { label: 'Ukupno Objava', value: '128', change: '+12%', trend: 'up' },
+    { label: 'Pratilaca', value: '24.5K', change: '+8.2%', trend: 'up' },
+    { label: 'Angažovanje', value: '5.4%', change: '+1.2%', trend: 'up' },
+    { label: 'Domet', value: '128K', change: '-3%', trend: 'down' }
   ],
   engagement: {
     likes: 45200,
@@ -104,16 +101,6 @@ const Dashboard = () => {
     return num.toLocaleString();
   };
 
-  const getKpiIcon = (iconType) => {
-    switch(iconType) {
-      case 'posts': return <FiImage />;
-      case 'followers': return <FiUsers />;
-      case 'engagement': return <FiTrendingUp />;
-      case 'reach': return <FiEye />;
-      default: return <FiTarget />;
-    }
-  };
-
   if (loading) {
     return (
       <div className="dash-loading">
@@ -142,24 +129,8 @@ const Dashboard = () => {
         </Link>
       </header>
 
-      {/* KPI Cards - 4 medium cards */}
-      <div className="dash-kpis">
-        {data?.kpis?.map((kpi, index) => (
-          <div key={index} className="dash-kpi">
-            <div className="dash-kpi-icon">{getKpiIcon(kpi.icon)}</div>
-            <div className="dash-kpi-content">
-              <span className="dash-kpi-label">{kpi.label}</span>
-              <div className="dash-kpi-row">
-                <span className="dash-kpi-value">{kpi.value}</span>
-                <span className={`dash-kpi-change ${kpi.trend}`}>
-                  {kpi.trend === 'up' ? <FiArrowUpRight /> : <FiArrowDownRight />}
-                  {kpi.change}
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* KPI Cards - Clean Premium Style */}
+      <KpiRow data={data?.kpis || []} />
 
       {/* Main 2-Column Layout */}
       <div className="dash-grid">
