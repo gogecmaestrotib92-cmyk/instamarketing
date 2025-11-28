@@ -224,8 +224,8 @@
   margin-top: 16px;
 }
 
-/* Buttons */
-.btn {
+/* Buttons (Scoped to Settings Page) */
+.settings-page .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -240,42 +240,42 @@
   cursor: pointer;
 }
 
-.btn-primary {
+.settings-page .btn-primary {
   background: #3b82f6;
   color: white;
 }
 
-.btn-primary:hover {
+.settings-page .btn-primary:hover {
   background: #2563eb;
 }
 
-.btn-secondary {
+.settings-page .btn-secondary {
   background: #1e293b;
   color: #94a3b8;
   border: 1px solid #334155;
 }
 
-.btn-secondary:hover {
+.settings-page .btn-secondary:hover {
   background: #334155;
   color: #f1f5f9;
 }
 
-.btn-danger {
+.settings-page .btn-danger {
   background: rgba(239, 68, 68, 0.1);
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.btn-danger:hover {
+.settings-page .btn-danger:hover {
   background: rgba(239, 68, 68, 0.2);
 }
 
-.btn-instagram {
+.settings-page .btn-instagram {
   background: linear-gradient(135deg, #e1306c, #833ab4);
   color: white;
 }
 
-.btn-instagram:hover {
+.settings-page .btn-instagram:hover {
   opacity: 0.9;
 }
 

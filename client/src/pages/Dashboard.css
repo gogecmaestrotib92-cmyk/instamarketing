@@ -62,8 +62,8 @@
   gap: 10px;
 }
 
-/* ============ BUTTONS ============ */
-.btn {
+/* ============ BUTTONS (Scoped to Dashboard) ============ */
+.dashboard .btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -77,32 +77,32 @@
   transition: all 0.15s;
 }
 
-.btn-primary {
+.dashboard .btn-primary {
   background: #3b82f6;
   color: white;
 }
 
-.btn-primary:hover {
+.dashboard .btn-primary:hover {
   background: #2563eb;
 }
 
-.btn-secondary {
+.dashboard .btn-secondary {
   background: rgba(255,255,255,0.04);
   color: #e2e8f0;
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-.btn-secondary:hover {
+.dashboard .btn-secondary:hover {
   background: rgba(255,255,255,0.06);
   border-color: rgba(255,255,255,0.12);
 }
 
-.btn-sm {
+.dashboard .btn-sm {
   padding: 7px 12px;
   font-size: 12px;
 }
 
-.btn-icon {
+.dashboard .btn-icon {
   width: 34px;
   height: 34px;
   display: flex;
@@ -116,7 +116,7 @@
   transition: all 0.15s;
 }
 
-.btn-icon:hover {
+.dashboard .btn-icon:hover {
   background: rgba(255,255,255,0.08);
   color: #e2e8f0;
 }
