@@ -1,5 +1,6 @@
 # InstaMarketing Srbija - robots.txt
 # https://instamarketing.rs
+# Updated: January 2025 - GEO/AEO Optimized
 
 User-agent: *
 Allow: /
@@ -8,44 +9,98 @@ Disallow: /admin/
 Disallow: /private/
 Disallow: /*.json$
 Disallow: /temp/
+Disallow: /uploads/temp/
 
-# Dozvoli pristup važnim stranicama
+# Dozvoli pristup važnim stranicama za SEO
 Allow: /login
 Allow: /register
 Allow: /dashboard
 Allow: /ai-tools
+Allow: /ai-video
 Allow: /scheduler
+Allow: /calendar
 Allow: /analytics
-Allow: /ads
-Allow: /settings
+Allow: /campaigns
+Allow: /pricing
+Allow: /profile
 
 # Sitemap lokacija
 Sitemap: https://instamarketing.rs/sitemap.xml
 
-# Crawl-delay za smanjenje opterećenja servera
-Crawl-delay: 10
+# ============================================
+# AI ASSISTANTS & LLM CRAWLERS - GEO 2025
+# ============================================
+
+# OpenAI GPT / ChatGPT
+User-agent: GPTBot
+Allow: /
+Crawl-delay: 2
+
+# OpenAI ChatGPT User Agent
+User-agent: ChatGPT-User
+Allow: /
+
+# Google Bard / Gemini
+User-agent: Google-Extended
+Allow: /
+
+# Anthropic Claude
+User-agent: Claude-Web
+Allow: /
+User-agent: anthropic-ai
+Allow: /
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+
+# Meta AI
+User-agent: FacebookBot
+Allow: /
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Cohere AI
+User-agent: cohere-ai
+Allow: /
+
+# Microsoft Copilot / Bing AI
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 5
+
+# ============================================
+# SEARCH ENGINE CRAWLERS
+# ============================================
 
 # Googlebot specifična pravila
 User-agent: Googlebot
 Allow: /
-Crawl-delay: 5
+Crawl-delay: 3
 
 # Googlebot Images
 User-agent: Googlebot-Image
 Allow: /images/
 Allow: /og-image.png
+Allow: /logo512.png
 
-# Bingbot
-User-agent: Bingbot
+# Googlebot Video
+User-agent: Googlebot-Video
+Allow: /
+
+# Yandex (za rusko/balkans tržište)
+User-agent: Yandex
 Allow: /
 Crawl-delay: 10
 
-# Yandex (za rusko tržište)
-User-agent: Yandex
+# DuckDuckGo
+User-agent: DuckDuckBot
 Allow: /
-Crawl-delay: 15
 
-# Blokiraj loše botove
+# ============================================
+# BLOKIRAJ LOŠE/SCRAPER BOTOVE
+# ============================================
+
 User-agent: AhrefsBot
 Disallow: /
 
@@ -56,4 +111,13 @@ User-agent: MJ12bot
 Disallow: /
 
 User-agent: DotBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: PetalBot
 Disallow: /

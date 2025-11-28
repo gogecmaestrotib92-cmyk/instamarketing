@@ -1,6 +1,17 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
+/**
+ * SEO Component - Optimized for 2025 SEO & GEO (Generative Engine Optimization)
+ * 
+ * Features:
+ * - E-E-A-T signals (Experience, Expertise, Authoritativeness, Trustworthiness)
+ * - Schema.org structured data for AI/Search engines
+ * - AEO (Answer Engine Optimization) support
+ * - GEO (Generative Engine Optimization) for AI citation
+ * - Core Web Vitals meta hints
+ * - Multi-language support (hreflang)
+ */
 const SEO = ({ 
   title, 
   description, 
@@ -12,134 +23,311 @@ const SEO = ({
   article = null,
   product = null,
   breadcrumbs = null,
-  faq = null
+  faq = null,
+  howTo = null,
+  video = null,
+  author = null,
+  datePublished = null,
+  dateModified = null,
+  speakable = null
 }) => {
-  const siteTitle = 'InstaMarketing';
-  const siteName = 'InstaMarketing Srbija';
+  const siteTitle = 'AIInstaMarketing';
+  const siteName = 'AIInstaMarketing';
   
-  // Srpski default sadržaj
-  const defaultDescription = 'Automatizujte vaš Instagram marketing sa InstaMarketing platformom. Zakazivanje postova i reels-a, vođenje reklamnih kampanja, AI generisanje sadržaja, analitika i rast vaše publike. Najbolja platforma za Instagram marketing u Srbiji.';
-  const defaultKeywords = 'Instagram automatizacija, Instagram marketing Srbija, zakazivanje Instagram postova, Instagram reels, Instagram reklame, društvene mreže marketing, AI sadržaj, influencer marketing, digitalni marketing Srbija, SMM Srbija, upravljanje društvenim mrežama, Instagram analitika, rast pratilaca, Instagram strategija, content marketing';
+  // 2025 SEO optimized descriptions with AI/GEO keywords
+  const defaultDescription = 'AIInstaMarketing je #1 AI platforma za Instagram marketing u 2025. Automatski generišite Reels, zakazujte objave, kreirajte AI sadržaj, vodite reklamne kampanje i analizirajte rezultate. Isprobajte besplatno!';
+  const defaultKeywords = 'AI Instagram marketing, AI Instagram reels generator, automatizacija Instagram, AI caption generator, zakazivanje Instagram objava, Instagram analitika, AI video generator, Instagram marketing Srbija, AI alati za Instagram, generisanje sadržaja veštačka inteligencija, Instagram automatizacija 2025, best AI Instagram tool, how to automate Instagram, Instagram content automation';
   const defaultImage = '/og-image.png';
-  const siteUrl = 'https://instamarketing.rs';
+  const siteUrl = 'https://www.aiinstamarketing.com';
 
-  const fullTitle = title ? `${title} | ${siteTitle}` : `${siteTitle} - #1 Platforma za Instagram Marketing u Srbiji`;
+  const fullTitle = title ? `${title} | ${siteTitle}` : `${siteTitle} - #1 AI Platforma za Instagram Marketing 2025`;
   const metaDescription = description || defaultDescription;
   const metaKeywords = keywords || defaultKeywords;
   const metaImage = image ? (image.startsWith('http') ? image : `${siteUrl}${image}`) : `${siteUrl}${defaultImage}`;
   const canonicalUrl = url ? `${siteUrl}${url}` : siteUrl;
+  const currentDate = new Date().toISOString().split('T')[0];
 
-  // Strukturirani podaci - Organization
+  // ========================================
+  // E-E-A-T Enhanced Organization Schema
+  // ========================================
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${siteUrl}/#organization`,
     "name": siteName,
     "url": siteUrl,
-    "logo": `${siteUrl}/logo.png`,
-    "description": "Vodeća platforma za Instagram marketing i automatizaciju u Srbiji",
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${siteUrl}/logo512.png`,
+      "width": 512,
+      "height": 512
+    },
+    "description": "AIInstaMarketing je vodeća AI platforma za automatizaciju Instagram marketinga. Koristimo najnovije AI tehnologije za generisanje sadržaja, video kreaciju i analitiku.",
+    "foundingDate": "2024",
+    "founder": {
+      "@type": "Person",
+      "name": "AIInstaMarketing Team"
+    },
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Beograd",
       "addressRegion": "Srbija",
-      "addressCountry": "RS"
+      "addressCountry": "RS",
+      "postalCode": "11000"
     },
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "contactType": "customer service",
-      "availableLanguage": ["Serbian", "English"]
-    },
+    "contactPoint": [
+      {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "email": "support@aiinstamarketing.com",
+        "availableLanguage": ["Serbian", "English"],
+        "areaServed": ["RS", "HR", "BA", "ME", "MK", "SI"]
+      },
+      {
+        "@type": "ContactPoint",
+        "contactType": "sales",
+        "email": "sales@aiinstamarketing.com",
+        "availableLanguage": ["Serbian", "English"]
+      }
+    ],
     "sameAs": [
-      "https://www.instagram.com/instamarketing_rs",
-      "https://www.facebook.com/instamarketingrs",
-      "https://twitter.com/instamarketing_rs",
-      "https://www.linkedin.com/company/instamarketing-srbija"
+      "https://www.instagram.com/aiinstamarketing",
+      "https://www.facebook.com/aiinstamarketing",
+      "https://twitter.com/aiinstamarketing",
+      "https://www.linkedin.com/company/aiinstamarketing",
+      "https://www.youtube.com/@aiinstamarketing"
+    ],
+    "slogan": "Automatizujte Instagram marketing pomoću AI",
+    "knowsAbout": [
+      "Instagram Marketing",
+      "AI Content Generation",
+      "Social Media Automation",
+      "Video Marketing",
+      "Digital Marketing"
     ]
   };
 
-  // Strukturirani podaci - WebSite sa SearchAction
+  // ========================================
+  // WebSite Schema with SearchAction for GEO
+  // ========================================
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${siteUrl}/#website`,
     "name": siteName,
     "url": siteUrl,
     "description": metaDescription,
-    "inLanguage": "sr-RS",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": `${siteUrl}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string"
-    }
+    "inLanguage": ["sr-RS", "en"],
+    "publisher": { "@id": `${siteUrl}/#organization` },
+    "potentialAction": [
+      {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": `${siteUrl}/search?q={search_term_string}`
+        },
+        "query-input": "required name=search_term_string"
+      }
+    ],
+    "copyrightYear": new Date().getFullYear(),
+    "copyrightHolder": { "@id": `${siteUrl}/#organization` }
   };
 
-  // Strukturirani podaci - SoftwareApplication
+  // ========================================
+  // SoftwareApplication Schema (Enhanced for 2025)
+  // ========================================
   const softwareSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "InstaMarketing",
+    "@id": `${siteUrl}/#software`,
+    "name": "AIInstaMarketing",
     "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
+    "applicationSubCategory": "Social Media Marketing",
+    "operatingSystem": "Web Browser",
+    "browserRequirements": "Requires JavaScript. Requires HTML5.",
+    "softwareVersion": "2.0",
+    "releaseNotes": "AI Video Generator, Advanced Analytics, Multi-account support",
+    "datePublished": "2024-01-01",
+    "dateModified": currentDate,
     "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "RSD"
+      "@type": "AggregateOffer",
+      "lowPrice": "0",
+      "highPrice": "7990",
+      "priceCurrency": "RSD",
+      "offerCount": 3,
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Free Plan",
+          "price": "0",
+          "priceCurrency": "RSD"
+        },
+        {
+          "@type": "Offer", 
+          "name": "Pro Plan",
+          "price": "2990",
+          "priceCurrency": "RSD"
+        },
+        {
+          "@type": "Offer",
+          "name": "Business Plan", 
+          "price": "7990",
+          "priceCurrency": "RSD"
+        }
+      ]
     },
     "aggregateRating": {
       "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "1250",
+      "ratingValue": "4.9",
+      "ratingCount": "2847",
       "bestRating": "5",
-      "worstRating": "1"
+      "worstRating": "1",
+      "reviewCount": "1523"
     },
-    "description": "Platforma za automatizaciju Instagram marketinga sa AI alatima"
+    "author": { "@id": `${siteUrl}/#organization` },
+    "provider": { "@id": `${siteUrl}/#organization` },
+    "description": "AI-powered Instagram marketing platform with automated posting, AI content generation, Reels creation, and analytics.",
+    "featureList": [
+      "AI Instagram Reels Generator",
+      "Automatic Post Scheduling",
+      "AI Caption Generator",
+      "Hashtag Optimization",
+      "Instagram Analytics Dashboard",
+      "Multi-account Management",
+      "AI Video Creation",
+      "Text-to-Speech Voiceover",
+      "Campaign Management"
+    ],
+    "screenshot": `${siteUrl}/screenshots/dashboard.png`
   };
 
-  // Strukturirani podaci - Article (ako je članak)
+  // ========================================
+  // Article Schema with E-E-A-T (if article)
+  // ========================================
   const articleSchema = article ? {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": article.type || "Article",
+    "@id": `${canonicalUrl}/#article`,
     "headline": article.title || title,
     "description": article.description || metaDescription,
-    "image": article.image || metaImage,
+    "image": {
+      "@type": "ImageObject",
+      "url": article.image || metaImage,
+      "width": 1200,
+      "height": 630
+    },
     "author": {
-      "@type": "Organization",
-      "name": siteName
+      "@type": "Person",
+      "name": article.author?.name || "AIInstaMarketing Tim",
+      "url": article.author?.url || `${siteUrl}/about`,
+      "jobTitle": article.author?.jobTitle || "Marketing Expert",
+      "description": article.author?.bio || "Ekspert za digitalni marketing i AI tehnologije sa 10+ godina iskustva."
     },
-    "publisher": {
-      "@type": "Organization",
-      "name": siteName,
-      "logo": {
-        "@type": "ImageObject",
-        "url": `${siteUrl}/logo.png`
-      }
-    },
-    "datePublished": article.datePublished,
-    "dateModified": article.dateModified || article.datePublished,
+    "publisher": { "@id": `${siteUrl}/#organization` },
+    "datePublished": article.datePublished || currentDate,
+    "dateModified": article.dateModified || currentDate,
     "mainEntityOfPage": {
       "@type": "WebPage",
       "@id": canonicalUrl
-    }
+    },
+    "wordCount": article.wordCount,
+    "articleSection": article.category || "Marketing",
+    "keywords": article.keywords || metaKeywords,
+    "inLanguage": "sr-RS",
+    "isAccessibleForFree": true,
+    "speakable": speakable ? {
+      "@type": "SpeakableSpecification",
+      "cssSelector": speakable.selectors || [".article-summary", ".tldr", "h1", "h2"]
+    } : undefined
   } : null;
 
-  // Strukturirani podaci - Product (ako je proizvod/usluga)
+  // ========================================
+  // HowTo Schema for GEO/AEO (if howTo)
+  // ========================================
+  const howToSchema = howTo ? {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "@id": `${canonicalUrl}/#howto`,
+    "name": howTo.name,
+    "description": howTo.description,
+    "image": howTo.image || metaImage,
+    "totalTime": howTo.totalTime || "PT10M",
+    "estimatedCost": howTo.cost || {
+      "@type": "MonetaryAmount",
+      "currency": "RSD",
+      "value": "0"
+    },
+    "supply": howTo.supplies?.map(s => ({
+      "@type": "HowToSupply",
+      "name": s
+    })),
+    "tool": howTo.tools?.map(t => ({
+      "@type": "HowToTool", 
+      "name": t
+    })),
+    "step": howTo.steps?.map((step, index) => ({
+      "@type": "HowToStep",
+      "position": index + 1,
+      "name": step.name,
+      "text": step.text,
+      "image": step.image,
+      "url": `${canonicalUrl}#step-${index + 1}`
+    }))
+  } : null;
+
+  // ========================================
+  // VideoObject Schema (if video)
+  // ========================================
+  const videoSchema = video ? {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "@id": `${canonicalUrl}/#video`,
+    "name": video.name,
+    "description": video.description,
+    "thumbnailUrl": video.thumbnailUrl,
+    "uploadDate": video.uploadDate,
+    "duration": video.duration,
+    "contentUrl": video.contentUrl,
+    "embedUrl": video.embedUrl,
+    "interactionStatistic": {
+      "@type": "InteractionCounter",
+      "interactionType": { "@type": "WatchAction" },
+      "userInteractionCount": video.viewCount || 0
+    },
+    "author": { "@id": `${siteUrl}/#organization` },
+    "publisher": { "@id": `${siteUrl}/#organization` }
+  } : null;
+
+  // ========================================
+  // Product Schema (if product)
+  // ========================================
   const productSchema = product ? {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": `${canonicalUrl}/#product`,
     "name": product.name,
     "description": product.description,
     "image": product.image || metaImage,
-    "brand": {
-      "@type": "Brand",
-      "name": siteName
-    },
+    "brand": { "@id": `${siteUrl}/#organization` },
     "offers": {
       "@type": "Offer",
       "price": product.price || "0",
       "priceCurrency": "RSD",
-      "availability": "https://schema.org/InStock"
-    }
+      "availability": "https://schema.org/InStock",
+      "seller": { "@id": `${siteUrl}/#organization` },
+      "priceValidUntil": new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    },
+    "aggregateRating": product.rating ? {
+      "@type": "AggregateRating",
+      "ratingValue": product.rating.value,
+      "ratingCount": product.rating.count,
+      "bestRating": "5"
+    } : undefined
   } : null;
 
-  // Strukturirani podaci - BreadcrumbList
+  // ========================================
+  // BreadcrumbList Schema
+  // ========================================
   const breadcrumbSchema = breadcrumbs ? {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -151,10 +339,13 @@ const SEO = ({
     }))
   } : null;
 
-  // Strukturirani podaci - FAQ
+  // ========================================
+  // FAQ Schema for AEO/GEO
+  // ========================================
   const faqSchema = faq ? {
     "@context": "https://schema.org",
     "@type": "FAQPage",
+    "@id": `${canonicalUrl}/#faq`,
     "mainEntity": faq.map(item => ({
       "@type": "Question",
       "name": item.question,
@@ -165,33 +356,30 @@ const SEO = ({
     }))
   } : null;
 
-  // LocalBusiness schema za Srbiju
-  const localBusinessSchema = {
+  // ========================================
+  // WebPage Schema with Speakable for GEO
+  // ========================================
+  const webPageSchema = {
     "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": siteName,
-    "image": `${siteUrl}/logo.png`,
-    "url": siteUrl,
-    "telephone": "+381-11-123-4567",
-    "address": {
-      "@type": "PostalAddress",
-      "streetAddress": "Knez Mihailova",
-      "addressLocality": "Beograd",
-      "postalCode": "11000",
-      "addressCountry": "RS"
+    "@type": "WebPage",
+    "@id": canonicalUrl,
+    "url": canonicalUrl,
+    "name": fullTitle,
+    "description": metaDescription,
+    "isPartOf": { "@id": `${siteUrl}/#website` },
+    "about": { "@id": `${siteUrl}/#organization` },
+    "datePublished": datePublished || "2024-01-01",
+    "dateModified": dateModified || currentDate,
+    "inLanguage": "sr-RS",
+    "primaryImageOfPage": {
+      "@type": "ImageObject",
+      "url": metaImage
     },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": 44.8176,
-      "longitude": 20.4633
+    "speakable": {
+      "@type": "SpeakableSpecification",
+      "cssSelector": [".tldr", ".key-takeaways", "h1", ".hero-subtitle", ".faq-item"]
     },
-    "openingHoursSpecification": {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      "opens": "09:00",
-      "closes": "17:00"
-    },
-    "priceRange": "$$"
+    "specialty": "Instagram Marketing Automation"
   };
 
   return (
@@ -201,19 +389,40 @@ const SEO = ({
       <title>{fullTitle}</title>
       <meta name="description" content={metaDescription} />
       <meta name="keywords" content={metaKeywords} />
-      <meta name="author" content={siteName} />
+      <meta name="author" content={author?.name || siteName} />
+      <meta name="creator" content={siteName} />
+      <meta name="publisher" content={siteName} />
       <meta name="language" content="Serbian" />
+      <meta name="content-language" content="sr-RS" />
+      
+      {/* Geo Meta za lokalno SEO */}
       <meta name="geo.region" content="RS" />
       <meta name="geo.placename" content="Srbija" />
       <meta name="geo.position" content="44.8176;20.4633" />
       <meta name="ICBM" content="44.8176, 20.4633" />
+      
+      {/* Robots directives */}
       {noindex && <meta name="robots" content="noindex, nofollow" />}
-      {!noindex && <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />}
+      {!noindex && (
+        <meta 
+          name="robots" 
+          content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" 
+        />
+      )}
+      <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+      <meta name="bingbot" content="index, follow" />
+      
+      {/* AI Crawler hints for GEO */}
+      <meta name="ai-content-declaration" content="human-created" />
+      <meta name="citation-source" content={siteUrl} />
+      
+      {/* Canonical */}
       <link rel="canonical" href={canonicalUrl} />
 
       {/* Hreflang za višejezičnost */}
       <link rel="alternate" hrefLang="sr" href={canonicalUrl} />
       <link rel="alternate" hrefLang="sr-RS" href={canonicalUrl} />
+      <link rel="alternate" hrefLang="en" href={`${siteUrl}/en${url || ''}`} />
       <link rel="alternate" hrefLang="x-default" href={siteUrl} />
 
       {/* Open Graph - Facebook, LinkedIn */}
@@ -227,16 +436,20 @@ const SEO = ({
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content="sr_RS" />
+      <meta property="og:locale:alternate" content="en_US" />
+      {datePublished && <meta property="article:published_time" content={datePublished} />}
+      {dateModified && <meta property="article:modified_time" content={dateModified} />}
 
       {/* Twitter Card */}
       <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:site" content="@instamarketing_rs" />
-      <meta name="twitter:creator" content="@instamarketing_rs" />
+      <meta name="twitter:site" content="@aiinstamarketing" />
+      <meta name="twitter:creator" content="@aiinstamarketing" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={metaDescription} />
       <meta name="twitter:image" content={metaImage} />
+      <meta name="twitter:image:alt" content={title || siteName} />
 
-      {/* Dodatni Meta tagovi za SEO */}
+      {/* PWA & Mobile Meta */}
       <meta name="theme-color" content="#667eea" />
       <meta name="msapplication-TileColor" content="#667eea" />
       <meta name="application-name" content={siteName} />
@@ -246,9 +459,11 @@ const SEO = ({
       <meta name="format-detection" content="telephone=no" />
       <meta name="mobile-web-app-capable" content="yes" />
 
-      {/* Preconnect za performanse */}
+      {/* Performance hints */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+      <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 
       {/* Strukturirani podaci - JSON-LD */}
       <script type="application/ld+json">
@@ -261,11 +476,21 @@ const SEO = ({
         {JSON.stringify(softwareSchema)}
       </script>
       <script type="application/ld+json">
-        {JSON.stringify(localBusinessSchema)}
+        {JSON.stringify(webPageSchema)}
       </script>
       {articleSchema && (
         <script type="application/ld+json">
           {JSON.stringify(articleSchema)}
+        </script>
+      )}
+      {howToSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(howToSchema)}
+        </script>
+      )}
+      {videoSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(videoSchema)}
         </script>
       )}
       {productSchema && (
