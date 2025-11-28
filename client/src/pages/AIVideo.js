@@ -452,54 +452,53 @@ const AIVideo = () => {
                     <div 
                       className="video-thumbnail" 
                       onClick={() => setSelectedVideo(video)}
-                      style={{ cursor: 'pointer' }}
                     >
-                      <video src={video.videoUrl} muted />
+                      <video src={video.videoUrl} muted loop onMouseOver={e => e.target.play()} onMouseOut={e => e.target.pause()} />
                       <div className="video-overlay">
                         <FiPlay size={32} />
                       </div>
                       <span className="video-duration">{video.duration}s</span>
                     </div>
                     <div className="video-info">
-                      <p className="video-prompt">{video.prompt.substring(0, 50)}...</p>
+                      <p className="video-prompt" title={video.prompt}>{video.prompt}</p>
                       <div className="video-meta">
                         <span className={`badge ${video.postedToInstagram ? 'badge-success' : 'badge-secondary'}`}>
                           {video.postedToInstagram ? 'Objavljeno' : video.type}
                         </span>
+                        <div className="video-card-actions">
+                          <a 
+                            href={video.videoUrl}
+                            download
+                            className="btn btn-sm btn-secondary"
+                            title="Download"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FiDownload />
+                          </a>
+                          {!video.postedToInstagram && (
+                            <button 
+                              className="btn btn-sm btn-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePostToInstagram(video._id);
+                              }}
+                              title="Objavi na Instagram"
+                            >
+                              <FiInstagram />
+                            </button>
+                          )}
+                          <button 
+                            className="btn btn-sm btn-danger"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(video._id);
+                            }}
+                            title="Obriši"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="video-card-actions">
-                      <a 
-                        href={video.videoUrl}
-                        download
-                        className="btn btn-sm btn-secondary"
-                        title="Download"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <FiDownload />
-                      </a>
-                      {!video.postedToInstagram && (
-                        <button 
-                          className="btn btn-sm btn-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePostToInstagram(video._id);
-                          }}
-                          title="Objavi na Instagram"
-                        >
-                          <FiInstagram />
-                        </button>
-                      )}
-                      <button 
-                        className="btn btn-sm btn-danger"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(video._id);
-                        }}
-                        title="Obriši"
-                      >
-                        <FiTrash2 />
-                      </button>
                     </div>
                   </div>
                 ))}
