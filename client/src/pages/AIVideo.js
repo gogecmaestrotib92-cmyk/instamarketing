@@ -28,6 +28,7 @@ const AIVideo = () => {
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [myVideos, setMyVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
+  const [selectedVideo, setSelectedVideo] = useState(null);
 
   useEffect(() => {
     fetchMyVideos();
@@ -429,7 +430,11 @@ const AIVideo = () => {
               <div className="videos-grid">
                 {myVideos.map((video) => (
                   <div key={video._id} className="video-card">
-                    <div className="video-thumbnail">
+                    <div 
+                      className="video-thumbnail" 
+                      onClick={() => setSelectedVideo(video)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <video src={video.videoUrl} muted />
                       <div className="video-overlay">
                         <FiPlay size={32} />
@@ -450,13 +455,17 @@ const AIVideo = () => {
                         download
                         className="btn btn-sm btn-secondary"
                         title="Download"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <FiDownload />
                       </a>
                       {!video.postedToInstagram && (
                         <button 
                           className="btn btn-sm btn-primary"
-                          onClick={() => handlePostToInstagram(video._id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePostToInstagram(video._id);
+                          }}
                           title="Objavi na Instagram"
                         >
                           <FiInstagram />
@@ -464,7 +473,10 @@ const AIVideo = () => {
                       )}
                       <button 
                         className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(video._id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(video._id);
+                        }}
                         title="Obriši"
                       >
                         <FiTrash2 />
@@ -477,6 +489,45 @@ const AIVideo = () => {
           </div>
         </div>
       </div>
+
+      {/* Video Modal */}
+      {selectedVideo && (
+        <div className="video-modal-overlay" onClick={() => setSelectedVideo(null)}>
+          <div className="video-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="video-modal-close" onClick={() => setSelectedVideo(null)}>×</button>
+            <div className="video-modal-header">
+              <h3>{selectedVideo.type}</h3>
+              <span className="video-date">{new Date(selectedVideo.createdAt).toLocaleDateString()}</span>
+            </div>
+            <div className="video-modal-player">
+              <video 
+                src={selectedVideo.videoUrl} 
+                controls 
+                autoPlay 
+                className={`aspect-${selectedVideo.aspectRatio?.replace(':', '-') || '9-16'}`}
+              />
+            </div>
+            <div className="video-modal-details">
+              <p className="video-prompt-full">{selectedVideo.prompt}</p>
+              <div className="video-actions">
+                <a 
+                  href={selectedVideo.videoUrl} 
+                  download 
+                  className="btn btn-secondary"
+                >
+                  <FiDownload /> Download
+                </a>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => handlePostToInstagram(selectedVideo._id)}
+                >
+                  <FiInstagram /> Objavi na Instagram
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

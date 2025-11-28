@@ -33,6 +33,10 @@ const Dashboard = () => {
       setData(response.data);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+      // Show error to user if it's not a 401 (which redirects)
+      if (error.response?.status !== 401) {
+        // toast.error('Failed to load dashboard data. Please check your connection.');
+      }
     } finally {
       setLoading(false);
     }
