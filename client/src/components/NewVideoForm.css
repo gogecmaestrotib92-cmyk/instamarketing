@@ -1,9 +1,10 @@
 /* ============================================================
    NEW VIDEO FORM COMPONENT
    Modern, clean video generation form
+   All classes prefixed with 'nvf-' to avoid global conflicts
    ============================================================ */
 
-.video-generator {
+.nvf-container {
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -12,7 +13,7 @@
 }
 
 /* Tabs */
-.tabs {
+.nvf-tabs {
   display: inline-flex;
   padding: 4px;
   border-radius: 999px;
@@ -21,7 +22,7 @@
   width: fit-content;
 }
 
-.tab {
+.nvf-tab {
   padding: 10px 20px;
   border-radius: 999px;
   border: none;
@@ -33,46 +34,46 @@
   transition: all 0.15s ease;
 }
 
-.tab:hover {
+.nvf-tab:hover {
   color: #cbd5e1;
 }
 
-.tab--active {
+.nvf-tab--active {
   background: #3b82f6;
   color: #ffffff;
 }
 
 /* Sections */
-.section {
+.nvf-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.row {
+.nvf-row {
   display: flex;
   gap: 16px;
 }
 
 @media (max-width: 600px) {
-  .row {
+  .nvf-row {
     flex-direction: column;
   }
 }
 
-.half {
+.nvf-half {
   flex: 1;
 }
 
 /* Labels */
-.label {
+.nvf-label {
   font-size: 13px;
   font-weight: 500;
   color: #94a3b8;
 }
 
 /* Textarea */
-.textarea {
+.nvf-textarea {
   background: #050711;
   border: 1px solid #242b3a;
   border-radius: 12px;
@@ -84,25 +85,27 @@
   font-size: 14px;
   line-height: 1.5;
   transition: border-color 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.textarea:focus {
+.nvf-textarea:focus {
   outline: none;
   border-color: #3b82f6;
 }
 
-.textarea::placeholder {
+.nvf-textarea::placeholder {
   color: #475569;
 }
 
 /* Chips / Suggestions */
-.chips {
+.nvf-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.chip {
+.nvf-chip {
   padding: 8px 14px;
   border-radius: 999px;
   border: 1px solid #293244;
@@ -113,14 +116,14 @@
   transition: all 0.15s ease;
 }
 
-.chip:hover {
+.nvf-chip:hover {
   background: #1a2235;
   border-color: #3b82f6;
   color: #ffffff;
 }
 
 /* Select */
-.select {
+.nvf-select {
   width: 100%;
   background: #050711;
   border: 1px solid #242b3a;
@@ -130,20 +133,21 @@
   font-size: 14px;
   cursor: pointer;
   transition: border-color 0.15s ease;
+  box-sizing: border-box;
 }
 
-.select:focus {
+.nvf-select:focus {
   outline: none;
   border-color: #3b82f6;
 }
 
-.select option {
+.nvf-select option {
   background: #0b1018;
   color: #e5e7eb;
 }
 
 /* Format Button */
-.format-btn {
+.nvf-format-btn {
   width: 100%;
   padding: 12px 14px;
   background: linear-gradient(135deg, #3b82f6, #8b5cf6);
@@ -157,7 +161,7 @@
 }
 
 /* Addon Buttons (Music / Text) */
-.addon-btn {
+.nvf-addon-btn {
   flex: 1;
   display: flex;
   align-items: center;
@@ -174,13 +178,13 @@
   transition: all 0.15s ease;
 }
 
-.addon-btn:hover {
+.nvf-addon-btn:hover {
   background: #151c28;
   border-color: #3b4a5f;
   color: #cbd5e1;
 }
 
-.addon-btn--active {
+.nvf-addon-btn--active {
   background: rgba(59, 130, 246, 0.1);
   border-color: #3b82f6;
   border-style: solid;
@@ -188,7 +192,7 @@
 }
 
 /* Generate Button */
-.generate-btn {
+.nvf-generate-btn {
   width: 100%;
   padding: 16px 20px;
   border-radius: 12px;
@@ -202,18 +206,18 @@
   margin-top: 8px;
 }
 
-.generate-btn:hover:not(:disabled) {
+.nvf-generate-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(236, 72, 153, 0.4);
 }
 
-.generate-btn:disabled {
+.nvf-generate-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
 /* Cost Info */
-.cost-info {
+.nvf-cost-info {
   text-align: center;
   font-size: 12px;
   color: #64748b;
@@ -221,7 +225,7 @@
 }
 
 /* Image Upload Area */
-.image-upload-area {
+.nvf-image-upload-area {
   border: 2px dashed #242b3a;
   border-radius: 12px;
   overflow: hidden;
@@ -229,11 +233,11 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
-.image-upload-area:hover {
+.nvf-image-upload-area:hover {
   border-color: #3b82f6;
 }
 
-.upload-placeholder {
+.nvf-upload-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -245,26 +249,26 @@
   transition: color 0.2s;
 }
 
-.upload-placeholder:hover {
+.nvf-upload-placeholder:hover {
   color: #94a3b8;
 }
 
-.upload-icon {
+.nvf-upload-icon {
   font-size: 48px;
 }
 
-.image-preview-container {
+.nvf-image-preview-container {
   position: relative;
 }
 
-.image-preview-img {
+.nvf-image-preview-img {
   width: 100%;
   max-height: 250px;
   object-fit: cover;
   display: block;
 }
 
-.image-remove-btn {
+.nvf-image-remove-btn {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -278,6 +282,6 @@
   transition: background 0.15s ease;
 }
 
-.image-remove-btn:hover {
+.nvf-image-remove-btn:hover {
   background: rgba(239, 68, 68, 0.9);
 }

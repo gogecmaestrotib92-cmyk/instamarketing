@@ -46,17 +46,17 @@ const NewVideoForm = ({
   onImageRemove
 }) => {
   return (
-    <div className="video-generator">
+    <div className="nvf-container">
       {/* Tabs */}
-      <div className="tabs">
+      <div className="nvf-tabs">
         <button 
-          className={`tab ${activeTab === 'text-to-video' ? 'tab--active' : ''}`}
+          className={`nvf-tab ${activeTab === 'text-to-video' ? 'nvf-tab--active' : ''}`}
           onClick={() => onTabChange?.('text-to-video')}
         >
           Text to Video
         </button>
         <button 
-          className={`tab ${activeTab === 'image-to-video' ? 'tab--active' : ''}`}
+          className={`nvf-tab ${activeTab === 'image-to-video' ? 'nvf-tab--active' : ''}`}
           onClick={() => onTabChange?.('image-to-video')}
         >
           Image to Video
@@ -65,19 +65,19 @@ const NewVideoForm = ({
 
       {/* Image Upload (for image-to-video) */}
       {activeTab === 'image-to-video' && (
-        <section className="section">
-          <label className="label">Select image to animate</label>
-          <div className="image-upload-area">
+        <div className="nvf-section">
+          <label className="nvf-label">Select image to animate</label>
+          <div className="nvf-image-upload-area">
             {imagePreview ? (
-              <div className="image-preview-container">
-                <img src={imagePreview} alt="Preview" className="image-preview-img" />
-                <button className="image-remove-btn" onClick={onImageRemove}>
+              <div className="nvf-image-preview-container">
+                <img src={imagePreview} alt="Preview" className="nvf-image-preview-img" />
+                <button className="nvf-image-remove-btn" onClick={onImageRemove}>
                   Remove
                 </button>
               </div>
             ) : (
-              <label className="upload-placeholder">
-                <span className="upload-icon">🖼️</span>
+              <label className="nvf-upload-placeholder">
+                <span className="nvf-upload-icon">🖼️</span>
                 <span>Click to upload image</span>
                 <input
                   type="file"
@@ -88,18 +88,18 @@ const NewVideoForm = ({
               </label>
             )}
           </div>
-        </section>
+        </div>
       )}
 
       {/* Description */}
-      <section className="section">
-        <label className="label">
+      <div className="nvf-section">
+        <label className="nvf-label">
           {activeTab === 'text-to-video' 
             ? 'Describe the video you want' 
             : 'Describe the desired animation (optional)'}
         </label>
         <textarea
-          className="textarea"
+          className="nvf-textarea"
           placeholder={activeTab === 'text-to-video'
             ? "E.g.: Cinematic drone shot of sunset over ocean waves, golden hour lighting, 4K quality..."
             : "E.g.: Slow zoom in with gentle movement, cinematic feel..."
@@ -107,32 +107,32 @@ const NewVideoForm = ({
           value={prompt}
           onChange={(e) => onPromptChange?.(e.target.value)}
         />
-      </section>
+      </div>
 
       {/* Suggestions */}
       {activeTab === 'text-to-video' && (
-        <section className="section">
-          <label className="label">Suggestions</label>
-          <div className="chips">
+        <div className="nvf-section">
+          <label className="nvf-label">Suggestions</label>
+          <div className="nvf-chips">
             {SUGGESTIONS.map((suggestion, index) => (
               <button 
                 key={index}
-                className="chip"
+                className="nvf-chip"
                 onClick={() => onPromptChange?.(suggestion)}
               >
                 {suggestion.length > 40 ? suggestion.substring(0, 40) + '...' : suggestion}
               </button>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
       {/* Duration + Format */}
-      <section className="row">
-        <div className="section half">
-          <label className="label">Duration</label>
+      <div className="nvf-row">
+        <div className="nvf-section nvf-half">
+          <label className="nvf-label">Duration</label>
           <select 
-            className="select"
+            className="nvf-select"
             value={duration}
             onChange={(e) => onDurationChange?.(Number(e.target.value))}
           >
@@ -141,31 +141,31 @@ const NewVideoForm = ({
           </select>
         </div>
 
-        <div className="section half">
-          <label className="label">Format</label>
-          <button className="format-btn">📱 9:16 (Reels / TikTok)</button>
+        <div className="nvf-section nvf-half">
+          <label className="nvf-label">Format</label>
+          <button className="nvf-format-btn">📱 9:16 (Reels / TikTok)</button>
         </div>
-      </section>
+      </div>
 
       {/* Music + Text */}
-      <section className="row">
+      <div className="nvf-row">
         <button 
-          className={`addon-btn ${hasMusicConfig ? 'addon-btn--active' : ''}`}
+          className={`nvf-addon-btn ${hasMusicConfig ? 'nvf-addon-btn--active' : ''}`}
           onClick={onMusicClick}
         >
           <FiMusic /> {hasMusicConfig ? 'Music ✓' : 'Add Music'}
         </button>
         <button 
-          className={`addon-btn ${hasTextConfig ? 'addon-btn--active' : ''}`}
+          className={`nvf-addon-btn ${hasTextConfig ? 'nvf-addon-btn--active' : ''}`}
           onClick={onTextClick}
         >
           <FiType /> {hasTextConfig ? 'Text ✓' : 'Add Text'}
         </button>
-      </section>
+      </div>
 
       {/* Generate button */}
       <button 
-        className="generate-btn"
+        className="nvf-generate-btn"
         onClick={onGenerate}
         disabled={loading}
       >
@@ -177,7 +177,7 @@ const NewVideoForm = ({
       </button>
 
       {/* Cost Info */}
-      <p className="cost-info">
+      <p className="nvf-cost-info">
         Estimated time: 1-3 minutes | Cost: ~$0.25-0.50 per video
       </p>
     </div>
