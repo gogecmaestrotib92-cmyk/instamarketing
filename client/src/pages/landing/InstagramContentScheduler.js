@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaCalendarAlt, FaClock, FaChartBar, FaInstagram, FaBolt, FaCheck, FaRocket, FaMagic } from 'react-icons/fa';
-import { FiArrowRight, FiCheck, FiTrendingUp, FiCalendar, FiClock, FiTarget } from 'react-icons/fi';
+import { FaCalendarAlt, FaChartBar, FaBolt, FaMagic } from 'react-icons/fa';
+import { FiArrowRight, FiCheck, FiCalendar, FiClock, FiTarget } from 'react-icons/fi';
 import SEO from '../../components/SEO';
 import './LandingPages.css';
 

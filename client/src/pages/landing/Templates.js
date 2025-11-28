@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaVideo, FaFire, FaEye, FaStar, FaCheck, FaPlay } from 'react-icons/fa';
-import { FiArrowRight, FiCheck, FiTrendingUp, FiFilter } from 'react-icons/fi';
+import { FaVideo, FaFire, FaEye, FaStar, FaPlay } from 'react-icons/fa';
+import { FiArrowRight, FiTrendingUp, FiFilter } from 'react-icons/fi';
 import SEO from '../../components/SEO';
 import './LandingPages.css';
 

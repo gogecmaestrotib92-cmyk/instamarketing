@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaMagic, FaSmile, FaHashtag, FaBolt, FaLanguage, FaStar, FaCheck, FaQuoteLeft, FaPen } from 'react-icons/fa';
-import { FiArrowRight, FiCheck, FiTarget, FiTrendingUp, FiEdit } from 'react-icons/fi';
+import { FaMagic, FaSmile, FaHashtag, FaBolt, FaLanguage, FaQuoteLeft } from 'react-icons/fa';
+import { FiArrowRight, FiCheck, FiTrendingUp, FiEdit } from 'react-icons/fi';
 import SEO from '../../components/SEO';
 import './LandingPages.css';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaVideo, FaMagic, FaMusic, FaClock, FaDownload, FaInstagram, FaStar, FaPlay, FaCheck } from 'react-icons/fa';
-import { FiArrowRight, FiCheck, FiZap, FiLayers, FiVolume2 } from 'react-icons/fi';
+import { FaVideo, FaMagic, FaMusic, FaClock, FaInstagram, FaPlay, FaCheck } from 'react-icons/fa';
+import { FiArrowRight, FiCheck, FiLayers, FiVolume2 } from 'react-icons/fi';
 import SEO from '../../components/SEO';
 import './LandingPages.css';
 

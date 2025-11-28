@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaCheck, FaStar, FaShieldAlt, FaHeadset, FaCrown } from 'react-icons/fa';
+import { FaStar, FaShieldAlt, FaHeadset, FaCrown } from 'react-icons/fa';
 import { FiArrowRight, FiCheck, FiX } from 'react-icons/fi';
 import SEO from '../../components/SEO';
 import './LandingPages.css';

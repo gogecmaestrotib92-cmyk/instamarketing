@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import { 
   FaVideo, FaRobot, FaCalendarAlt, FaChartLine, FaBullhorn, FaInstagram,
   FaMagic, FaHashtag, FaMicrophone, FaImage, FaPalette, FaCogs,
-  FaStar, FaCheck, FaRocket
+  FaCheck
 } from 'react-icons/fa';
-import { FiArrowRight, FiCheck, FiZap, FiLayers, FiTarget, FiTrendingUp } from 'react-icons/fi';
+import { FiArrowRight, FiCheck, FiLayers, FiTarget } from 'react-icons/fi';
 import SEO from '../../components/SEO';
 import './LandingPages.css';
 

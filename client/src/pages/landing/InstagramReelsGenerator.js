@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaVideo, FaMagic, FaMusic, FaHashtag, FaRocket, FaInstagram, FaStar, FaPlay, FaCheck, FaFire, FaTiktok } from 'react-icons/fa';
+import { FaVideo, FaMagic, FaMusic, FaHashtag, FaInstagram, FaPlay, FaFire } from 'react-icons/fa';
 import { FiArrowRight, FiCheck, FiTrendingUp, FiClock, FiTarget } from 'react-icons/fi';
 import SEO from '../../components/SEO';
 import './LandingPages.css';

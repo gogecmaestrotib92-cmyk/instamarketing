@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaImage, FaMagic, FaHashtag, FaPalette, FaInstagram, FaCalendarAlt, FaStar, FaCheck, FaLayerGroup } from 'react-icons/fa';
+import { FaMagic, FaHashtag, FaCalendarAlt, FaCheck } from 'react-icons/fa';
 import { FiArrowRight, FiCheck, FiGrid, FiEdit3, FiTarget } from 'react-icons/fi';
 import SEO from '../../components/SEO';
 import './LandingPages.css';
