@@ -162,18 +162,37 @@ const AIVideo = () => {
   };
 
   const handlePostToInstagram = async (videoId) => {
+    const video = myVideos.find(v => v._id === videoId);
+    if (!video) return;
+
     const caption = window.prompt('Unesite caption za Instagram Reel:');
     if (!caption) return;
+
+    const toastId = toast.loading('Objavljivanje na Instagram... (ovo može potrajati minut)');
 
     try {
       await api.post(`/ai-video/${videoId}/post-to-instagram`, {
         caption,
-        hashtags: ['ai', 'reels', 'viral']
+        hashtags: ['ai', 'reels', 'viral'],
+        videoUrl: video.videoUrl // Send URL in case it's not in DB
       });
-      toast.success('🎉 Video objavljen na Instagram!');
+      
+      toast.update(toastId, { 
+        render: '🎉 Video objavljen na Instagram!', 
+        type: 'success', 
+        isLoading: false, 
+        autoClose: 5000 
+      });
+      
       fetchMyVideos();
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Greška pri objavljivanju');
+      console.error('Post error:', error);
+      toast.update(toastId, { 
+        render: error.response?.data?.error || 'Greška pri objavljivanju', 
+        type: 'error', 
+        isLoading: false, 
+        autoClose: 5000 
+      });
     }
   };
 

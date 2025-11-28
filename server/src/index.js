@@ -30,6 +30,33 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Database connection
+let isConnected = false;
+const connectDB = async () => {
+  if (isConnected) return;
+  
+  try {
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/instamarketing';
+    await mongoose.connect(mongoURI);
+    isConnected = true;
+    console.log('✅ MongoDB connected successfully');
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error.message);
+    // Don't exit in development - allow running without DB for testing
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    }
+  }
+};
+
+// Ensure DB is connected for every request (Vercel/Serverless)
+app.use(async (req, res, next) => {
+  if (!isConnected) {
+    await connectDB();
+  }
+  next();
+});
+
 // Static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -59,25 +86,6 @@ app.use((err, req, res, next) => {
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
-
-// Database connection
-let isConnected = false;
-const connectDB = async () => {
-  if (isConnected) return;
-  
-  try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/instamarketing';
-    await mongoose.connect(mongoURI);
-    isConnected = true;
-    console.log('✅ MongoDB connected successfully');
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error.message);
-    // Don't exit in development - allow running without DB for testing
-    if (process.env.NODE_ENV === 'production') {
-      throw error;
-    }
-  }
-};
 
 // Start server if running directly
 if (require.main === module) {
