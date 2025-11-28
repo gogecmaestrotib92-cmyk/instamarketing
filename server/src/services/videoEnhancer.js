@@ -14,9 +14,15 @@ const replicate = new Replicate({
  */
 class VideoEnhancerService {
   constructor() {
-    this.tempDir = path.join(__dirname, '../../temp');
-    if (!fs.existsSync(this.tempDir)) {
-      fs.mkdirSync(this.tempDir, { recursive: true });
+    const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    this.tempDir = isVercel ? '/tmp' : path.join(__dirname, '../../temp');
+    
+    try {
+      if (!fs.existsSync(this.tempDir)) {
+        fs.mkdirSync(this.tempDir, { recursive: true });
+      }
+    } catch (e) {
+      console.warn('Failed to create temp dir:', e.message);
     }
   }
 
