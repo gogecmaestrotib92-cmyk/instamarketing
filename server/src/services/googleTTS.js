@@ -18,11 +18,15 @@ class GoogleTTSService {
       ? new textToSpeech.TextToSpeechClient({ credentials })
       : new textToSpeech.TextToSpeechClient();
     
-    this.outputDir = path.join(__dirname, '../../uploads/audio');
+    // Use /tmp on Vercel, otherwise local uploads
+    const baseDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '../../uploads');
+    this.outputDir = path.join(baseDir, 'audio');
     
     // Ensure output directory exists
     if (!fs.existsSync(this.outputDir)) {
-      fs.mkdirSync(this.outputDir, { recursive: true });
+      try {
+        fs.mkdirSync(this.outputDir, { recursive: true });
+      } catch (e) { console.log('Audio dir creation skipped'); }
     }
   }
 
