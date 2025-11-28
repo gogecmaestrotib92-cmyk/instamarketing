@@ -1,11 +1,13 @@
 .ai-video-page {
   padding: 0;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .ai-video-container {
   display: grid;
   grid-template-columns: 1fr 400px;
-  gap: 24px;
+  gap: 20px;
 }
 
 @media (max-width: 1200px) {
@@ -18,18 +20,17 @@
 .generator-section {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .generator-tabs {
   display: flex;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  margin-bottom: 16px;
-  backdrop-filter: blur(10px);
+  gap: 4px;
+  padding: 4px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  margin-bottom: 12px;
 }
 
 .generator-tabs .tab {
@@ -38,25 +39,25 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
-  border-radius: 12px;
+  color: #64748b;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 600;
+  transition: all 0.15s ease;
+  font-weight: 500;
+  font-size: 13px;
 }
 
 .generator-tabs .tab:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
+  background: #1e293b;
+  color: #e2e8f0;
 }
 
 .generator-tabs .tab.active {
-  background: var(--gradient);
+  background: #3b82f6;
   color: white;
-  box-shadow: 0 4px 12px rgba(225, 48, 108, 0.3);
 }
 
 .generator-form {
@@ -114,28 +115,27 @@
 /* Prompt Input */
 .prompt-input {
   width: 100%;
-  padding: 20px;
+  padding: 16px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--glass-border);
-  border-radius: 16px;
-  color: var(--text-primary);
-  font-size: 15px;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  color: #f1f5f9;
+  font-size: 14px;
   resize: vertical;
-  min-height: 120px;
+  min-height: 100px;
   font-family: inherit;
-  transition: all 0.2s ease;
-  line-height: 1.6;
+  transition: all 0.15s ease;
+  line-height: 1.5;
 }
 
 .prompt-input:focus {
   outline: none;
-  border-color: rgba(225, 48, 108, 0.5);
+  border-color: #3b82f6;
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 0 4px rgba(225, 48, 108, 0.1);
 }
 
 .prompt-input::placeholder {
-  color: var(--text-muted);
+  color: #475569;
 }
 
 /* Prompt Suggestions */
@@ -203,16 +203,15 @@
 
 /* Generate Button */
 .btn-generate {
-  padding: 18px 24px;
-  font-size: 16px;
-  font-weight: 700;
+  padding: 14px 24px;
+  font-size: 14px;
+  font-weight: 600;
   gap: 10px;
-  border-radius: 14px;
-  background: var(--gradient);
+  border-radius: 10px;
+  background: #3b82f6;
   border: none;
   color: white;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
+  transition: all 0.15s ease;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -220,14 +219,12 @@
 }
 
 .btn-generate:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(225, 48, 108, 0.4);
+  background: #2563eb;
 }
 
 .btn-generate:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
 .btn-generate .spinner {
@@ -650,29 +647,26 @@
 
 /* Card styles */
 .card {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-radius: 24px;
-  padding: 32px;
-  border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-md);
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #1e293b;
 }
 
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #1e293b;
 }
 
 .card-header h3 {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
   margin: 0;
-  color: var(--text-primary);
+  color: #f1f5f9;
 }
 
 /* Form group */
