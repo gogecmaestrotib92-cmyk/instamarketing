@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { FiInstagram, FiCalendar, FiDownload } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 import MobilePreview from './MobilePreview';
+import PublishToInstagramModal from './PublishToInstagramModal';
+import api from '../services/api';
 import './SavedVideosPanel.css';
 
 /**
  * SavedVideosPanel Component
- * Right column: scrollable list of saved videos + big mobile preview
+ * Right column: scrollable list of saved videos + big mobile preview + action buttons
  */
 
 const formatDuration = (seconds) => {
@@ -17,6 +21,12 @@ const formatDuration = (seconds) => {
 
 const SavedVideosPanel = ({ videos = [] }) => {
   const [selectedVideoId, setSelectedVideoId] = useState(null);
+  
+  // Publish modal state
+  const [publishMode, setPublishMode] = useState(null); // "now" | "schedule" | null
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   // Auto-select first video when videos change
   useEffect(() => {
@@ -30,10 +40,99 @@ const SavedVideosPanel = ({ videos = [] }) => {
     }
   }, [videos, selectedVideoId]);
 
+  // Load Instagram accounts on mount
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      setLoadingAccounts(true);
+      try {
+        // TODO: Prilagodi endpoint prema tvom backendu
+        const response = await api.get('/instagram/accounts');
+        setAccounts(response.data.accounts || []);
+      } catch (error) {
+        console.log('No Instagram accounts loaded:', error.message);
+        // Fallback - možda korisnik nema povezane naloge
+        setAccounts([]);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    fetchAccounts();
+  }, []);
+
   const selectedVideo = useMemo(
     () => videos.find((v) => v.id === selectedVideoId) || null,
     [videos, selectedVideoId]
   );
+
+  // Handle publish now button click
+  const handlePublishNow = () => {
+    if (!selectedVideo) return;
+    setPublishMode('now');
+    setPublishOpen(true);
+  };
+
+  // Handle schedule button click
+  const handleSchedule = () => {
+    if (!selectedVideo) return;
+    setPublishMode('schedule');
+    setPublishOpen(true);
+  };
+
+  // Handle download button click
+  const handleDownload = () => {
+    if (!selectedVideo?.videoUrl) return;
+    
+    // Create temporary link to trigger download
+    const link = document.createElement('a');
+    link.href = selectedVideo.videoUrl;
+    link.download = `ai-video-${selectedVideo.id}.mp4`;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('⬇️ Preuzimanje započeto!');
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    setPublishOpen(false);
+    setPublishMode(null);
+  };
+
+  // Handle publish submit
+  const handleSubmitPublish = async (payload) => {
+    try {
+      if (payload.mode === 'now') {
+        // TODO: Prilagodi endpoint prema tvom backendu
+        await api.post('/instagram/publish', {
+          videoId: payload.videoId,
+          videoUrl: payload.videoUrl,
+          accountId: payload.accountId,
+          caption: payload.caption,
+          hashtags: payload.hashtags,
+        });
+        toast.success('🎉 Video uspešno objavljen na Instagram!');
+      } else {
+        // Schedule mode
+        // TODO: Prilagodi endpoint prema tvom backendu
+        await api.post('/instagram/schedule', {
+          videoId: payload.videoId,
+          videoUrl: payload.videoUrl,
+          accountId: payload.accountId,
+          caption: payload.caption,
+          hashtags: payload.hashtags,
+          scheduledAt: payload.scheduledAt,
+        });
+        toast.success('📅 Objava zakazana!');
+      }
+      
+      handleCloseModal();
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || error.message || 'Greška pri slanju';
+      throw new Error(errorMsg);
+    }
+  };
 
   return (
     <aside className="saved-videos">
@@ -109,7 +208,43 @@ const SavedVideosPanel = ({ videos = [] }) => {
             posterUrl={selectedVideo?.thumbnailUrl}
           />
         </div>
+
+        {/* Action buttons - only show if video selected */}
+        {selectedVideo && (
+          <div className="saved-videos__actions">
+            <button
+              className="saved-videos__action-btn saved-videos__action-btn--primary"
+              onClick={handlePublishNow}
+              disabled={loadingAccounts}
+            >
+              <FiInstagram /> Objavi na Instagram
+            </button>
+            <button
+              className="saved-videos__action-btn saved-videos__action-btn--secondary"
+              onClick={handleSchedule}
+              disabled={loadingAccounts}
+            >
+              <FiCalendar /> Zakaži
+            </button>
+            <button
+              className="saved-videos__action-btn saved-videos__action-btn--neutral"
+              onClick={handleDownload}
+            >
+              <FiDownload />
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Publish Modal */}
+      <PublishToInstagramModal
+        open={publishOpen}
+        mode={publishMode}
+        video={selectedVideo}
+        accounts={accounts}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmitPublish}
+      />
     </aside>
   );
 };
