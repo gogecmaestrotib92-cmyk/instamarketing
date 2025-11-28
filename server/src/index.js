@@ -20,8 +20,14 @@ const aiRoutes = require('./routes/ai');
 const advancedVideoRoutes = require('./routes/advancedVideo');
 const instagramRoutes = require('./routes/instagram');
 
-// Import scheduler
-const { initScheduler } = require('./services/scheduler');
+// Scheduler is optional (only available in development)
+let initScheduler = null;
+try {
+  const scheduler = require('./services/scheduler');
+  initScheduler = scheduler.initScheduler;
+} catch (e) {
+  console.log('Scheduler not available (node-cron not installed)');
+}
 
 const app = express();
 
@@ -110,8 +116,8 @@ app.use((err, req, res, next) => {
 if (require.main === module) {
   const PORT = process.env.PORT || 5000;
   connectDB().then(() => {
-    // Only init scheduler if not in serverless environment or if explicitly enabled
-    if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SCHEDULER === 'true') {
+    // Only init scheduler if available and not in serverless environment
+    if (initScheduler && (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SCHEDULER === 'true')) {
       initScheduler();
     }
     app.listen(PORT, () => {

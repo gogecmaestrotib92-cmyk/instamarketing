@@ -1,4 +1,3 @@
-const textToSpeech = require('@google-cloud/text-to-speech');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
@@ -9,24 +8,41 @@ const util = require('util');
  */
 class GoogleTTSService {
   constructor() {
-    // Initialize with credentials from environment or file
-    const credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON 
-      ? JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON)
-      : null;
-
-    this.client = credentials 
-      ? new textToSpeech.TextToSpeechClient({ credentials })
-      : new textToSpeech.TextToSpeechClient();
+    this.client = null;
+    this.initialized = false;
     
     // Use /tmp on Vercel, otherwise local uploads
-    const baseDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '../../uploads');
+    const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const baseDir = isVercel ? '/tmp' : path.join(__dirname, '../../uploads');
     this.outputDir = path.join(baseDir, 'audio');
     
     // Ensure output directory exists
-    if (!fs.existsSync(this.outputDir)) {
-      try {
+    try {
+      if (!fs.existsSync(this.outputDir)) {
         fs.mkdirSync(this.outputDir, { recursive: true });
-      } catch (e) { console.log('Audio dir creation skipped'); }
+      }
+    } catch (e) { 
+      console.log('Audio dir creation skipped'); 
+    }
+  }
+
+  _initClient() {
+    if (this.initialized) return true;
+    
+    try {
+      const textToSpeech = require('@google-cloud/text-to-speech');
+      const credentials = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON 
+        ? JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON)
+        : null;
+
+      this.client = credentials 
+        ? new textToSpeech.TextToSpeechClient({ credentials })
+        : new textToSpeech.TextToSpeechClient();
+      this.initialized = true;
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize Google TTS:', error.message);
+      return false;
     }
   }
 
@@ -35,6 +51,9 @@ class GoogleTTSService {
    */
   async listVoices(languageCode = 'en-US') {
     try {
+      if (!this._initClient()) {
+        return { success: false, error: 'Google TTS not available' };
+      }
       const [response] = await this.client.listVoices({ languageCode });
       
       const voices = response.voices.map(voice => ({
@@ -58,6 +77,9 @@ class GoogleTTSService {
    */
   async textToSpeech(text, options = {}) {
     try {
+      if (!this._initClient()) {
+        return { success: false, error: 'Google TTS not available' };
+      }
       const {
         languageCode = 'en-US',
         voiceName = 'en-US-Neural2-J', // Neural voice for natural sound
@@ -116,6 +138,9 @@ class GoogleTTSService {
    */
   async ssmlToSpeech(ssml, options = {}) {
     try {
+      if (!this._initClient()) {
+        return { success: false, error: 'Google TTS not available' };
+      }
       const {
         languageCode = 'en-US',
         voiceName = 'en-US-Neural2-J',
