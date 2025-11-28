@@ -3,194 +3,17 @@ import { toast } from 'react-toastify';
 import { 
   FiDownload, 
   FiInstagram,
-  FiClock,
   FiLoader,
-  FiSave,
-  FiType,
-  FiX,
-  FiCheck,
-  FiPlus,
-  FiTrash2
+  FiSave
 } from 'react-icons/fi';
 import { FaWandMagicSparkles } from 'react-icons/fa6';
 import SEO from '../components/SEO';
 import NewVideoForm from '../components/NewVideoForm';
 import SavedVideosPanel from '../components/SavedVideosPanel';
 import MusicModal from '../components/MusicModal';
+import TextModal from '../components/TextModal';
 import api from '../services/api';
 import './AIVideo.css';
-
-// TextModal Component
-const TextModal = ({ isOpen, onClose, onApply, currentConfig }) => {
-  const [overlayText, setOverlayText] = useState(currentConfig?.overlayText || '');
-  const [captions, setCaptions] = useState(currentConfig?.captions || []);
-  const [newText, setNewText] = useState('');
-  const [newStart, setNewStart] = useState('');
-  const [newEnd, setNewEnd] = useState('');
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (currentConfig) {
-      setOverlayText(currentConfig.overlayText || '');
-      setCaptions(currentConfig.captions || []);
-    }
-  }, [currentConfig, isOpen]);
-
-  if (!isOpen) return null;
-
-  const handleAddCaption = () => {
-    setError(null);
-
-    if (!newText.trim()) {
-      setError('Unesite tekst titla');
-      return;
-    }
-
-    const startNum = parseFloat(newStart);
-    const endNum = parseFloat(newEnd);
-
-    if (isNaN(startNum) || startNum < 0) {
-      setError('Start vreme mora biti pozitivan broj');
-      return;
-    }
-
-    if (isNaN(endNum) || endNum <= startNum) {
-      setError('End vreme mora biti veće od start vremena');
-      return;
-    }
-
-    setCaptions([...captions, { text: newText.trim(), start: startNum, end: endNum }]);
-    setNewText('');
-    setNewStart('');
-    setNewEnd('');
-  };
-
-  const handleDeleteCaption = (index) => {
-    setCaptions(captions.filter((_, i) => i !== index));
-  };
-
-  const handleApply = () => {
-    onApply({ overlayText: overlayText.trim(), captions });
-    onClose();
-  };
-
-  const handleRemove = () => {
-    onApply(null);
-    onClose();
-  };
-
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = (seconds % 60).toFixed(1);
-    return `${mins}:${secs.padStart(4, '0')}`;
-  };
-
-  const hasContent = overlayText.trim() || captions.length > 0;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card modal-card-wide" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2><FiType /> Dodaj Tekst i Titlove</h2>
-          <button onClick={onClose} className="modal-close"><FiX /></button>
-        </div>
-
-        <div className="modal-body">
-          <div className="form-group">
-            <label>Overlay Tekst (prikazan tokom celog videa)</label>
-            <textarea
-              value={overlayText}
-              onChange={(e) => setOverlayText(e.target.value)}
-              placeholder="Unesite tekst za prikaz na videu..."
-              rows={2}
-            />
-          </div>
-
-          <div className="divider"><span>Vremenski Titlovi</span></div>
-
-          <div className="caption-form">
-            <div className="caption-input-row">
-              <div className="form-group flex-grow">
-                <label>Tekst Titla</label>
-                <input
-                  type="text"
-                  value={newText}
-                  onChange={(e) => setNewText(e.target.value)}
-                  placeholder="Unesite tekst titla..."
-                />
-              </div>
-              <div className="form-group">
-                <label><FiClock /> Start (sek)</label>
-                <input
-                  type="number"
-                  value={newStart}
-                  onChange={(e) => setNewStart(e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  step="0.1"
-                  style={{ width: '80px' }}
-                />
-              </div>
-              <div className="form-group">
-                <label><FiClock /> End (sek)</label>
-                <input
-                  type="number"
-                  value={newEnd}
-                  onChange={(e) => setNewEnd(e.target.value)}
-                  placeholder="3"
-                  min="0"
-                  step="0.1"
-                  style={{ width: '80px' }}
-                />
-              </div>
-              <button onClick={handleAddCaption} className="btn btn-primary btn-add-caption">
-                <FiPlus /> Dodaj
-              </button>
-            </div>
-
-            {error && <p className="error-text">{error}</p>}
-          </div>
-
-          {captions.length > 0 && (
-            <div className="caption-list">
-              <label>Titlovi ({captions.length})</label>
-              {captions.map((caption, index) => (
-                <div key={index} className="caption-item">
-                  <div className="caption-info">
-                    <p className="caption-text">{caption.text}</p>
-                    <p className="caption-time">
-                      {formatTime(caption.start)} → {formatTime(caption.end)}
-                    </p>
-                  </div>
-                  <button onClick={() => handleDeleteCaption(index)} className="btn-delete">
-                    <FiTrash2 />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {captions.length === 0 && (
-            <div className="empty-captions">
-              <FiType />
-              <p>Još nema dodatih titlova</p>
-            </div>
-          )}
-        </div>
-
-        <div className="modal-footer">
-          <button onClick={handleRemove} className="btn btn-text-danger">Ukloni Tekst</button>
-          <div className="modal-footer-actions">
-            <button onClick={onClose} className="btn btn-secondary">Otkaži</button>
-            <button onClick={handleApply} disabled={!hasContent} className="btn btn-primary">
-              <FiCheck /> Primeni
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const AIVideo = () => {
   const [activeTab, setActiveTab] = useState('text-to-video');
@@ -545,10 +368,13 @@ const AIVideo = () => {
 
       {/* Text Modal */}
       <TextModal
-        isOpen={isTextOpen}
+        open={isTextOpen}
+        durationSeconds={duration}
+        initialConfig={textConfig}
+        onApply={(config) => {
+          setTextConfig(config);
+        }}
         onClose={() => setIsTextOpen(false)}
-        onApply={setTextConfig}
-        currentConfig={textConfig}
       />
     </main>
   );
