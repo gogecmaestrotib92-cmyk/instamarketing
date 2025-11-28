@@ -8,20 +8,19 @@ import {
   FiHeart,
   FiMessageCircle,
   FiEye,
-  FiPlus,
   FiCheckCircle,
   FiClock,
   FiExternalLink,
   FiSettings,
   FiCalendar,
   FiUsers,
-  FiTarget,
-  FiZap,
   FiBarChart2,
   FiBookmark
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import SEO from '../components/SEO';
+import DashboardHeader from '../components/DashboardHeader';
+import '../components/DashboardHeader.css';
 import './Dashboard.css';
 
 // ============================================================
@@ -97,13 +96,6 @@ const Dashboard = () => {
 
   const user = authUser || PLACEHOLDER_DATA.user;
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Dobro jutro';
-    if (hour < 18) return 'Dobar dan';
-    return 'Dobro veče';
-  };
-
   const formatNumber = (num) => {
     if (!num) return '0';
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -150,20 +142,7 @@ const Dashboard = () => {
       />
 
       {/* ========== HEADER ========== */}
-      <header className="dashboard-header">
-        <div className="header-text">
-          <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'User'}!</h1>
-          <p>Pregled vašeg Instagram naloga i performansi</p>
-        </div>
-        <div className="header-actions">
-          <Link to="/app/ai-video" className="btn btn-secondary">
-            <FiZap /> AI Video
-          </Link>
-          <Link to="/posts/create" className="btn btn-primary">
-            <FiPlus /> Nova Objava
-          </Link>
-        </div>
-      </header>
+      <DashboardHeader userName={user?.name} />
 
       {/* ========== KPI ROW ========== */}
       <section className="kpi-section">

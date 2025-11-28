@@ -1,0 +1,145 @@
+/* ================================================
+   DASHBOARD HEADER - Compact Modern Design
+   ================================================ */
+
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 18px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 20px;
+}
+
+/* Left Side - Greeting */
+.dash-header-left h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0 0 2px 0;
+  letter-spacing: -0.01em;
+}
+
+.dash-header-left p {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Right Side - Actions */
+.dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Button Base */
+.header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.header-btn svg {
+  font-size: 14px;
+}
+
+/* Ghost Button (minimal) */
+.header-btn-ghost {
+  background: transparent;
+  color: #94a3b8;
+  padding: 7px 10px;
+}
+
+.header-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.header-btn-ghost span {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .header-btn-ghost span {
+    display: inline;
+  }
+  
+  .header-btn-ghost {
+    padding: 7px 12px;
+  }
+}
+
+/* Secondary Button */
+.header-btn-secondary {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Primary Button */
+.header-btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.header-btn-primary:hover {
+  background: #2563eb;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .dash-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding-bottom: 16px;
+  }
+  
+  .dash-header-left h1 {
+    font-size: 1.125rem;
+  }
+  
+  .dash-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .header-btn-ghost {
+    display: none;
+  }
+  
+  .header-btn-secondary,
+  .header-btn-primary {
+    flex: 1;
+    justify-content: center;
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-header-actions {
+    flex-direction: column;
+  }
+  
+  .header-btn-secondary,
+  .header-btn-primary {
+    width: 100%;
+  }
+}
