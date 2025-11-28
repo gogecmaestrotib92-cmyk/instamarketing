@@ -52,7 +52,16 @@ const connectDB = async () => {
 // Ensure DB is connected for every request (Vercel/Serverless)
 app.use(async (req, res, next) => {
   if (!isConnected) {
-    await connectDB();
+    try {
+      await connectDB();
+    } catch (err) {
+      console.error("Middleware DB Connect Error:", err);
+      // Allow health check to proceed even if DB fails
+      if (req.path === '/api/health') {
+        return next();
+      }
+      return res.status(500).json({ error: 'Database connection failed', details: err.message });
+    }
   }
   next();
 });
@@ -83,7 +92,8 @@ app.get('/api/health', (req, res) => {
       mongo: !!process.env.MONGODB_URI,
       jwt: !!process.env.JWT_SECRET,
       replicate: !!process.env.REPLICATE_API_TOKEN
-    }
+    },
+    error: isConnected ? null : 'DB not connected'
   });
 });
 
@@ -113,6 +123,16 @@ module.exports = app;
 
 // Also export as handler for Vercel
 module.exports.default = async (req, res) => {
-  await connectDB();
+  try {
+    if (!isConnected) {
+      await connectDB();
+    }
+  } catch (e) {
+    console.error("Vercel Handler DB Error:", e);
+    // If it's the health check, let it pass through
+    if (req.url && req.url.includes('/api/health')) {
+      return app(req, res);
+    }
+  }
   return app(req, res);
 };
