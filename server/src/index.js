@@ -75,7 +75,16 @@ app.use('/api/instagram', instagramRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    dbState: mongoose.connection.readyState, // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
+    env: {
+      mongo: !!process.env.MONGODB_URI,
+      jwt: !!process.env.JWT_SECRET,
+      replicate: !!process.env.REPLICATE_API_TOKEN
+    }
+  });
 });
 
 // Error handling middleware
