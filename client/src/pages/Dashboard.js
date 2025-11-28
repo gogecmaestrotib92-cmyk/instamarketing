@@ -12,7 +12,12 @@ import {
   FiMessageCircle,
   FiEye,
   FiPlus,
-  FiAlertCircle
+  FiUsers,
+  FiCheckCircle,
+  FiClock,
+  FiExternalLink,
+  FiSettings,
+  FiZap
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import SEO from '../components/SEO';
@@ -33,259 +38,361 @@ const Dashboard = () => {
       setData(response.data);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
-      // Show error to user if it's not a 401 (which redirects)
-      if (error.response?.status !== 401) {
-        // toast.error('Failed to load dashboard data. Please check your connection.');
-      }
     } finally {
       setLoading(false);
     }
   };
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Dobro jutro';
+    if (hour < 18) return 'Dobar dan';
+    return 'Dobro veče';
+  };
+
+  const formatNumber = (num) => {
+    if (!num) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toLocaleString();
+  };
+
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
+      <div className="dashboard-loading">
+        <div className="loading-spinner"></div>
+        <p>Učitavanje...</p>
       </div>
     );
   }
 
   return (
-    <main className="dashboard">
+    <main className="dashboard-modern">
       <SEO 
         title="Kontrolna Tabla"
-        description="Upravljajte Instagram marketingom sa jedne kontrolne table. Pratite analitiku, zakazane objave i performanse kampanja u realnom vremenu."
-        keywords="instagram dashboard, kontrolna tabla, instagram metrike, praćenje performansi, instagram statistika"
+        description="Upravljajte Instagram marketingom sa jedne kontrolne table."
         url="/dashboard"
-        breadcrumbs={[
-          { name: 'Početna', url: '/' },
-          { name: 'Kontrolna Tabla', url: '/dashboard' }
-        ]}
         noindex={true}
       />
-      <header className="page-header">
-        <div>
-          <h1 className="gradient-text">Dobrodošli nazad, {user?.name?.split(' ')[0]}!</h1>
-          <p className="page-subtitle">Evo šta se dešava sa vašim Instagram-om</p>
+
+      {/* Header Section */}
+      <header className="dashboard-header">
+        <div className="header-content">
+          <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'User'}!</h1>
+          <p>Evo pregleda vašeg Instagram naloga i aktivnosti</p>
         </div>
         <div className="header-actions">
-          <Link to="/posts/create" className="btn btn-primary" aria-label="Kreiraj novu objavu">
-            <FiPlus aria-hidden="true" /> Kreiraj Objavu
+          <Link to="/app/ai-video" className="btn-action btn-secondary-action">
+            <FiZap />
+            <span>AI Video</span>
+          </Link>
+          <Link to="/posts/create" className="btn-action btn-primary-action">
+            <FiPlus />
+            <span>Nova Objava</span>
           </Link>
         </div>
       </header>
 
-      {/* Instagram Connection Status */}
-      {!data?.account?.connected && (
-        <section className="alert alert-warning" aria-label="Upozorenje o povezivanju naloga">
-          <FiAlertCircle aria-hidden="true" />
-          <div>
-            <strong>Povežite Vaš Instagram Nalog</strong>
-            <p>Povežite vaš Instagram Business nalog da biste počeli sa objavljivanjem i praćenjem analitike.</p>
-          </div>
-          <Link to="/settings" className="btn btn-secondary btn-sm">Poveži Sada</Link>
-        </section>
-      )}
-
-      {/* Stats Grid */}
-      <section className="stats-grid" aria-label="Statistika">
-        <article className="stat-card">
-          <div className="stat-icon posts" aria-hidden="true">
+      {/* KPI Cards Row */}
+      <section className="kpi-grid">
+        <div className="kpi-card">
+          <div className="kpi-icon blue">
             <FiImage />
           </div>
-          <div className="stat-content">
-            <span className="stat-value">{data?.overview?.posts?.total || 0}</span>
-            <h2 className="stat-label">Total Posts</h2>
+          <div className="kpi-content">
+            <span className="kpi-label">Ukupno Objava</span>
+            <span className="kpi-value">{data?.overview?.posts?.total || 0}</span>
+            <span className="kpi-meta">{data?.overview?.posts?.published || 0} objavljeno</span>
           </div>
-          <div className="stat-meta">
-            <span className="badge badge-success">{data?.overview?.posts?.published || 0} Published</span>
-          </div>
-        </article>
+        </div>
 
-        <article className="stat-card">
-          <div className="stat-icon reels" aria-hidden="true">
+        <div className="kpi-card">
+          <div className="kpi-icon purple">
             <FiFilm />
           </div>
-          <div className="stat-content">
-            <span className="stat-value">{data?.overview?.reels?.total || 0}</span>
-            <h2 className="stat-label">Total Reels</h2>
+          <div className="kpi-content">
+            <span className="kpi-label">Ukupno Reels</span>
+            <span className="kpi-value">{data?.overview?.reels?.total || 0}</span>
+            <span className="kpi-meta">{data?.overview?.reels?.published || 0} objavljeno</span>
           </div>
-          <div className="stat-meta">
-            <span className="badge badge-success">{data?.overview?.reels?.published || 0} Published</span>
-          </div>
-        </article>
+        </div>
 
-        <article className="stat-card">
-          <div className="stat-icon campaigns" aria-hidden="true">
+        <div className="kpi-card">
+          <div className="kpi-icon pink">
             <FiTarget />
           </div>
-          <div className="stat-content">
-            <span className="stat-value">{data?.overview?.campaigns?.total || 0}</span>
-            <h2 className="stat-label">Campaigns</h2>
+          <div className="kpi-content">
+            <span className="kpi-label">Kampanje</span>
+            <span className="kpi-value">{data?.overview?.campaigns?.total || 0}</span>
+            <span className="kpi-meta">{data?.overview?.campaigns?.active || 0} aktivnih</span>
           </div>
-          <div className="stat-meta">
-            <span className="badge badge-info">{data?.overview?.campaigns?.active || 0} Active</span>
-          </div>
-        </article>
+        </div>
 
-        <article className="stat-card">
-          <div className="stat-icon scheduled" aria-hidden="true">
+        <div className="kpi-card">
+          <div className="kpi-icon orange">
             <FiCalendar />
           </div>
-          <div className="stat-content">
-            <span className="stat-value">{data?.overview?.posts?.scheduled || 0}</span>
-            <h2 className="stat-label">Scheduled</h2>
+          <div className="kpi-content">
+            <span className="kpi-label">Zakazano</span>
+            <span className="kpi-value">{data?.overview?.posts?.scheduled || 0}</span>
+            <span className="kpi-meta">čeka objavljivanje</span>
           </div>
-          <div className="stat-meta">
-            <span className="badge badge-warning">Upcoming</span>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-icon green">
+            <FiUsers />
           </div>
-        </article>
+          <div className="kpi-content">
+            <span className="kpi-label">Pratilaca</span>
+            <span className="kpi-value">{formatNumber(data?.account?.followers)}</span>
+            <span className="kpi-meta">na Instagram-u</span>
+          </div>
+        </div>
       </section>
 
-      {/* Main Content Grid */}
-      <div className="dashboard-grid">
-        {/* Engagement Overview */}
-        <section className="card engagement-card" aria-labelledby="engagement-heading">
-          <div className="card-header">
-            <h2 id="engagement-heading" className="card-title">Engagement Overview</h2>
-            <FiTrendingUp className="card-icon" aria-hidden="true" />
+      {/* Engagement Overview - Full Width */}
+      <section className="section-card engagement-section">
+        <div className="section-header">
+          <div className="section-title">
+            <FiTrendingUp className="section-icon" />
+            <h2>Pregled Angažovanja</h2>
           </div>
-          <div className="engagement-stats">
-            <div className="engagement-item">
-              <FiHeart className="engagement-icon likes" aria-hidden="true" />
-              <div className="engagement-data">
-                <span className="engagement-value">{data?.contentMetrics?.likes?.toLocaleString() || 0}</span>
-                <span className="engagement-label">Likes</span>
-              </div>
+          <Link to="/analytics" className="link-button">
+            Pogledaj analitiku <FiExternalLink />
+          </Link>
+        </div>
+        <div className="engagement-grid">
+          <div className="engagement-stat">
+            <div className="engagement-icon-wrap red">
+              <FiHeart />
             </div>
-            <div className="engagement-item">
-              <FiMessageCircle className="engagement-icon comments" aria-hidden="true" />
-              <div className="engagement-data">
-                <span className="engagement-value">{data?.contentMetrics?.comments?.toLocaleString() || 0}</span>
-                <span className="engagement-label">Comments</span>
-              </div>
+            <div className="engagement-info">
+              <span className="engagement-number">{formatNumber(data?.contentMetrics?.likes)}</span>
+              <span className="engagement-label">Lajkova</span>
             </div>
-            <div className="engagement-item">
-              <FiEye className="engagement-icon reach" aria-hidden="true" />
-              <div className="engagement-data">
-                <span className="engagement-value">{data?.contentMetrics?.reach?.toLocaleString() || 0}</span>
-                <span className="engagement-label">Reach</span>
-              </div>
+          </div>
+          <div className="engagement-stat">
+            <div className="engagement-icon-wrap blue">
+              <FiMessageCircle />
             </div>
+            <div className="engagement-info">
+              <span className="engagement-number">{formatNumber(data?.contentMetrics?.comments)}</span>
+              <span className="engagement-label">Komentara</span>
+            </div>
+          </div>
+          <div className="engagement-stat">
+            <div className="engagement-icon-wrap green">
+              <FiEye />
+            </div>
+            <div className="engagement-info">
+              <span className="engagement-number">{formatNumber(data?.contentMetrics?.reach)}</span>
+              <span className="engagement-label">Domet</span>
+            </div>
+          </div>
+          <div className="engagement-stat">
+            <div className="engagement-icon-wrap purple">
+              <FiTrendingUp />
+            </div>
+            <div className="engagement-info">
+              <span className="engagement-number">{formatNumber(data?.contentMetrics?.impressions)}</span>
+              <span className="engagement-label">Impresija</span>
+            </div>
+          </div>
+        </div>
+        {/* Chart placeholder */}
+        <div className="chart-placeholder">
+          <div className="chart-bars">
+            {[65, 45, 75, 55, 85, 60, 70].map((height, i) => (
+              <div key={i} className="chart-bar" style={{ height: `${height}%` }}></div>
+            ))}
+          </div>
+          <div className="chart-labels">
+            <span>Pon</span><span>Uto</span><span>Sre</span><span>Čet</span><span>Pet</span><span>Sub</span><span>Ned</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Two Column Layout */}
+      <div className="two-column-grid">
+        {/* Left: Scheduled Posts */}
+        <section className="section-card">
+          <div className="section-header">
+            <div className="section-title">
+              <FiClock className="section-icon" />
+              <h2>Zakazane Objave</h2>
+            </div>
+            <Link to="/schedule" className="link-button">
+              Prikaži sve <FiExternalLink />
+            </Link>
+          </div>
+          <div className="scheduled-list">
+            {data?.scheduledPosts?.length > 0 ? (
+              data.scheduledPosts.slice(0, 5).map((post, index) => (
+                <div key={index} className="scheduled-item">
+                  <div className="scheduled-icon">
+                    {post.type === 'reel' ? <FiFilm /> : <FiImage />}
+                  </div>
+                  <div className="scheduled-content">
+                    <p className="scheduled-caption">
+                      {post.caption?.substring(0, 50) || 'Bez opisa'}
+                      {post.caption?.length > 50 ? '...' : ''}
+                    </p>
+                    <span className="scheduled-time">
+                      {new Date(post.scheduledFor).toLocaleDateString('sr-RS', {
+                        day: 'numeric',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                  <span className="scheduled-badge">Zakazano</span>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state-small">
+                <FiCalendar />
+                <p>Nema zakazanih objava</p>
+                <Link to="/posts/create" className="btn-small">Zakažite prvu</Link>
+              </div>
+            )}
           </div>
         </section>
 
-        {/* Account Info */}
-        <section className="card account-card" aria-labelledby="account-heading">
-          <div className="card-header">
-            <h2 id="account-heading" className="card-title">Instagram Account</h2>
-            <FaInstagram className="card-icon instagram" aria-hidden="true" />
-          </div>
-          {data?.account?.connected ? (
-            <div className="account-info">
-              <div className="account-avatar" aria-hidden="true">
-                {data.account.username?.charAt(0).toUpperCase() || 'I'}
+        {/* Right: Instagram Account + Quick Actions */}
+        <div className="right-column">
+          {/* Instagram Account Card */}
+          <section className="section-card account-section">
+            <div className="section-header">
+              <div className="section-title">
+                <FaInstagram className="section-icon instagram-icon" />
+                <h2>Instagram Nalog</h2>
               </div>
-              <div className="account-details">
-                <span className="account-username">@{data.account.username}</span>
-                <span className="account-followers">
-                  {data.account.followers?.toLocaleString() || 0} followers
-                </span>
+            </div>
+            {data?.account?.connected ? (
+              <div className="account-connected">
+                <div className="account-row">
+                  <div className="account-avatar">
+                    {data.account.profilePicture ? (
+                      <img src={data.account.profilePicture} alt="" />
+                    ) : (
+                      <span>{data.account.username?.charAt(0).toUpperCase() || 'I'}</span>
+                    )}
+                  </div>
+                  <div className="account-details">
+                    <span className="account-username">@{data.account.username}</span>
+                    <span className="account-followers">{formatNumber(data.account.followers)} pratilaca</span>
+                  </div>
+                  <div className="status-badge connected">
+                    <FiCheckCircle /> Povezan
+                  </div>
+                </div>
+                <div className="account-actions">
+                  <Link to="/settings" className="btn-outline">
+                    <FiSettings /> Podešavanja
+                  </Link>
+                  <a 
+                    href={`https://instagram.com/${data.account.username}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="btn-outline"
+                  >
+                    <FiExternalLink /> Otvori Profil
+                  </a>
+                </div>
               </div>
-              <span className="badge badge-success">Connected</span>
-            </div>
-          ) : (
-            <div className="account-disconnected">
-              <p>No Instagram account connected</p>
-              <Link to="/settings" className="btn btn-secondary btn-sm">Connect Account</Link>
-            </div>
-          )}
-        </section>
+            ) : (
+              <div className="account-disconnected">
+                <div className="disconnected-icon">
+                  <FaInstagram />
+                </div>
+                <p>Povežite vaš Instagram Business nalog</p>
+                <Link to="/settings" className="btn-connect">
+                  Poveži Instagram
+                </Link>
+              </div>
+            )}
+          </section>
 
-        {/* Campaign Performance */}
-        <section className="card campaign-card" aria-labelledby="campaign-heading">
-          <div className="card-header">
-            <h2 id="campaign-heading" className="card-title">Campaign Performance</h2>
-            <Link to="/campaigns" className="btn btn-ghost btn-sm">View All</Link>
-          </div>
-          <div className="campaign-stats">
-            <div className="campaign-stat">
-              <span className="campaign-value">${data?.campaignMetrics?.totalSpend?.toFixed(2) || '0.00'}</span>
-              <span className="campaign-label">Total Spend</span>
+          {/* Quick Actions */}
+          <section className="section-card">
+            <div className="section-header">
+              <div className="section-title">
+                <FiZap className="section-icon" />
+                <h2>Brze Akcije</h2>
+              </div>
             </div>
-            <div className="campaign-stat">
-              <span className="campaign-value">{data?.campaignMetrics?.totalImpressions?.toLocaleString() || 0}</span>
-              <span className="campaign-label">Impressions</span>
+            <div className="quick-actions-grid">
+              <Link to="/posts/create" className="quick-action-item">
+                <FiImage />
+                <span>Nova Objava</span>
+              </Link>
+              <Link to="/reels/create" className="quick-action-item">
+                <FiFilm />
+                <span>Novi Reel</span>
+              </Link>
+              <Link to="/app/ai-video" className="quick-action-item">
+                <FiZap />
+                <span>AI Video</span>
+              </Link>
+              <Link to="/campaigns/create" className="quick-action-item">
+                <FiTarget />
+                <span>Kampanja</span>
+              </Link>
             </div>
-            <div className="campaign-stat">
-              <span className="campaign-value">{data?.campaignMetrics?.totalClicks?.toLocaleString() || 0}</span>
-              <span className="campaign-label">Clicks</span>
-            </div>
-            <div className="campaign-stat">
-              <span className="campaign-value">{data?.campaignMetrics?.totalConversions || 0}</span>
-              <span className="campaign-label">Conversions</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Quick Actions */}
-        <nav className="card quick-actions-card" aria-labelledby="actions-heading">
-          <div className="card-header">
-            <h2 id="actions-heading" className="card-title">Quick Actions</h2>
-          </div>
-          <div className="quick-actions">
-            <Link to="/posts/create" className="quick-action">
-              <FiImage aria-hidden="true" />
-              <span>New Post</span>
-            </Link>
-            <Link to="/reels/create" className="quick-action">
-              <FiFilm aria-hidden="true" />
-              <span>New Reel</span>
-            </Link>
-            <Link to="/campaigns/create" className="quick-action">
-              <FiTarget aria-hidden="true" />
-              <span>New Campaign</span>
-            </Link>
-            <Link to="/schedule" className="quick-action">
-              <FiCalendar aria-hidden="true" />
-              <span>View Schedule</span>
-            </Link>
-          </div>
-        </nav>
+          </section>
+        </div>
       </div>
 
-      {/* Recent Content */}
-      <section className="card recent-content-card" aria-labelledby="recent-heading">
-        <div className="card-header">
-          <h2 id="recent-heading" className="card-title">Recent Published Content</h2>
-          <Link to="/posts" className="btn btn-ghost btn-sm">View All</Link>
+      {/* Recent Campaigns Table */}
+      <section className="section-card">
+        <div className="section-header">
+          <div className="section-title">
+            <FiTarget className="section-icon" />
+            <h2>Nedavne Kampanje</h2>
+          </div>
+          <Link to="/campaigns" className="link-button">
+            Sve kampanje <FiExternalLink />
+          </Link>
         </div>
-        <div className="recent-content-list">
-          {data?.recentContent?.posts?.length > 0 ? (
-            data.recentContent.posts.map((post, index) => (
-              <article key={index} className="recent-item">
-                <div className="recent-item-icon" aria-hidden="true">
-                  <FiImage />
-                </div>
-                <div className="recent-item-content">
-                  <p className="recent-item-caption">
-                    {post.caption?.substring(0, 60) || 'No caption'}
-                    {post.caption?.length > 60 ? '...' : ''}
-                  </p>
-                  <span className="recent-item-date">
-                    {new Date(post.publishedAt).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="recent-item-stats">
-                  <span aria-label={`${post.metrics?.likes || 0} likes`}><FiHeart aria-hidden="true" /> {post.metrics?.likes || 0}</span>
-                  <span aria-label={`${post.metrics?.comments || 0} comments`}><FiMessageCircle aria-hidden="true" /> {post.metrics?.comments || 0}</span>
-                </div>
-              </article>
-            ))
+        <div className="campaigns-table-wrap">
+          {data?.recentCampaigns?.length > 0 ? (
+            <table className="campaigns-table">
+              <thead>
+                <tr>
+                  <th>Naziv</th>
+                  <th>Status</th>
+                  <th>Budžet</th>
+                  <th>Impresije</th>
+                  <th>Klikovi</th>
+                  <th>Konverzije</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recentCampaigns.slice(0, 5).map((campaign, index) => (
+                  <tr key={index}>
+                    <td className="campaign-name">{campaign.name}</td>
+                    <td>
+                      <span className={`status-pill ${campaign.status}`}>
+                        {campaign.status === 'active' ? 'Aktivna' : 
+                         campaign.status === 'paused' ? 'Pauzirana' : 
+                         campaign.status === 'completed' ? 'Završena' : campaign.status}
+                      </span>
+                    </td>
+                    <td>${campaign.budget?.toFixed(2) || '0.00'}</td>
+                    <td>{formatNumber(campaign.impressions)}</td>
+                    <td>{formatNumber(campaign.clicks)}</td>
+                    <td>{campaign.conversions || 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           ) : (
-            <div className="empty-state">
-              <p>No published content yet</p>
-              <Link to="/posts/create" className="btn btn-primary btn-sm">Create Your First Post</Link>
+            <div className="empty-state-table">
+              <FiTarget />
+              <p>Još nemate kampanja</p>
+              <Link to="/campaigns/create" className="btn-small">Kreirajte prvu kampanju</Link>
             </div>
           )}
         </div>
