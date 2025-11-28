@@ -17,43 +17,47 @@
   gap: 8px;
   padding: 12px 20px;
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
+  backdrop-filter: blur(12px);
 }
 
 .step:hover {
   border-color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .step.active {
-  border-color: var(--primary);
+  border-color: #E1306C;
   background: rgba(225, 48, 108, 0.1);
+  box-shadow: 0 0 15px rgba(225, 48, 108, 0.1);
 }
 
 .step.completed {
-  border-color: var(--success);
+  border-color: #10b981;
 }
 
 .step.completed .step-number {
-  background: var(--success);
+  background: #10b981;
 }
 
 .step-number {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   font-weight: 600;
+  color: white;
 }
 
 .step.active .step-number {
-  background: var(--primary);
+  background: var(--gradient);
 }
 
 .step span {
@@ -62,25 +66,36 @@
 }
 
 .step.active span {
-  color: var(--primary);
+  color: white;
+  font-weight: 500;
 }
 
 /* Step Content */
+.step-content {
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 32px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+}
+
 .step-content h2 {
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 24px;
   margin-bottom: 8px;
+  color: var(--text-primary);
 }
 
 .step-content h2 svg {
-  color: var(--primary);
+  color: #E1306C;
 }
 
 .step-description {
   color: var(--text-secondary);
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 /* Objectives Grid */
@@ -91,46 +106,51 @@
 }
 
 .objective-card {
-  padding: 20px;
-  background: var(--bg-dark);
-  border: 2px solid var(--border);
-  border-radius: 12px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid var(--glass-border);
+  border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .objective-card:hover {
   border-color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .objective-card.selected {
-  border-color: var(--primary);
+  border-color: #E1306C;
   background: rgba(225, 48, 108, 0.1);
+  box-shadow: 0 0 15px rgba(225, 48, 108, 0.1);
 }
 
 .objective-card h4 {
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-size: 16px;
 }
 
 .objective-card p {
   font-size: 13px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 /* Form Row */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 24px;
 }
 
 /* Step Actions */
 .step-actions {
   display: flex;
   justify-content: space-between;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-  margin-top: 24px;
+  padding-top: 32px;
+  border-top: 1px solid var(--glass-border);
+  margin-top: 32px;
 }
 
 .step-actions .btn:only-child {
@@ -153,5 +173,9 @@
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+  
+  .step-content {
+    padding: 20px;
   }
 }

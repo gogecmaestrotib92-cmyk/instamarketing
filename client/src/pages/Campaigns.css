@@ -11,17 +11,20 @@
 }
 
 .campaign-card {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 16px;
-  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  padding: 32px;
   transition: all 0.3s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-md);
 }
 
 .campaign-card:hover {
-  border-color: #555;
+  border-color: rgba(225, 48, 108, 0.3);
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
 }
 
 .campaign-header {
@@ -35,12 +38,12 @@
   font-size: 20px;
   font-weight: 600;
   margin-bottom: 6px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .campaign-objective {
   font-size: 13px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -58,9 +61,9 @@
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: #0f0f0f;
-  border-radius: 12px;
-  border: 1px solid #333;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
 }
 
 .campaign-stats .stat svg {
@@ -68,20 +71,20 @@
   color: #E1306C;
   padding: 8px;
   background: rgba(225, 48, 108, 0.1);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .stat-value {
   display: block;
   font-size: 20px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .stat-label {
   display: block;
   font-size: 12px;
-  color: #a0a0a0;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -90,11 +93,11 @@
   display: flex;
   justify-content: space-between;
   font-size: 14px;
-  color: #e0e0e0;
-  padding: 16px 0;
-  border-top: 1px solid #333;
-  border-bottom: 1px solid #333;
-  margin-bottom: 20px;
+  color: var(--text-primary);
+  padding: 20px 0;
+  border-top: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+  margin-bottom: 24px;
 }
 
 .campaign-actions {
