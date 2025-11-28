@@ -1,6 +1,6 @@
-# InstaMarketing Srbija - robots.txt
-# https://instamarketing.rs
-# Updated: January 2025 - GEO/AEO Optimized
+# AIInstaMarketing - robots.txt
+# https://www.aiinstamarketing.com
+# Updated: November 2025 - GEO/AEO Optimized
 
 User-agent: *
 Allow: /
@@ -11,7 +11,7 @@ Disallow: /*.json$
 Disallow: /temp/
 Disallow: /uploads/temp/
 
-# Dozvoli pristup važnim stranicama za SEO
+# Allow access to important SEO pages
 Allow: /login
 Allow: /register
 Allow: /dashboard
@@ -24,8 +24,8 @@ Allow: /campaigns
 Allow: /pricing
 Allow: /profile
 
-# Sitemap lokacija
-Sitemap: https://instamarketing.rs/sitemap.xml
+# Sitemap location
+Sitemap: https://www.aiinstamarketing.com/sitemap.xml
 
 # ============================================
 # AI ASSISTANTS & LLM CRAWLERS - GEO 2025
@@ -73,7 +73,7 @@ Crawl-delay: 5
 # SEARCH ENGINE CRAWLERS
 # ============================================
 
-# Googlebot specifična pravila
+# Googlebot specific rules
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 3
@@ -88,17 +88,12 @@ Allow: /logo512.png
 User-agent: Googlebot-Video
 Allow: /
 
-# Yandex (za rusko/balkans tržište)
-User-agent: Yandex
-Allow: /
-Crawl-delay: 10
-
 # DuckDuckGo
 User-agent: DuckDuckBot
 Allow: /
 
 # ============================================
-# BLOKIRAJ LOŠE/SCRAPER BOTOVE
+# BLOCK BAD/SCRAPER BOTS
 # ============================================
 
 User-agent: AhrefsBot

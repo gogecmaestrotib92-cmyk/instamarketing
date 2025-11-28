@@ -10,89 +10,89 @@ const Home = () => {
   const features = [
     {
       icon: FaVideo,
-      title: 'AI Video Generator za Reels',
-      description: 'Generišite profesionalne Instagram Reels pomoću AI. Text-to-video tehnologija kreira viralne video sadržaje za 2 minuta.',
+      title: 'AI Video Generator for Reels',
+      description: 'Generate professional Instagram Reels using AI. Text-to-video technology creates viral video content in just 2 minutes.',
       keywords: ['AI video generator', 'Instagram Reels', 'text-to-video']
     },
     {
       icon: FaCalendarAlt,
-      title: 'Automatsko Zakazivanje Objava',
-      description: 'Zakazujte Instagram objave i Reels unapred. AI analizira vašu publiku i predlaže optimalno vreme objavljivanja.',
-      keywords: ['zakazivanje objava', 'Instagram scheduler', 'automatsko postovanje']
+      title: 'Automatic Post Scheduling',
+      description: 'Schedule Instagram posts and Reels in advance. AI analyzes your audience and suggests optimal posting times.',
+      keywords: ['post scheduling', 'Instagram scheduler', 'auto posting']
     },
     {
       icon: FaRobot,
       title: 'AI Caption & Hashtag Generator',
-      description: 'GPT-4 tehnologija generiše engaging captione i optimizovane hashtag-ove za maksimalan reach i engagement.',
+      description: 'GPT-4 technology generates engaging captions and optimized hashtags for maximum reach and engagement.',
       keywords: ['AI caption generator', 'hashtag generator', 'GPT-4']
     },
     {
       icon: FaChartLine,
-      title: 'AI-Powered Analitika',
-      description: 'Dubinska analiza performansi sa AI insightima. Pratite engagement, reach, rast pratilaca i ROI u realnom vremenu.',
-      keywords: ['Instagram analitika', 'engagement rate', 'AI insights']
+      title: 'AI-Powered Analytics',
+      description: 'Deep performance analysis with AI insights. Track engagement, reach, follower growth, and ROI in real-time.',
+      keywords: ['Instagram analytics', 'engagement rate', 'AI insights']
     },
     {
       icon: FaBullhorn,
-      title: 'Smart Reklamne Kampanje',
-      description: 'AI optimizuje vaše Instagram reklame. A/B testiranje, automatsko targetiranje i maksimizacija ROAS-a.',
-      keywords: ['Instagram ads', 'ROAS optimizacija', 'A/B testiranje']
+      title: 'Smart Ad Campaigns',
+      description: 'AI optimizes your Instagram ads. A/B testing, automatic targeting, and ROAS maximization.',
+      keywords: ['Instagram ads', 'ROAS optimization', 'A/B testing']
     },
     {
       icon: FaInstagram,
       title: 'Official Instagram API',
-      description: 'Direktna integracija sa Meta Business API. Sigurno povezivanje, pouzdano objavljivanje, 99.9% uptime.',
-      keywords: ['Instagram API', 'Meta Business', 'sigurna integracija']
+      description: 'Direct integration with Meta Business API. Secure connection, reliable publishing, 99.9% uptime.',
+      keywords: ['Instagram API', 'Meta Business', 'secure integration']
     }
   ];
 
   const pricingPlans = [
     {
-      name: 'Besplatno',
+      name: 'Free',
       price: '0',
-      period: 'zauvek',
+      period: 'forever',
       features: [
-        '5 zakazanih objava mesečno',
+        '5 scheduled posts per month',
         'AI Caption generator',
-        'Hashtag predlozi',
-        'Osnovna analitika',
-        '1 Instagram nalog',
-        'Email podrška'
+        'Hashtag suggestions',
+        'Basic analytics',
+        '1 Instagram account',
+        'Email support'
       ],
-      cta: 'Započni Besplatno',
+      cta: 'Start Free',
       popular: false
     },
     {
       name: 'Pro',
-      price: '2,990',
-      period: 'mesečno',
+      price: '29',
+      period: 'month',
       features: [
-        'Neograničeno zakazivanje',
-        'Svi AI alati',
-        'AI Video Generator (50 videa/mes)',
+        'Unlimited scheduling',
+        'All AI tools',
+        'AI Video Generator (50 videos/mo)',
         'AI Voiceover',
-        'Napredna analitika',
-        'Do 3 Instagram naloga',
-        'Prioritetna podrška'
+        'Advanced analytics',
+        'Up to 3 Instagram accounts',
+        'Priority support'
       ],
-      cta: 'Započni 14 Dana Besplatno',
+      cta: 'Start 14-Day Free Trial',
       popular: true
     },
     {
       name: 'Business',
-      price: '7,990',
-      period: 'mesečno',
+      price: '79',
+      period: 'month',
       features: [
-        'Sve iz Pro plana',
-        'Neograničeni AI videi',
-        'Do 10 Instagram naloga',
-        'Tim pristup (5 članova)',
-        'Reklamne kampanje',
-        'API pristup',
-        'Dedicirani account manager',
-        'Custom integracije'
+        'Everything in Pro',
+        'Unlimited AI videos',
+        'Up to 10 Instagram accounts',
+        'Team access (5 members)',
+        'Ad campaigns',
+        'API access',
+        'Dedicated account manager',
+        'Custom integrations'
       ],
-      cta: 'Kontaktirajte Nas',
+      cta: 'Contact Us',
       popular: false,
       link: '/contact'
     }
@@ -101,89 +101,89 @@ const Home = () => {
   // Extended FAQ for AEO/GEO
   const faqs = [
     {
-      question: 'Šta je AIInstaMarketing i kako funkcioniše?',
-      answer: 'AIInstaMarketing je vodeća AI platforma za automatizaciju Instagram marketinga. Koristi napredne AI modele (GPT-4, Stable Diffusion) za generisanje video sadržaja, pisanje captiona, optimizaciju hashtag-ova i analizu performansi. Platforma se povezuje sa vašim Instagram Business nalogom putem zvaničnog Meta API-ja, omogućavajući automatsko zakazivanje i objavljivanje sadržaja.'
+      question: 'What is AIInstaMarketing and how does it work?',
+      answer: 'AIInstaMarketing is the leading AI platform for Instagram marketing automation. It uses advanced AI models (GPT-4, Stable Diffusion) to generate video content, write captions, optimize hashtags, and analyze performance. The platform connects to your Instagram Business account via the official Meta API, enabling automatic scheduling and content publishing.'
     },
     {
-      question: 'Kako AI generiše Instagram Reels video sadržaj?',
-      answer: 'Naš AI Video Generator koristi text-to-video tehnologiju. Unosite prompt (opis željenog videa), birate trajanje (5-60 sekundi) i stil. AI zatim generiše profesionalni video sa tranzicijama, efektima i opcionalnim AI voiceoverom. Proces traje 1-2 minuta, a rezultat je video optimizovan za Instagram Reels format (9:16).'
+      question: 'How does AI generate Instagram Reels video content?',
+      answer: 'Our AI Video Generator uses text-to-video technology. You enter a prompt (description of desired video), select duration (5-60 seconds) and style. AI then generates professional video with transitions, effects, and optional AI voiceover. The process takes 1-2 minutes, and the result is a video optimized for Instagram Reels format (9:16).'
     },
     {
-      question: 'Da li je AIInstaMarketing besplatan?',
-      answer: 'Da! Nudimo trajno besplatan plan sa 5 zakazanih objava mesečno, AI caption generatorom i osnovnom analitikom. Pro plan (2,990 RSD/mes) dodaje neograničeno zakazivanje i AI video generator. Svi plaćeni planovi imaju 14 dana besplatnog trial perioda bez potrebe za kreditnom karticom.'
+      question: 'Is AIInstaMarketing free to use?',
+      answer: 'Yes! We offer a permanently free plan with 5 scheduled posts per month, AI caption generator, and basic analytics. Pro plan ($29/mo) adds unlimited scheduling and AI video generator. All paid plans include a 14-day free trial with no credit card required.'
     },
     {
-      question: 'Kako da povežem Instagram nalog sa platformom?',
-      answer: 'Povezivanje je jednostavno: 1) Registrujte se na AIInstaMarketing, 2) Idite u Podešavanja > Poveži Instagram, 3) Kliknite "Poveži" i autorizujte pristup putem Facebook/Meta, 4) Izaberite Instagram Business ili Creator nalog. Ceo proces traje manje od 2 minuta i koristi zvanični Meta OAuth protokol za maksimalnu sigurnost.'
+      question: 'How do I connect my Instagram account to the platform?',
+      answer: 'Connecting is simple: 1) Sign up on AIInstaMarketing, 2) Go to Settings > Connect Instagram, 3) Click "Connect" and authorize access via Facebook/Meta, 4) Select your Instagram Business or Creator account. The entire process takes less than 2 minutes and uses official Meta OAuth protocol for maximum security.'
     },
     {
-      question: 'Koje je najbolje vreme za objavljivanje na Instagramu?',
-      answer: 'Optimalno vreme varira po publici, ali naš AI analizira kada su vaši pratioci najaktivniji. Generalno, najbolji periodi su: radnim danima 11-13h i 19-21h, vikendima 10-14h. AIInstaMarketing automatski predlaže personalizovano optimalno vreme za svaku objavu bazirano na analizi vaše specifične publike.'
+      question: 'What is the best time to post on Instagram?',
+      answer: 'Optimal timing varies by audience, but our AI analyzes when your followers are most active. Generally, the best times are: weekdays 11am-1pm and 7-9pm, weekends 10am-2pm. AIInstaMarketing automatically suggests personalized optimal times for each post based on your specific audience analysis.'
     },
     {
-      question: 'Da li AIInstaMarketing radi sa više Instagram naloga?',
-      answer: 'Da! Besplatan plan podržava 1 nalog, Pro plan do 3 naloga, a Business plan do 10 naloga. Svi nalozi se upravljaju iz jednog dashboard-a sa mogućnošću brzog prebacivanja između naloga. Idealno za agencije i marketare koji upravljaju više brendova.'
+      question: 'Does AIInstaMarketing work with multiple Instagram accounts?',
+      answer: 'Yes! Free plan supports 1 account, Pro plan up to 3 accounts, and Business plan up to 10 accounts. All accounts are managed from a single dashboard with the ability to quickly switch between accounts. Ideal for agencies and marketers managing multiple brands.'
     },
     {
-      question: 'Kako AI Caption Generator kreira engaging sadržaj?',
-      answer: 'AI Caption Generator koristi GPT-4 model treniran na milionima uspešnih Instagram objava. Analizira vašu temu, ton brenda i ciljnu publiku. Generiše više varijanti captiona sa emoji-jima, call-to-action-ima i optimizovanom dužinom. Možete birati između profesionalnog, zabavnog ili inspirativnog tona.'
+      question: 'How does the AI Caption Generator create engaging content?',
+      answer: 'AI Caption Generator uses GPT-4 model trained on millions of successful Instagram posts. It analyzes your topic, brand tone, and target audience. It generates multiple caption variations with emojis, call-to-actions, and optimized length. You can choose between professional, fun, or inspirational tone.'
     },
     {
-      question: 'Da li je sigurno povezivati Instagram sa AIInstaMarketing?',
-      answer: 'Apsolutno sigurno. Koristimo zvanični Meta Business API i OAuth 2.0 autentifikaciju. Nikada ne čuvamo vaše Instagram lozinke. Svi podaci su enkriptovani (AES-256), a naši serveri su ISO 27001 sertifikovani. Možete u svakom trenutku opozvati pristup iz Facebook podešavanja.'
+      question: 'Is it safe to connect Instagram to AIInstaMarketing?',
+      answer: 'Absolutely safe. We use the official Meta Business API and OAuth 2.0 authentication. We never store your Instagram passwords. All data is encrypted (AES-256), and our servers are ISO 27001 certified. You can revoke access at any time from your Facebook settings.'
     }
   ];
 
   // Trust signals data
   const trustStats = [
-    { number: '15,000+', label: 'Aktivnih Korisnika', icon: FiUsers },
-    { number: '2M+', label: 'Objavljenih Postova', icon: FaInstagram },
-    { number: '50+', label: 'Zemalja', icon: FiGlobe },
-    { number: '4.9★', label: 'Prosečna Ocena', icon: FaStar }
+    { number: '15,000+', label: 'Active Users', icon: FiUsers },
+    { number: '2M+', label: 'Posts Published', icon: FaInstagram },
+    { number: '50+', label: 'Countries', icon: FiGlobe },
+    { number: '4.9★', label: 'Average Rating', icon: FaStar }
   ];
 
   // Testimonials for E-E-A-T
   const testimonials = [
     {
-      name: 'Marija Petrović',
-      role: 'Influencer, 150K pratilaca',
-      text: 'AIInstaMarketing mi je uštedeo 10+ sati nedeljno. AI video generator je neverovatno - kreiram Reels za par minuta!',
+      name: 'Sarah Johnson',
+      role: 'Influencer, 150K followers',
+      text: 'AIInstaMarketing saved me 10+ hours per week. The AI video generator is incredible - I create Reels in just a few minutes!',
       rating: 5
     },
     {
-      name: 'Stefan Jovanović',
-      role: 'Marketing Manager, TechStartup d.o.o.',
-      text: 'Najbolji alat za Instagram marketing koji sam koristio. Analitika je detaljna, a AI predlozi su uvek relevantni.',
+      name: 'Michael Chen',
+      role: 'Marketing Manager, TechStartup Inc.',
+      text: 'The best Instagram marketing tool I\'ve ever used. Analytics are detailed, and AI suggestions are always relevant.',
       rating: 5
     },
     {
-      name: 'Ana Nikolić',
-      role: 'Vlasnik online prodavnice',
-      text: 'Od kada koristim AIInstaMarketing, moj engagement je porastao za 300%. Preporučujem svima!',
+      name: 'Emma Williams',
+      role: 'E-commerce Store Owner',
+      text: 'Since using AIInstaMarketing, my engagement has increased by 300%. Highly recommend to everyone!',
       rating: 5
     }
   ];
 
   // HowTo data for schema
   const howToData = {
-    name: 'Kako koristiti AIInstaMarketing za Instagram automatizaciju',
-    description: 'Vodič korak po korak za automatizaciju Instagram marketinga pomoću AI tehnologije.',
+    name: 'How to Use AIInstaMarketing for Instagram Automation',
+    description: 'Step-by-step guide to automating Instagram marketing using AI technology.',
     totalTime: 'PT10M',
     steps: [
-      { name: 'Registracija', text: 'Kreirajte besplatan nalog na AIInstaMarketing.com. Proces traje manje od 1 minut.' },
-      { name: 'Povezivanje Instagrama', text: 'Povežite vaš Instagram Business ili Creator nalog putem sigurne Meta autorizacije.' },
-      { name: 'Kreiranje sadržaja', text: 'Koristite AI alate za generisanje captiona, hashtag-ova ili čak celih video sadržaja.' },
-      { name: 'Zakazivanje objava', text: 'Zakažite objave unapred - AI će predložiti optimalno vreme za maksimalan engagement.' },
-      { name: 'Praćenje rezultata', text: 'Analizirajte performanse u realnom vremenu i optimizujte strategiju na osnovu AI insights-a.' }
+      { name: 'Sign Up', text: 'Create a free account on AIInstaMarketing.com. The process takes less than 1 minute.' },
+      { name: 'Connect Instagram', text: 'Connect your Instagram Business or Creator account via secure Meta authorization.' },
+      { name: 'Create Content', text: 'Use AI tools to generate captions, hashtags, or even complete video content.' },
+      { name: 'Schedule Posts', text: 'Schedule posts in advance - AI will suggest optimal times for maximum engagement.' },
+      { name: 'Track Results', text: 'Analyze performance in real-time and optimize your strategy based on AI insights.' }
     ]
   };
 
   return (
     <main className="home-page">
       <SEO 
-        title="AI Instagram Marketing Platforma | Automatizacija Reels & Objava 2025"
-        description="AIInstaMarketing je #1 AI platforma za Instagram marketing. Automatski generišite Reels, zakazujte objave, kreirajte AI sadržaj i analizirajte rezultate. Besplatna probna verzija!"
-        keywords="AI Instagram marketing, AI Instagram reels generator, automatizacija Instagram, AI caption generator, zakazivanje Instagram objava, Instagram analitika, AI video generator, Instagram marketing platforma 2025"
+        title="AI Instagram Marketing Platform | Automate Reels & Posts 2025"
+        description="AIInstaMarketing is the #1 AI platform for Instagram marketing. Automatically generate Reels, schedule posts, create AI content, and analyze results. Free trial available!"
+        keywords="AI Instagram marketing, AI Instagram reels generator, Instagram automation, AI caption generator, schedule Instagram posts, Instagram analytics, AI video generator, Instagram marketing platform 2025"
         url="/"
         faq={faqs}
         howTo={howToData}
@@ -192,15 +192,15 @@ const Home = () => {
       />
 
       {/* TL;DR Section for AI/GEO - Key Takeaways */}
-      <section className="tldr-section" aria-label="Ključne informacije">
+      <section className="tldr-section" aria-label="Key Information">
         <div className="tldr-container">
-          <h2 className="tldr-title">📋 TL;DR - Šta je AIInstaMarketing?</h2>
+          <h2 className="tldr-title">📋 TL;DR - What is AIInstaMarketing?</h2>
           <ul className="tldr-list">
-            <li><strong>AI Video Generator:</strong> Kreirajte Instagram Reels automatski pomoću text-to-video AI tehnologije</li>
-            <li><strong>Smart Scheduler:</strong> Zakazujte objave unapred sa AI preporukama optimalnog vremena</li>
-            <li><strong>AI Caption Generator:</strong> GPT-4 generiše engaging captione i optimizovane hashtag-ove</li>
-            <li><strong>Analitika u realnom vremenu:</strong> Pratite engagement, reach i ROI sa AI insights-ima</li>
-            <li><strong>Besplatan plan:</strong> Započnite besplatno, nadogradite kada budete spremni</li>
+            <li><strong>AI Video Generator:</strong> Create Instagram Reels automatically using text-to-video AI technology</li>
+            <li><strong>Smart Scheduler:</strong> Schedule posts in advance with AI-optimized timing recommendations</li>
+            <li><strong>AI Caption Generator:</strong> GPT-4 generates engaging captions and optimized hashtags</li>
+            <li><strong>Real-time Analytics:</strong> Track engagement, reach, and ROI with AI insights</li>
+            <li><strong>Free Plan Available:</strong> Start for free, upgrade when you're ready</li>
           </ul>
         </div>
       </section>
@@ -208,36 +208,36 @@ const Home = () => {
       {/* Hero Section */}
       <header className="hero">
         <div className="hero-content">
-          <div className="hero-badge">🏆 #1 AI Instagram Platforma 2025</div>
+          <div className="hero-badge">🏆 #1 AI Instagram Platform 2025</div>
           <h1>
-            Automatizujte <span className="gradient-text">Instagram Marketing</span> Pomoću AI
+            Automate <span className="gradient-text">Instagram Marketing</span> With AI
           </h1>
           <p className="hero-subtitle">
-            Generišite viralne Reels, zakazujte objave, kreirajte AI sadržaj i 
-            povećajte engagement 10x brže sa AIInstaMarketing platformom.
+            Generate viral Reels, schedule posts, create AI content, and 
+            increase engagement 10x faster with AIInstaMarketing platform.
           </p>
           
           {/* Key benefits list for AI extraction */}
-          <ul className="hero-benefits" aria-label="Ključne prednosti">
-            <li><FiCheck aria-hidden="true" /> AI Video Generator za Instagram Reels</li>
-            <li><FiCheck aria-hidden="true" /> Automatsko zakazivanje sa AI optimizacijom</li>
+          <ul className="hero-benefits" aria-label="Key Benefits">
+            <li><FiCheck aria-hidden="true" /> AI Video Generator for Instagram Reels</li>
+            <li><FiCheck aria-hidden="true" /> Automatic scheduling with AI optimization</li>
             <li><FiCheck aria-hidden="true" /> GPT-4 Caption & Hashtag Generator</li>
-            <li><FiCheck aria-hidden="true" /> 14 dana besplatno, bez kreditne kartice</li>
+            <li><FiCheck aria-hidden="true" /> 14 days free, no credit card required</li>
           </ul>
 
           <div className="hero-cta">
-            <Link to="/register" className="btn btn-primary btn-lg" aria-label="Započnite besplatno sa AIInstaMarketing">
-              Započnite Besplatno <FiArrowRight aria-hidden="true" />
+            <Link to="/register" className="btn btn-primary btn-lg" aria-label="Start free with AIInstaMarketing">
+              Start Free <FiArrowRight aria-hidden="true" />
             </Link>
-            <Link to="/login" className="btn btn-outline btn-lg" aria-label="Prijavite se na platformu">
-              Prijavite Se
+            <Link to="/login" className="btn btn-outline btn-lg" aria-label="Log in to the platform">
+              Log In
             </Link>
           </div>
 
           {/* Trust indicators */}
           <div className="hero-trust">
             <span className="trust-badge"><FiShield aria-hidden="true" /> Meta Business Partner</span>
-            <span className="trust-badge"><FiAward aria-hidden="true" /> 4.9★ ocena (2,800+ recenzija)</span>
+            <span className="trust-badge"><FiAward aria-hidden="true" /> 4.9★ rating (2,800+ reviews)</span>
           </div>
         </div>
         <div className="hero-image" aria-hidden="true">
@@ -247,7 +247,7 @@ const Home = () => {
 
       {/* Trust Stats Section */}
       <section className="trust-stats-section" aria-labelledby="stats-heading">
-        <h2 id="stats-heading" className="sr-only">AIInstaMarketing u brojkama</h2>
+        <h2 id="stats-heading" className="sr-only">AIInstaMarketing by the Numbers</h2>
         <div className="trust-stats-grid">
           {trustStats.map((stat, index) => (
             <div key={index} className="trust-stat-card">
@@ -262,8 +262,8 @@ const Home = () => {
       {/* Features Section */}
       <section className="features-section" id="features" aria-labelledby="features-heading">
         <div className="section-header">
-          <h2 id="features-heading">Kako AIInstaMarketing Pomaže Vašem Instagram Rastu?</h2>
-          <p>Kompletan set AI alata za profesionalni Instagram marketing</p>
+          <h2 id="features-heading">How Does AIInstaMarketing Help Your Instagram Growth?</h2>
+          <p>Complete set of AI tools for professional Instagram marketing</p>
         </div>
         <div className="features-grid">
           {features.map((feature, index) => (
@@ -286,39 +286,39 @@ const Home = () => {
       {/* How It Works - Step by Step for AI/GEO */}
       <section className="how-it-works" id="how-it-works" aria-labelledby="how-it-works-heading">
         <div className="section-header">
-          <h2 id="how-it-works-heading">Kako Početi sa AIInstaMarketing?</h2>
-          <p>Automatizujte Instagram marketing u samo 5 koraka</p>
+          <h2 id="how-it-works-heading">How to Get Started with AIInstaMarketing?</h2>
+          <p>Automate Instagram marketing in just 5 steps</p>
         </div>
         <ol className="steps">
           <li className="step" id="step-1">
             <div className="step-number" aria-hidden="true">1</div>
-            <h3>Registrujte Se Besplatno</h3>
-            <p>Kreirajte nalog za manje od 1 minuta. Bez kreditne kartice, bez obaveza.</p>
+            <h3>Sign Up for Free</h3>
+            <p>Create an account in less than 1 minute. No credit card, no obligations.</p>
           </li>
           <li className="step" id="step-2">
             <div className="step-number" aria-hidden="true">2</div>
-            <h3>Povežite Instagram Nalog</h3>
-            <p>Sigurno povežite vaš Instagram Business nalog putem zvaničnog Meta API-ja.</p>
+            <h3>Connect Your Instagram Account</h3>
+            <p>Securely connect your Instagram Business account via the official Meta API.</p>
           </li>
           <li className="step" id="step-3">
             <div className="step-number" aria-hidden="true">3</div>
-            <h3>Kreirajte AI Sadržaj</h3>
-            <p>Generišite video, captione i hashtag-ove pomoću naših naprednih AI alata.</p>
+            <h3>Create AI Content</h3>
+            <p>Generate videos, captions, and hashtags using our advanced AI tools.</p>
           </li>
           <li className="step" id="step-4">
             <div className="step-number" aria-hidden="true">4</div>
-            <h3>Zakažite Objave</h3>
-            <p>Postavite raspored objavljivanja. AI predlaže optimalno vreme za vašu publiku.</p>
+            <h3>Schedule Your Posts</h3>
+            <p>Set up your publishing schedule. AI suggests optimal times for your audience.</p>
           </li>
           <li className="step" id="step-5">
             <div className="step-number" aria-hidden="true">5</div>
-            <h3>Pratite i Optimizujte</h3>
-            <p>Analizirajte rezultate i prilagodite strategiju na osnovu AI preporuka.</p>
+            <h3>Track and Optimize</h3>
+            <p>Analyze results and adjust your strategy based on AI recommendations.</p>
           </li>
         </ol>
         <div className="steps-cta">
           <Link to="/register" className="btn btn-primary btn-lg">
-            Započnite Sada - Besplatno <FiArrowRight aria-hidden="true" />
+            Get Started Now - Free <FiArrowRight aria-hidden="true" />
           </Link>
         </div>
       </section>
@@ -326,8 +326,8 @@ const Home = () => {
       {/* Testimonials for E-E-A-T */}
       <section className="testimonials-section" aria-labelledby="testimonials-heading">
         <div className="section-header">
-          <h2 id="testimonials-heading">Šta Kažu Naši Korisnici?</h2>
-          <p>Pridružite se hiljadama zadovoljnih korisnika širom regiona</p>
+          <h2 id="testimonials-heading">What Our Users Say</h2>
+          <p>Join thousands of satisfied users worldwide</p>
         </div>
         <div className="testimonials-grid">
           {testimonials.map((testimonial, index) => (
@@ -339,7 +339,7 @@ const Home = () => {
                   <strong>{testimonial.name}</strong>
                   <span>{testimonial.role}</span>
                 </div>
-                <div className="testimonial-rating" aria-label={`Ocena: ${testimonial.rating} od 5`}>
+                <div className="testimonial-rating" aria-label={`Rating: ${testimonial.rating} out of 5`}>
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <FaStar key={i} aria-hidden="true" />
                   ))}
@@ -353,17 +353,17 @@ const Home = () => {
       {/* Pricing Section */}
       <section className="pricing-section" id="pricing" aria-labelledby="pricing-heading">
         <div className="section-header">
-          <h2 id="pricing-heading">Transparentne Cene, Bez Skrivenih Troškova</h2>
-          <p>Izaberite plan koji odgovara vašim potrebama. 14 dana Pro besplatno!</p>
+          <h2 id="pricing-heading">Transparent Pricing, No Hidden Fees</h2>
+          <p>Choose the plan that fits your needs. 14 days of Pro free!</p>
         </div>
         <div className="pricing-grid">
           {pricingPlans.map((plan, index) => (
             <article key={index} className={`pricing-card ${plan.popular ? 'popular' : ''}`}>
-              {plan.popular && <div className="popular-badge">Najpopularniji</div>}
+              {plan.popular && <div className="popular-badge">Most Popular</div>}
               <h3>{plan.name}</h3>
               <div className="price">
+                <span className="currency">$</span>
                 <span className="amount">{plan.price}</span>
-                <span className="currency">RSD</span>
                 <span className="period">/{plan.period}</span>
               </div>
               <ul className="features-list">
@@ -373,7 +373,7 @@ const Home = () => {
                   </li>
                 ))}
               </ul>
-              <Link to={plan.link || "/register"} className={`btn ${plan.popular ? 'btn-primary' : 'btn-outline'} btn-full`} aria-label={`Izaberite ${plan.name} plan`}>
+              <Link to={plan.link || "/register"} className={`btn ${plan.popular ? 'btn-primary' : 'btn-outline'} btn-full`} aria-label={`Choose ${plan.name} plan`}>
                 {plan.cta}
               </Link>
             </article>
@@ -384,8 +384,8 @@ const Home = () => {
       {/* FAQ Section - Critical for AEO/GEO */}
       <section className="faq-section" id="faq" aria-labelledby="faq-heading">
         <div className="section-header">
-          <h2 id="faq-heading">Često Postavljana Pitanja o AIInstaMarketing</h2>
-          <p>Sve što trebate znati o našoj AI Instagram marketing platformi</p>
+          <h2 id="faq-heading">Frequently Asked Questions About AIInstaMarketing</h2>
+          <p>Everything you need to know about our AI Instagram marketing platform</p>
         </div>
         <div className="faq-grid">
           {faqs.map((faq, index) => (
@@ -399,14 +399,14 @@ const Home = () => {
 
       {/* Final CTA Section */}
       <section className="cta-section" aria-labelledby="cta-heading">
-        <h2 id="cta-heading">Spremni da Transformišete Vaš Instagram Marketing?</h2>
-        <p>Pridružite se 15,000+ korisnika koji već koriste AI za Instagram uspeh</p>
+        <h2 id="cta-heading">Ready to Transform Your Instagram Marketing?</h2>
+        <p>Join 15,000+ users already using AI for Instagram success</p>
         <div className="cta-buttons">
           <Link to="/register" className="btn btn-primary btn-lg">
-            Započnite Besplatno - 14 Dana Pro <FiArrowRight aria-hidden="true" />
+            Start Free - 14 Days Pro <FiArrowRight aria-hidden="true" />
           </Link>
         </div>
-        <p className="cta-note">Bez kreditne kartice • Otkazivanje u bilo kom trenutku • 24/7 podrška</p>
+        <p className="cta-note">No credit card required • Cancel anytime • 24/7 support</p>
       </section>
 
       {/* Footer */}
@@ -416,15 +416,15 @@ const Home = () => {
             <FaInstagram className="footer-logo" aria-hidden="true" />
             <span>AIInstaMarketing</span>
           </div>
-          <nav className="footer-links" aria-label="Footer navigacija">
-            <Link to="/about">O Nama</Link>
-            <Link to="/contact">Kontakt</Link>
-            <Link to="/pricing">Cene</Link>
-            <Link to="/login">Prijava</Link>
-            <Link to="/register">Registracija</Link>
+          <nav className="footer-links" aria-label="Footer navigation">
+            <Link to="/about">About Us</Link>
+            <Link to="/contact">Contact</Link>
+            <Link to="/pricing">Pricing</Link>
+            <Link to="/login">Login</Link>
+            <Link to="/register">Sign Up</Link>
           </nav>
           <div className="footer-bottom">
-            <p>© 2025 AIInstaMarketing. Sva prava zadržana.</p>
+            <p>© 2025 AIInstaMarketing. All rights reserved.</p>
             <p className="footer-trust">
               <FiShield aria-hidden="true" /> Meta Business Partner • ISO 27001 Certified • GDPR Compliant
             </p>

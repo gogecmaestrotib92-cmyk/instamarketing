@@ -4,112 +4,112 @@
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
         xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
   
-  <!-- Pocetna strana - Landing Page - GEO Optimized 2025 -->
+  <!-- Homepage - Landing Page - GEO Optimized 2025 -->
   <url>
-    <loc>https://instamarketing.rs/</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="sr" href="https://instamarketing.rs/"/>
-    <xhtml:link rel="alternate" hreflang="sr-RS" href="https://instamarketing.rs/"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://instamarketing.rs/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.aiinstamarketing.com/"/>
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://www.aiinstamarketing.com/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.aiinstamarketing.com/"/>
     <image:image>
-      <image:loc>https://instamarketing.rs/og-image.png</image:loc>
-      <image:title>InstaMarketing Srbija - AI Instagram Platforma</image:title>
-      <image:caption>Vodeća AI platforma za Instagram marketing u Srbiji</image:caption>
+      <image:loc>https://www.aiinstamarketing.com/og-image.png</image:loc>
+      <image:title>AIInstaMarketing - AI Instagram Platform</image:title>
+      <image:caption>Leading AI platform for Instagram marketing worldwide</image:caption>
     </image:image>
   </url>
   
-  <!-- AI Video Generator - Glavna funkcionalnost -->
+  <!-- AI Video Generator - Main Feature -->
   <url>
-    <loc>https://instamarketing.rs/ai-video</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/ai-video</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
-    <xhtml:link rel="alternate" hreflang="sr" href="https://instamarketing.rs/ai-video"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.aiinstamarketing.com/ai-video"/>
     <image:image>
-      <image:loc>https://instamarketing.rs/ai-video-preview.png</image:loc>
-      <image:title>AI Video Generator za Instagram Reels</image:title>
+      <image:loc>https://www.aiinstamarketing.com/ai-video-preview.png</image:loc>
+      <image:title>AI Video Generator for Instagram Reels</image:title>
     </image:image>
   </url>
   
-  <!-- AI Alati - Feature Hub -->
+  <!-- AI Tools - Feature Hub -->
   <url>
-    <loc>https://instamarketing.rs/ai-tools</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/ai-tools</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="sr" href="https://instamarketing.rs/ai-tools"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.aiinstamarketing.com/ai-tools"/>
   </url>
   
   <!-- Dashboard -->
   <url>
-    <loc>https://instamarketing.rs/dashboard</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/dashboard</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.85</priority>
   </url>
   
-  <!-- Kalendar Sadržaja -->
+  <!-- Content Calendar -->
   <url>
-    <loc>https://instamarketing.rs/calendar</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/calendar</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
-  <!-- Analitika -->
+  <!-- Analytics -->
   <url>
-    <loc>https://instamarketing.rs/analytics</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/analytics</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   
-  <!-- Zakazivanje Postova -->
+  <!-- Post Scheduler -->
   <url>
-    <loc>https://instamarketing.rs/schedule</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/schedule</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   
-  <!-- Reklamne Kampanje -->
+  <!-- Ad Campaigns -->
   <url>
-    <loc>https://instamarketing.rs/campaigns</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/campaigns</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
   </url>
   
-  <!-- Pricing / Cenovnik -->
+  <!-- Pricing -->
   <url>
-    <loc>https://instamarketing.rs/pricing</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/pricing</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   
-  <!-- Prijava -->
+  <!-- Login -->
   <url>
-    <loc>https://instamarketing.rs/login</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/login</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   
-  <!-- Registracija -->
+  <!-- Register -->
   <url>
-    <loc>https://instamarketing.rs/register</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/register</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.65</priority>
   </url>
   
-  <!-- Profil -->
+  <!-- Profile -->
   <url>
-    <loc>https://instamarketing.rs/profile</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://www.aiinstamarketing.com/profile</loc>
+    <lastmod>2025-11-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

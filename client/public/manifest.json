@@ -1,7 +1,7 @@
 {
-  "short_name": "InstaMarketing",
-  "name": "InstaMarketing - Automatizacija Instagram Marketinga",
-  "description": "Automatizujte Instagram marketing. Zakazujte objave i rilsove, vodite reklamne kampanje, analizirajte performanse i povećajte publiku 10x brže. Najbolji alat za Instagram marketing u Srbiji.",
+  "short_name": "AIInstaMarketing",
+  "name": "AIInstaMarketing - AI Instagram Marketing Automation",
+  "description": "Automate Instagram marketing. Schedule posts and Reels, manage ad campaigns, analyze performance, and grow your audience 10x faster. The best AI tool for Instagram marketing.",
   "icons": [
     {
       "src": "favicon.ico",
@@ -28,43 +28,43 @@
   "theme_color": "#E1306C",
   "background_color": "#ffffff",
   "categories": ["business", "productivity", "social"],
-  "lang": "sr-RS",
+  "lang": "en-US",
   "dir": "ltr",
   "prefer_related_applications": false,
   "shortcuts": [
     {
-      "name": "Kreiraj Objavu",
-      "short_name": "Nova Objava",
-      "description": "Kreirajte novu Instagram objavu",
+      "name": "Create Post",
+      "short_name": "New Post",
+      "description": "Create a new Instagram post",
       "url": "/posts/create",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Zakaži Sadržaj",
-      "short_name": "Zakazivanje",
-      "description": "Pregledajte i upravljajte zakazanim sadržajem",
+      "name": "Schedule Content",
+      "short_name": "Schedule",
+      "description": "View and manage scheduled content",
       "url": "/scheduler",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Analitika",
-      "short_name": "Analitika",
-      "description": "Pogledajte analitiku performansi",
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "View performance analytics",
       "url": "/analytics",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     },
     {
-      "name": "AI Alati",
-      "short_name": "AI Alati",
-      "description": "Koristite AI alate za kreiranje sadržaja",
+      "name": "AI Tools",
+      "short_name": "AI Tools",
+      "description": "Use AI tools to create content",
       "url": "/ai-tools",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     },
     {
-      "name": "Reklame",
+      "name": "Campaigns",
       "short_name": "Ads",
-      "description": "Upravljajte reklamnim kampanjama",
-      "url": "/ads",
+      "description": "Manage ad campaigns",
+      "url": "/campaigns",
       "icons": [{ "src": "logo192.png", "sizes": "192x192" }]
     }
   ],
@@ -73,13 +73,13 @@
       "src": "screenshot-dashboard.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "label": "Kontrolna tabla - Pregled svih Instagram metrika"
+      "label": "Dashboard - Overview of all Instagram metrics"
     },
     {
       "src": "screenshot-ai-tools.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "label": "AI Alati - Generišite sadržaj pomoću veštačke inteligencije"
+      "label": "AI Tools - Generate content using artificial intelligence"
     }
   ],
   "related_applications": [],
