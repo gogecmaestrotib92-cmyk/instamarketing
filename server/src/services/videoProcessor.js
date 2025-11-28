@@ -1,24 +1,43 @@
-const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('ffmpeg-static');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
 
-// Set ffmpeg path
-ffmpeg.setFfmpegPath(ffmpegPath);
+// Try to load ffmpeg - it's optional for serverless environments
+let ffmpeg = null;
+let ffmpegPath = null;
+let ffmpegAvailable = false;
+
+try {
+  ffmpeg = require('fluent-ffmpeg');
+  ffmpegPath = require('ffmpeg-static');
+  if (ffmpegPath) {
+    ffmpeg.setFfmpegPath(ffmpegPath);
+    ffmpegAvailable = true;
+    console.log('FFmpeg available at:', ffmpegPath);
+  }
+} catch (e) {
+  console.log('FFmpeg not available:', e.message);
+}
 
 class VideoProcessor {
   constructor() {
     this.tempDir = path.join(__dirname, '../../uploads/temp');
     this.outputDir = path.join(__dirname, '../../uploads/processed');
     
-    // Ensure directories exist
-    if (!fs.existsSync(this.tempDir)) fs.mkdirSync(this.tempDir, { recursive: true });
-    if (!fs.existsSync(this.outputDir)) fs.mkdirSync(this.outputDir, { recursive: true });
+    // Ensure directories exist (with error handling for serverless)
+    try {
+      if (!fs.existsSync(this.tempDir)) fs.mkdirSync(this.tempDir, { recursive: true });
+      if (!fs.existsSync(this.outputDir)) fs.mkdirSync(this.outputDir, { recursive: true });
+    } catch (e) {
+      console.log('Could not create directories (serverless environment):', e.message);
+    }
   }
 
   async downloadFile(url, filepath) {
+    if (!ffmpegAvailable) {
+      throw new Error('FFmpeg not available in this environment');
+    }
     const writer = fs.createWriteStream(filepath);
     const response = await axios({
       url,
@@ -53,6 +72,12 @@ class VideoProcessor {
   }
 
   async processVideo({ videoUrl, voiceoverUrl, musicUrl, overlays, aspectRatio = '9:16' }) {
+    // Check if ffmpeg is available
+    if (!ffmpegAvailable) {
+      console.log('FFmpeg not available - returning original video URL');
+      return videoUrl; // Return the original video if we can't process it
+    }
+
     const jobId = uuidv4();
     const videoPath = path.join(this.tempDir, `${jobId}_video.mp4`);
     const voicePath = path.join(this.tempDir, `${jobId}_voice.mp3`);
