@@ -149,11 +149,11 @@ const Dashboard = () => {
         noindex={true}
       />
 
-      {/* ========== HEADER - Big Greeting + 2 Actions ========== */}
+      {/* ========== HEADER ========== */}
       <header className="dashboard-header">
         <div className="header-text">
           <h1>{getGreeting()}, {user?.name?.split(' ')[0] || 'User'}!</h1>
-          <p>Evo pregleda vašeg Instagram naloga i performansi</p>
+          <p>Pregled vašeg Instagram naloga i performansi</p>
         </div>
         <div className="header-actions">
           <Link to="/app/ai-video" className="btn btn-secondary">
@@ -165,7 +165,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* ========== KPI ROW - 5 Cards ========== */}
+      {/* ========== KPI ROW ========== */}
       <section className="kpi-section">
         {data?.kpis?.map((kpi) => (
           <div key={kpi.id} className="kpi-card">
@@ -181,237 +181,159 @@ const Dashboard = () => {
         ))}
       </section>
 
-      {/* ========== SECTION 1: Engagement Overview (Full Width) ========== */}
-      <section className="card card-full">
-        <div className="card-header">
-          <div className="card-title">
-            <FiBarChart2 className="card-icon" />
-            <h2>Pregled Angažovanja</h2>
-          </div>
-          <Link to="/analytics" className="card-link">
-            Detaljna analitika <FiExternalLink />
-          </Link>
-        </div>
-
-        {/* Engagement Stats Row */}
-        <div className="engagement-row">
-          <div className="engagement-stat">
-            <FiHeart className="stat-icon red" />
-            <div className="stat-data">
-              <span className="stat-value">{formatNumber(data?.engagement?.likes)}</span>
-              <span className="stat-label">Lajkova</span>
+      {/* ========== MAIN 2-COLUMN LAYOUT ========== */}
+      <div className="main-grid">
+        {/* LEFT COLUMN: Engagement + Chart */}
+        <div className="left-column">
+          {/* Engagement Overview Card */}
+          <section className="card">
+            <div className="card-header">
+              <div className="card-title">
+                <FiBarChart2 className="card-icon" />
+                <h2>Pregled Angažovanja</h2>
+              </div>
+              <Link to="/analytics" className="card-link">
+                Analitika <FiExternalLink />
+              </Link>
             </div>
-          </div>
-          <div className="engagement-stat">
-            <FiMessageCircle className="stat-icon blue" />
-            <div className="stat-data">
-              <span className="stat-value">{formatNumber(data?.engagement?.comments)}</span>
-              <span className="stat-label">Komentara</span>
-            </div>
-          </div>
-          <div className="engagement-stat">
-            <FiTrendingUp className="stat-icon green" />
-            <div className="stat-data">
-              <span className="stat-value">{formatNumber(data?.engagement?.shares)}</span>
-              <span className="stat-label">Deljenja</span>
-            </div>
-          </div>
-          <div className="engagement-stat">
-            <FiBookmark className="stat-icon purple" />
-            <div className="stat-data">
-              <span className="stat-value">{formatNumber(data?.engagement?.saves)}</span>
-              <span className="stat-label">Sačuvano</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Chart */}
-        <div className="chart-container">
-          <div className="chart-grid">
-            {data?.chartData?.map((item, i) => (
-              <div key={i} className="chart-column">
-                <div className="chart-bar-wrapper">
-                  <span className="chart-value">{item.label}</span>
-                  <div className="chart-bar" style={{ height: `${item.value}%` }} />
+            <div className="engagement-grid">
+              <div className="engagement-item">
+                <FiHeart className="engagement-icon red" />
+                <div>
+                  <span className="engagement-value">{formatNumber(data?.engagement?.likes)}</span>
+                  <span className="engagement-label">Lajkova</span>
                 </div>
-                <span className="chart-day">{item.day}</span>
               </div>
-            ))}
-          </div>
+              <div className="engagement-item">
+                <FiMessageCircle className="engagement-icon blue" />
+                <div>
+                  <span className="engagement-value">{formatNumber(data?.engagement?.comments)}</span>
+                  <span className="engagement-label">Komentara</span>
+                </div>
+              </div>
+              <div className="engagement-item">
+                <FiTrendingUp className="engagement-icon green" />
+                <div>
+                  <span className="engagement-value">{formatNumber(data?.engagement?.shares)}</span>
+                  <span className="engagement-label">Deljenja</span>
+                </div>
+              </div>
+              <div className="engagement-item">
+                <FiBookmark className="engagement-icon purple" />
+                <div>
+                  <span className="engagement-value">{formatNumber(data?.engagement?.saves)}</span>
+                  <span className="engagement-label">Sačuvano</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Chart Card (Smaller) */}
+          <section className="card card-chart">
+            <div className="card-header">
+              <div className="card-title">
+                <FiTrendingUp className="card-icon" />
+                <h2>Nedeljni Pregled</h2>
+              </div>
+              <span className="chart-period">Poslednjih 7 dana</span>
+            </div>
+            <div className="chart-wrapper">
+              {data?.chartData?.map((item, i) => (
+                <div key={i} className="chart-col">
+                  <div className="chart-bar-wrap">
+                    <span className="chart-val">{item.label}</span>
+                    <div className="chart-bar" style={{ height: `${item.value}%` }} />
+                  </div>
+                  <span className="chart-label">{item.day}</span>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
 
-      {/* ========== SECTION 2: Two-Column Layout ========== */}
-      <div className="two-columns">
-        {/* Left: Scheduled Posts */}
-        <section className="card">
-          <div className="card-header">
-            <div className="card-title">
-              <FiClock className="card-icon" />
-              <h2>Zakazane Objave</h2>
-            </div>
-            <Link to="/schedule" className="card-link">
-              Sve objave <FiExternalLink />
-            </Link>
-          </div>
-
-          <div className="posts-table">
-            <div className="table-header">
-              <span>Tip</span>
-              <span>Sadržaj</span>
-              <span>Datum</span>
-              <span>Status</span>
-            </div>
-            {data?.scheduledPosts?.map((post) => (
-              <div key={post.id} className="table-row">
-                <span className="post-type">
-                  {post.type === 'reel' ? <FiFilm /> : <FiImage />}
-                </span>
-                <span className="post-caption">{post.caption}</span>
-                <span className="post-date">{formatDate(post.scheduledFor)}</span>
-                <span className={`post-status ${post.status}`}>
-                  {post.status === 'scheduled' ? 'Zakazano' : 'Nacrt'}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {(!data?.scheduledPosts?.length) && (
-            <div className="empty-state">
-              <FiCalendar />
-              <p>Nema zakazanih objava</p>
-              <Link to="/posts/create" className="btn btn-primary btn-sm">Kreiraj objavu</Link>
-            </div>
-          )}
-        </section>
-
-        {/* Right: Instagram Account + Quick Actions */}
-        <div className="right-stack">
-          {/* Instagram Account */}
+        {/* RIGHT COLUMN: Instagram Account + Scheduled Posts */}
+        <div className="right-column">
+          {/* Instagram Account Card */}
           <section className="card">
             <div className="card-header">
               <div className="card-title">
                 <FaInstagram className="card-icon instagram" />
                 <h2>Instagram Nalog</h2>
               </div>
-              <span className={`status-badge ${data?.account?.connected ? 'connected' : 'disconnected'}`}>
+              <span className={`badge ${data?.account?.connected ? 'badge-success' : 'badge-error'}`}>
                 <FiCheckCircle /> {data?.account?.connected ? 'Povezan' : 'Nepovezan'}
               </span>
             </div>
 
             {data?.account?.connected ? (
-              <div className="account-info">
-                <div className="account-avatar">
-                  {data.account.profilePicture ? (
-                    <img src={data.account.profilePicture} alt="" />
-                  ) : (
-                    <span>{data.account.username?.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <div className="account-details">
-                  <span className="account-username">@{data.account.username}</span>
-                  <div className="account-stats">
-                    <span><strong>{formatNumber(data.account.followers)}</strong> pratilaca</span>
-                    <span><strong>{formatNumber(data.account.following)}</strong> praćenja</span>
-                    <span><strong>{data.account.posts}</strong> objava</span>
+              <>
+                <div className="profile-row">
+                  <div className="profile-avatar">
+                    {data.account.profilePicture ? (
+                      <img src={data.account.profilePicture} alt="" />
+                    ) : (
+                      <span>{data.account.username?.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="profile-info">
+                    <span className="profile-username">@{data.account.username}</span>
+                    <div className="profile-stats">
+                      <span><strong>{formatNumber(data.account.followers)}</strong> pratilaca</span>
+                      <span><strong>{data.account.posts}</strong> objava</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+                <div className="profile-actions">
+                  <Link to="/settings" className="btn-icon"><FiSettings /></Link>
+                  <a href={`https://instagram.com/${data?.account?.username}`} target="_blank" rel="noopener noreferrer" className="btn-icon"><FiExternalLink /></a>
+                </div>
+              </>
             ) : (
-              <div className="account-connect">
-                <p>Povežite svoj Instagram Business nalog</p>
-                <Link to="/settings" className="btn btn-primary">Poveži nalog</Link>
+              <div className="connect-prompt">
+                <p>Povežite Instagram Business nalog</p>
+                <Link to="/settings" className="btn btn-primary btn-sm">Poveži</Link>
               </div>
             )}
-
-            <div className="account-actions">
-              <Link to="/settings" className="btn btn-ghost">
-                <FiSettings /> Podešavanja
-              </Link>
-              <a href={`https://instagram.com/${data?.account?.username}`} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
-                <FiExternalLink /> Otvori profil
-              </a>
-            </div>
           </section>
 
-          {/* Quick Actions */}
-          <section className="card">
+          {/* Scheduled Posts List */}
+          <section className="card card-posts">
             <div className="card-header">
               <div className="card-title">
-                <FiZap className="card-icon" />
-                <h2>Brze Akcije</h2>
+                <FiClock className="card-icon" />
+                <h2>Zakazane Objave</h2>
               </div>
-            </div>
-            <div className="quick-actions">
-              <Link to="/posts/create" className="quick-action">
-                <FiImage /> Nova objava
-              </Link>
-              <Link to="/reels/create" className="quick-action">
-                <FiFilm /> Novi reel
-              </Link>
-              <Link to="/app/ai-video" className="quick-action">
-                <FiZap /> AI Video
-              </Link>
-              <Link to="/campaigns" className="quick-action">
-                <FiTarget /> Kampanje
+              <Link to="/schedule" className="card-link">
+                Sve <FiExternalLink />
               </Link>
             </div>
+
+            <div className="posts-list">
+              {data?.scheduledPosts?.slice(0, 4).map((post) => (
+                <div key={post.id} className="post-row">
+                  <div className="post-icon">
+                    {post.type === 'reel' ? <FiFilm /> : <FiImage />}
+                  </div>
+                  <div className="post-content">
+                    <p className="post-text">{post.caption}</p>
+                    <span className="post-time">{formatDate(post.scheduledFor)}</span>
+                  </div>
+                  <span className={`post-badge ${post.status}`}>
+                    {post.status === 'scheduled' ? 'Zakazano' : 'Nacrt'}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {(!data?.scheduledPosts?.length) && (
+              <div className="empty-box">
+                <FiCalendar />
+                <p>Nema zakazanih objava</p>
+              </div>
+            )}
           </section>
         </div>
       </div>
-
-      {/* ========== SECTION 3: Recent Campaigns (Table) ========== */}
-      <section className="card card-full">
-        <div className="card-header">
-          <div className="card-title">
-            <FiTarget className="card-icon" />
-            <h2>Nedavne Kampanje</h2>
-          </div>
-          <Link to="/campaigns" className="card-link">
-            Sve kampanje <FiExternalLink />
-          </Link>
-        </div>
-
-        <div className="campaigns-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Naziv kampanje</th>
-                <th>Status</th>
-                <th>Potrošeno</th>
-                <th>Impresije</th>
-                <th>Klikovi</th>
-                <th>CTR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data?.campaigns?.map((campaign) => (
-                <tr key={campaign.id}>
-                  <td className="campaign-name">{campaign.name}</td>
-                  <td>
-                    <span className={`campaign-status ${campaign.status}`}>
-                      {campaign.status === 'active' ? 'Aktivna' : 
-                       campaign.status === 'paused' ? 'Pauzirana' : 'Završena'}
-                    </span>
-                  </td>
-                  <td>{campaign.spent}</td>
-                  <td>{campaign.impressions}</td>
-                  <td>{campaign.clicks}</td>
-                  <td className="ctr">{campaign.ctr}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {(!data?.campaigns?.length) && (
-          <div className="empty-state">
-            <FiTarget />
-            <p>Nemate aktivnih kampanja</p>
-            <Link to="/campaigns/create" className="btn btn-primary btn-sm">Kreiraj kampanju</Link>
-          </div>
-        )}
-      </section>
     </div>
   );
 };
