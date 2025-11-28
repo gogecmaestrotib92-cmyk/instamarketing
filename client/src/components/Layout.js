@@ -77,7 +77,11 @@ const Layout = () => {
             >
               <item.icon className="nav-icon" aria-hidden="true" />
               <span>{item.label}</span>
-              {item.badge && <span className="nav-badge">{item.badge}</span>}
+              {item.badge && (
+                <span className={`nav-badge ${item.badge.toLowerCase()}`}>
+                  {item.badge}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>
