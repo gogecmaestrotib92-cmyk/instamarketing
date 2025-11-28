@@ -6,12 +6,9 @@ import {
   FiClock,
   FiLoader,
   FiSave,
-  FiMusic,
   FiType,
   FiX,
   FiCheck,
-  FiUpload,
-  FiVolume2,
   FiPlus,
   FiTrash2
 } from 'react-icons/fi';
@@ -19,128 +16,9 @@ import { FaWandMagicSparkles } from 'react-icons/fa6';
 import SEO from '../components/SEO';
 import NewVideoForm from '../components/NewVideoForm';
 import SavedVideosPanel from '../components/SavedVideosPanel';
+import MusicModal from '../components/MusicModal';
 import api from '../services/api';
 import './AIVideo.css';
-
-// Preset music tracks
-const PRESET_TRACKS = [
-  { label: 'Upbeat Energy', value: 'upbeat' },
-  { label: 'Chill Vibes', value: 'chill' },
-  { label: 'Epic Cinematic', value: 'epic' },
-  { label: 'Soft Piano', value: 'piano' },
-  { label: 'Electronic Beat', value: 'electronic' },
-];
-
-// MusicModal Component
-const MusicModal = ({ isOpen, onClose, onApply, currentConfig }) => {
-  const [selectedTrack, setSelectedTrack] = useState(currentConfig?.preset || '');
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const [volume, setVolume] = useState(currentConfig?.volume || 0.35);
-
-  useEffect(() => {
-    if (currentConfig) {
-      setSelectedTrack(currentConfig.preset || '');
-      setVolume(currentConfig.volume || 0.35);
-    }
-  }, [currentConfig, isOpen]);
-
-  if (!isOpen) return null;
-
-  const handleApply = () => {
-    const config = {
-      enabled: true,
-      preset: uploadedFile ? null : selectedTrack,
-      uploadedFile: uploadedFile,
-      volume,
-    };
-    onApply(config);
-    onClose();
-  };
-
-  const handleRemove = () => {
-    onApply(null);
-    onClose();
-  };
-
-  const hasSelection = selectedTrack || uploadedFile;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2><FiMusic /> Dodaj Pozadinsku Muziku</h2>
-          <button onClick={onClose} className="modal-close"><FiX /></button>
-        </div>
-
-        <div className="modal-body">
-          <div className="form-group">
-            <label>Izaberi Muziku</label>
-            <div className="music-presets">
-              {PRESET_TRACKS.map((track) => (
-                <button
-                  key={track.value}
-                  className={`preset-btn ${selectedTrack === track.value ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedTrack(track.value);
-                    setUploadedFile(null);
-                  }}
-                >
-                  <FiMusic /> {track.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="divider"><span>ili</span></div>
-
-          <div className="form-group">
-            <label>Upload Sopstvenu Muziku</label>
-            <div className="file-upload">
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  if (file) {
-                    setUploadedFile(file);
-                    setSelectedTrack('');
-                  }
-                }}
-                id="audio-upload"
-              />
-              <label htmlFor="audio-upload" className="file-upload-btn">
-                <FiUpload /> {uploadedFile ? uploadedFile.name : 'Klikni za upload audio fajla'}
-              </label>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label><FiVolume2 /> Glasnoća: {Math.round(volume * 100)}%</label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="volume-slider"
-            />
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <button onClick={handleRemove} className="btn btn-text-danger">Ukloni Muziku</button>
-          <div className="modal-footer-actions">
-            <button onClick={onClose} className="btn btn-secondary">Otkaži</button>
-            <button onClick={handleApply} disabled={!hasSelection} className="btn btn-primary">
-              <FiCheck /> Primeni
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // TextModal Component
 const TextModal = ({ isOpen, onClose, onApply, currentConfig }) => {
@@ -655,10 +533,14 @@ const AIVideo = () => {
 
       {/* Music Modal */}
       <MusicModal
-        isOpen={isMusicOpen}
+        open={isMusicOpen}
         onClose={() => setIsMusicOpen(false)}
-        onApply={setMusicConfig}
-        currentConfig={musicConfig}
+        onApply={(config, track) => {
+          setMusicConfig(config);
+          setIsMusicOpen(false);
+        }}
+        initialConfig={musicConfig}
+        initialTrack={null}
       />
 
       {/* Text Modal */}
