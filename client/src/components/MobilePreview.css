@@ -5,18 +5,17 @@
 
 .mobile-preview {
   width: 100%;
-  aspect-ratio: 9 / 16;            /* fixed phone ratio */
-  border-radius: 16px;
+  aspect-ratio: 9 / 16;
+  border-radius: 18px;
   overflow: hidden;
   background: #000;
-  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4);
-  display: flex;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.5);
 }
 
 .mobile-preview__video {
   width: 100%;
   height: 100%;
-  object-fit: cover;               /* fills frame, crops excess - NO black bars */
+  object-fit: cover;   /* fills frame, no black bars */
   display: block;
 }
 
@@ -24,6 +23,7 @@
 .mobile-preview--empty {
   background: linear-gradient(145deg, #10131c 0%, #050711 100%);
   border: 2px dashed #1f2533;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -34,7 +34,7 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  color: #9ca3af;
+  color: #64748b;
   text-align: center;
   padding: 24px;
 }

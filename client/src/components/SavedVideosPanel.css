@@ -10,9 +10,8 @@
   background: #10131c;
   border-radius: 18px;
   padding: 16px;
-  color: #e5e7eb;
   border: 1px solid #1f2533;
-  height: 100%;
+  color: #e5e7eb;
   box-sizing: border-box;
 }
 
@@ -20,39 +19,38 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
 }
 
 .saved-videos__title {
+  margin: 0;
   font-size: 16px;
   font-weight: 600;
-  margin: 0;
 }
 
 .saved-videos__subtitle {
+  margin: 2px 0 0;
   font-size: 12px;
   color: #9ca3af;
-  margin: 2px 0 0;
 }
 
 .saved-videos__badge {
   background: linear-gradient(135deg, #f97316, #ec4899);
-  color: white;
-  font-size: 12px;
-  padding: 4px 10px;
   border-radius: 999px;
-  white-space: nowrap;
+  color: #fff;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .saved-videos__body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 /* List */
 .saved-videos__list {
-  max-height: 220px;
+  max-height: 210px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -87,17 +85,17 @@
 
 .saved-videos__item {
   display: flex;
-  align-items: center;
   gap: 10px;
+  align-items: center;
   padding: 6px 8px;
   border-radius: 10px;
   border: 1px solid transparent;
   background: transparent;
-  color: inherit;
   cursor: pointer;
   text-align: left;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  color: inherit;
   width: 100%;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
 
 .saved-videos__item:hover {
@@ -150,8 +148,8 @@
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
-  text-overflow: ellipsis;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .saved-videos__item-date {
@@ -165,17 +163,7 @@
 }
 
 /* Responsive */
-@media (max-width: 1200px) {
-  .saved-videos__list {
-    max-height: 180px;
-  }
-}
-
 @media (max-width: 900px) {
-  .saved-videos {
-    height: auto;
-  }
-  
   .saved-videos__list {
     flex-direction: row;
     overflow-x: auto;

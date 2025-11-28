@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { 
   FiVideo, 
-  FiImage, 
   FiDownload, 
   FiInstagram,
   FiClock,
   FiTrash2,
   FiLoader,
-  FiZap,
   FiSave,
   FiMusic,
   FiType,
@@ -20,6 +18,7 @@ import {
 } from 'react-icons/fi';
 import { FaWandMagicSparkles } from 'react-icons/fa6';
 import SEO from '../components/SEO';
+import NewVideoForm from '../components/NewVideoForm';
 import SavedVideosPanel from '../components/SavedVideosPanel';
 import api from '../services/api';
 import './AIVideo.css';
@@ -556,195 +555,25 @@ const AIVideo = () => {
       </header>
 
       <div className="ai-video-container">
-        {/* Generator Section */}
+        {/* Generator Section - Left Side */}
         <section className="generator-section" aria-labelledby="generator-heading">
-          <div className="card">
-            <div className="card-header">
-              <h3 id="generator-heading">Generiši Video</h3>
-            </div>
-
-            {/* Tabs */}
-            <div className="generator-tabs" role="tablist" aria-label="Tip generisanja">
-              <button 
-                className={`tab ${activeTab === 'text-to-video' ? 'active' : ''}`}
-                onClick={() => setActiveTab('text-to-video')}
-                role="tab"
-                aria-selected={activeTab === 'text-to-video'}
-                aria-controls="generator-panel"
-                id="tab-text-to-video"
-              >
-                <FiVideo aria-hidden="true" /> Text to Video
-              </button>
-              <button 
-                className={`tab ${activeTab === 'image-to-video' ? 'active' : ''}`}
-                onClick={() => setActiveTab('image-to-video')}
-                role="tab"
-                aria-selected={activeTab === 'image-to-video'}
-                aria-controls="generator-panel"
-                id="tab-image-to-video"
-              >
-                <FiImage aria-hidden="true" /> Image to Video
-              </button>
-            </div>
-
-            <div className="generator-form" role="tabpanel" id="generator-panel" aria-labelledby={`tab-${activeTab}`}>
-              {/* Image upload for image-to-video */}
-              {activeTab === 'image-to-video' && (
-                <div className="form-group">
-                  <label htmlFor="image-upload">Izaberite sliku za animaciju</label>
-                  <div className="image-upload-area">
-                    {imagePreview ? (
-                      <div className="image-preview">
-                        <img src={imagePreview} alt="Preview" />
-                        <button 
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => { setImageFile(null); setImagePreview(null); }}
-                          aria-label="Ukloni sliku"
-                        >
-                          Ukloni
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="upload-placeholder" htmlFor="image-upload">
-                        <FiImage size={48} aria-hidden="true" />
-                        <span>Kliknite za upload slike</span>
-                        <input 
-                          id="image-upload"
-                          type="file" 
-                          accept="image/*" 
-                          onChange={handleImageChange}
-                          hidden 
-                        />
-                      </label>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Prompt */}
-              <div className="form-group">
-                <label htmlFor="prompt-input">
-                  {activeTab === 'text-to-video' ? 'Opišite video koji želite' : 'Opišite željenu animaciju (opciono)'}
-                </label>
-                <textarea
-                  id="prompt-input"
-                  className="prompt-input"
-                  placeholder={activeTab === 'text-to-video' 
-                    ? "Npr: Cinematic drone shot of sunset over ocean waves, golden hour lighting, 4K quality..."
-                    : "Npr: Slow zoom in with gentle movement, cinematic feel..."
-                  }
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  rows={4}
-                />
-              </div>
-
-              {/* Prompt Suggestions */}
-              {activeTab === 'text-to-video' && (
-                <div className="prompt-suggestions">
-                  <span className="label-text">Predlozi:</span>
-                  <div className="suggestions-list">
-                    {promptSuggestions.slice(0, 4).map((suggestion, index) => (
-                      <button 
-                        key={index}
-                        className="suggestion-chip"
-                        onClick={() => setPrompt(suggestion)}
-                        aria-label={`Koristi predlog: ${suggestion}`}
-                      >
-                        {suggestion.substring(0, 40)}...
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Options */}
-              <div className="options-row">
-                <div className="form-group">
-                  <label htmlFor="duration-select">Trajanje</label>
-                  <select 
-                    id="duration-select"
-                    value={duration} 
-                    onChange={(e) => setDuration(Number(e.target.value))}
-                    className="select"
-                  >
-                    <option value={5}>5 sekundi</option>
-                    <option value={10}>10 sekundi</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Format</label>
-                  <div className="format-badge">
-                    📱 9:16 (TikTok/Reels)
-                  </div>
-                </div>
-              </div>
-
-              {/* Music & Text Buttons */}
-              <div className="media-options">
-                <button 
-                  className={`btn btn-media ${musicConfig ? 'active' : ''}`}
-                  onClick={() => setIsMusicOpen(true)}
-                  type="button"
-                >
-                  <FiMusic /> {musicConfig ? 'Muzika ✓' : 'Dodaj Muziku'}
-                </button>
-                <button 
-                  className={`btn btn-media ${textConfig ? 'active' : ''}`}
-                  onClick={() => setIsTextOpen(true)}
-                  type="button"
-                >
-                  <FiType /> {textConfig ? 'Tekst ✓' : 'Dodaj Tekst'}
-                </button>
-              </div>
-
-              {/* Config Summary */}
-              {(musicConfig || textConfig) && (
-                <div className="config-summary">
-                  {musicConfig && (
-                    <div className="config-item">
-                      <FiMusic className="config-icon" />
-                      <span>Muzika: {musicConfig.preset ? PRESET_TRACKS.find(t => t.value === musicConfig.preset)?.label : musicConfig.uploadedFile?.name}</span>
-                      <span className="config-detail">({Math.round(musicConfig.volume * 100)}%)</span>
-                    </div>
-                  )}
-                  {textConfig && (
-                    <div className="config-item">
-                      <FiType className="config-icon" />
-                      <span>
-                        {textConfig.overlayText ? `"${textConfig.overlayText.substring(0, 25)}${textConfig.overlayText.length > 25 ? '...' : ''}"` : ''}
-                        {textConfig.captions?.length > 0 && ` + ${textConfig.captions.length} titl${textConfig.captions.length !== 1 ? 'a' : ''}`}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Generate Button */}
-              <button 
-                className="btn btn-primary btn-full btn-generate"
-                onClick={handleGenerate}
-                disabled={loading}
-                aria-busy={loading}
-              >
-                {loading ? (
-                  <>
-                    <FiLoader className="spinner" aria-hidden="true" /> Generisanje u toku... (1-3 min)
-                  </>
-                ) : (
-                  <>
-                    <FiZap aria-hidden="true" /> Generiši Video
-                  </>
-                )}
-              </button>
-
-              {/* Cost Info */}
-              <p className="cost-info">
-                <FiClock aria-hidden="true" /> Procenjeno vreme: 1-3 minuta | Cena: ~$0.25-0.50 po videu
-              </p>
-            </div>
-          </div>
+          <NewVideoForm
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            prompt={prompt}
+            onPromptChange={setPrompt}
+            duration={duration}
+            onDurationChange={setDuration}
+            loading={loading}
+            onGenerate={handleGenerate}
+            onMusicClick={() => setIsMusicOpen(true)}
+            onTextClick={() => setIsTextOpen(true)}
+            hasMusicConfig={!!musicConfig}
+            hasTextConfig={!!textConfig}
+            imagePreview={imagePreview}
+            onImageChange={handleImageChange}
+            onImageRemove={() => { setImageFile(null); setImagePreview(null); }}
+          />
 
           {/* Generated Video Preview */}
           {generatedVideo && (
@@ -787,7 +616,7 @@ const AIVideo = () => {
           )}
         </section>
 
-        {/* My Videos Section - Using SavedVideosPanel */}
+        {/* My Videos Section - Right Side */}
         <section className="my-videos-section" aria-labelledby="my-videos-heading">
           {loadingVideos ? (
             <div className="loading-placeholder" aria-label="Učitavanje videa">
