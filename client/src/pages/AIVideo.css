@@ -251,39 +251,47 @@
 
 /* Generated Preview */
 .generated-preview .video-preview {
-  background: #000;
-  border-radius: 12px;
+  background: transparent;
+  border-radius: 16px;
   overflow: hidden;
   margin-bottom: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
 }
 
 .generated-preview video {
-  width: 100%;
-  max-height: 600px;
+  width: auto;
+  height: 70vh;
+  max-height: 700px;
+  min-height: 500px;
   object-fit: contain;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .generated-preview video.aspect-9-16 {
-  max-width: 340px;
-  height: auto;
-  max-height: 600px;
+  width: auto;
+  height: 70vh;
+  max-height: 700px;
+  min-height: 500px;
+  aspect-ratio: 9/16;
   margin: 0 auto;
   display: block;
-  border-radius: 8px;
+  border-radius: 16px;
 }
 
 .generated-preview video.aspect-16-9 {
-  max-width: 100%;
+  width: 100%;
   height: auto;
+  max-height: 500px;
 }
 
 .generated-preview video.aspect-1-1 {
-  max-width: 400px;
-  height: auto;
+  width: auto;
+  height: 60vh;
+  max-height: 500px;
+  aspect-ratio: 1/1;
   margin: 0 auto;
   display: block;
 }
@@ -388,12 +396,34 @@
 .videos-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 16px;
   transition: all 0.3s ease;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .videos-grid.expanded {
-  /* Show all videos when expanded */
+  max-height: none;
+}
+
+/* Custom scrollbar for videos grid */
+.videos-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.videos-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.videos-grid::-webkit-scrollbar-thumb {
+  background: rgba(225, 48, 108, 0.5);
+  border-radius: 3px;
+}
+
+.videos-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(225, 48, 108, 0.7);
 }
 
 .btn-show-more {

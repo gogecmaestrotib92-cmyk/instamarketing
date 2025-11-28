@@ -328,7 +328,7 @@ const AIVideo = () => {
   const [myVideos, setMyVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const [showAllVideos, setShowAllVideos] = useState(false);
+  const [showAllVideos, setShowAllVideos] = useState(true); // Default to expanded
   
   // Music and Text states
   const [musicConfig, setMusicConfig] = useState(null);
