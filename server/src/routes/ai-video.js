@@ -4,6 +4,7 @@ const replicateService = require('../services/replicate');
 const { uploadToCloudinary } = require('../services/cloudinary');
 const upload = require('../services/upload');
 const GeneratedVideo = require('../models/GeneratedVideo');
+const videoProcessor = require('../services/videoProcessor');
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ const router = express.Router();
 router.post('/text-to-video', auth, async (req, res) => {
   try {
     // Default to premium (Minimax) for better quality and length (6s vs 2s)
-    const { prompt, duration = 4, aspectRatio = '9:16', quality = 'premium' } = req.body;
+    const { prompt, duration = 4, aspectRatio = '9:16', quality = 'premium', musicConfig, textConfig } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -50,15 +51,90 @@ router.post('/text-to-video', auth, async (req, res) => {
       return res.status(500).json({ error: result.error });
     }
 
+    let finalVideoUrl = result.videoUrl;
+
+    // Process video with music and/or text if provided
+    if (musicConfig || textConfig) {
+      try {
+        console.log('Processing video with music/text overlays...');
+        
+        // Build overlays from textConfig
+        const overlays = [];
+        if (textConfig) {
+          if (textConfig.overlayText) {
+            overlays.push({
+              text: textConfig.overlayText,
+              start: 0,
+              end: 999 // Show throughout
+            });
+          }
+          if (textConfig.captions && textConfig.captions.length > 0) {
+            overlays.push(...textConfig.captions);
+          }
+        }
+
+        // Get music URL from preset or null
+        let musicUrl = null;
+        if (musicConfig && musicConfig.preset) {
+          // Map preset names to actual music file URLs
+          const musicPresets = {
+            'upbeat': 'https://cdn.pixabay.com/audio/2024/02/14/audio_66b66f5a36.mp3',
+            'chill': 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3',
+            'epic': 'https://cdn.pixabay.com/audio/2022/01/18/audio_d0ef25e06d.mp3',
+            'piano': 'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c21.mp3',
+            'electronic': 'https://cdn.pixabay.com/audio/2022/03/15/audio_8d84e1a0c1.mp3'
+          };
+          musicUrl = musicPresets[musicConfig.preset] || null;
+        }
+
+        const processedVideoPath = await videoProcessor.processVideo({
+          videoUrl: result.videoUrl,
+          voiceoverUrl: null,
+          musicUrl: musicUrl,
+          overlays: overlays.length > 0 ? overlays : null,
+          aspectRatio: aspectRatio
+        });
+
+        // Upload processed video to get a public URL
+        if (processedVideoPath && processedVideoPath.startsWith('/uploads/')) {
+          const fs = require('fs');
+          const path = require('path');
+          const fullPath = path.join(__dirname, '../..', processedVideoPath);
+          
+          if (fs.existsSync(fullPath)) {
+            const cloudinaryResult = await uploadToCloudinary(fullPath, {
+              folder: 'instamarketing/processed-videos',
+              resource_type: 'video'
+            });
+            
+            if (cloudinaryResult.success) {
+              finalVideoUrl = cloudinaryResult.url;
+              // Clean up local file
+              try { fs.unlinkSync(fullPath); } catch (e) {}
+            }
+          }
+        } else if (processedVideoPath) {
+          finalVideoUrl = processedVideoPath;
+        }
+
+        console.log('Video processed successfully with music/text');
+      } catch (processError) {
+        console.error('Video processing error (continuing with original):', processError);
+        // Continue with original video if processing fails
+      }
+    }
+
     // Save to database
     const video = new GeneratedVideo({
       user: req.userId,
       type: 'text-to-video',
       prompt,
-      videoUrl: result.videoUrl,
+      videoUrl: finalVideoUrl,
       duration: parseInt(duration),
       aspectRatio,
-      status: 'completed'
+      status: 'completed',
+      hasMusic: !!musicConfig,
+      hasText: !!textConfig
     });
     await video.save();
 
@@ -67,10 +143,12 @@ router.post('/text-to-video', auth, async (req, res) => {
       message: 'Video generated successfully!',
       video: {
         id: video._id,
-        videoUrl: result.videoUrl,
+        videoUrl: finalVideoUrl,
         prompt,
         duration,
-        aspectRatio
+        aspectRatio,
+        hasMusic: !!musicConfig,
+        hasText: !!textConfig
       }
     });
 
@@ -87,6 +165,16 @@ router.post('/text-to-video', auth, async (req, res) => {
 router.post('/image-to-video', auth, upload.single('image'), async (req, res) => {
   try {
     const { prompt, duration = 4, aspectRatio = '9:16', imageUrl } = req.body;
+    
+    // Parse musicConfig and textConfig from FormData (they come as JSON strings)
+    let musicConfig = null;
+    let textConfig = null;
+    try {
+      if (req.body.musicConfig) musicConfig = JSON.parse(req.body.musicConfig);
+      if (req.body.textConfig) textConfig = JSON.parse(req.body.textConfig);
+    } catch (e) {
+      console.log('Could not parse music/text config:', e.message);
+    }
 
     if (!process.env.REPLICATE_API_TOKEN) {
       return res.status(500).json({ error: 'Replicate API not configured' });
@@ -121,16 +209,88 @@ router.post('/image-to-video', auth, upload.single('image'), async (req, res) =>
       return res.status(500).json({ error: result.error });
     }
 
+    let finalVideoUrl = result.videoUrl;
+
+    // Process video with music and/or text if provided
+    if (musicConfig || textConfig) {
+      try {
+        console.log('Processing video with music/text overlays...');
+        
+        // Build overlays from textConfig
+        const overlays = [];
+        if (textConfig) {
+          if (textConfig.overlayText) {
+            overlays.push({
+              text: textConfig.overlayText,
+              start: 0,
+              end: 999
+            });
+          }
+          if (textConfig.captions && textConfig.captions.length > 0) {
+            overlays.push(...textConfig.captions);
+          }
+        }
+
+        // Get music URL from preset
+        let musicUrl = null;
+        if (musicConfig && musicConfig.preset) {
+          const musicPresets = {
+            'upbeat': 'https://cdn.pixabay.com/audio/2024/02/14/audio_66b66f5a36.mp3',
+            'chill': 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3',
+            'epic': 'https://cdn.pixabay.com/audio/2022/01/18/audio_d0ef25e06d.mp3',
+            'piano': 'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c21.mp3',
+            'electronic': 'https://cdn.pixabay.com/audio/2022/03/15/audio_8d84e1a0c1.mp3'
+          };
+          musicUrl = musicPresets[musicConfig.preset] || null;
+        }
+
+        const processedVideoPath = await videoProcessor.processVideo({
+          videoUrl: result.videoUrl,
+          voiceoverUrl: null,
+          musicUrl: musicUrl,
+          overlays: overlays.length > 0 ? overlays : null,
+          aspectRatio: aspectRatio
+        });
+
+        // Upload processed video
+        if (processedVideoPath && processedVideoPath.startsWith('/uploads/')) {
+          const fs = require('fs');
+          const path = require('path');
+          const fullPath = path.join(__dirname, '../..', processedVideoPath);
+          
+          if (fs.existsSync(fullPath)) {
+            const cloudResult = await uploadToCloudinary(fullPath, {
+              folder: 'instamarketing/processed-videos',
+              resource_type: 'video'
+            });
+            
+            if (cloudResult.success) {
+              finalVideoUrl = cloudResult.url;
+              try { fs.unlinkSync(fullPath); } catch (e) {}
+            }
+          }
+        } else if (processedVideoPath) {
+          finalVideoUrl = processedVideoPath;
+        }
+
+        console.log('Video processed successfully with music/text');
+      } catch (processError) {
+        console.error('Video processing error:', processError);
+      }
+    }
+
     // Save to database
     const video = new GeneratedVideo({
       user: req.userId,
       type: 'image-to-video',
       prompt: prompt || 'Animated from image',
       sourceImageUrl,
-      videoUrl: result.videoUrl,
+      videoUrl: finalVideoUrl,
       duration: parseInt(duration),
       aspectRatio,
-      status: 'completed'
+      status: 'completed',
+      hasMusic: !!musicConfig,
+      hasText: !!textConfig
     });
     await video.save();
 
@@ -139,11 +299,13 @@ router.post('/image-to-video', auth, upload.single('image'), async (req, res) =>
       message: 'Video generated successfully!',
       video: {
         id: video._id,
-        videoUrl: result.videoUrl,
+        videoUrl: finalVideoUrl,
         sourceImageUrl,
         prompt,
         duration,
-        aspectRatio
+        aspectRatio,
+        hasMusic: !!musicConfig,
+        hasText: !!textConfig
       }
     });
 

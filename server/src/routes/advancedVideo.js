@@ -7,12 +7,13 @@ const videoProcessor = require('../services/videoProcessor');
 
 /**
  * @route   POST /api/video/generate
- * @desc    Generate AI video with optimized prompt
+ * @desc    Generate AI video with optimized prompt and optional music/text
  * @access  Private
  */
 router.post('/generate', auth, async (req, res) => {
   try {
     const {
+      // Legacy parameters
       subject,
       action,
       shotType,
@@ -31,15 +32,22 @@ router.post('/generate', auth, async (req, res) => {
       numInferenceSteps,
       fps,
       guidanceScale,
-      seed
+      seed,
+      // New parameters from CreateVideo page
+      script,
+      musicConfig,
+      textConfig
     } = req.body;
 
-    if (!subject && !customPrompt) {
-      return res.status(400).json({ error: 'Subject or custom prompt is required' });
+    // Support both old (subject/customPrompt) and new (script) API
+    const promptText = script || customPrompt || subject;
+    
+    if (!promptText) {
+      return res.status(400).json({ error: 'Subject, script, or custom prompt is required' });
     }
 
     const promptOptions = {
-      subject,
+      subject: subject || promptText,
       action,
       shotType,
       style,
@@ -48,7 +56,7 @@ router.post('/generate', auth, async (req, res) => {
       setting,
       mood,
       audioCues,
-      customPrompt,
+      customPrompt: customPrompt || script,
       negatives: negatives || [],
       template
     };
@@ -62,7 +70,56 @@ router.post('/generate', auth, async (req, res) => {
       seed
     };
 
+    // Generate the base video
     const result = await advancedVideoGenerator.generateSingle(promptOptions, generationOptions);
+
+    // If music or text config provided, process the video with them
+    if ((musicConfig || textConfig) && result.url) {
+      try {
+        const overlays = [];
+        
+        // Add text overlay if provided
+        if (textConfig) {
+          // Add overlay text as a permanent subtitle
+          if (textConfig.overlayText) {
+            overlays.push({
+              text: textConfig.overlayText,
+              start: 0,
+              end: 999 // Show throughout
+            });
+          }
+          
+          // Add timed captions
+          if (textConfig.captions && textConfig.captions.length > 0) {
+            overlays.push(...textConfig.captions);
+          }
+        }
+
+        const processedResult = await videoProcessor.processVideo({
+          videoUrl: result.url,
+          voiceoverUrl: null,
+          musicUrl: musicConfig?.trackUrl || null,
+          overlays: overlays.length > 0 ? overlays : null
+        });
+
+        return res.json({
+          success: true,
+          url: processedResult,
+          originalUrl: result.url,
+          hasMusic: !!musicConfig,
+          hasText: !!textConfig,
+          predictionId: result.predictionId
+        });
+      } catch (processError) {
+        console.error('Post-processing error:', processError);
+        // Return original video if processing fails
+        return res.json({
+          success: true,
+          ...result,
+          processingError: processError.message
+        });
+      }
+    }
 
     res.json({
       success: true,

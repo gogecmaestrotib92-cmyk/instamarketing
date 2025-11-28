@@ -52,13 +52,22 @@ class VideoProcessor {
     fs.writeFileSync(srtPath, srtContent);
   }
 
-  async processVideo({ videoUrl, voiceoverUrl, musicUrl, overlays }) {
+  async processVideo({ videoUrl, voiceoverUrl, musicUrl, overlays, aspectRatio = '9:16' }) {
     const jobId = uuidv4();
     const videoPath = path.join(this.tempDir, `${jobId}_video.mp4`);
     const voicePath = path.join(this.tempDir, `${jobId}_voice.mp3`);
     const musicPath = musicUrl ? path.join(this.tempDir, `${jobId}_music.mp3`) : null;
     const srtPath = path.join(this.tempDir, `${jobId}.srt`);
     const outputPath = path.join(this.outputDir, `${jobId}_final.mp4`);
+
+    // 9:16 dimensions for TikTok/Instagram Reels (1080x1920 is standard)
+    const dimensions = {
+      '9:16': { width: 1080, height: 1920 },  // TikTok, Reels, Shorts (vertical)
+      '16:9': { width: 1920, height: 1080 },  // YouTube landscape
+      '1:1': { width: 1080, height: 1080 },   // Instagram square
+      '4:5': { width: 1080, height: 1350 }    // Instagram portrait
+    };
+    const targetDim = dimensions[aspectRatio] || dimensions['9:16'];
 
     try {
       // 1. Download assets
@@ -75,9 +84,13 @@ class VideoProcessor {
       // 3. Build FFmpeg command
       return new Promise((resolve, reject) => {
         let command = ffmpeg(videoPath);
-        const inputOptions = [];
         const complexFilter = [];
         let audioInputs = 0;
+        const videoFilters = [];
+
+        // Add scaling to 9:16 vertical format FIRST
+        videoFilters.push(`scale=${targetDim.width}:${targetDim.height}:force_original_aspect_ratio=decrease`);
+        videoFilters.push(`pad=${targetDim.width}:${targetDim.height}:(ow-iw)/2:(oh-ih)/2:black`);
 
         // Add voiceover
         if (voiceoverUrl) {
@@ -97,36 +110,25 @@ class VideoProcessor {
           complexFilter.push(`[1:a]volume=1.0[a1];[2:a]volume=0.3[a2];[a1][a2]amix=inputs=2:duration=first[aout]`);
           command.outputOptions(['-map 0:v', '-map [aout]']);
         } else if (audioInputs === 1) {
-          // Just map the single audio track
-          command.outputOptions(['-map 0:v', '-map 1:a']);
-        } else {
-          // No audio added, keep original or silent
-          // If original video has no audio, this might need -c:a copy or similar
+          // Just map the single audio track with volume adjustment for music
+          if (musicUrl && !voiceoverUrl) {
+            // Music only - apply volume
+            complexFilter.push(`[1:a]volume=0.5[aout]`);
+            command.outputOptions(['-map 0:v', '-map [aout]']);
+          } else {
+            command.outputOptions(['-map 0:v', '-map 1:a']);
+          }
         }
 
-        // Add subtitles
+        // Add subtitles to video filters
         if (overlays && overlays.length > 0) {
-          // Escape path for FFmpeg (Windows needs special handling sometimes, but forward slashes usually work)
-          // Using simple subtitles filter. Note: This requires a build of ffmpeg with libass, which ffmpeg-static usually has.
-          // We need to ensure the path is absolute and properly formatted.
-          const srtPathFixed = srtPath.replace(/\\/g, '/').replace(':', '\\:');
-          // complexFilter.push(`subtitles='${srtPathFixed}'`); 
-          // Alternatively use video filter option directly if not mixing with complex filter for audio
-          // But since we might have complex filter for audio, we need to chain them or use -vf
-          
-          // If we have audio mixing, we used -filter_complex. We can add video filtering to it.
-          // [0:v]subtitles=...[vout]
-          
-          if (complexFilter.length > 0) {
-             // We already have an audio filter. Let's add video filter to the chain?
-             // Actually, it's easier to separate -filter_complex for audio and -vf for video if they don't interact.
-             // But fluent-ffmpeg handles .complexFilter() as one big thing.
-             
-             // Let's try using .videoFilters() for subtitles, it usually appends -vf
-             command.videoFilters(`subtitles='${srtPathFixed}'`);
-          } else {
-             command.videoFilters(`subtitles='${srtPathFixed}'`);
-          }
+          const srtPathFixed = srtPath.replace(/\\/g, '/').replace(/:/g, '\\:');
+          videoFilters.push(`subtitles='${srtPathFixed}'`);
+        }
+
+        // Apply all video filters as a chain
+        if (videoFilters.length > 0) {
+          command.videoFilters(videoFilters);
         }
 
         if (complexFilter.length > 0) {
@@ -135,9 +137,13 @@ class VideoProcessor {
 
         command
           .outputOptions([
-            '-c:v libx264', // Re-encode video to burn subtitles
+            '-c:v libx264',
+            '-preset fast',
+            '-crf 23',
             '-c:a aac',
-            '-shortest' // Stop when the shortest input ends (usually video or voice)
+            '-b:a 128k',
+            '-shortest',
+            '-movflags +faststart' // Optimize for web streaming
           ])
           .save(outputPath)
           .on('start', (cmdLine) => {

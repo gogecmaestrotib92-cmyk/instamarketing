@@ -10,18 +10,317 @@ import {
   FiTrash2,
   FiLoader,
   FiZap,
-  FiSave
+  FiSave,
+  FiMusic,
+  FiType,
+  FiX,
+  FiCheck,
+  FiUpload,
+  FiVolume2,
+  FiPlus
 } from 'react-icons/fi';
 import { FaWandMagicSparkles } from 'react-icons/fa6';
 import SEO from '../components/SEO';
 import api from '../services/api';
 import './AIVideo.css';
 
+// Preset music tracks
+const PRESET_TRACKS = [
+  { label: 'Upbeat Energy', value: 'upbeat' },
+  { label: 'Chill Vibes', value: 'chill' },
+  { label: 'Epic Cinematic', value: 'epic' },
+  { label: 'Soft Piano', value: 'piano' },
+  { label: 'Electronic Beat', value: 'electronic' },
+];
+
+// MusicModal Component
+const MusicModal = ({ isOpen, onClose, onApply, currentConfig }) => {
+  const [selectedTrack, setSelectedTrack] = useState(currentConfig?.preset || '');
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [volume, setVolume] = useState(currentConfig?.volume || 0.35);
+
+  useEffect(() => {
+    if (currentConfig) {
+      setSelectedTrack(currentConfig.preset || '');
+      setVolume(currentConfig.volume || 0.35);
+    }
+  }, [currentConfig, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleApply = () => {
+    const config = {
+      enabled: true,
+      preset: uploadedFile ? null : selectedTrack,
+      uploadedFile: uploadedFile,
+      volume,
+    };
+    onApply(config);
+    onClose();
+  };
+
+  const handleRemove = () => {
+    onApply(null);
+    onClose();
+  };
+
+  const hasSelection = selectedTrack || uploadedFile;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2><FiMusic /> Dodaj Pozadinsku Muziku</h2>
+          <button onClick={onClose} className="modal-close"><FiX /></button>
+        </div>
+
+        <div className="modal-body">
+          <div className="form-group">
+            <label>Izaberi Muziku</label>
+            <div className="music-presets">
+              {PRESET_TRACKS.map((track) => (
+                <button
+                  key={track.value}
+                  className={`preset-btn ${selectedTrack === track.value ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedTrack(track.value);
+                    setUploadedFile(null);
+                  }}
+                >
+                  <FiMusic /> {track.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="divider"><span>ili</span></div>
+
+          <div className="form-group">
+            <label>Upload Sopstvenu Muziku</label>
+            <div className="file-upload">
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  if (file) {
+                    setUploadedFile(file);
+                    setSelectedTrack('');
+                  }
+                }}
+                id="audio-upload"
+              />
+              <label htmlFor="audio-upload" className="file-upload-btn">
+                <FiUpload /> {uploadedFile ? uploadedFile.name : 'Klikni za upload audio fajla'}
+              </label>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label><FiVolume2 /> Glasnoća: {Math.round(volume * 100)}%</label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="volume-slider"
+            />
+          </div>
+        </div>
+
+        <div className="modal-footer">
+          <button onClick={handleRemove} className="btn btn-text-danger">Ukloni Muziku</button>
+          <div className="modal-footer-actions">
+            <button onClick={onClose} className="btn btn-secondary">Otkaži</button>
+            <button onClick={handleApply} disabled={!hasSelection} className="btn btn-primary">
+              <FiCheck /> Primeni
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// TextModal Component
+const TextModal = ({ isOpen, onClose, onApply, currentConfig }) => {
+  const [overlayText, setOverlayText] = useState(currentConfig?.overlayText || '');
+  const [captions, setCaptions] = useState(currentConfig?.captions || []);
+  const [newText, setNewText] = useState('');
+  const [newStart, setNewStart] = useState('');
+  const [newEnd, setNewEnd] = useState('');
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (currentConfig) {
+      setOverlayText(currentConfig.overlayText || '');
+      setCaptions(currentConfig.captions || []);
+    }
+  }, [currentConfig, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleAddCaption = () => {
+    setError(null);
+
+    if (!newText.trim()) {
+      setError('Unesite tekst titla');
+      return;
+    }
+
+    const startNum = parseFloat(newStart);
+    const endNum = parseFloat(newEnd);
+
+    if (isNaN(startNum) || startNum < 0) {
+      setError('Start vreme mora biti pozitivan broj');
+      return;
+    }
+
+    if (isNaN(endNum) || endNum <= startNum) {
+      setError('End vreme mora biti veće od start vremena');
+      return;
+    }
+
+    setCaptions([...captions, { text: newText.trim(), start: startNum, end: endNum }]);
+    setNewText('');
+    setNewStart('');
+    setNewEnd('');
+  };
+
+  const handleDeleteCaption = (index) => {
+    setCaptions(captions.filter((_, i) => i !== index));
+  };
+
+  const handleApply = () => {
+    onApply({ overlayText: overlayText.trim(), captions });
+    onClose();
+  };
+
+  const handleRemove = () => {
+    onApply(null);
+    onClose();
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = (seconds % 60).toFixed(1);
+    return `${mins}:${secs.padStart(4, '0')}`;
+  };
+
+  const hasContent = overlayText.trim() || captions.length > 0;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card modal-card-wide" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2><FiType /> Dodaj Tekst i Titlove</h2>
+          <button onClick={onClose} className="modal-close"><FiX /></button>
+        </div>
+
+        <div className="modal-body">
+          <div className="form-group">
+            <label>Overlay Tekst (prikazan tokom celog videa)</label>
+            <textarea
+              value={overlayText}
+              onChange={(e) => setOverlayText(e.target.value)}
+              placeholder="Unesite tekst za prikaz na videu..."
+              rows={2}
+            />
+          </div>
+
+          <div className="divider"><span>Vremenski Titlovi</span></div>
+
+          <div className="caption-form">
+            <div className="caption-input-row">
+              <div className="form-group flex-grow">
+                <label>Tekst Titla</label>
+                <input
+                  type="text"
+                  value={newText}
+                  onChange={(e) => setNewText(e.target.value)}
+                  placeholder="Unesite tekst titla..."
+                />
+              </div>
+              <div className="form-group">
+                <label><FiClock /> Start (sek)</label>
+                <input
+                  type="number"
+                  value={newStart}
+                  onChange={(e) => setNewStart(e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  step="0.1"
+                  style={{ width: '80px' }}
+                />
+              </div>
+              <div className="form-group">
+                <label><FiClock /> End (sek)</label>
+                <input
+                  type="number"
+                  value={newEnd}
+                  onChange={(e) => setNewEnd(e.target.value)}
+                  placeholder="3"
+                  min="0"
+                  step="0.1"
+                  style={{ width: '80px' }}
+                />
+              </div>
+              <button onClick={handleAddCaption} className="btn btn-primary btn-add-caption">
+                <FiPlus /> Dodaj
+              </button>
+            </div>
+
+            {error && <p className="error-text">{error}</p>}
+          </div>
+
+          {captions.length > 0 && (
+            <div className="caption-list">
+              <label>Titlovi ({captions.length})</label>
+              {captions.map((caption, index) => (
+                <div key={index} className="caption-item">
+                  <div className="caption-info">
+                    <p className="caption-text">{caption.text}</p>
+                    <p className="caption-time">
+                      {formatTime(caption.start)} → {formatTime(caption.end)}
+                    </p>
+                  </div>
+                  <button onClick={() => handleDeleteCaption(index)} className="btn-delete">
+                    <FiTrash2 />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {captions.length === 0 && (
+            <div className="empty-captions">
+              <FiType />
+              <p>Još nema dodatih titlova</p>
+            </div>
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button onClick={handleRemove} className="btn btn-text-danger">Ukloni Tekst</button>
+          <div className="modal-footer-actions">
+            <button onClick={onClose} className="btn btn-secondary">Otkaži</button>
+            <button onClick={handleApply} disabled={!hasContent} className="btn btn-primary">
+              <FiCheck /> Primeni
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AIVideo = () => {
   const [activeTab, setActiveTab] = useState('text-to-video');
   const [prompt, setPrompt] = useState('');
   const [duration, setDuration] = useState(5);
-  const [aspectRatio, setAspectRatio] = useState('9:16'); // Default for Reels
+  const [aspectRatio, setAspectRatio] = useState('9:16'); // Always 9:16 for TikTok/Reels
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -29,6 +328,13 @@ const AIVideo = () => {
   const [myVideos, setMyVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [showAllVideos, setShowAllVideos] = useState(false);
+  
+  // Music and Text states
+  const [musicConfig, setMusicConfig] = useState(null);
+  const [textConfig, setTextConfig] = useState(null);
+  const [isMusicOpen, setIsMusicOpen] = useState(false);
+  const [isTextOpen, setIsTextOpen] = useState(false);
 
   useEffect(() => {
     fetchMyVideos();
@@ -119,7 +425,9 @@ const AIVideo = () => {
         response = await api.post('/ai-video/text-to-video', {
           prompt,
           duration,
-          aspectRatio
+          aspectRatio,
+          musicConfig,
+          textConfig
         });
       } else {
         const formData = new FormData();
@@ -127,6 +435,8 @@ const AIVideo = () => {
         formData.append('prompt', prompt);
         formData.append('duration', duration);
         formData.append('aspectRatio', aspectRatio);
+        if (musicConfig) formData.append('musicConfig', JSON.stringify(musicConfig));
+        if (textConfig) formData.append('textConfig', JSON.stringify(textConfig));
 
         response = await api.post('/ai-video/image-to-video', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -364,19 +674,52 @@ const AIVideo = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="aspect-select">Format</label>
-                  <select 
-                    id="aspect-select"
-                    value={aspectRatio} 
-                    onChange={(e) => setAspectRatio(e.target.value)}
-                    className="select"
-                  >
-                    <option value="9:16">9:16 (Reels/TikTok)</option>
-                    <option value="16:9">16:9 (YouTube)</option>
-                    <option value="1:1">1:1 (Square)</option>
-                  </select>
+                  <label>Format</label>
+                  <div className="format-badge">
+                    📱 9:16 (TikTok/Reels)
+                  </div>
                 </div>
               </div>
+
+              {/* Music & Text Buttons */}
+              <div className="media-options">
+                <button 
+                  className={`btn btn-media ${musicConfig ? 'active' : ''}`}
+                  onClick={() => setIsMusicOpen(true)}
+                  type="button"
+                >
+                  <FiMusic /> {musicConfig ? 'Muzika ✓' : 'Dodaj Muziku'}
+                </button>
+                <button 
+                  className={`btn btn-media ${textConfig ? 'active' : ''}`}
+                  onClick={() => setIsTextOpen(true)}
+                  type="button"
+                >
+                  <FiType /> {textConfig ? 'Tekst ✓' : 'Dodaj Tekst'}
+                </button>
+              </div>
+
+              {/* Config Summary */}
+              {(musicConfig || textConfig) && (
+                <div className="config-summary">
+                  {musicConfig && (
+                    <div className="config-item">
+                      <FiMusic className="config-icon" />
+                      <span>Muzika: {musicConfig.preset ? PRESET_TRACKS.find(t => t.value === musicConfig.preset)?.label : musicConfig.uploadedFile?.name}</span>
+                      <span className="config-detail">({Math.round(musicConfig.volume * 100)}%)</span>
+                    </div>
+                  )}
+                  {textConfig && (
+                    <div className="config-item">
+                      <FiType className="config-icon" />
+                      <span>
+                        {textConfig.overlayText ? `"${textConfig.overlayText.substring(0, 25)}${textConfig.overlayText.length > 25 ? '...' : ''}"` : ''}
+                        {textConfig.captions?.length > 0 && ` + ${textConfig.captions.length} titl${textConfig.captions.length !== 1 ? 'a' : ''}`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Generate Button */}
               <button 
@@ -420,12 +763,6 @@ const AIVideo = () => {
                 />
               </div>
               <div className="video-actions">
-                <button 
-                  className="btn btn-success"
-                  onClick={() => saveVideoToLocal(generatedVideo)}
-                >
-                  <FiSave aria-hidden="true" /> Sačuvaj Video
-                </button>
                 <a 
                   href={generatedVideo.videoUrl} 
                   download 
@@ -433,6 +770,12 @@ const AIVideo = () => {
                 >
                   <FiDownload aria-hidden="true" /> Download
                 </a>
+                <button 
+                  className="btn btn-success"
+                  onClick={() => saveVideoToLocal(generatedVideo)}
+                >
+                  <FiSave aria-hidden="true" /> Sačuvaj
+                </button>
                 <button 
                   className="btn btn-primary"
                   onClick={() => handlePostToInstagram(generatedVideo.id)}
@@ -447,9 +790,13 @@ const AIVideo = () => {
         {/* My Videos Section */}
         <section className="my-videos-section" aria-labelledby="my-videos-heading">
           <div className="card">
-            <div className="card-header">
-              <h3 id="my-videos-heading">Moji AI Videi</h3>
-              <span className="video-count">{myVideos.length} videa</span>
+            <div 
+              className="card-header clickable-header" 
+              onClick={() => setShowAllVideos(prev => !prev)}
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+            >
+              <h3 id="my-videos-heading" style={{ pointerEvents: 'none' }}>Moji AI Videi</h3>
+              <span className="video-count" style={{ pointerEvents: 'none' }}>{myVideos.length} videa {showAllVideos ? '▲' : '▼'}</span>
             </div>
 
             {loadingVideos ? (
@@ -462,8 +809,8 @@ const AIVideo = () => {
                 <p>Još nemate generisanih videa</p>
               </div>
             ) : (
-              <div className="videos-grid" role="list">
-                {myVideos.map((video) => (
+              <div className={`videos-grid ${showAllVideos ? 'expanded' : ''}`} role="list">
+                {(showAllVideos ? myVideos : myVideos.slice(0, 4)).map((video) => (
                   <article 
                     key={video._id} 
                     className="video-card" 
@@ -477,7 +824,18 @@ const AIVideo = () => {
                     }}
                     aria-label={`Video: ${video.prompt}`}
                   >
-                    <div className="video-thumbnail">
+                    <div 
+                      className="video-thumbnail"
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        height: 0,
+                        paddingBottom: '177.78%',
+                        background: '#000',
+                        borderRadius: '16px',
+                        overflow: 'hidden'
+                      }}
+                    >
                       <video 
                         src={video.videoUrl} 
                         muted 
@@ -485,6 +843,14 @@ const AIVideo = () => {
                         onMouseOver={e => e.target.play()} 
                         onMouseOut={e => e.target.pause()} 
                         aria-hidden="true"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover'
+                        }}
                       />
                       <div className="video-overlay">
                         <div className="overlay-content">
@@ -542,6 +908,14 @@ const AIVideo = () => {
                 ))}
               </div>
             )}
+            {myVideos.length > 4 && (
+              <button 
+                className="btn btn-show-more"
+                onClick={() => setShowAllVideos(!showAllVideos)}
+              >
+                {showAllVideos ? 'Prikaži manje ▲' : `Prikaži sve (${myVideos.length}) ▼`}
+              </button>
+            )}
           </div>
         </section>
       </div>
@@ -597,6 +971,22 @@ const AIVideo = () => {
           </div>
         </div>
       )}
+
+      {/* Music Modal */}
+      <MusicModal
+        isOpen={isMusicOpen}
+        onClose={() => setIsMusicOpen(false)}
+        onApply={setMusicConfig}
+        currentConfig={musicConfig}
+      />
+
+      {/* Text Modal */}
+      <TextModal
+        isOpen={isTextOpen}
+        onClose={() => setIsTextOpen(false)}
+        onApply={setTextConfig}
+        currentConfig={textConfig}
+      />
     </main>
   );
 };

@@ -317,8 +317,10 @@ class AdvancedVideoGenerator {
       numInferenceSteps = 50,
       fps = 8,
       guidanceScale = 7.5,
-      width = 512,
-      height = 512
+      // 9:16 vertical format for TikTok/Instagram Reels
+      width = 576,
+      height = 1024,
+      aspectRatio = '9:16'
     } = generationOptions;
 
     const prompt = this.buildOptimizedPrompt(promptOptions);
@@ -485,6 +487,7 @@ class AdvancedVideoGenerator {
 
   /**
    * SINGLE VIDEO GENERATION with optimized settings
+   * Default: 9:16 vertical format for TikTok/Instagram Reels
    */
   async generateSingle(promptOptions, options = {}) {
     const {
@@ -493,7 +496,11 @@ class AdvancedVideoGenerator {
       numInferenceSteps = 50,
       fps = 8,
       guidanceScale = 7.5,
-      seed = null
+      seed = null,
+      // 9:16 vertical format for TikTok/Instagram Reels
+      width = 576,
+      height = 1024,
+      aspectRatio = '9:16'
     } = options;
 
     const prompt = this.buildOptimizedPrompt(promptOptions);
@@ -506,7 +513,9 @@ class AdvancedVideoGenerator {
       input = {
         prompt: prompt.positive,
         prompt_optimizer: true,
-        seed: generatedSeed
+        seed: generatedSeed,
+        // 9:16 vertical format
+        aspect_ratio: aspectRatio
       };
     } else {
       input = {
@@ -515,7 +524,10 @@ class AdvancedVideoGenerator {
         num_inference_steps: numInferenceSteps,
         fps: fps,
         guidance_scale: guidanceScale,
-        seed: generatedSeed
+        seed: generatedSeed,
+        // 9:16 vertical dimensions for TikTok/Reels
+        width: width,
+        height: height
       };
 
       if (modelConfig.supportsNegativePrompt) {
