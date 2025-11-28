@@ -1,0 +1,299 @@
+/* ============================================================
+   SAVED VIDEOS PANEL COMPONENT
+   Split layout: scrollable list + large mobile preview
+   ============================================================ */
+
+.saved-videos-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: calc(100vh - 140px);
+  background: var(--bg-card, #11131a);
+  border: 1px solid var(--border-default, #1c1f27);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Header */
+.saved-videos-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-default, #1c1f27);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.saved-videos-panel__header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #e4e7ec);
+}
+
+.saved-videos-panel__count {
+  background: var(--accent, #6366f1);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* Scrollable Video List */
+.saved-videos-panel__list {
+  flex: 0 0 auto;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-default, #1c1f27);
+}
+
+/* Custom scrollbar */
+.saved-videos-panel__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.saved-videos-panel__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.saved-videos-panel__list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.saved-videos-panel__list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Video Item */
+.saved-video-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.saved-video-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-default, #1c1f27);
+}
+
+.saved-video-item--selected {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--accent, #6366f1);
+}
+
+.saved-video-item--selected:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+/* Thumbnail */
+.saved-video-item__thumbnail {
+  position: relative;
+  width: 56px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  flex-shrink: 0;
+}
+
+.saved-video-item__thumbnail img,
+.saved-video-item__thumbnail video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.saved-video-item__duration {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.saved-video-item__posted {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: linear-gradient(135deg, #E1306C, #833AB4);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Item Info */
+.saved-video-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.saved-video-item__title {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary, #e4e7ec);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.saved-video-item__date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted, #6b7280);
+}
+
+/* Preview Section */
+.saved-videos-panel__preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  min-height: 0;
+}
+
+.saved-videos-panel__preview .mobile-preview {
+  flex: 1;
+  min-height: 280px;
+  max-height: 100%;
+}
+
+/* Action Buttons */
+.saved-videos-panel__actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.panel-action-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border-default, #1c1f27);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary, #9ca3af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 18px;
+  text-decoration: none;
+}
+
+.panel-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #e4e7ec);
+  transform: translateY(-2px);
+}
+
+.panel-action-btn--primary {
+  background: linear-gradient(135deg, #E1306C, #833AB4);
+  border-color: transparent;
+  color: white;
+}
+
+.panel-action-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(225, 48, 108, 0.4);
+}
+
+.panel-action-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Empty State */
+.saved-videos-panel--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.saved-videos-panel__empty-state {
+  text-align: center;
+  color: var(--text-muted, #6b7280);
+}
+
+.saved-videos-panel__empty-state svg {
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.saved-videos-panel__empty-state h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary, #9ca3af);
+}
+
+.saved-videos-panel__empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .saved-videos-panel {
+    max-height: none;
+  }
+  
+  .saved-videos-panel__list {
+    max-height: 150px;
+  }
+  
+  .saved-videos-panel__preview .mobile-preview {
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .saved-videos-panel__list {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-height: none;
+    padding-bottom: 8px;
+  }
+  
+  .saved-video-item {
+    flex-direction: column;
+    min-width: 100px;
+    padding: 8px;
+  }
+  
+  .saved-video-item__thumbnail {
+    width: 80px;
+    height: 100px;
+  }
+  
+  .saved-video-item__info {
+    text-align: center;
+  }
+}
