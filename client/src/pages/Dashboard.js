@@ -25,8 +25,48 @@ import KpiCard, { KpiGrid } from '../components/KpiCard';
 import '../components/KpiCard.css';
 import './Dashboard.css';
 
+// ============================================================
+// STATIC PLACEHOLDER DATA - Replace with your backend API calls
+// ============================================================
+const PLACEHOLDER_DATA = {
+  user: {
+    name: 'Marko Petrović'
+  },
+  overview: {
+    posts: { total: 128, published: 115, scheduled: 13 },
+    reels: { total: 45, published: 42 },
+    campaigns: { total: 7, active: 3 }
+  },
+  account: {
+    connected: true,
+    username: 'your_brand',
+    followers: 24500,
+    profilePicture: null
+  },
+  contentMetrics: {
+    likes: 45200,
+    comments: 3840,
+    reach: 128000,
+    impressions: 256000
+  },
+  scheduledPosts: [
+    { id: 1, type: 'post', caption: 'Exciting new product launch coming soon! Stay tuned for updates...', scheduledFor: '2025-11-29T10:00:00' },
+    { id: 2, type: 'reel', caption: 'Behind the scenes of our latest shoot 🎬', scheduledFor: '2025-11-29T14:30:00' },
+    { id: 3, type: 'post', caption: 'Customer spotlight: See how @client uses our product', scheduledFor: '2025-11-30T09:00:00' },
+    { id: 4, type: 'reel', caption: 'Quick tips for better engagement', scheduledFor: '2025-11-30T16:00:00' },
+    { id: 5, type: 'post', caption: 'Weekend vibes ✨ What are your plans?', scheduledFor: '2025-12-01T11:00:00' }
+  ],
+  recentCampaigns: [
+    { id: 1, name: 'Black Friday Sale', status: 'active', budget: 500.00, impressions: 45000, clicks: 1250, conversions: 89 },
+    { id: 2, name: 'Holiday Collection', status: 'active', budget: 750.00, impressions: 62000, clicks: 2100, conversions: 156 },
+    { id: 3, name: 'Brand Awareness Q4', status: 'active', budget: 1200.00, impressions: 128000, clicks: 3400, conversions: 210 },
+    { id: 4, name: 'Summer Promo', status: 'completed', budget: 400.00, impressions: 38000, clicks: 980, conversions: 67 },
+    { id: 5, name: 'Product Launch', status: 'paused', budget: 600.00, impressions: 52000, clicks: 1800, conversions: 124 }
+  ]
+};
+
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,14 +76,23 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await analyticsAPI.getDashboard();
-      setData(response.data);
+      // TODO: Replace with your actual API call
+      // const response = await analyticsAPI.getDashboard();
+      // setData(response.data);
+      
+      // Using placeholder data for now
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate loading
+      setData(PLACEHOLDER_DATA);
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
+      setData(PLACEHOLDER_DATA); // Fallback to placeholder
     } finally {
       setLoading(false);
     }
   };
+
+  // Use auth user name or placeholder
+  const user = authUser || PLACEHOLDER_DATA.user;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
