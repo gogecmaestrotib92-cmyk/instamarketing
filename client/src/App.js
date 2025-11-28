@@ -28,6 +28,18 @@ import AIVideo from './pages/AIVideo';
 import AITools from './pages/AITools';
 import AdvancedVideoGenerator from './pages/AdvancedVideoGenerator';
 
+// SEO Landing Pages
+import {
+  AIInstagramVideoGenerator,
+  InstagramReelsGenerator,
+  AIInstagramPostGenerator,
+  AICaptionGenerator,
+  InstagramContentScheduler,
+  Features,
+  Templates,
+  Pricing
+} from './pages/landing';
+
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -83,6 +95,16 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
+      
+      {/* SEO Landing Pages */}
+      <Route path="/ai-instagram-video-generator" element={<AIInstagramVideoGenerator />} />
+      <Route path="/instagram-reels-generator" element={<InstagramReelsGenerator />} />
+      <Route path="/ai-instagram-post-generator" element={<AIInstagramPostGenerator />} />
+      <Route path="/ai-caption-generator" element={<AICaptionGenerator />} />
+      <Route path="/instagram-content-scheduler" element={<InstagramContentScheduler />} />
+      <Route path="/features" element={<Features />} />
+      <Route path="/templates" element={<Templates />} />
+      <Route path="/pricing" element={<Pricing />} />
       
       {/* Public routes */}
       <Route path="/login" element={

@@ -417,11 +417,29 @@ const Home = () => {
             <span>AIInstaMarketing</span>
           </div>
           <nav className="footer-links" aria-label="Footer navigation">
-            <Link to="/about">About Us</Link>
-            <Link to="/contact">Contact</Link>
-            <Link to="/pricing">Pricing</Link>
-            <Link to="/login">Login</Link>
-            <Link to="/register">Sign Up</Link>
+            <div className="footer-column">
+              <h4>Product</h4>
+              <Link to="/features">Features</Link>
+              <Link to="/templates">Templates</Link>
+              <Link to="/pricing">Pricing</Link>
+            </div>
+            <div className="footer-column">
+              <h4>Tools</h4>
+              <Link to="/ai-instagram-video-generator">AI Video Generator</Link>
+              <Link to="/instagram-reels-generator">Reels Generator</Link>
+              <Link to="/ai-caption-generator">Caption Generator</Link>
+              <Link to="/instagram-content-scheduler">Scheduler</Link>
+            </div>
+            <div className="footer-column">
+              <h4>Company</h4>
+              <Link to="/about">About Us</Link>
+              <Link to="/contact">Contact</Link>
+            </div>
+            <div className="footer-column">
+              <h4>Get Started</h4>
+              <Link to="/register">Sign Up Free</Link>
+              <Link to="/login">Login</Link>
+            </div>
           </nav>
           <div className="footer-bottom">
             <p>© 2025 AIInstaMarketing. All rights reserved.</p>
