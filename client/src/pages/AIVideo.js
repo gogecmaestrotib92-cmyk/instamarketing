@@ -4,7 +4,6 @@ import {
   FiDownload, 
   FiInstagram,
   FiClock,
-  FiTrash2,
   FiLoader,
   FiSave,
   FiMusic,
@@ -500,29 +499,6 @@ const AIVideo = () => {
         isLoading: false, 
         autoClose: 5000 
       });
-    }
-  };
-
-  const handleDelete = async (videoId) => {
-    if (!window.confirm('Da li ste sigurni da želite obrisati ovaj video?')) return;
-
-    try {
-      // Remove from localStorage
-      const savedVideos = JSON.parse(localStorage.getItem('myAIVideos') || '[]');
-      const updatedVideos = savedVideos.filter(v => v._id !== videoId);
-      localStorage.setItem('myAIVideos', JSON.stringify(updatedVideos));
-      setMyVideos(updatedVideos);
-      
-      // Also try to delete from API
-      try {
-        await api.delete(`/ai-video/${videoId}`);
-      } catch (apiError) {
-        // API delete failed, but localStorage is already updated
-      }
-      
-      toast.success('Video obrisan');
-    } catch (error) {
-      toast.error('Greška pri brisanju');
     }
   };
 
