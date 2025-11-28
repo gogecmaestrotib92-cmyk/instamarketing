@@ -21,6 +21,8 @@ import {
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import SEO from '../components/SEO';
+import KpiCard, { KpiGrid } from '../components/KpiCard';
+import '../components/KpiCard.css';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -94,62 +96,43 @@ const Dashboard = () => {
       </header>
 
       {/* KPI Cards Row */}
-      <section className="kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-icon blue">
-            <FiImage />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Ukupno Objava</span>
-            <span className="kpi-value">{data?.overview?.posts?.total || 0}</span>
-            <span className="kpi-meta">{data?.overview?.posts?.published || 0} objavljeno</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon purple">
-            <FiFilm />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Ukupno Reels</span>
-            <span className="kpi-value">{data?.overview?.reels?.total || 0}</span>
-            <span className="kpi-meta">{data?.overview?.reels?.published || 0} objavljeno</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon pink">
-            <FiTarget />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Kampanje</span>
-            <span className="kpi-value">{data?.overview?.campaigns?.total || 0}</span>
-            <span className="kpi-meta">{data?.overview?.campaigns?.active || 0} aktivnih</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon orange">
-            <FiCalendar />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Zakazano</span>
-            <span className="kpi-value">{data?.overview?.posts?.scheduled || 0}</span>
-            <span className="kpi-meta">čeka objavljivanje</span>
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-icon green">
-            <FiUsers />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Pratilaca</span>
-            <span className="kpi-value">{formatNumber(data?.account?.followers)}</span>
-            <span className="kpi-meta">na Instagram-u</span>
-          </div>
-        </div>
-      </section>
+      <KpiGrid>
+        <KpiCard
+          label="UKUPNO OBJAVA"
+          value={data?.overview?.posts?.total || 0}
+          icon={<FiImage />}
+          iconColor="blue"
+          subtitle={`${data?.overview?.posts?.published || 0} objavljeno`}
+        />
+        <KpiCard
+          label="UKUPNO REELS"
+          value={data?.overview?.reels?.total || 0}
+          icon={<FiFilm />}
+          iconColor="purple"
+          subtitle={`${data?.overview?.reels?.published || 0} objavljeno`}
+        />
+        <KpiCard
+          label="KAMPANJE"
+          value={data?.overview?.campaigns?.total || 0}
+          icon={<FiTarget />}
+          iconColor="pink"
+          subtitle={`${data?.overview?.campaigns?.active || 0} aktivnih`}
+        />
+        <KpiCard
+          label="ZAKAZANO"
+          value={data?.overview?.posts?.scheduled || 0}
+          icon={<FiCalendar />}
+          iconColor="orange"
+          subtitle="čeka objavljivanje"
+        />
+        <KpiCard
+          label="PRATILACA"
+          value={formatNumber(data?.account?.followers)}
+          icon={<FiUsers />}
+          iconColor="green"
+          subtitle="na Instagram-u"
+        />
+      </KpiGrid>
 
       {/* Engagement Overview - Full Width */}
       <section className="section-card engagement-section">
