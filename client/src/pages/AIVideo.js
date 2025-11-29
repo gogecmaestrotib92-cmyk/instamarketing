@@ -23,6 +23,8 @@ const AIVideo = () => {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStatus, setLoadingStatus] = useState('');
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [myVideos, setMyVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(true);
@@ -102,10 +104,24 @@ const AIVideo = () => {
     }
   };
 
+  // Loading status messages for different stages
+  const getStatusMessage = (progress) => {
+    if (progress < 10) return 'Initializing AI model...';
+    if (progress < 25) return 'Processing your prompt...';
+    if (progress < 50) return 'Generating video frames...';
+    if (progress < 75) return 'Rendering video...';
+    if (progress < 90) return 'Finalizing video...';
+    return 'Almost done...';
+  };
+
   // Poll for video generation status
   const pollVideoStatus = async (predictionId, toastId) => {
     const maxAttempts = 60; // 5 minutes max (5s intervals)
     let attempts = 0;
+
+    // Reset progress
+    setLoadingProgress(5);
+    setLoadingStatus('Initializing AI model...');
 
     while (attempts < maxAttempts) {
       try {
@@ -115,6 +131,8 @@ const AIVideo = () => {
         const { status, video, error } = statusResponse.data;
 
         if (status === 'completed' && video?.videoUrl) {
+          setLoadingProgress(100);
+          setLoadingStatus('Complete!');
           toast.update(toastId, {
             render: '🎬 Video generated successfully!',
             type: 'success',
@@ -123,6 +141,8 @@ const AIVideo = () => {
           });
           setGeneratedVideo(video);
           setLoading(false);
+          setLoadingProgress(0);
+          setLoadingStatus('');
           fetchMyVideos();
           return;
         } else if (status === 'failed') {
@@ -133,14 +153,21 @@ const AIVideo = () => {
             autoClose: 5000
           });
           setLoading(false);
+          setLoadingProgress(0);
+          setLoadingStatus('');
           return;
         }
         
-        // Still processing - update toast with progress
+        // Still processing - update progress
         attempts++;
+        // Simulate progress (max 95% until done)
+        const simulatedProgress = Math.min(95, Math.round((attempts / maxAttempts) * 100));
+        setLoadingProgress(simulatedProgress);
+        setLoadingStatus(getStatusMessage(simulatedProgress));
+        
         const timeElapsed = attempts * 5;
         toast.update(toastId, {
-          render: `⏳ Generating video... (${timeElapsed}s elapsed)`,
+          render: `⏳ ${getStatusMessage(simulatedProgress)} (${timeElapsed}s)`,
           type: 'info',
           isLoading: true
         });
@@ -160,6 +187,8 @@ const AIVideo = () => {
       autoClose: 5000
     });
     setLoading(false);
+    setLoadingProgress(0);
+    setLoadingStatus('');
   };
 
   const handleGenerate = async () => {
@@ -174,6 +203,8 @@ const AIVideo = () => {
     }
 
     setLoading(true);
+    setLoadingProgress(0);
+    setLoadingStatus('Starting...');
     setGeneratedVideo(null);
 
     const toastId = toast.loading('🎬 Starting video generation... (takes 2-3 minutes)');
@@ -217,6 +248,8 @@ const AIVideo = () => {
         });
         setGeneratedVideo(response.data.video);
         setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStatus('');
         fetchMyVideos();
       } else {
         toast.update(toastId, {
@@ -226,6 +259,8 @@ const AIVideo = () => {
           autoClose: 5000
         });
         setLoading(false);
+        setLoadingProgress(0);
+        setLoadingStatus('');
       }
 
     } catch (error) {
@@ -257,6 +292,8 @@ const AIVideo = () => {
         });
       }
       setLoading(false);
+      setLoadingProgress(0);
+      setLoadingStatus('');
     }
   };
 
@@ -335,6 +372,8 @@ const AIVideo = () => {
             duration={duration}
             onDurationChange={setDuration}
             loading={loading}
+            loadingProgress={loadingProgress}
+            loadingStatus={loadingStatus}
             onGenerate={handleGenerate}
             onMusicClick={() => setIsMusicOpen(true)}
             onTextClick={() => setIsTextOpen(true)}

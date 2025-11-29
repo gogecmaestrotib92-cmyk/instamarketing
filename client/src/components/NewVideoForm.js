@@ -13,6 +13,8 @@ import './NewVideoForm.css';
  * @param {number} duration - Selected duration
  * @param {Function} onDurationChange - Duration change handler
  * @param {boolean} loading - Loading state
+ * @param {number} loadingProgress - Loading progress percentage (0-100)
+ * @param {string} loadingStatus - Current loading status message
  * @param {Function} onGenerate - Generate button handler
  * @param {Function} onMusicClick - Music button handler
  * @param {Function} onTextClick - Text button handler
@@ -35,6 +37,8 @@ const NewVideoForm = ({
   duration = 5,
   onDurationChange,
   loading = false,
+  loadingProgress = 0,
+  loadingStatus = '',
   onGenerate,
   onMusicClick,
   onTextClick,
@@ -165,12 +169,24 @@ const NewVideoForm = ({
 
       {/* Generate button */}
       <button 
-        className="nvf-generate-btn"
+        className={`nvf-generate-btn ${loading ? 'nvf-generate-btn--loading' : ''}`}
         onClick={onGenerate}
         disabled={loading}
       >
         {loading ? (
-          <>⏳ Generating... (1-3 min)</>
+          <div className="nvf-loading-content">
+            <div className="nvf-loading-spinner"></div>
+            <div className="nvf-loading-text">
+              <span className="nvf-loading-status">{loadingStatus || 'Generating...'}</span>
+              <span className="nvf-loading-percent">{loadingProgress}%</span>
+            </div>
+            <div className="nvf-progress-bar">
+              <div 
+                className="nvf-progress-fill" 
+                style={{ width: `${loadingProgress}%` }}
+              ></div>
+            </div>
+          </div>
         ) : (
           <>⚡ Generate Video</>
         )}
