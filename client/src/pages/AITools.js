@@ -353,13 +353,59 @@ const AITools = () => {
               });
 
               if (finalResponse.data.success) {
-                // Shotstack returns full URL, FFmpeg returns relative path
-                const finalUrl = finalResponse.data.videoUrl.startsWith('http') 
-                  ? finalResponse.data.videoUrl 
-                  : `${process.env.REACT_APP_API_URL || ''}${finalResponse.data.videoUrl}`;
-                setReelFinalUrl(finalUrl);
-                setReelStatus('✅ Reel ready for posting!');
-                toast.success('Reel is ready! 🎬🎉');
+                // Check if Shotstack is processing in background
+                if (finalResponse.data.processing && finalResponse.data.shotstackJobId) {
+                  setReelStatus('Step 4/4: Adding audio & text... (30-60 sec)');
+                  
+                  // Poll for Shotstack completion
+                  let shotstackAttempts = 0;
+                  const maxShotstackAttempts = 30; // 2.5 minutes max
+                  
+                  const pollShotstack = async () => {
+                    if (shotstackAttempts >= maxShotstackAttempts) {
+                      // Timeout - use original video
+                      setReelFinalUrl(status.output);
+                      setReelStatus('Video ready (composition timed out)');
+                      setReelLoading(false);
+                      return;
+                    }
+                    
+                    shotstackAttempts++;
+                    
+                    try {
+                      const ssResponse = await api.get(`/render-video/status/${finalResponse.data.shotstackJobId}`);
+                      const ssStatus = ssResponse.data;
+                      
+                      if (ssStatus.status === 'done' && ssStatus.url) {
+                        setReelFinalUrl(ssStatus.url);
+                        setReelStatus('✅ Reel ready for posting!');
+                        toast.success('Reel is ready! 🎬🎉');
+                        setReelLoading(false);
+                      } else if (ssStatus.status === 'failed') {
+                        setReelFinalUrl(status.output);
+                        setReelStatus('Video ready (audio/text failed)');
+                        setReelLoading(false);
+                      } else {
+                        setReelStatus(`Step 4/4: Adding audio & text... ${Math.round(ssStatus.progress || shotstackAttempts * 3)}%`);
+                        setTimeout(pollShotstack, 5000);
+                      }
+                    } catch (ssErr) {
+                      console.error('Shotstack poll error:', ssErr);
+                      setTimeout(pollShotstack, 5000);
+                    }
+                  };
+                  
+                  setTimeout(pollShotstack, 3000);
+                } else {
+                  // Direct result (no Shotstack processing)
+                  const finalUrl = finalResponse.data.videoUrl.startsWith('http') 
+                    ? finalResponse.data.videoUrl 
+                    : `${process.env.REACT_APP_API_URL || ''}${finalResponse.data.videoUrl}`;
+                  setReelFinalUrl(finalUrl);
+                  setReelStatus('✅ Reel ready for posting!');
+                  toast.success('Reel is ready! 🎬🎉');
+                  setReelLoading(false);
+                }
               } else {
                 // If composition fails, still show the video without audio/text
                 setReelFinalUrl(status.output);

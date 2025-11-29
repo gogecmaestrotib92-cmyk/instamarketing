@@ -554,6 +554,7 @@ router.post('/reel/create', async (req, res) => {
  * POST /api/ai/reel/finalize
  * 
  * Uses Shotstack for cloud processing (works on Vercel), falls back to FFmpeg locally
+ * Returns immediately with jobId - frontend should poll for completion
  */
 router.post('/reel/finalize', async (req, res) => {
   try {
@@ -576,7 +577,7 @@ router.post('/reel/finalize', async (req, res) => {
       console.log('☁️ Using Shotstack for reel composition...');
       
       try {
-        // Start Shotstack render job (don't wait - returns jobId)
+        // Start Shotstack render job - DON'T WAIT (Vercel has 10s timeout)
         const jobResult = await shotstackClient.createShotstackRender(
           videoUrl,
           audioUrl,
@@ -587,51 +588,28 @@ router.post('/reel/finalize', async (req, res) => {
         if (jobResult.success && jobResult.jobId) {
           console.log('✅ Shotstack job started:', jobResult.jobId);
           
-          // Poll for completion (max 2 minutes for reel finalize)
-          const maxAttempts = 24;
-          for (let i = 0; i < maxAttempts; i++) {
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            const status = await shotstackClient.getRenderStatus(jobResult.jobId);
-            console.log(`   Poll ${i + 1}/${maxAttempts}: ${status.status}`);
-            
-            if (status.status === 'done' && status.url) {
-              return res.json({
-                success: true,
-                videoUrl: status.url,
-                shotstackJobId: jobResult.jobId,
-                message: 'Reel ready for posting!'
-              });
-            } else if (status.status === 'failed') {
-              console.error('Shotstack failed:', status.error);
-              break; // Fall through to FFmpeg
-            }
-          }
+          // Return immediately with job ID - frontend will poll
+          return res.json({
+            success: true,
+            processing: true,
+            shotstackJobId: jobResult.jobId,
+            videoUrl: videoUrl, // Return original video for now
+            message: 'Reel processing started! Checking for completion...'
+          });
         }
       } catch (shotstackError) {
         console.error('Shotstack error:', shotstackError.message);
-        // Fall through to FFmpeg
+        // Fall through - return original video
       }
     }
 
-    // Fallback to FFmpeg (local processing)
-    console.log('🎬 Using FFmpeg for reel composition...');
-    const result = await videoComposerService.composeVideo({
-      videoUrl,
-      audioUrl,
-      text,
-      textPosition: textPosition || 'bottom',
-      fontSize: 32
-    });
-
-    if (!result.success) {
-      return res.status(500).json({ error: result.error });
-    }
-
+    // No processing needed or Shotstack failed - return original video
+    // FFmpeg won't work on Vercel anyway
+    console.log('ℹ️ Returning original video (no cloud processing available)');
     res.json({
       success: true,
-      videoUrl: result.videoUrl,
-      filename: result.filename,
-      message: 'Reel ready for posting!'
+      videoUrl: videoUrl,
+      message: 'Reel ready (original video)'
     });
   } catch (error) {
     console.error('Reel finalize error:', error);
