@@ -1063,6 +1063,13 @@ const MusicModalV2 = ({
           Note: By using your own audio files, you take responsibility for copyrights. 
           We recommend royalty-free or AI generated music.
         </div>
+
+        {/* Hidden Audio Element */}
+        <audio 
+          ref={audioRef} 
+          crossOrigin="anonymous"
+          preload="metadata"
+        />
       </div>
     </div>
   );
