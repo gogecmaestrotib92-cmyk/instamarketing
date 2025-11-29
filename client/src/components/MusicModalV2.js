@@ -43,24 +43,49 @@ import './MusicModalV2.css';
 
 // ============================================================
 // ROYALTY-FREE MUSIC LIBRARY
-// Using Pixabay's free audio CDN (royalty-free, no attribution required)
+// All tracks are CC0 from Pixabay - royalty-free, no attribution required
 // ============================================================
 const LIBRARY_TRACKS = [
-  { id: 'lib-1', name: 'Epic Cinematic', url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3', durationSeconds: 116, sourceType: 'library', tags: ['cinematic', 'epic'], genre: 'Cinematic' },
-  { id: 'lib-2', name: 'Inspiring Cinematic', url: 'https://cdn.pixabay.com/audio/2022/02/22/audio_d1718ab41b.mp3', durationSeconds: 122, sourceType: 'library', tags: ['cinematic', 'inspiring'], genre: 'Cinematic' },
-  { id: 'lib-3', name: 'Documentary', url: 'https://cdn.pixabay.com/audio/2022/03/15/audio_115e8c9a82.mp3', durationSeconds: 125, sourceType: 'library', tags: ['cinematic', 'documentary'], genre: 'Cinematic' },
-  { id: 'lib-4', name: 'Lofi Chill', url: 'https://cdn.pixabay.com/audio/2022/05/16/audio_3b8d43c7e4.mp3', durationSeconds: 147, sourceType: 'library', tags: ['lofi', 'chill'], genre: 'Chill' },
-  { id: 'lib-5', name: 'Good Night', url: 'https://cdn.pixabay.com/audio/2022/10/25/audio_64cb1c9a33.mp3', durationSeconds: 147, sourceType: 'library', tags: ['chill', 'relax'], genre: 'Chill' },
-  { id: 'lib-6', name: 'Hip Hop Beat', url: 'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c21.mp3', durationSeconds: 87, sourceType: 'library', tags: ['trap', 'hiphop'], genre: 'Trap' },
-  { id: 'lib-7', name: 'Street Style', url: 'https://cdn.pixabay.com/audio/2023/07/30/audio_e0b8a6a94c.mp3', durationSeconds: 106, sourceType: 'library', tags: ['hiphop', 'urban'], genre: 'Trap' },
-  { id: 'lib-8', name: 'EDM Festival', url: 'https://cdn.pixabay.com/audio/2022/03/10/audio_a50c6a3614.mp3', durationSeconds: 177, sourceType: 'library', tags: ['edm', 'festival'], genre: 'EDM' },
-  { id: 'lib-9', name: 'Electronic Future', url: 'https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3', durationSeconds: 130, sourceType: 'library', tags: ['edm', 'electronic'], genre: 'EDM' },
-  { id: 'lib-10', name: 'Relaxing Piano', url: 'https://cdn.pixabay.com/audio/2022/08/31/audio_419263fc12.mp3', durationSeconds: 121, sourceType: 'library', tags: ['piano', 'ambient'], genre: 'Ambient' },
-  { id: 'lib-11', name: 'Ambient Piano', url: 'https://cdn.pixabay.com/audio/2022/12/13/audio_bd706e306b.mp3', durationSeconds: 136, sourceType: 'library', tags: ['ambient', 'relaxing'], genre: 'Ambient' },
-  { id: 'lib-12', name: 'Soft Emotional', url: 'https://cdn.pixabay.com/audio/2023/04/10/audio_3fe1f4a089.mp3', durationSeconds: 116, sourceType: 'library', tags: ['piano', 'emotional'], genre: 'Ambient' },
+  // 🎵 Upbeat / Energetic / Viral Reels Style
+  { id: 'lib-1', name: 'Energize', url: 'https://cdn.pixabay.com/download/audio/2022/10/19/audio_8c1bc8b0eb.mp3?filename=energy-12489.mp3', durationSeconds: 120, sourceType: 'library', tags: ['energetic', 'viral'], genre: 'Upbeat' },
+  { id: 'lib-2', name: 'Glitch Energy', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_22c47684a3.mp3?filename=glitch-110397.mp3', durationSeconds: 95, sourceType: 'library', tags: ['glitch', 'energetic'], genre: 'Upbeat' },
+  { id: 'lib-3', name: 'Sport Motivation', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_3e78616d6b.mp3?filename=sport-motivation-125758.mp3', durationSeconds: 110, sourceType: 'library', tags: ['sport', 'motivation'], genre: 'Upbeat' },
+  { id: 'lib-4', name: 'Fashion Beat', url: 'https://cdn.pixabay.com/download/audio/2022/02/23/audio_44e07039e8.mp3?filename=fashion-show-112687.mp3', durationSeconds: 100, sourceType: 'library', tags: ['fashion', 'beat'], genre: 'Upbeat' },
+  
+  // 🌆 Chill / Aesthetic / Lofi
+  { id: 'lib-5', name: 'LoFi Study', url: 'https://cdn.pixabay.com/download/audio/2023/01/10/audio_131c6714bb.mp3?filename=lofi-study-136460.mp3', durationSeconds: 147, sourceType: 'library', tags: ['lofi', 'study'], genre: 'Chill' },
+  { id: 'lib-6', name: 'Calm Vibes', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_b5cde23bb2.mp3?filename=chill-vibes-112191.mp3', durationSeconds: 130, sourceType: 'library', tags: ['chill', 'calm'], genre: 'Chill' },
+  { id: 'lib-7', name: 'Midnight Walk', url: 'https://cdn.pixabay.com/download/audio/2022/08/30/audio_b3cfb9f5bc.mp3?filename=midnight-walk-11936.mp3', durationSeconds: 125, sourceType: 'library', tags: ['night', 'aesthetic'], genre: 'Chill' },
+  
+  // 🌅 Cinematic / Emotional / Viral Travel
+  { id: 'lib-8', name: 'Epic Inspiring', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_3757a3352c.mp3?filename=epic-inspiring-112199.mp3', durationSeconds: 140, sourceType: 'library', tags: ['epic', 'inspiring'], genre: 'Cinematic' },
+  { id: 'lib-9', name: 'Sunset Relaxation', url: 'https://cdn.pixabay.com/download/audio/2023/03/14/audio_17f31d78b0.mp3?filename=sunset-view-144241.mp3', durationSeconds: 135, sourceType: 'library', tags: ['sunset', 'relaxing'], genre: 'Cinematic' },
+  { id: 'lib-10', name: 'Adventure Trailer', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_6a79dcae7a.mp3?filename=adventure-trailer-112200.mp3', durationSeconds: 150, sourceType: 'library', tags: ['adventure', 'trailer'], genre: 'Cinematic' },
+  
+  // 🤖 Future / Trap / Electronic
+  { id: 'lib-11', name: 'Future Bass', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_8257bf0ec2.mp3?filename=future-bass-112194.mp3', durationSeconds: 120, sourceType: 'library', tags: ['future', 'bass'], genre: 'Electronic' },
+  { id: 'lib-12', name: 'Cyberpunk Drive', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_7381751099.mp3?filename=cyberpunk-110402.mp3', durationSeconds: 115, sourceType: 'library', tags: ['cyberpunk', 'drive'], genre: 'Electronic' },
+  { id: 'lib-13', name: 'Trap Energy', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a62295c46.mp3?filename=trap-sport-112198.mp3', durationSeconds: 105, sourceType: 'library', tags: ['trap', 'energy'], genre: 'Electronic' },
+  
+  // 🌴 Tropical / Summer Vibes
+  { id: 'lib-14', name: 'Tropical House', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_2c5632f8db.mp3?filename=tropical-112192.mp3', durationSeconds: 130, sourceType: 'library', tags: ['tropical', 'house'], genre: 'Tropical' },
+  { id: 'lib-15', name: 'Beach Vibes', url: 'https://cdn.pixabay.com/download/audio/2023/03/13/audio_e7452e7a38.mp3?filename=beach-vibes-144195.mp3', durationSeconds: 140, sourceType: 'library', tags: ['beach', 'summer'], genre: 'Tropical' },
+  { id: 'lib-16', name: 'Chill Tropical', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_82d54cf6b3.mp3?filename=tropical-chill-110399.mp3', durationSeconds: 125, sourceType: 'library', tags: ['tropical', 'chill'], genre: 'Tropical' },
+  
+  // 🔥 Motivational
+  { id: 'lib-17', name: 'Motivation Speech Beat', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_8f88c8f47d.mp3?filename=motivation-112197.mp3', durationSeconds: 110, sourceType: 'library', tags: ['motivation', 'speech'], genre: 'Motivation' },
+  { id: 'lib-18', name: 'Hard Work Beat', url: 'https://cdn.pixabay.com/download/audio/2023/02/08/audio_90b4908a4e.mp3?filename=motivation-135813.mp3', durationSeconds: 120, sourceType: 'library', tags: ['hardwork', 'grind'], genre: 'Motivation' },
+  
+  // 🧘 Ambient Background
+  { id: 'lib-19', name: 'Soft Ambient Pad', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_f6f8aeecc8.mp3?filename=ambient-pad-110405.mp3', durationSeconds: 180, sourceType: 'library', tags: ['ambient', 'soft'], genre: 'Ambient' },
+  { id: 'lib-20', name: 'Calm Ambient Drone', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_4c0b622ed3.mp3?filename=ambient-drone-110404.mp3', durationSeconds: 200, sourceType: 'library', tags: ['ambient', 'drone'], genre: 'Ambient' },
+  
+  // 🎤 AI / Synthetic Sci-Fi
+  { id: 'lib-21', name: 'AI Atmosphere', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_73ba7dd9e1.mp3?filename=ai-ambience-110401.mp3', durationSeconds: 150, sourceType: 'library', tags: ['ai', 'scifi'], genre: 'Sci-Fi' },
+  { id: 'lib-22', name: 'Neon Pulse', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_1ad528eb79.mp3?filename=neon-pulse-112196.mp3', durationSeconds: 115, sourceType: 'library', tags: ['neon', 'pulse'], genre: 'Sci-Fi' },
 ];
 
-const GENRES = ['All', 'Cinematic', 'Chill', 'Trap', 'EDM', 'Ambient'];
+const GENRES = ['All', 'Upbeat', 'Chill', 'Cinematic', 'Electronic', 'Tropical', 'Motivation', 'Ambient', 'Sci-Fi'];
 const AI_STYLES = ['Cinematic', 'Trap', 'Lofi', 'Ambient', 'Synthwave', 'Afrobeat', 'Pop', 'Rock', 'Classical'];
 const AI_MOODS = ['Happy', 'Dark', 'Dramatic', 'Chill', 'Inspiring', 'Energetic', 'Sad', 'Mysterious'];
 
