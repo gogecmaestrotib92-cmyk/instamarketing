@@ -36,10 +36,100 @@ router.get('/status', auth, async (req, res) => {
     console.log(`   Status: ${status}, Output: ${output ? 'yes' : 'no'}`);
 
     if (status === 'succeeded' && output) {
-      const videoUrl = Array.isArray(output) ? output[0] : output;
+      let videoUrl = Array.isArray(output) ? output[0] : output;
       
       // Get stored metadata
       const metadata = pendingPredictions.get(id) || {};
+      
+      console.log('📦 Metadata:', JSON.stringify({
+        hasMusic: !!metadata.musicConfig,
+        hasText: !!metadata.textConfig,
+        prompt: metadata.prompt?.substring(0, 50)
+      }));
+
+      // Process video with music and/or text if provided
+      if (metadata.musicConfig || metadata.textConfig) {
+        try {
+          console.log('🎵 Processing video with music/text overlays...');
+          
+          // Build overlays from textConfig
+          const overlays = [];
+          if (metadata.textConfig) {
+            if (metadata.textConfig.overlayText) {
+              overlays.push({
+                text: metadata.textConfig.overlayText,
+                start: 0,
+                end: 999 // Show throughout
+              });
+            }
+            if (metadata.textConfig.captions && metadata.textConfig.captions.length > 0) {
+              overlays.push(...metadata.textConfig.captions);
+            }
+          }
+
+          // Get music URL from config
+          let musicUrl = null;
+          if (metadata.musicConfig) {
+            // Check for direct URL first (from MusicModalV2)
+            if (metadata.musicConfig.url) {
+              musicUrl = metadata.musicConfig.url;
+            } else if (metadata.musicConfig.preset) {
+              // Fallback to preset mapping
+              const musicPresets = {
+                'upbeat': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                'chill': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+                'epic': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+                'piano': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+                'electronic': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
+              };
+              musicUrl = musicPresets[metadata.musicConfig.preset] || null;
+            }
+          }
+
+          console.log('🎵 Music URL:', musicUrl ? 'yes' : 'no');
+          console.log('📝 Text overlays:', overlays.length);
+
+          if (musicUrl || overlays.length > 0) {
+            const processedVideoPath = await videoProcessor.processVideo({
+              videoUrl: videoUrl,
+              voiceoverUrl: null,
+              musicUrl: musicUrl,
+              musicVolume: metadata.musicConfig?.volume || 0.5,
+              overlays: overlays.length > 0 ? overlays : null,
+              aspectRatio: metadata.aspectRatio || '9:16'
+            });
+
+            // Upload processed video to Cloudinary
+            if (processedVideoPath && processedVideoPath.startsWith('/uploads/')) {
+              const fs = require('fs');
+              const path = require('path');
+              const fullPath = path.join(__dirname, '../..', processedVideoPath);
+              
+              if (fs.existsSync(fullPath)) {
+                console.log('☁️ Uploading processed video to Cloudinary...');
+                const cloudinaryResult = await uploadToCloudinary(fullPath, {
+                  folder: 'instamarketing/processed-videos',
+                  resource_type: 'video'
+                });
+                
+                if (cloudinaryResult.success) {
+                  videoUrl = cloudinaryResult.url;
+                  console.log('✅ Processed video uploaded:', videoUrl);
+                  // Clean up local file
+                  try { fs.unlinkSync(fullPath); } catch (e) {}
+                }
+              }
+            } else if (processedVideoPath && !processedVideoPath.startsWith('/uploads/')) {
+              videoUrl = processedVideoPath;
+            }
+
+            console.log('✅ Video processed with music/text!');
+          }
+        } catch (processError) {
+          console.error('⚠️ Video processing error (using original):', processError.message);
+          // Continue with original video if processing fails
+        }
+      }
       
       // Save to database
       try {

@@ -504,7 +504,12 @@ const AIVideo = () => {
         open={isMusicOpen}
         onClose={() => setIsMusicOpen(false)}
         onApply={(config, track) => {
-          setMusicConfig(config);
+          // Include the track URL in the config so backend can use it
+          setMusicConfig({
+            ...config,
+            url: track?.url || null,
+            trackName: track?.name || null
+          });
           setIsMusicOpen(false);
         }}
         initialConfig={musicConfig}
