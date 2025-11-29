@@ -216,7 +216,7 @@ module.exports = async (req, res) => {
 
     // ==================== AI VIDEO GENERATION ====================
     
-    // Text to Video - Premium (Minimax)
+    // Text to Video - Start async generation
     if (url === '/api/ai-video/text-to-video' && req.method === 'POST') {
       if (!process.env.REPLICATE_API_TOKEN) {
         return res.status(500).json({ error: 'REPLICATE_API_TOKEN nije konfigurisan u Vercel Environment Variables' });
@@ -234,29 +234,84 @@ module.exports = async (req, res) => {
 
       console.log('🎬 Starting Minimax video generation:', prompt);
 
-      // Use Minimax model for premium quality (6 seconds)
-      const output = await replicate.run(
-        "minimax/video-01",
-        {
+      try {
+        // Start prediction without waiting (async)
+        const prediction = await replicate.predictions.create({
+          model: "minimax/video-01",
           input: {
             prompt: prompt,
             prompt_optimizer: true
           }
-        }
-      );
+        });
 
-      console.log('✅ Video generated:', output);
+        console.log('📝 Prediction created:', prediction.id);
 
-      return res.status(200).json({
-        success: true,
-        video: {
-          id: Date.now().toString(),
-          videoUrl: output,
-          prompt,
-          duration,
-          aspectRatio
+        // Return immediately with prediction ID - client will poll for status
+        return res.status(200).json({
+          success: true,
+          status: 'processing',
+          predictionId: prediction.id,
+          message: 'Video se generiše. Sačekajte 2-3 minuta...',
+          video: {
+            id: prediction.id,
+            status: 'processing',
+            prompt,
+            duration,
+            aspectRatio
+          }
+        });
+      } catch (error) {
+        console.error('Replicate error:', error);
+        if (error.message?.includes('Payment') || error.message?.includes('402') || error.message?.includes('billing')) {
+          return res.status(402).json({ 
+            error: 'Payment required. Add a payment method at replicate.com/account/billing',
+            requiresPayment: true
+          });
         }
-      });
+        throw error;
+      }
+    }
+
+    // Check video generation status
+    if (url === '/api/ai-video/status' && req.method === 'GET') {
+      const predictionId = req.query?.id || url.split('?id=')[1];
+      
+      if (!predictionId) {
+        return res.status(400).json({ error: 'Prediction ID je obavezan' });
+      }
+
+      const Replicate = require('replicate');
+      const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+
+      try {
+        const prediction = await replicate.predictions.get(predictionId);
+
+        if (prediction.status === 'succeeded') {
+          return res.status(200).json({
+            success: true,
+            status: 'completed',
+            video: {
+              id: prediction.id,
+              videoUrl: prediction.output,
+              status: 'completed'
+            }
+          });
+        } else if (prediction.status === 'failed') {
+          return res.status(500).json({
+            success: false,
+            status: 'failed',
+            error: prediction.error || 'Video generation failed'
+          });
+        } else {
+          return res.status(200).json({
+            success: true,
+            status: prediction.status, // 'starting' or 'processing'
+            message: 'Video se još generiše...'
+          });
+        }
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
+      }
     }
 
     // Start async video generation

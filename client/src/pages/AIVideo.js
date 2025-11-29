@@ -102,6 +102,66 @@ const AIVideo = () => {
     }
   };
 
+  // Poll for video generation status
+  const pollVideoStatus = async (predictionId, toastId) => {
+    const maxAttempts = 60; // 5 minutes max (5s intervals)
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+        
+        const statusResponse = await api.get(`/ai-video/status?id=${predictionId}`);
+        const { status, video, error } = statusResponse.data;
+
+        if (status === 'completed' && video?.videoUrl) {
+          toast.update(toastId, {
+            render: '🎬 Video generated successfully!',
+            type: 'success',
+            isLoading: false,
+            autoClose: 5000
+          });
+          setGeneratedVideo(video);
+          setLoading(false);
+          fetchMyVideos();
+          return;
+        } else if (status === 'failed') {
+          toast.update(toastId, {
+            render: error || 'Video generation failed',
+            type: 'error',
+            isLoading: false,
+            autoClose: 5000
+          });
+          setLoading(false);
+          return;
+        }
+        
+        // Still processing - update toast with progress
+        attempts++;
+        const timeElapsed = attempts * 5;
+        toast.update(toastId, {
+          render: `⏳ Generating video... (${timeElapsed}s elapsed)`,
+          type: 'info',
+          isLoading: true
+        });
+
+      } catch (error) {
+        console.error('Polling error:', error);
+        // Continue polling unless it's a critical error
+        attempts++;
+      }
+    }
+
+    // Timeout
+    toast.update(toastId, {
+      render: 'Video generation timed out. Please try again.',
+      type: 'error',
+      isLoading: false,
+      autoClose: 5000
+    });
+    setLoading(false);
+  };
+
   const handleGenerate = async () => {
     if (activeTab === 'text-to-video' && !prompt.trim()) {
       toast.error('Enter a prompt for the video');
@@ -115,6 +175,8 @@ const AIVideo = () => {
 
     setLoading(true);
     setGeneratedVideo(null);
+
+    const toastId = toast.loading('🎬 Starting video generation... (takes 2-3 minutes)');
 
     try {
       let response;
@@ -141,30 +203,59 @@ const AIVideo = () => {
         });
       }
 
-      setGeneratedVideo(response.data.video);
-      toast.success('🎬 Video generated successfully!');
-      fetchMyVideos();
+      // Check if we got a prediction ID (async generation) or immediate result
+      if (response.data.predictionId && response.data.status === 'processing') {
+        // Start polling for status
+        pollVideoStatus(response.data.predictionId, toastId);
+      } else if (response.data.video?.videoUrl) {
+        // Immediate result (shouldn't happen with current setup, but handle it)
+        toast.update(toastId, {
+          render: '🎬 Video generated successfully!',
+          type: 'success',
+          isLoading: false,
+          autoClose: 5000
+        });
+        setGeneratedVideo(response.data.video);
+        setLoading(false);
+        fetchMyVideos();
+      } else {
+        toast.update(toastId, {
+          render: 'Unexpected response from server',
+          type: 'error',
+          isLoading: false,
+          autoClose: 5000
+        });
+        setLoading(false);
+      }
 
     } catch (error) {
       console.error('Generation error:', error);
       const errorMsg = error.response?.data?.error || 'Error generating video';
       
       // Check if payment is required
-      if (errorMsg.includes('Payment required') || errorMsg.includes('payment method') || errorMsg.includes('402')) {
-        toast.error(
-          <div>
-            <strong>💳 Payment Required</strong>
-            <p style={{fontSize: '12px', marginTop: '5px'}}>
-              Add a payment method at <a href="https://replicate.com/account/billing" target="_blank" rel="noopener noreferrer" style={{color: '#00ff88'}}>replicate.com/account/billing</a>
-              <br/>Cost: ~$0.01-0.05 per video
-            </p>
-          </div>,
-          { autoClose: 10000 }
-        );
+      if (errorMsg.includes('Payment') || errorMsg.includes('payment') || errorMsg.includes('402') || errorMsg.includes('billing')) {
+        toast.update(toastId, {
+          render: (
+            <div>
+              <strong>💳 Payment Required</strong>
+              <p style={{fontSize: '12px', marginTop: '5px'}}>
+                Add a payment method at <a href="https://replicate.com/account/billing" target="_blank" rel="noopener noreferrer" style={{color: '#00ff88'}}>replicate.com/account/billing</a>
+                <br/>Cost: ~$0.01-0.05 per video
+              </p>
+            </div>
+          ),
+          type: 'error',
+          isLoading: false,
+          autoClose: 10000
+        });
       } else {
-        toast.error(errorMsg);
+        toast.update(toastId, {
+          render: errorMsg,
+          type: 'error',
+          isLoading: false,
+          autoClose: 5000
+        });
       }
-    } finally {
       setLoading(false);
     }
   };
