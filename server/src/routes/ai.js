@@ -4,6 +4,17 @@ const openaiService = require('../services/openai');
 const googleTTSService = require('../services/googleTTS');
 const replicateService = require('../services/replicate');
 const videoComposerService = require('../services/videoComposer');
+const fetch = require('node-fetch');
+
+// Import Cloudinary for uploading assets before Shotstack
+let cloudinaryUpload = null;
+try {
+  const cloudinary = require('../services/cloudinary');
+  cloudinaryUpload = cloudinary.uploadBufferToCloudinary;
+  console.log('✅ Cloudinary loaded for AI routes');
+} catch (e) {
+  console.log('Cloudinary not available:', e.message);
+}
 
 // Try to load Shotstack for cloud video processing (works on Vercel)
 let shotstackClient = null;
@@ -558,7 +569,7 @@ router.post('/reel/create', async (req, res) => {
  */
 router.post('/reel/finalize', async (req, res) => {
   try {
-    const { videoUrl, audioUrl, text, textPosition } = req.body;
+    let { videoUrl, audioUrl, text, textPosition } = req.body;
 
     if (!videoUrl) {
       return res.status(400).json({ error: 'Video URL is required' });
@@ -577,6 +588,27 @@ router.post('/reel/finalize', async (req, res) => {
       console.log('☁️ Using Shotstack for reel composition...');
       
       try {
+        // CRITICAL: Upload video to Cloudinary first
+        // Replicate URLs expire quickly, Shotstack needs persistent URLs!
+        if (cloudinaryUpload && videoUrl.includes('replicate.delivery')) {
+          console.log('📤 Uploading video to Cloudinary (Replicate URLs expire)...');
+          try {
+            const videoResponse = await fetch(videoUrl);
+            const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+            const uploadResult = await cloudinaryUpload(videoBuffer, {
+              folder: 'instamarketing/reels',
+              resource_type: 'video'
+            });
+            if (uploadResult.success) {
+              videoUrl = uploadResult.url;
+              console.log('✅ Video uploaded to Cloudinary:', videoUrl);
+            }
+          } catch (uploadErr) {
+            console.error('⚠️ Video upload failed:', uploadErr.message);
+            // Continue with original URL - might work if not expired
+          }
+        }
+
         // Start Shotstack render job - DON'T WAIT (Vercel has 10s timeout)
         const jobResult = await shotstackClient.createShotstackRender(
           videoUrl,
