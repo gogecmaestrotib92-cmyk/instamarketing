@@ -44,7 +44,9 @@ router.post('/status', auth, async (req, res) => {
     }
 
     console.log(`📊 Checking status for prediction: ${id}`);
-    console.log(`   Config: music=${!!musicConfig}, text=${!!textConfig}`);
+    console.log(`   Request body keys:`, Object.keys(req.body));
+    console.log(`   musicConfig:`, musicConfig ? JSON.stringify(musicConfig).substring(0, 200) : 'null');
+    console.log(`   textConfig:`, textConfig ? JSON.stringify(textConfig).substring(0, 200) : 'null');
 
     // Check Replicate status
     const statusResult = await replicateService.getPredictionStatus(id);
@@ -123,24 +125,32 @@ router.post('/status', auth, async (req, res) => {
 
           if (musicUrl || subtitles.length > 0) {
             // Try Shotstack first (cloud-based, works on Vercel)
-            if (shotstackClient && process.env.SHOTSTACK_API_KEY) {
+            if (shotstackClient) {
               console.log('🎬 Using Shotstack for video processing...');
+              console.log('   Video URL:', videoUrl);
+              console.log('   Music URL:', musicUrl);
+              console.log('   Subtitles count:', subtitles.length);
               
-              const renderResult = await shotstackClient.renderVideo(
-                videoUrl,
-                musicUrl,
-                subtitles,
-                {
-                  duration: metadata.duration || 6,
-                  musicVolume: metadata.musicConfig?.volume || 0.8
-                }
-              );
+              try {
+                const renderResult = await shotstackClient.renderVideo(
+                  videoUrl,
+                  musicUrl,
+                  subtitles,
+                  {
+                    duration: metadata.duration || 6,
+                    musicVolume: metadata.musicConfig?.volume || 0.8
+                  }
+                );
 
-              if (renderResult.success && renderResult.url) {
-                videoUrl = renderResult.url;
-                console.log('✅ Shotstack render complete:', videoUrl);
-              } else {
-                console.error('⚠️ Shotstack render failed:', renderResult.error);
+                if (renderResult.success && renderResult.url) {
+                  videoUrl = renderResult.url;
+                  console.log('✅ Shotstack render complete:', videoUrl);
+                } else {
+                  console.error('⚠️ Shotstack render failed:', renderResult.error);
+                  // Don't throw, just continue with original video
+                }
+              } catch (shotstackError) {
+                console.error('⚠️ Shotstack error:', shotstackError.message);
               }
             }
             // Fallback to FFmpeg (local processing)
