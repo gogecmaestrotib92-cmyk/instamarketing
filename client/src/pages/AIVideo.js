@@ -116,7 +116,7 @@ const AIVideo = () => {
 
   // Poll for video generation status
   const pollVideoStatus = async (predictionId, toastId, config = {}) => {
-    const maxAttempts = 60; // 5 minutes max (5s intervals)
+    const maxAttempts = 120; // 10 minutes max (5s intervals)
     let attempts = 0;
 
     // Reset progress
