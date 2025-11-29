@@ -206,9 +206,10 @@ const AIVideo = () => {
     let attempts = 0;
     
     // Show a toast that enhanced video is processing
-    const enhanceToastId = toast.info('🎵 Adding music & text in background...', {
+    const enhanceToastId = toast.info('🎵 Adding music & text... 0%', {
       autoClose: false,
-      hideProgressBar: true
+      hideProgressBar: false,
+      progress: 0
     });
 
     while (attempts < maxAttempts) {
@@ -216,7 +217,14 @@ const AIVideo = () => {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5s
         
         const response = await api.get(`/render-video/status/${jobId}`);
-        const { status, url, error } = response.data;
+        const { status, progress, url, error } = response.data;
+
+        // Update toast with progress
+        const progressPercent = progress || Math.min(attempts * 5, 95);
+        toast.update(enhanceToastId, {
+          render: `🎵 Adding music & text... ${progressPercent}%`,
+          progress: progressPercent / 100
+        });
 
         if (status === 'done' && url) {
           // Update the video with enhanced version
@@ -229,7 +237,8 @@ const AIVideo = () => {
           toast.update(enhanceToastId, {
             render: '✨ Video enhanced with music & text!',
             type: 'success',
-            autoClose: 5000
+            autoClose: 5000,
+            progress: 1
           });
           
           // Refresh video list
