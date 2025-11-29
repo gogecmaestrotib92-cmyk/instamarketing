@@ -5,6 +5,15 @@ const googleTTSService = require('../services/googleTTS');
 const replicateService = require('../services/replicate');
 const videoComposerService = require('../services/videoComposer');
 
+// Try to load Shotstack for cloud video processing (works on Vercel)
+let shotstackClient = null;
+try {
+  shotstackClient = require('../services/shotstackClient');
+  console.log('✅ Shotstack client loaded for AI routes');
+} catch (e) {
+  console.log('Shotstack not available for AI routes:', e.message);
+}
+
 /**
  * AI Content Generation Routes
  * OpenAI + Google Text-to-Speech + Replicate Video + Video Composer
@@ -543,6 +552,8 @@ router.post('/reel/create', async (req, res) => {
 /**
  * Finalize reel: Compose video with audio and text after video is ready
  * POST /api/ai/reel/finalize
+ * 
+ * Uses Shotstack for cloud processing (works on Vercel), falls back to FFmpeg locally
  */
 router.post('/reel/finalize', async (req, res) => {
   try {
@@ -553,6 +564,57 @@ router.post('/reel/finalize', async (req, res) => {
     }
 
     console.log('🎬 Finalizing reel...');
+    console.log('   Video:', videoUrl);
+    console.log('   Audio:', audioUrl || 'none');
+    console.log('   Text:', text || 'none');
+
+    // Build subtitles array if text provided
+    const subtitles = text ? [{ text, start: 0, end: 6 }] : [];
+
+    // Try Shotstack first (cloud-based, works on Vercel)
+    if (shotstackClient && (audioUrl || subtitles.length > 0)) {
+      console.log('☁️ Using Shotstack for reel composition...');
+      
+      try {
+        // Start Shotstack render job (don't wait - returns jobId)
+        const jobResult = await shotstackClient.createShotstackRender(
+          videoUrl,
+          audioUrl,
+          subtitles,
+          { duration: 6, musicVolume: 0.8 }
+        );
+
+        if (jobResult.success && jobResult.jobId) {
+          console.log('✅ Shotstack job started:', jobResult.jobId);
+          
+          // Poll for completion (max 2 minutes for reel finalize)
+          const maxAttempts = 24;
+          for (let i = 0; i < maxAttempts; i++) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            const status = await shotstackClient.getRenderStatus(jobResult.jobId);
+            console.log(`   Poll ${i + 1}/${maxAttempts}: ${status.status}`);
+            
+            if (status.status === 'done' && status.url) {
+              return res.json({
+                success: true,
+                videoUrl: status.url,
+                shotstackJobId: jobResult.jobId,
+                message: 'Reel ready for posting!'
+              });
+            } else if (status.status === 'failed') {
+              console.error('Shotstack failed:', status.error);
+              break; // Fall through to FFmpeg
+            }
+          }
+        }
+      } catch (shotstackError) {
+        console.error('Shotstack error:', shotstackError.message);
+        // Fall through to FFmpeg
+      }
+    }
+
+    // Fallback to FFmpeg (local processing)
+    console.log('🎬 Using FFmpeg for reel composition...');
     const result = await videoComposerService.composeVideo({
       videoUrl,
       audioUrl,
