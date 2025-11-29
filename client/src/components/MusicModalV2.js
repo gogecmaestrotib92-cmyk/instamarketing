@@ -43,20 +43,21 @@ import './MusicModalV2.css';
 
 // ============================================================
 // ROYALTY-FREE MUSIC LIBRARY
+// Using Pixabay's free audio CDN (royalty-free, no attribution required)
 // ============================================================
 const LIBRARY_TRACKS = [
-  { id: 'lib-1', name: 'Epic Rising', url: '/audio/epic-rising.mp3', durationSeconds: 30, sourceType: 'library', tags: ['cinematic', 'epic'], genre: 'Cinematic' },
-  { id: 'lib-2', name: 'Cinematic Drama', url: '/audio/cinematic-drama.mp3', durationSeconds: 25, sourceType: 'library', tags: ['cinematic', 'dramatic'], genre: 'Cinematic' },
-  { id: 'lib-3', name: 'Hero Theme', url: '/audio/hero-theme.mp3', durationSeconds: 20, sourceType: 'library', tags: ['epic', 'inspiring'], genre: 'Cinematic' },
-  { id: 'lib-4', name: 'Lofi Study', url: '/audio/lofi-study.mp3', durationSeconds: 30, sourceType: 'library', tags: ['lofi', 'chill'], genre: 'Chill' },
-  { id: 'lib-5', name: 'Sunset Vibes', url: '/audio/sunset-vibes.mp3', durationSeconds: 25, sourceType: 'library', tags: ['chill', 'ambient'], genre: 'Chill' },
-  { id: 'lib-6', name: 'Trap Energy', url: '/audio/trap-energy.mp3', durationSeconds: 20, sourceType: 'library', tags: ['trap', 'hiphop'], genre: 'Trap' },
-  { id: 'lib-7', name: 'Street Beat', url: '/audio/street-beat.mp3', durationSeconds: 25, sourceType: 'library', tags: ['hiphop', 'urban'], genre: 'Trap' },
-  { id: 'lib-8', name: 'Festival Drop', url: '/audio/festival-drop.mp3', durationSeconds: 30, sourceType: 'library', tags: ['edm', 'festival'], genre: 'EDM' },
-  { id: 'lib-9', name: 'Electronic Pulse', url: '/audio/electronic-pulse.mp3', durationSeconds: 25, sourceType: 'library', tags: ['edm', 'electronic'], genre: 'EDM' },
-  { id: 'lib-10', name: 'Soft Piano', url: '/audio/soft-piano.mp3', durationSeconds: 30, sourceType: 'library', tags: ['piano', 'ambient'], genre: 'Ambient' },
-  { id: 'lib-11', name: 'Ambient Dreams', url: '/audio/ambient-dreams.mp3', durationSeconds: 35, sourceType: 'library', tags: ['ambient', 'relaxing'], genre: 'Ambient' },
-  { id: 'lib-12', name: 'Emotional Keys', url: '/audio/emotional-keys.mp3', durationSeconds: 25, sourceType: 'library', tags: ['piano', 'emotional'], genre: 'Ambient' },
+  { id: 'lib-1', name: 'Epic Cinematic', url: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3', durationSeconds: 116, sourceType: 'library', tags: ['cinematic', 'epic'], genre: 'Cinematic' },
+  { id: 'lib-2', name: 'Inspiring Cinematic', url: 'https://cdn.pixabay.com/audio/2022/02/22/audio_d1718ab41b.mp3', durationSeconds: 122, sourceType: 'library', tags: ['cinematic', 'inspiring'], genre: 'Cinematic' },
+  { id: 'lib-3', name: 'Documentary', url: 'https://cdn.pixabay.com/audio/2022/03/15/audio_115e8c9a82.mp3', durationSeconds: 125, sourceType: 'library', tags: ['cinematic', 'documentary'], genre: 'Cinematic' },
+  { id: 'lib-4', name: 'Lofi Chill', url: 'https://cdn.pixabay.com/audio/2022/05/16/audio_3b8d43c7e4.mp3', durationSeconds: 147, sourceType: 'library', tags: ['lofi', 'chill'], genre: 'Chill' },
+  { id: 'lib-5', name: 'Good Night', url: 'https://cdn.pixabay.com/audio/2022/10/25/audio_64cb1c9a33.mp3', durationSeconds: 147, sourceType: 'library', tags: ['chill', 'relax'], genre: 'Chill' },
+  { id: 'lib-6', name: 'Hip Hop Beat', url: 'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c21.mp3', durationSeconds: 87, sourceType: 'library', tags: ['trap', 'hiphop'], genre: 'Trap' },
+  { id: 'lib-7', name: 'Street Style', url: 'https://cdn.pixabay.com/audio/2023/07/30/audio_e0b8a6a94c.mp3', durationSeconds: 106, sourceType: 'library', tags: ['hiphop', 'urban'], genre: 'Trap' },
+  { id: 'lib-8', name: 'EDM Festival', url: 'https://cdn.pixabay.com/audio/2022/03/10/audio_a50c6a3614.mp3', durationSeconds: 177, sourceType: 'library', tags: ['edm', 'festival'], genre: 'EDM' },
+  { id: 'lib-9', name: 'Electronic Future', url: 'https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3', durationSeconds: 130, sourceType: 'library', tags: ['edm', 'electronic'], genre: 'EDM' },
+  { id: 'lib-10', name: 'Relaxing Piano', url: 'https://cdn.pixabay.com/audio/2022/08/31/audio_419263fc12.mp3', durationSeconds: 121, sourceType: 'library', tags: ['piano', 'ambient'], genre: 'Ambient' },
+  { id: 'lib-11', name: 'Ambient Piano', url: 'https://cdn.pixabay.com/audio/2022/12/13/audio_bd706e306b.mp3', durationSeconds: 136, sourceType: 'library', tags: ['ambient', 'relaxing'], genre: 'Ambient' },
+  { id: 'lib-12', name: 'Soft Emotional', url: 'https://cdn.pixabay.com/audio/2023/04/10/audio_3fe1f4a089.mp3', durationSeconds: 116, sourceType: 'library', tags: ['piano', 'emotional'], genre: 'Ambient' },
 ];
 
 const GENRES = ['All', 'Cinematic', 'Chill', 'Trap', 'EDM', 'Ambient'];
