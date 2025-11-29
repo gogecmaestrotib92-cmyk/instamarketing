@@ -295,6 +295,20 @@ const AIVideo = () => {
     }
   };
 
+  const handleDeleteVideo = (videoId) => {
+    // Delete from localStorage
+    const savedVideos = JSON.parse(localStorage.getItem('myAIVideos') || '[]');
+    const updatedVideos = savedVideos.filter(v => v._id !== videoId && v.id !== videoId);
+    localStorage.setItem('myAIVideos', JSON.stringify(updatedVideos));
+    
+    // Update state
+    setMyVideos(updatedVideos);
+    toast.success('🗑️ Video deleted!');
+    
+    // Also try to delete from API (optional, won't fail if not found)
+    api.delete(`/ai-video/${videoId}`).catch(() => {});
+  };
+
   return (
     <main className="ai-video-page">
       <SEO 
@@ -388,6 +402,7 @@ const AIVideo = () => {
                 thumbnailUrl: null,
                 videoUrl: video.videoUrl
               }))}
+              onDeleteVideo={handleDeleteVideo}
             />
           )}
         </section>

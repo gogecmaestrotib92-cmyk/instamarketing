@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FiInstagram, FiCalendar, FiDownload } from 'react-icons/fi';
+import { FiInstagram, FiCalendar, FiDownload, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import MobilePreview from './MobilePreview';
 import PublishToInstagramModal from './PublishToInstagramModal';
@@ -19,7 +19,7 @@ const formatDuration = (seconds) => {
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-const SavedVideosPanel = ({ videos = [] }) => {
+const SavedVideosPanel = ({ videos = [], onDeleteVideo }) => {
   const [selectedVideoId, setSelectedVideoId] = useState(null);
   
   // Publish modal state
@@ -94,6 +94,25 @@ const SavedVideosPanel = ({ videos = [] }) => {
     toast.success('⬇️ Download started!');
   };
 
+  // Handle delete video
+  const handleDeleteVideo = (videoId, e) => {
+    e.stopPropagation(); // Prevent selecting the video when clicking delete
+    
+    if (window.confirm('Are you sure you want to delete this video?')) {
+      if (onDeleteVideo) {
+        onDeleteVideo(videoId);
+      } else {
+        // Fallback: delete from localStorage if no callback provided
+        const savedVideos = JSON.parse(localStorage.getItem('myAIVideos') || '[]');
+        const updatedVideos = savedVideos.filter(v => v._id !== videoId && v.id !== videoId);
+        localStorage.setItem('myAIVideos', JSON.stringify(updatedVideos));
+        toast.success('🗑️ Video deleted!');
+        // Force page reload to reflect changes
+        window.location.reload();
+      }
+    }
+  };
+
   // Handle modal close
   const handleCloseModal = () => {
     setPublishOpen(false);
@@ -160,43 +179,58 @@ const SavedVideosPanel = ({ videos = [] }) => {
           {videos.map((video) => {
             const isActive = video.id === selectedVideoId;
             return (
-              <button
+              <div
                 key={video.id}
-                type="button"
-                onClick={() => setSelectedVideoId(video.id)}
                 className={
-                  'saved-videos__item' +
-                  (isActive ? ' saved-videos__item--active' : '')
+                  'saved-videos__item-wrapper' +
+                  (isActive ? ' saved-videos__item-wrapper--active' : '')
                 }
               >
-                <div className="saved-videos__thumb-wrapper">
-                  {video.thumbnailUrl ? (
-                    <img
-                      src={video.thumbnailUrl}
-                      alt={video.title}
-                      className="saved-videos__thumb"
-                    />
-                  ) : (
-                    <video 
-                      src={video.videoUrl} 
-                      muted 
-                      className="saved-videos__thumb"
-                    />
-                  )}
-                  <span className="saved-videos__duration">
-                    {formatDuration(video.durationSeconds || 0)}
-                  </span>
-                </div>
-                <div className="saved-videos__meta">
-                  <div className="saved-videos__item-title">
-                    {video.title?.substring(0, 30) || 'AI Video'}
-                    {video.title?.length > 30 ? '...' : ''}
+                <button
+                  type="button"
+                  onClick={() => setSelectedVideoId(video.id)}
+                  className={
+                    'saved-videos__item' +
+                    (isActive ? ' saved-videos__item--active' : '')
+                  }
+                >
+                  <div className="saved-videos__thumb-wrapper">
+                    {video.thumbnailUrl ? (
+                      <img
+                        src={video.thumbnailUrl}
+                        alt={video.title}
+                        className="saved-videos__thumb"
+                      />
+                    ) : (
+                      <video 
+                        src={video.videoUrl} 
+                        muted 
+                        className="saved-videos__thumb"
+                      />
+                    )}
+                    <span className="saved-videos__duration">
+                      {formatDuration(video.durationSeconds || 0)}
+                    </span>
                   </div>
-                  <div className="saved-videos__item-date">
-                    {video.createdAt}
+                  <div className="saved-videos__meta">
+                    <div className="saved-videos__item-title">
+                      {video.title?.substring(0, 30) || 'AI Video'}
+                      {video.title?.length > 30 ? '...' : ''}
+                    </div>
+                    <div className="saved-videos__item-date">
+                      {video.createdAt}
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+                <button
+                  type="button"
+                  className="saved-videos__delete-btn"
+                  onClick={(e) => handleDeleteVideo(video.id, e)}
+                  title="Delete video"
+                >
+                  <FiTrash2 />
+                </button>
+              </div>
             );
           })}
         </div>
