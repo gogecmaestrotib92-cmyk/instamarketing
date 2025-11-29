@@ -12,20 +12,17 @@ const SHOTSTACK_HOST = process.env.SHOTSTACK_HOST || 'https://api.shotstack.io/s
 
 /**
  * Default subtitle style configuration
+ * Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
  */
 const DEFAULT_SUBTITLE_STYLE = {
-  font: 'Montserrat ExtraBold',
-  fontSize: 40,
+  style: 'blockbuster', // Bold, attention-grabbing style for reels
   color: '#ffffff',
-  background: 'transparent',
+  size: 'medium', // small, medium, large, x-large
+  background: '#000000', // Background color for readability
   position: 'bottom',
   offset: {
     x: 0,
-    y: -0.15 // Offset from bottom
-  },
-  shadow: {
-    color: '#000000',
-    blur: 5
+    y: -0.1 // Offset from bottom
   }
 };
 
@@ -94,22 +91,21 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         transition.out = 'fade';
       }
 
+      // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
       return {
         asset: {
           type: 'title',
           text: subtitle.text,
-          style: subtitleStyle.font || 'Montserrat ExtraBold',
-          size: subtitleStyle.fontSize ? `${subtitleStyle.fontSize}px` : '40px',
+          style: subtitleStyle.style || 'blockbuster',
+          size: subtitleStyle.size || 'medium',
           color: subtitleStyle.color || '#ffffff',
-          background: subtitleStyle.background || 'transparent',
+          background: subtitleStyle.background || '#000000',
           position: subtitleStyle.position || 'bottom',
-          offset: subtitleStyle.offset || { x: 0, y: -0.15 }
+          offset: subtitleStyle.offset || { x: 0, y: -0.1 }
         },
         start: subtitle.start,
         length: clipDuration,
-        transition: Object.keys(transition).length > 0 ? transition : undefined,
-        effect: 'zoomIn', // Subtle zoom effect
-        filter: 'none'
+        transition: Object.keys(transition).length > 0 ? transition : undefined
       };
     });
 
@@ -134,10 +130,9 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
   };
 
   // Build output configuration
+  // Note: Can't use both 'resolution' and 'size' - they conflict
   const output = {
     format: 'mp4',
-    resolution: resolution,
-    aspectRatio: '9:16',
     fps: fps,
     size: {
       width: 1080,
