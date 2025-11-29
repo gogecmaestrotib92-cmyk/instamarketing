@@ -19,6 +19,7 @@ const aiVideoRoutes = require('./routes/ai-video');
 const aiRoutes = require('./routes/ai');
 const advancedVideoRoutes = require('./routes/advancedVideo');
 const instagramRoutes = require('./routes/instagram');
+const renderVideoRoutes = require('./routes/render-video');
 
 // Scheduler is optional (only available in development)
 let initScheduler = null;
@@ -87,6 +88,7 @@ app.use('/api/ai-video', aiVideoRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/video', advancedVideoRoutes);
 app.use('/api/instagram', instagramRoutes);
+app.use('/api/render-video', renderVideoRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
