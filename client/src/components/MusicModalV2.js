@@ -43,49 +43,37 @@ import './MusicModalV2.css';
 
 // ============================================================
 // ROYALTY-FREE MUSIC LIBRARY
-// Using Free Music Archive (FMA) - CC licensed, truly free streaming
+// Using SoundHelix - Always accessible streaming audio samples
 // ============================================================
 const LIBRARY_TRACKS = [
   // 🎵 Upbeat / Energetic
-  { id: 'lib-1', name: 'Shipping Lanes', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Shipping_Lanes.mp3', durationSeconds: 161, sourceType: 'library', tags: ['electronic', 'upbeat'], genre: 'Upbeat' },
-  { id: 'lib-2', name: 'Enthusiast', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3', durationSeconds: 228, sourceType: 'library', tags: ['indie', 'energetic'], genre: 'Upbeat' },
-  { id: 'lib-3', name: 'Wakka Wakka', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Wakka_Wakka.mp3', durationSeconds: 155, sourceType: 'library', tags: ['funky', 'beat'], genre: 'Upbeat' },
-  { id: 'lib-4', name: 'Night Owl', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Directionless_EP/Broke_For_Free_-_01_-_Night_Owl.mp3', durationSeconds: 233, sourceType: 'library', tags: ['electronic', 'cool'], genre: 'Upbeat' },
+  { id: 'lib-1', name: 'Energy Boost', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', durationSeconds: 374, sourceType: 'library', tags: ['electronic', 'upbeat'], genre: 'Upbeat' },
+  { id: 'lib-2', name: 'Power Drive', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', durationSeconds: 318, sourceType: 'library', tags: ['indie', 'energetic'], genre: 'Upbeat' },
+  { id: 'lib-3', name: 'Funky Beat', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', durationSeconds: 295, sourceType: 'library', tags: ['funky', 'beat'], genre: 'Upbeat' },
+  { id: 'lib-4', name: 'Night Rider', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', durationSeconds: 340, sourceType: 'library', tags: ['electronic', 'cool'], genre: 'Upbeat' },
   
   // 🌆 Chill / Lo-Fi
-  { id: 'lib-5', name: 'We Are One', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_04_-_We_Are_One.mp3', durationSeconds: 275, sourceType: 'library', tags: ['ambient', 'chill'], genre: 'Chill' },
-  { id: 'lib-6', name: 'Interlude', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_08_-_Interlude.mp3', durationSeconds: 82, sourceType: 'library', tags: ['calm', 'peaceful'], genre: 'Chill' },
-  { id: 'lib-7', name: 'Something Elated', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Something_EP/Broke_For_Free_-_01_-_Something_Elated.mp3', durationSeconds: 176, sourceType: 'library', tags: ['chill', 'happy'], genre: 'Chill' },
+  { id: 'lib-5', name: 'Mellow Vibes', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', durationSeconds: 282, sourceType: 'library', tags: ['ambient', 'chill'], genre: 'Chill' },
+  { id: 'lib-6', name: 'Peaceful Mind', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3', durationSeconds: 325, sourceType: 'library', tags: ['calm', 'peaceful'], genre: 'Chill' },
+  { id: 'lib-7', name: 'Soft Glow', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3', durationSeconds: 298, sourceType: 'library', tags: ['chill', 'happy'], genre: 'Chill' },
   
   // 🌅 Cinematic / Emotional
-  { id: 'lib-8', name: 'Auguries', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_07_-_Auguries.mp3', durationSeconds: 191, sourceType: 'library', tags: ['cinematic', 'emotional'], genre: 'Cinematic' },
-  { id: 'lib-9', name: 'Satins', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_01_-_Satin.mp3', durationSeconds: 226, sourceType: 'library', tags: ['piano', 'beautiful'], genre: 'Cinematic' },
-  { id: 'lib-10', name: 'Bleeding Out', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_09_-_Bleeding_Out.mp3', durationSeconds: 267, sourceType: 'library', tags: ['dramatic', 'epic'], genre: 'Cinematic' },
+  { id: 'lib-8', name: 'Epic Journey', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', durationSeconds: 356, sourceType: 'library', tags: ['cinematic', 'emotional'], genre: 'Cinematic' },
+  { id: 'lib-9', name: 'Grand Adventure', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3', durationSeconds: 312, sourceType: 'library', tags: ['piano', 'beautiful'], genre: 'Cinematic' },
+  { id: 'lib-10', name: 'Dramatic Rise', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3', durationSeconds: 278, sourceType: 'library', tags: ['dramatic', 'epic'], genre: 'Cinematic' },
   
   // 🤖 Electronic / Future
-  { id: 'lib-11', name: 'Only', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Only.mp3', durationSeconds: 173, sourceType: 'library', tags: ['synth', 'electronic'], genre: 'Electronic' },
-  { id: 'lib-12', name: 'Algorithms', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Algorithms.mp3', durationSeconds: 188, sourceType: 'library', tags: ['tech', 'digital'], genre: 'Electronic' },
-  { id: 'lib-13', name: 'Peyote Ugly', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Directionless_EP/Broke_For_Free_-_05_-_Peyote_Ugly.mp3', durationSeconds: 220, sourceType: 'library', tags: ['electronic', 'edgy'], genre: 'Electronic' },
+  { id: 'lib-11', name: 'Digital Pulse', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3', durationSeconds: 334, sourceType: 'library', tags: ['synth', 'electronic'], genre: 'Electronic' },
+  { id: 'lib-12', name: 'Tech Flow', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3', durationSeconds: 289, sourceType: 'library', tags: ['tech', 'digital'], genre: 'Electronic' },
+  { id: 'lib-13', name: 'Cyber Wave', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3', durationSeconds: 267, sourceType: 'library', tags: ['electronic', 'edgy'], genre: 'Electronic' },
   
   // 🌴 Happy / Positive
-  { id: 'lib-14', name: 'Sunny', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Sunny.mp3', durationSeconds: 137, sourceType: 'library', tags: ['sunny', 'positive'], genre: 'Tropical' },
-  { id: 'lib-15', name: 'Summer Day', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Summer_Day.mp3', durationSeconds: 147, sourceType: 'library', tags: ['summer', 'happy'], genre: 'Tropical' },
-  { id: 'lib-16', name: 'Upbeat Party', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Upbeat_Party.mp3', durationSeconds: 125, sourceType: 'library', tags: ['party', 'fun'], genre: 'Tropical' },
-  
-  // 🔥 Motivation / Inspiring
-  { id: 'lib-17', name: 'Inspiring', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Inspiring__Upbeat_Music.mp3', durationSeconds: 153, sourceType: 'library', tags: ['inspiring', 'uplifting'], genre: 'Motivation' },
-  { id: 'lib-18', name: 'Storybook', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Storybook.mp3', durationSeconds: 168, sourceType: 'library', tags: ['story', 'hopeful'], genre: 'Motivation' },
-  
-  // 🧘 Ambient / Peaceful
-  { id: 'lib-19', name: 'Snowfall', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_03_-_Snowfall.mp3', durationSeconds: 312, sourceType: 'library', tags: ['ambient', 'peaceful'], genre: 'Ambient' },
-  { id: 'lib-20', name: 'Contention', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_05_-_Contention.mp3', durationSeconds: 247, sourceType: 'library', tags: ['meditation', 'calm'], genre: 'Ambient' },
-  
-  // 🎤 Pop / Modern
-  { id: 'lib-21', name: 'A Minute', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Directionless_EP/Broke_For_Free_-_02_-_A_Minute.mp3', durationSeconds: 213, sourceType: 'library', tags: ['indie', 'modern'], genre: 'Pop' },
-  { id: 'lib-22', name: 'Calm The Fuck Down', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Directionless_EP/Broke_For_Free_-_06_-_Calm_The_Fuck_Down.mp3', durationSeconds: 185, sourceType: 'library', tags: ['chill', 'relaxed'], genre: 'Pop' },
+  { id: 'lib-14', name: 'Sunny Days', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3', durationSeconds: 301, sourceType: 'library', tags: ['sunny', 'positive'], genre: 'Tropical' },
+  { id: 'lib-15', name: 'Beach Vibes', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3', durationSeconds: 345, sourceType: 'library', tags: ['summer', 'happy'], genre: 'Tropical' },
+  { id: 'lib-16', name: 'Party Time', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-16.mp3', durationSeconds: 256, sourceType: 'library', tags: ['party', 'fun'], genre: 'Tropical' },
 ];
 
-const GENRES = ['All', 'Upbeat', 'Chill', 'Cinematic', 'Electronic', 'Tropical', 'Motivation', 'Ambient', 'Pop'];
+const GENRES = ['All', 'Upbeat', 'Chill', 'Cinematic', 'Electronic', 'Tropical'];
 const AI_STYLES = ['Cinematic', 'Trap', 'Lofi', 'Ambient', 'Synthwave', 'Afrobeat', 'Pop', 'Rock', 'Classical'];
 const AI_MOODS = ['Happy', 'Dark', 'Dramatic', 'Chill', 'Inspiring', 'Energetic', 'Sad', 'Mysterious'];
 
