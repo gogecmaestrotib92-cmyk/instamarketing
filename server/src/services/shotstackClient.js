@@ -116,21 +116,21 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
     tracks.push({ clips: subtitleClips });
   }
 
-  // Build soundtrack array
-  const soundtrack = [];
+  // Build soundtrack object (not array!)
+  let soundtrack = null;
   if (audioUrl) {
-    soundtrack.push({
+    soundtrack = {
       src: audioUrl,
       effect: 'fadeOut', // Fade out at the end
       volume: musicVolume
-    });
+    };
   }
 
   // Build full timeline
   const timeline = {
     background: '#000000',
     tracks: tracks,
-    ...(soundtrack.length > 0 && { soundtrack })
+    ...(soundtrack && { soundtrack })
   };
 
   // Build output configuration
