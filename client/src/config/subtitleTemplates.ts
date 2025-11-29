@@ -674,40 +674,584 @@ export const SUBTITLE_TEMPLATES: SubtitleTemplate[] = [
     maxWidth: 70,
     tags: ['corporate', 'minimal', 'lower-third'],
   },
+
+  // ============================================================
+  // 🔥 VIRAL TEMPLATES - MOST USED ON TIKTOK & REELS
+  // ============================================================
+
+  // ============ VIRAL HOOKS (Top Text) ============
+  {
+    id: 'viral-bold-top',
+    name: 'Bold Top Attention',
+    description: 'STOP SCROLLING - Big bold hook at top for maximum attention',
+    category: 'bold',
+    style: {
+      fontFamily: FONT_FAMILIES.bebas,
+      fontSize: 38,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      shadowColor: 'rgba(0, 0, 0, 0.8)',
+      shadowBlur: 8,
+      shadowOffsetX: 0,
+      shadowOffsetY: 4,
+      textCase: 'uppercase',
+    },
+    position: 'top',
+    animation: 'pop',
+    animationDuration: 400,
+    maxWidth: 95,
+    tags: ['viral', 'hook', 'attention', 'tiktok', 'reels', 'motivation'],
+  },
+  {
+    id: 'viral-stop-scrolling',
+    name: 'Stop Scrolling Hook',
+    description: 'READ THIS BEFORE YOU SCROLL - Grabs attention instantly',
+    category: 'bold',
+    style: {
+      fontFamily: FONT_FAMILIES.oswald,
+      fontSize: 42,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 4,
+      textCase: 'uppercase',
+      letterSpacing: 2,
+    },
+    position: 'top',
+    animation: 'slide-down',
+    animationDuration: 350,
+    maxWidth: 90,
+    tags: ['viral', 'hook', 'stop-scroll', 'business', 'motivational'],
+  },
+  {
+    id: 'viral-watch-till-end',
+    name: 'Watch Till End',
+    description: 'WATCH TILL THE END - Creates curiosity and retention',
+    category: 'bold',
+    style: {
+      fontFamily: FONT_FAMILIES.montserrat,
+      fontSize: 36,
+      fontWeight: 'bold',
+      color: '#FFD700',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      shadowColor: 'rgba(255, 215, 0, 0.4)',
+      shadowBlur: 10,
+      shadowOffsetX: 0,
+      shadowOffsetY: 0,
+      textCase: 'uppercase',
+    },
+    position: 'top',
+    animation: 'bounce',
+    animationDuration: 500,
+    maxWidth: 90,
+    tags: ['viral', 'hook', 'retention', 'curiosity'],
+  },
+
+  // ============ STORY SUBTITLE (Yellow Highlight) ============
+  {
+    id: 'viral-story-yellow',
+    name: 'Story Subtitle Yellow',
+    description: 'Everything changed after this moment... - Emotional storytelling',
+    category: 'cinematic',
+    style: {
+      fontFamily: FONT_FAMILIES.poppins,
+      fontSize: 28,
+      fontWeight: 'medium',
+      color: '#FFD700',
+      shadowColor: 'rgba(0, 0, 0, 0.8)',
+      shadowBlur: 6,
+      shadowOffsetX: 0,
+      shadowOffsetY: 2,
+    },
+    position: 'bottom',
+    animation: 'fade-in',
+    animationDuration: 400,
+    maxWidth: 90,
+    tags: ['viral', 'story', 'emotional', 'yellow', 'storytelling'],
+  },
+  {
+    id: 'viral-story-reveal',
+    name: 'Story Reveal',
+    description: 'Here\'s the truth they hide from you... - Creates mystery',
+    category: 'cinematic',
+    style: {
+      fontFamily: FONT_FAMILIES.inter,
+      fontSize: 26,
+      fontWeight: 'medium',
+      color: '#F1C40F',
+      shadowColor: 'rgba(0, 0, 0, 0.9)',
+      shadowBlur: 8,
+      shadowOffsetX: 0,
+      shadowOffsetY: 3,
+      italic: true,
+    },
+    position: 'bottom',
+    animation: 'typewriter',
+    animationDuration: 1200,
+    maxWidth: 85,
+    tags: ['viral', 'story', 'mystery', 'reveal', 'emotional'],
+  },
+
+  // ============ TIKTOK AUTO CAPTION STYLE ============
+  {
+    id: 'viral-tiktok-caption',
+    name: 'TikTok Caption Style',
+    description: 'Let me tell you something important... - Auto caption look',
+    category: 'social',
+    style: {
+      fontFamily: FONT_FAMILIES.inter,
+      fontSize: 30,
+      fontWeight: 'semibold',
+      color: '#FFFFFF',
+      shadowColor: 'rgba(0, 0, 0, 0.7)',
+      shadowBlur: 4,
+      shadowOffsetX: 0,
+      shadowOffsetY: 2,
+    },
+    position: 'bottom',
+    animation: 'fade-in',
+    animationDuration: 200,
+    maxWidth: 90,
+    tags: ['viral', 'tiktok', 'caption', 'auto-caption', 'talking-head'],
+  },
+  {
+    id: 'viral-tiktok-rounded',
+    name: 'TikTok Rounded BG',
+    description: 'TikTok style with subtle rounded background',
+    category: 'social',
+    style: {
+      fontFamily: FONT_FAMILIES.inter,
+      fontSize: 28,
+      fontWeight: 'semibold',
+      color: '#FFFFFF',
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      shadowColor: 'rgba(0, 0, 0, 0.5)',
+      shadowBlur: 2,
+      shadowOffsetX: 0,
+      shadowOffsetY: 1,
+    },
+    position: 'bottom',
+    animation: 'slide-up',
+    animationDuration: 250,
+    padding: { top: 10, right: 16, bottom: 10, left: 16 },
+    maxWidth: 85,
+    tags: ['viral', 'tiktok', 'rounded', 'background', 'tutorial'],
+  },
+
+  // ============ MOTIVATIONAL QUOTE CENTER ============
+  {
+    id: 'viral-motivation-center',
+    name: 'Motivational Quote',
+    description: 'Discipline builds everything. - Elegant centered quote',
+    category: 'elegant',
+    style: {
+      fontFamily: FONT_FAMILIES.playfair,
+      fontSize: 32,
+      fontWeight: 'normal',
+      color: '#FFFFFF',
+      shadowColor: 'rgba(0, 0, 0, 0.5)',
+      shadowBlur: 6,
+      shadowOffsetX: 0,
+      shadowOffsetY: 2,
+      italic: true,
+      letterSpacing: 1,
+    },
+    position: 'center',
+    animation: 'fade-in-out',
+    animationDuration: 600,
+    maxWidth: 80,
+    tags: ['viral', 'motivation', 'quote', 'elegant', 'gym', 'mindset'],
+  },
+  {
+    id: 'viral-motivation-bold',
+    name: 'Bold Motivation',
+    description: 'If it was easy, everyone would do it. - Impact style',
+    category: 'bold',
+    style: {
+      fontFamily: FONT_FAMILIES.oswald,
+      fontSize: 36,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 2,
+      textCase: 'uppercase',
+      letterSpacing: 2,
+    },
+    position: 'center',
+    animation: 'pop',
+    animationDuration: 400,
+    maxWidth: 85,
+    tags: ['viral', 'motivation', 'bold', 'gym', 'grind'],
+  },
+
+  // ============ MEME STYLE (TOP + BOTTOM) ============
+  {
+    id: 'viral-meme-top',
+    name: 'Meme Top Text',
+    description: 'When you start using AI... - Classic meme top',
+    category: 'fun',
+    style: {
+      fontFamily: FONT_FAMILIES.impact,
+      fontSize: 40,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      textCase: 'uppercase',
+    },
+    position: 'top',
+    animation: 'none',
+    maxWidth: 95,
+    tags: ['viral', 'meme', 'funny', 'top-text'],
+  },
+  {
+    id: 'viral-meme-bottom',
+    name: 'Meme Bottom Text',
+    description: '...and suddenly life becomes 10x easier - Classic meme bottom',
+    category: 'fun',
+    style: {
+      fontFamily: FONT_FAMILIES.impact,
+      fontSize: 40,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      textCase: 'uppercase',
+    },
+    position: 'bottom',
+    animation: 'none',
+    maxWidth: 95,
+    tags: ['viral', 'meme', 'funny', 'bottom-text'],
+  },
+
+  // ============ KARAOKE HIGHLIGHT (MOST VIRAL NOW) ============
+  {
+    id: 'viral-karaoke',
+    name: 'Karaoke Highlight',
+    description: 'Word by word highlight - Most viral subtitle style',
+    category: 'social',
+    style: {
+      fontFamily: FONT_FAMILIES.poppins,
+      fontSize: 34,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 2,
+      shadowColor: 'rgba(0, 0, 0, 0.6)',
+      shadowBlur: 4,
+      shadowOffsetX: 0,
+      shadowOffsetY: 2,
+    },
+    position: 'bottom',
+    animation: 'highlight',
+    animationDuration: 300,
+    maxWidth: 90,
+    tags: ['viral', 'karaoke', 'highlight', 'music', 'emotional', 'gym'],
+  },
+  {
+    id: 'viral-karaoke-neon',
+    name: 'Karaoke Neon',
+    description: 'Neon yellow highlight word by word',
+    category: 'neon',
+    style: {
+      fontFamily: FONT_FAMILIES.montserrat,
+      fontSize: 36,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 2,
+      shadowColor: '#FFD700',
+      shadowBlur: 15,
+      shadowOffsetX: 0,
+      shadowOffsetY: 0,
+    },
+    position: 'bottom',
+    animation: 'word-by-word',
+    animationDuration: 200,
+    maxWidth: 90,
+    tags: ['viral', 'karaoke', 'neon', 'yellow', 'glow'],
+  },
+
+  // ============ NETFLIX SUBTITLE STYLE ============
+  {
+    id: 'viral-netflix',
+    name: 'Netflix Style',
+    description: 'This is the truth... - Netflix yellow subtitle',
+    category: 'cinematic',
+    style: {
+      fontFamily: FONT_FAMILIES.roboto,
+      fontSize: 30,
+      fontWeight: 'semibold',
+      color: '#F1C40F',
+      shadowColor: 'rgba(0, 0, 0, 0.9)',
+      shadowBlur: 6,
+      shadowOffsetX: 0,
+      shadowOffsetY: 2,
+    },
+    position: 'bottom',
+    animation: 'fade-in-out',
+    animationDuration: 300,
+    maxWidth: 85,
+    tags: ['viral', 'netflix', 'cinematic', 'yellow', 'movie'],
+  },
+
+  // ============ MRBEAST STYLE ============
+  {
+    id: 'viral-mrbeast',
+    name: 'MrBeast Style',
+    description: 'Bold white with thick black stroke - Maximum readability',
+    category: 'bold',
+    style: {
+      fontFamily: FONT_FAMILIES.bebas,
+      fontSize: 44,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 4,
+      textCase: 'uppercase',
+      letterSpacing: 1,
+    },
+    position: 'center',
+    animation: 'pop',
+    animationDuration: 350,
+    maxWidth: 90,
+    tags: ['viral', 'mrbeast', 'youtube', 'bold', 'readable'],
+  },
+
+  // ============ SPEECH BUBBLE STYLE ============
+  {
+    id: 'viral-speech-bubble',
+    name: 'Speech Bubble',
+    description: 'Rounded rectangle background - Great for tutorials',
+    category: 'social',
+    style: {
+      fontFamily: FONT_FAMILIES.inter,
+      fontSize: 26,
+      fontWeight: 'medium',
+      color: '#FFFFFF',
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    },
+    position: 'bottom',
+    animation: 'slide-up',
+    animationDuration: 300,
+    padding: { top: 14, right: 20, bottom: 14, left: 20 },
+    maxWidth: 85,
+    tags: ['viral', 'speech-bubble', 'tutorial', 'talking-head', 'explainer'],
+  },
+
+  // ============ MINIMAL AESTHETIC (IG Stories) ============
+  {
+    id: 'viral-minimal-aesthetic',
+    name: 'Minimal Aesthetic',
+    description: 'Thin soft white - Perfect for IG stories aesthetic',
+    category: 'minimal',
+    style: {
+      fontFamily: FONT_FAMILIES.inter,
+      fontSize: 24,
+      fontWeight: 'normal',
+      color: 'rgba(255, 255, 255, 0.9)',
+      letterSpacing: 2,
+    },
+    position: 'center',
+    animation: 'fade-in',
+    animationDuration: 500,
+    maxWidth: 80,
+    tags: ['viral', 'aesthetic', 'minimal', 'instagram', 'stories', 'soft'],
+  },
+
+  // ============ BUSINESS / MONEY HOOKS ============
+  {
+    id: 'viral-business-hook',
+    name: 'Business Hook',
+    description: 'Watch this before you start a business - Money/biz content',
+    category: 'corporate',
+    style: {
+      fontFamily: FONT_FAMILIES.montserrat,
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 2,
+      shadowColor: 'rgba(0, 0, 0, 0.7)',
+      shadowBlur: 6,
+      shadowOffsetX: 0,
+      shadowOffsetY: 3,
+    },
+    position: 'top',
+    animation: 'slide-down',
+    animationDuration: 400,
+    maxWidth: 90,
+    tags: ['viral', 'business', 'money', 'entrepreneur', 'hook'],
+  },
+  {
+    id: 'viral-money-mistake',
+    name: 'Money Mistake Hook',
+    description: 'This ONE mistake is ruining your growth - Creates urgency',
+    category: 'bold',
+    style: {
+      fontFamily: FONT_FAMILIES.oswald,
+      fontSize: 34,
+      fontWeight: 'bold',
+      color: '#FF4444',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      textCase: 'uppercase',
+    },
+    position: 'top',
+    animation: 'pop',
+    animationDuration: 400,
+    maxWidth: 90,
+    tags: ['viral', 'business', 'mistake', 'urgency', 'warning'],
+  },
+
+  // ============ GYM / FITNESS HOOKS ============
+  {
+    id: 'viral-gym-motivation',
+    name: 'Gym Motivation',
+    description: 'Remember why you started - Fitness motivation',
+    category: 'bold',
+    style: {
+      fontFamily: FONT_FAMILIES.bebas,
+      fontSize: 40,
+      fontWeight: 'bold',
+      color: '#FFFFFF',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      textCase: 'uppercase',
+      letterSpacing: 3,
+    },
+    position: 'center',
+    animation: 'pop',
+    animationDuration: 450,
+    maxWidth: 90,
+    tags: ['viral', 'gym', 'fitness', 'motivation', 'workout'],
+  },
+  {
+    id: 'viral-gym-pain',
+    name: 'Pain Temporary',
+    description: 'Pain is temporary. Pride is forever. - Classic gym quote',
+    category: 'bold',
+    style: {
+      fontFamily: FONT_FAMILIES.oswald,
+      fontSize: 38,
+      fontWeight: 'bold',
+      color: '#FFD700',
+      outlineColor: '#000000',
+      outlineWidth: 3,
+      textCase: 'uppercase',
+    },
+    position: 'center',
+    animation: 'fade-in',
+    animationDuration: 500,
+    maxWidth: 85,
+    tags: ['viral', 'gym', 'pain', 'pride', 'motivation'],
+  },
+
+  // ============ LIFESTYLE HOOKS ============
+  {
+    id: 'viral-lifestyle-change',
+    name: 'Lifestyle Change',
+    description: 'This changed everything for me - Personal transformation',
+    category: 'cinematic',
+    style: {
+      fontFamily: FONT_FAMILIES.poppins,
+      fontSize: 30,
+      fontWeight: 'medium',
+      color: '#FFFFFF',
+      shadowColor: 'rgba(0, 0, 0, 0.7)',
+      shadowBlur: 8,
+      shadowOffsetX: 0,
+      shadowOffsetY: 3,
+    },
+    position: 'bottom',
+    animation: 'fade-in',
+    animationDuration: 500,
+    maxWidth: 85,
+    tags: ['viral', 'lifestyle', 'transformation', 'personal', 'growth'],
+  },
+  {
+    id: 'viral-nobody-talks',
+    name: 'Nobody Talks About',
+    description: 'Nobody talks about this enough... - Creates intrigue',
+    category: 'cinematic',
+    style: {
+      fontFamily: FONT_FAMILIES.inter,
+      fontSize: 28,
+      fontWeight: 'medium',
+      color: '#FFFFFF',
+      shadowColor: 'rgba(0, 0, 0, 0.8)',
+      shadowBlur: 6,
+      shadowOffsetX: 0,
+      shadowOffsetY: 2,
+      italic: true,
+    },
+    position: 'bottom',
+    animation: 'typewriter',
+    animationDuration: 1000,
+    maxWidth: 85,
+    tags: ['viral', 'intrigue', 'mystery', 'storytelling', 'lifestyle'],
+  },
 ];
 
 // ============================================================
-// HELPER FUNCTIONS
+// VIRAL HOOK TEMPLATES (Ready-to-use text)
 // ============================================================
 
+export interface ViralHook {
+  id: string;
+  text: string;
+  category: 'business' | 'motivation' | 'lifestyle' | 'gym' | 'general';
+  position: SubtitlePosition;
+  suggestedTemplateId: string;
+}
+
+export const VIRAL_HOOKS: ViralHook[] = [
+  // Business / Money
+  { id: 'hook-1', text: 'STOP SCROLLING', category: 'general', position: 'top', suggestedTemplateId: 'viral-bold-top' },
+  { id: 'hook-2', text: 'READ THIS BEFORE YOU SCROLL', category: 'general', position: 'top', suggestedTemplateId: 'viral-stop-scrolling' },
+  { id: 'hook-3', text: 'THIS WILL CHANGE YOUR LIFE', category: 'motivation', position: 'top', suggestedTemplateId: 'viral-bold-top' },
+  { id: 'hook-4', text: 'WATCH TILL THE END', category: 'general', position: 'top', suggestedTemplateId: 'viral-watch-till-end' },
+  { id: 'hook-5', text: 'The 3-second rule nobody tells you about…', category: 'business', position: 'top', suggestedTemplateId: 'viral-business-hook' },
+  { id: 'hook-6', text: 'Watch this before you start a business.', category: 'business', position: 'top', suggestedTemplateId: 'viral-business-hook' },
+  { id: 'hook-7', text: 'I wish someone told me this earlier…', category: 'business', position: 'top', suggestedTemplateId: 'viral-story-yellow' },
+  { id: 'hook-8', text: 'Do this if you want to make money in 2025.', category: 'business', position: 'top', suggestedTemplateId: 'viral-bold-top' },
+  { id: 'hook-9', text: 'This ONE mistake is ruining your growth.', category: 'business', position: 'top', suggestedTemplateId: 'viral-money-mistake' },
+  
+  // Motivation / Gym
+  { id: 'hook-10', text: 'Read this when you feel like giving up.', category: 'motivation', position: 'center', suggestedTemplateId: 'viral-motivation-center' },
+  { id: 'hook-11', text: 'Remember why you started.', category: 'gym', position: 'center', suggestedTemplateId: 'viral-gym-motivation' },
+  { id: 'hook-12', text: 'Your only competition is you.', category: 'motivation', position: 'center', suggestedTemplateId: 'viral-motivation-bold' },
+  { id: 'hook-13', text: 'Pain is temporary. Pride is forever.', category: 'gym', position: 'center', suggestedTemplateId: 'viral-gym-pain' },
+  { id: 'hook-14', text: 'Discipline builds everything.', category: 'motivation', position: 'center', suggestedTemplateId: 'viral-motivation-center' },
+  { id: 'hook-15', text: 'If it was easy, everyone would do it.', category: 'motivation', position: 'center', suggestedTemplateId: 'viral-motivation-bold' },
+  { id: 'hook-16', text: 'Be stronger than your excuses.', category: 'gym', position: 'center', suggestedTemplateId: 'viral-gym-motivation' },
+  
+  // Lifestyle / Story
+  { id: 'hook-17', text: 'Nobody talks about this enough…', category: 'lifestyle', position: 'bottom', suggestedTemplateId: 'viral-nobody-talks' },
+  { id: 'hook-18', text: 'This changed everything for me.', category: 'lifestyle', position: 'bottom', suggestedTemplateId: 'viral-lifestyle-change' },
+  { id: 'hook-19', text: 'The moment you choose yourself, life gets better.', category: 'lifestyle', position: 'center', suggestedTemplateId: 'viral-motivation-center' },
+  { id: 'hook-20', text: 'I didn\'t know this would happen…', category: 'lifestyle', position: 'bottom', suggestedTemplateId: 'viral-story-yellow' },
+  { id: 'hook-21', text: 'Everything changed after this moment.', category: 'lifestyle', position: 'bottom', suggestedTemplateId: 'viral-story-yellow' },
+  { id: 'hook-22', text: 'Here\'s the truth they hide from you.', category: 'lifestyle', position: 'bottom', suggestedTemplateId: 'viral-story-reveal' },
+];
+
 /**
- * Get templates by category
+ * Get viral hooks by category
  */
-export const getTemplatesByCategory = (category: SubtitleCategory): SubtitleTemplate[] => {
-  return SUBTITLE_TEMPLATES.filter(t => t.category === category);
+export const getViralHooksByCategory = (category: ViralHook['category']): ViralHook[] => {
+  return VIRAL_HOOKS.filter(h => h.category === category);
 };
 
 /**
- * Get template by ID
+ * Get random viral hook
  */
-export const getTemplateById = (id: string): SubtitleTemplate | undefined => {
-  return SUBTITLE_TEMPLATES.find(t => t.id === id);
+export const getRandomViralHook = (category?: ViralHook['category']): ViralHook => {
+  const hooks = category ? getViralHooksByCategory(category) : VIRAL_HOOKS;
+  return hooks[Math.floor(Math.random() * hooks.length)];
 };
-
-/**
- * Search templates by tags
- */
-export const searchTemplatesByTags = (tags: string[]): SubtitleTemplate[] => {
-  return SUBTITLE_TEMPLATES.filter(template => 
-    template.tags?.some(tag => tags.includes(tag.toLowerCase()))
-  );
-};
-
-/**
- * Get all categories
- */
-export const getAllCategories = (): SubtitleCategory[] => {
-  return ['minimal', 'bold', 'cinematic', 'social', 'neon', 'retro', 'elegant', 'fun', 'corporate'];
 };
 
 /**
