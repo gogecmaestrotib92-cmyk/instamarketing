@@ -205,24 +205,37 @@ const AIVideo = () => {
     const maxAttempts = 60; // 5 minutes max
     let attempts = 0;
     
+    console.log('🎵 Starting Shotstack polling for job:', jobId);
+    
     // Show a toast that enhanced video is processing
-    const enhanceToastId = toast.info('🎵 Adding music & text... 0%', {
+    const enhanceToastId = toast.info('🎵 Processing music & text... 0%', {
       autoClose: false,
       hideProgressBar: false,
-      progress: 0
+      progress: 0,
+      position: 'bottom-right'
     });
 
     while (attempts < maxAttempts) {
       try {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5s
         
+        console.log(`🔄 Polling Shotstack (attempt ${attempts + 1}/${maxAttempts})`);
+        
         const response = await api.get(`/render-video/status/${jobId}`);
-        const { status, progress, url, error } = response.data;
+        const { success, status, progress, url, error } = response.data;
+        
+        console.log('📊 Shotstack status:', { success, status, progress, hasUrl: !!url });
+
+        if (!success) {
+          console.error('Shotstack poll failed:', error);
+          attempts++;
+          continue;
+        }
 
         // Update toast with progress
         const progressPercent = progress || Math.min(attempts * 5, 95);
         toast.update(enhanceToastId, {
-          render: `🎵 Adding music & text... ${progressPercent}%`,
+          render: `🎵 Processing music & text... ${progressPercent}%`,
           progress: progressPercent / 100
         });
 
@@ -470,6 +483,9 @@ const AIVideo = () => {
             <article className="card generated-preview" aria-label="Generated video">
               <div className="card-header">
                 <h3>✨ Generated Video</h3>
+                {generatedVideo.enhanced && (
+                  <span className="badge badge-success">🎵 Enhanced</span>
+                )}
               </div>
               <div className="video-preview">
                 <video 
