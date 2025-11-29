@@ -30,17 +30,21 @@ const pendingPredictions = new Map();
 
 /**
  * Check video generation status (for async polling)
- * GET /api/ai-video/status
+ * POST /api/ai-video/status
+ * 
+ * Body: { id, prompt, duration, aspectRatio, musicConfig, textConfig }
+ * Note: Config is passed with each request because Vercel serverless is stateless
  */
-router.get('/status', auth, async (req, res) => {
+router.post('/status', auth, async (req, res) => {
   try {
-    const { id } = req.query;
+    const { id, prompt, duration, aspectRatio, musicConfig, textConfig } = req.body;
     
     if (!id) {
       return res.status(400).json({ error: 'Prediction ID required' });
     }
 
     console.log(`📊 Checking status for prediction: ${id}`);
+    console.log(`   Config: music=${!!musicConfig}, text=${!!textConfig}`);
 
     // Check Replicate status
     const statusResult = await replicateService.getPredictionStatus(id);
@@ -55,13 +59,19 @@ router.get('/status', auth, async (req, res) => {
     if (status === 'succeeded' && output) {
       let videoUrl = Array.isArray(output) ? output[0] : output;
       
-      // Get stored metadata
-      const metadata = pendingPredictions.get(id) || {};
+      // Use config from request body (serverless stateless)
+      const metadata = {
+        prompt: prompt || 'AI Generated Video',
+        duration: duration || 6,
+        aspectRatio: aspectRatio || '9:16',
+        musicConfig,
+        textConfig
+      };
       
-      console.log('📦 Metadata:', JSON.stringify({
+      console.log('📦 Processing config:', JSON.stringify({
         hasMusic: !!metadata.musicConfig,
         hasText: !!metadata.textConfig,
-        prompt: metadata.prompt?.substring(0, 50)
+        musicUrl: metadata.musicConfig?.url ? 'yes' : 'no'
       }));
 
       // Process video with music and/or text if provided
@@ -196,9 +206,6 @@ router.get('/status', auth, async (req, res) => {
         await video.save();
         console.log('✅ Video saved to database:', video._id);
         
-        // Clean up
-        pendingPredictions.delete(id);
-        
         return res.json({
           status: 'completed',
           video: {
@@ -221,13 +228,11 @@ router.get('/status', auth, async (req, res) => {
         });
       }
     } else if (status === 'failed') {
-      pendingPredictions.delete(id);
       return res.json({
         status: 'failed',
         error: error || 'Video generation failed'
       });
     } else if (status === 'canceled') {
-      pendingPredictions.delete(id);
       return res.json({
         status: 'failed',
         error: 'Generation was canceled'

@@ -7,7 +7,7 @@
  * Docs: https://shotstack.io/docs/api/
  */
 
-const SHOTSTACK_API_KEY = process.env.SHOTSTACK_API_KEY;
+const SHOTSTACK_API_KEY = process.env.SHOTSTACK_API_KEY || 'dJmabLRWzY6RK4RnAAXQoIec84p8Uv9i1Cyo0qDE';
 const SHOTSTACK_HOST = process.env.SHOTSTACK_HOST || 'https://api.shotstack.io/stage'; // Use 'https://api.shotstack.io/v1' for production
 
 /**

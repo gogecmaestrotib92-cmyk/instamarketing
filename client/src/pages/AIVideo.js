@@ -115,7 +115,7 @@ const AIVideo = () => {
   };
 
   // Poll for video generation status
-  const pollVideoStatus = async (predictionId, toastId) => {
+  const pollVideoStatus = async (predictionId, toastId, config = {}) => {
     const maxAttempts = 60; // 5 minutes max (5s intervals)
     let attempts = 0;
 
@@ -127,7 +127,11 @@ const AIVideo = () => {
       try {
         await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
         
-        const statusResponse = await api.get(`/ai-video/status?id=${predictionId}`);
+        // Pass config with each poll (serverless is stateless)
+        const statusResponse = await api.post(`/ai-video/status`, {
+          id: predictionId,
+          ...config
+        });
         const { status, video, error } = statusResponse.data;
 
         if (status === 'completed' && video?.videoUrl) {
@@ -236,8 +240,14 @@ const AIVideo = () => {
 
       // Check if we got a prediction ID (async generation) or immediate result
       if (response.data.predictionId && response.data.status === 'processing') {
-        // Start polling for status
-        pollVideoStatus(response.data.predictionId, toastId);
+        // Start polling for status - pass config for serverless processing
+        pollVideoStatus(response.data.predictionId, toastId, {
+          prompt,
+          duration,
+          aspectRatio,
+          musicConfig,
+          textConfig
+        });
       } else if (response.data.video?.videoUrl) {
         // Immediate result (shouldn't happen with current setup, but handle it)
         toast.update(toastId, {
