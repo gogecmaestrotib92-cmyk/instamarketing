@@ -94,15 +94,55 @@ class ReplicateService {
         }
       });
 
+      console.log('📝 Prediction created:', prediction.id, 'Status:', prediction.status);
+
       return {
         success: true,
         predictionId: prediction.id,
         status: prediction.status,
-        message: 'Video generation started. Use /api/video/status/:id to check progress.'
+        message: 'Video generation started. Use /api/ai-video/status?id=<id> to check progress.'
       };
 
     } catch (error) {
       console.error('Start text-to-video error:', error.message);
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Start async image-to-video generation
+   */
+  async startImageToVideo(imageUrl, motionPrompt = '', options = {}) {
+    try {
+      console.log('🎬 Starting async image-to-video generation...');
+      console.log('Image URL:', imageUrl);
+      
+      const { motionBucketId = 127 } = options;
+
+      const prediction = await this.replicate.predictions.create({
+        version: '3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438',
+        input: {
+          input_image: imageUrl,
+          video_length: "14_frames_with_svd",
+          sizing_strategy: "maintain_aspect_ratio",
+          frames_per_second: 8,
+          motion_bucket_id: motionBucketId,
+          cond_aug: 0.02,
+          decoding_t: 7,
+          seed: Math.floor(Math.random() * 1000000)
+        }
+      });
+
+      console.log('📝 Prediction created:', prediction.id, 'Status:', prediction.status);
+
+      return {
+        success: true,
+        predictionId: prediction.id,
+        status: prediction.status
+      };
+
+    } catch (error) {
+      console.error('Start image-to-video error:', error.message);
       return this.handleError(error);
     }
   }
