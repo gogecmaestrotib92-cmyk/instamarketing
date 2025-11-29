@@ -123,16 +123,19 @@ router.post('/status', auth, async (req, res) => {
           console.log('🎵 Music URL:', musicUrl ? 'yes' : 'no');
           console.log('📝 Subtitles:', subtitles.length);
 
+          let shotstackJobId = null;
+          
           if (musicUrl || subtitles.length > 0) {
             // Try Shotstack first (cloud-based, works on Vercel)
             if (shotstackClient) {
-              console.log('🎬 Using Shotstack for video processing...');
+              console.log('🎬 Starting Shotstack render job...');
               console.log('   Video URL:', videoUrl);
               console.log('   Music URL:', musicUrl);
               console.log('   Subtitles count:', subtitles.length);
               
               try {
-                const renderResult = await shotstackClient.renderVideo(
+                // Start the render job (don't wait - Vercel has 10s timeout)
+                const jobResult = await shotstackClient.createShotstackRender(
                   videoUrl,
                   musicUrl,
                   subtitles,
@@ -142,16 +145,19 @@ router.post('/status', auth, async (req, res) => {
                   }
                 );
 
-                if (renderResult.success && renderResult.url) {
-                  videoUrl = renderResult.url;
-                  console.log('✅ Shotstack render complete:', videoUrl);
+                if (jobResult.success && jobResult.jobId) {
+                  console.log('✅ Shotstack job started:', jobResult.jobId);
+                  shotstackJobId = jobResult.jobId;
                 } else {
-                  console.error('⚠️ Shotstack render failed:', renderResult.error);
-                  // Don't throw, just continue with original video
+                  console.error('⚠️ Shotstack job creation failed:', jobResult.error);
                 }
               } catch (shotstackError) {
                 console.error('⚠️ Shotstack error:', shotstackError.message);
               }
+              
+              // NOTE: We don't wait for Shotstack to finish because Vercel has 10s timeout
+              // The user gets the original video immediately, enhanced version comes later
+              console.log('ℹ️ Returning original video (Shotstack processing in background)');
             }
             // Fallback to FFmpeg (local processing)
             else if (videoProcessor) {
@@ -222,7 +228,8 @@ router.post('/status', auth, async (req, res) => {
             id: video._id,
             videoUrl: videoUrl,
             prompt: metadata.prompt,
-            duration: metadata.duration
+            duration: metadata.duration,
+            shotstackJobId: shotstackJobId  // Frontend can poll for enhanced video
           }
         });
       } catch (dbError) {
@@ -233,7 +240,8 @@ router.post('/status', auth, async (req, res) => {
           video: {
             id: id,
             videoUrl: videoUrl,
-            prompt: metadata.prompt
+            prompt: metadata.prompt,
+            shotstackJobId: shotstackJobId
           }
         });
       }

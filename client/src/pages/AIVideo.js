@@ -148,6 +148,11 @@ const AIVideo = () => {
           setLoadingProgress(0);
           setLoadingStatus('');
           fetchMyVideos();
+          
+          // If Shotstack is processing enhanced version, poll for it
+          if (video.shotstackJobId) {
+            pollForEnhancedVideo(video.shotstackJobId, video);
+          }
           return;
         } else if (status === 'failed') {
           toast.update(toastId, {
@@ -193,6 +198,63 @@ const AIVideo = () => {
     setLoading(false);
     setLoadingProgress(0);
     setLoadingStatus('');
+  };
+
+  // Poll for enhanced video from Shotstack (music + text)
+  const pollForEnhancedVideo = async (jobId, originalVideo) => {
+    const maxAttempts = 60; // 5 minutes max
+    let attempts = 0;
+    
+    // Show a toast that enhanced video is processing
+    const enhanceToastId = toast.info('🎵 Adding music & text in background...', {
+      autoClose: false,
+      hideProgressBar: true
+    });
+
+    while (attempts < maxAttempts) {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5s
+        
+        const response = await api.get(`/render-video/status/${jobId}`);
+        const { status, url, error } = response.data;
+
+        if (status === 'done' && url) {
+          // Update the video with enhanced version
+          setGeneratedVideo(prev => ({
+            ...prev,
+            videoUrl: url,
+            enhanced: true
+          }));
+          
+          toast.update(enhanceToastId, {
+            render: '✨ Video enhanced with music & text!',
+            type: 'success',
+            autoClose: 5000
+          });
+          
+          // Refresh video list
+          fetchMyVideos();
+          return;
+        } else if (status === 'failed') {
+          console.error('Enhanced video failed:', error);
+          toast.update(enhanceToastId, {
+            render: '⚠️ Music/text processing failed. Using original video.',
+            type: 'warning',
+            autoClose: 5000
+          });
+          return;
+        }
+        
+        attempts++;
+      } catch (error) {
+        console.error('Enhanced video poll error:', error);
+        attempts++;
+      }
+    }
+
+    // Timeout - dismiss the toast
+    toast.dismiss(enhanceToastId);
+    console.log('Enhanced video polling timed out');
   };
 
   const handleGenerate = async () => {
