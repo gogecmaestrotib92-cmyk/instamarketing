@@ -43,49 +43,49 @@ import './MusicModalV2.css';
 
 // ============================================================
 // ROYALTY-FREE MUSIC LIBRARY
-// All tracks are CC0 from Pixabay - royalty-free, no attribution required
+// Using Free Music Archive (FMA) - CC licensed, truly free streaming
 // ============================================================
 const LIBRARY_TRACKS = [
-  // 🎵 Upbeat / Energetic / Viral Reels Style
-  { id: 'lib-1', name: 'Energize', url: 'https://cdn.pixabay.com/download/audio/2022/10/19/audio_8c1bc8b0eb.mp3?filename=energy-12489.mp3', durationSeconds: 120, sourceType: 'library', tags: ['energetic', 'viral'], genre: 'Upbeat' },
-  { id: 'lib-2', name: 'Glitch Energy', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_22c47684a3.mp3?filename=glitch-110397.mp3', durationSeconds: 95, sourceType: 'library', tags: ['glitch', 'energetic'], genre: 'Upbeat' },
-  { id: 'lib-3', name: 'Sport Motivation', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_3e78616d6b.mp3?filename=sport-motivation-125758.mp3', durationSeconds: 110, sourceType: 'library', tags: ['sport', 'motivation'], genre: 'Upbeat' },
-  { id: 'lib-4', name: 'Fashion Beat', url: 'https://cdn.pixabay.com/download/audio/2022/02/23/audio_44e07039e8.mp3?filename=fashion-show-112687.mp3', durationSeconds: 100, sourceType: 'library', tags: ['fashion', 'beat'], genre: 'Upbeat' },
+  // 🎵 Upbeat / Energetic
+  { id: 'lib-1', name: 'Shipping Lanes', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Shipping_Lanes.mp3', durationSeconds: 161, sourceType: 'library', tags: ['electronic', 'upbeat'], genre: 'Upbeat' },
+  { id: 'lib-2', name: 'Enthusiast', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3', durationSeconds: 228, sourceType: 'library', tags: ['indie', 'energetic'], genre: 'Upbeat' },
+  { id: 'lib-3', name: 'Wakka Wakka', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Wakka_Wakka.mp3', durationSeconds: 155, sourceType: 'library', tags: ['funky', 'beat'], genre: 'Upbeat' },
+  { id: 'lib-4', name: 'Night Owl', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Directionless_EP/Broke_For_Free_-_01_-_Night_Owl.mp3', durationSeconds: 233, sourceType: 'library', tags: ['electronic', 'cool'], genre: 'Upbeat' },
   
-  // 🌆 Chill / Aesthetic / Lofi
-  { id: 'lib-5', name: 'LoFi Study', url: 'https://cdn.pixabay.com/download/audio/2023/01/10/audio_131c6714bb.mp3?filename=lofi-study-136460.mp3', durationSeconds: 147, sourceType: 'library', tags: ['lofi', 'study'], genre: 'Chill' },
-  { id: 'lib-6', name: 'Calm Vibes', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_b5cde23bb2.mp3?filename=chill-vibes-112191.mp3', durationSeconds: 130, sourceType: 'library', tags: ['chill', 'calm'], genre: 'Chill' },
-  { id: 'lib-7', name: 'Midnight Walk', url: 'https://cdn.pixabay.com/download/audio/2022/08/30/audio_b3cfb9f5bc.mp3?filename=midnight-walk-11936.mp3', durationSeconds: 125, sourceType: 'library', tags: ['night', 'aesthetic'], genre: 'Chill' },
+  // 🌆 Chill / Lo-Fi
+  { id: 'lib-5', name: 'We Are One', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_04_-_We_Are_One.mp3', durationSeconds: 275, sourceType: 'library', tags: ['ambient', 'chill'], genre: 'Chill' },
+  { id: 'lib-6', name: 'Interlude', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_08_-_Interlude.mp3', durationSeconds: 82, sourceType: 'library', tags: ['calm', 'peaceful'], genre: 'Chill' },
+  { id: 'lib-7', name: 'Something Elated', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Something_EP/Broke_For_Free_-_01_-_Something_Elated.mp3', durationSeconds: 176, sourceType: 'library', tags: ['chill', 'happy'], genre: 'Chill' },
   
-  // 🌅 Cinematic / Emotional / Viral Travel
-  { id: 'lib-8', name: 'Epic Inspiring', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_3757a3352c.mp3?filename=epic-inspiring-112199.mp3', durationSeconds: 140, sourceType: 'library', tags: ['epic', 'inspiring'], genre: 'Cinematic' },
-  { id: 'lib-9', name: 'Sunset Relaxation', url: 'https://cdn.pixabay.com/download/audio/2023/03/14/audio_17f31d78b0.mp3?filename=sunset-view-144241.mp3', durationSeconds: 135, sourceType: 'library', tags: ['sunset', 'relaxing'], genre: 'Cinematic' },
-  { id: 'lib-10', name: 'Adventure Trailer', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_6a79dcae7a.mp3?filename=adventure-trailer-112200.mp3', durationSeconds: 150, sourceType: 'library', tags: ['adventure', 'trailer'], genre: 'Cinematic' },
+  // 🌅 Cinematic / Emotional
+  { id: 'lib-8', name: 'Auguries', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_07_-_Auguries.mp3', durationSeconds: 191, sourceType: 'library', tags: ['cinematic', 'emotional'], genre: 'Cinematic' },
+  { id: 'lib-9', name: 'Satins', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_01_-_Satin.mp3', durationSeconds: 226, sourceType: 'library', tags: ['piano', 'beautiful'], genre: 'Cinematic' },
+  { id: 'lib-10', name: 'Bleeding Out', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_09_-_Bleeding_Out.mp3', durationSeconds: 267, sourceType: 'library', tags: ['dramatic', 'epic'], genre: 'Cinematic' },
   
-  // 🤖 Future / Trap / Electronic
-  { id: 'lib-11', name: 'Future Bass', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_8257bf0ec2.mp3?filename=future-bass-112194.mp3', durationSeconds: 120, sourceType: 'library', tags: ['future', 'bass'], genre: 'Electronic' },
-  { id: 'lib-12', name: 'Cyberpunk Drive', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_7381751099.mp3?filename=cyberpunk-110402.mp3', durationSeconds: 115, sourceType: 'library', tags: ['cyberpunk', 'drive'], genre: 'Electronic' },
-  { id: 'lib-13', name: 'Trap Energy', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_7a62295c46.mp3?filename=trap-sport-112198.mp3', durationSeconds: 105, sourceType: 'library', tags: ['trap', 'energy'], genre: 'Electronic' },
+  // 🤖 Electronic / Future
+  { id: 'lib-11', name: 'Only', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Only.mp3', durationSeconds: 173, sourceType: 'library', tags: ['synth', 'electronic'], genre: 'Electronic' },
+  { id: 'lib-12', name: 'Algorithms', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Algorithms.mp3', durationSeconds: 188, sourceType: 'library', tags: ['tech', 'digital'], genre: 'Electronic' },
+  { id: 'lib-13', name: 'Peyote Ugly', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Directionless_EP/Broke_For_Free_-_05_-_Peyote_Ugly.mp3', durationSeconds: 220, sourceType: 'library', tags: ['electronic', 'edgy'], genre: 'Electronic' },
   
-  // 🌴 Tropical / Summer Vibes
-  { id: 'lib-14', name: 'Tropical House', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_2c5632f8db.mp3?filename=tropical-112192.mp3', durationSeconds: 130, sourceType: 'library', tags: ['tropical', 'house'], genre: 'Tropical' },
-  { id: 'lib-15', name: 'Beach Vibes', url: 'https://cdn.pixabay.com/download/audio/2023/03/13/audio_e7452e7a38.mp3?filename=beach-vibes-144195.mp3', durationSeconds: 140, sourceType: 'library', tags: ['beach', 'summer'], genre: 'Tropical' },
-  { id: 'lib-16', name: 'Chill Tropical', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_82d54cf6b3.mp3?filename=tropical-chill-110399.mp3', durationSeconds: 125, sourceType: 'library', tags: ['tropical', 'chill'], genre: 'Tropical' },
+  // 🌴 Happy / Positive
+  { id: 'lib-14', name: 'Sunny', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Sunny.mp3', durationSeconds: 137, sourceType: 'library', tags: ['sunny', 'positive'], genre: 'Tropical' },
+  { id: 'lib-15', name: 'Summer Day', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Summer_Day.mp3', durationSeconds: 147, sourceType: 'library', tags: ['summer', 'happy'], genre: 'Tropical' },
+  { id: 'lib-16', name: 'Upbeat Party', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Upbeat_Party.mp3', durationSeconds: 125, sourceType: 'library', tags: ['party', 'fun'], genre: 'Tropical' },
   
-  // 🔥 Motivational
-  { id: 'lib-17', name: 'Motivation Speech Beat', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_8f88c8f47d.mp3?filename=motivation-112197.mp3', durationSeconds: 110, sourceType: 'library', tags: ['motivation', 'speech'], genre: 'Motivation' },
-  { id: 'lib-18', name: 'Hard Work Beat', url: 'https://cdn.pixabay.com/download/audio/2023/02/08/audio_90b4908a4e.mp3?filename=motivation-135813.mp3', durationSeconds: 120, sourceType: 'library', tags: ['hardwork', 'grind'], genre: 'Motivation' },
+  // 🔥 Motivation / Inspiring
+  { id: 'lib-17', name: 'Inspiring', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Inspiring__Upbeat_Music.mp3', durationSeconds: 153, sourceType: 'library', tags: ['inspiring', 'uplifting'], genre: 'Motivation' },
+  { id: 'lib-18', name: 'Storybook', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Scott_Holmes/Positive__Uplifting_Music/Scott_Holmes_-_Storybook.mp3', durationSeconds: 168, sourceType: 'library', tags: ['story', 'hopeful'], genre: 'Motivation' },
   
-  // 🧘 Ambient Background
-  { id: 'lib-19', name: 'Soft Ambient Pad', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_f6f8aeecc8.mp3?filename=ambient-pad-110405.mp3', durationSeconds: 180, sourceType: 'library', tags: ['ambient', 'soft'], genre: 'Ambient' },
-  { id: 'lib-20', name: 'Calm Ambient Drone', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_4c0b622ed3.mp3?filename=ambient-drone-110404.mp3', durationSeconds: 200, sourceType: 'library', tags: ['ambient', 'drone'], genre: 'Ambient' },
+  // 🧘 Ambient / Peaceful
+  { id: 'lib-19', name: 'Snowfall', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_03_-_Snowfall.mp3', durationSeconds: 312, sourceType: 'library', tags: ['ambient', 'peaceful'], genre: 'Ambient' },
+  { id: 'lib-20', name: 'Contention', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_05_-_Contention.mp3', durationSeconds: 247, sourceType: 'library', tags: ['meditation', 'calm'], genre: 'Ambient' },
   
-  // 🎤 AI / Synthetic Sci-Fi
-  { id: 'lib-21', name: 'AI Atmosphere', url: 'https://cdn.pixabay.com/download/audio/2022/03/16/audio_73ba7dd9e1.mp3?filename=ai-ambience-110401.mp3', durationSeconds: 150, sourceType: 'library', tags: ['ai', 'scifi'], genre: 'Sci-Fi' },
-  { id: 'lib-22', name: 'Neon Pulse', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_1ad528eb79.mp3?filename=neon-pulse-112196.mp3', durationSeconds: 115, sourceType: 'library', tags: ['neon', 'pulse'], genre: 'Sci-Fi' },
+  // 🎤 Pop / Modern
+  { id: 'lib-21', name: 'A Minute', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Directionless_EP/Broke_For_Free_-_02_-_A_Minute.mp3', durationSeconds: 213, sourceType: 'library', tags: ['indie', 'modern'], genre: 'Pop' },
+  { id: 'lib-22', name: 'Calm The Fuck Down', url: 'https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Broke_For_Free/Directionless_EP/Broke_For_Free_-_06_-_Calm_The_Fuck_Down.mp3', durationSeconds: 185, sourceType: 'library', tags: ['chill', 'relaxed'], genre: 'Pop' },
 ];
 
-const GENRES = ['All', 'Upbeat', 'Chill', 'Cinematic', 'Electronic', 'Tropical', 'Motivation', 'Ambient', 'Sci-Fi'];
+const GENRES = ['All', 'Upbeat', 'Chill', 'Cinematic', 'Electronic', 'Tropical', 'Motivation', 'Ambient', 'Pop'];
 const AI_STYLES = ['Cinematic', 'Trap', 'Lofi', 'Ambient', 'Synthwave', 'Afrobeat', 'Pop', 'Rock', 'Classical'];
 const AI_MOODS = ['Happy', 'Dark', 'Dramatic', 'Chill', 'Inspiring', 'Energetic', 'Sad', 'Mysterious'];
 
@@ -1093,8 +1093,7 @@ const MusicModalV2 = ({
         {/* Hidden Audio Element */}
         <audio 
           ref={audioRef} 
-          crossOrigin="anonymous"
-          preload="metadata"
+          preload="auto"
         />
       </div>
     </div>
