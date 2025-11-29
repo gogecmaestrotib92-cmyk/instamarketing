@@ -353,7 +353,11 @@ const AITools = () => {
               });
 
               if (finalResponse.data.success) {
-                setReelFinalUrl(`http://localhost:5000${finalResponse.data.videoUrl}`);
+                // Shotstack returns full URL, FFmpeg returns relative path
+                const finalUrl = finalResponse.data.videoUrl.startsWith('http') 
+                  ? finalResponse.data.videoUrl 
+                  : `${process.env.REACT_APP_API_URL || ''}${finalResponse.data.videoUrl}`;
+                setReelFinalUrl(finalUrl);
                 setReelStatus('✅ Reel ready for posting!');
                 toast.success('Reel is ready! 🎬🎉');
               } else {

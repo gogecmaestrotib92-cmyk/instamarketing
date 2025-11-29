@@ -2,6 +2,16 @@ const fs = require('fs');
 const path = require('path');
 const util = require('util');
 
+// Import Cloudinary for cloud audio storage (works on Vercel)
+let uploadToCloudinary = null;
+try {
+  const cloudinaryModule = require('./cloudinary');
+  uploadToCloudinary = cloudinaryModule.uploadToCloudinary;
+  console.log('✅ Cloudinary loaded for audio uploads');
+} catch (e) {
+  console.log('Cloudinary not available for audio:', e.message);
+}
+
 /**
  * Google Cloud Text-to-Speech Service
  * Converts text to natural-sounding speech for Reels voiceovers
@@ -119,11 +129,31 @@ class GoogleTTSService {
 
       console.log('✅ Audio saved to:', filePath);
 
+      // Upload to Cloudinary for cloud access (required for Shotstack on Vercel)
+      let audioUrl = `/uploads/audio/${filename}`;
+      if (uploadToCloudinary) {
+        try {
+          console.log('☁️ Uploading audio to Cloudinary...');
+          const cloudinaryResult = await uploadToCloudinary(filePath, {
+            folder: 'instamarketing/audio',
+            resource_type: 'video' // Cloudinary uses 'video' for audio files
+          });
+          if (cloudinaryResult.success) {
+            audioUrl = cloudinaryResult.url;
+            console.log('✅ Audio uploaded to Cloudinary:', audioUrl);
+            // Clean up local file
+            try { fs.unlinkSync(filePath); } catch (e) {}
+          }
+        } catch (cloudErr) {
+          console.log('⚠️ Cloudinary upload failed, using local path:', cloudErr.message);
+        }
+      }
+
       return {
         success: true,
         audioPath: filePath,
         filename: filename,
-        audioUrl: `/uploads/audio/${filename}`
+        audioUrl: audioUrl
       };
     } catch (error) {
       console.error('Google TTS error:', error.message);
@@ -173,11 +203,28 @@ class GoogleTTSService {
 
       console.log('✅ SSML Audio saved to:', filePath);
 
+      // Upload to Cloudinary for cloud access
+      let audioUrl = `/uploads/audio/${filename}`;
+      if (uploadToCloudinary) {
+        try {
+          const cloudinaryResult = await uploadToCloudinary(filePath, {
+            folder: 'instamarketing/audio',
+            resource_type: 'video'
+          });
+          if (cloudinaryResult.success) {
+            audioUrl = cloudinaryResult.url;
+            try { fs.unlinkSync(filePath); } catch (e) {}
+          }
+        } catch (cloudErr) {
+          console.log('⚠️ Cloudinary upload failed:', cloudErr.message);
+        }
+      }
+
       return {
         success: true,
         audioPath: filePath,
         filename: filename,
-        audioUrl: `/uploads/audio/${filename}`
+        audioUrl: audioUrl
       };
     } catch (error) {
       console.error('Google TTS SSML error:', error.message);
