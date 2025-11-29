@@ -10,7 +10,7 @@ import { FaWandMagicSparkles } from 'react-icons/fa6';
 import SEO from '../components/SEO';
 import NewVideoForm from '../components/NewVideoForm';
 import SavedVideosPanel from '../components/SavedVideosPanel';
-import MusicModal from '../components/MusicModal';
+import MusicModal from '../components/MusicModalV2';
 import TextModal from '../components/TextModal';
 import api from '../services/api';
 import './AIVideo.css';
