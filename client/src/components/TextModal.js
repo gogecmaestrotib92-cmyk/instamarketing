@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { FiType, FiX, FiPlus, FiTrash2, FiClock } from "react-icons/fi";
+import { FiType, FiX, FiPlus, FiTrash2, FiClock, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import "./TextModal.css";
+import SubtitleTemplateSelector from "./SubtitleTemplateSelector";
 
 /**
  * TextModal - Modal for adding overlay text and timed captions
@@ -17,7 +18,8 @@ import "./TextModal.css";
 
 const createEmptyConfig = () => ({
   overlayText: "",
-  captions: []
+  captions: [],
+  subtitleTemplate: null
 });
 
 const TextModal = ({
@@ -30,6 +32,8 @@ const TextModal = ({
   // State
   const [overlayText, setOverlayText] = useState("");
   const [captions, setCaptions] = useState([]);
+  const [subtitleTemplate, setSubtitleTemplate] = useState(null);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [newText, setNewText] = useState("");
   const [newStart, setNewStart] = useState("");
   const [newEnd, setNewEnd] = useState("");
@@ -41,6 +45,8 @@ const TextModal = ({
       const cfg = initialConfig ?? createEmptyConfig();
       setOverlayText(cfg.overlayText ?? "");
       setCaptions(cfg.captions ?? []);
+      setSubtitleTemplate(cfg.subtitleTemplate ?? null);
+      setShowTemplates(false);
       setNewText("");
       setNewStart("");
       setNewEnd("");
@@ -111,7 +117,8 @@ const TextModal = ({
   const handleApply = () => {
     const config = {
       overlayText: overlayText.trim(),
-      captions
+      captions,
+      subtitleTemplate
     };
     onApply(config);
     onClose();
@@ -124,6 +131,16 @@ const TextModal = ({
   };
 
   const hasContent = overlayText.trim() || captions.length > 0;
+
+  // Handle template selection
+  const handleTemplateSelect = (template) => {
+    setSubtitleTemplate(template);
+  };
+
+  // Handle viral hook selection
+  const handleApplyHook = (hookText) => {
+    setOverlayText(hookText);
+  };
 
   // Keyboard handler za Enter
   const handleKeyDown = (e) => {
@@ -166,6 +183,37 @@ const TextModal = ({
             onChange={(e) => setOverlayText(e.target.value)}
             rows={3}
           />
+        </section>
+
+        {/* Subtitle Style Selector */}
+        <section className="text-modal__section">
+          <button
+            type="button"
+            className="text-modal__section-toggle"
+            onClick={() => setShowTemplates(!showTemplates)}
+          >
+            <div className="text-modal__section-toggle-left">
+              <span className="text-modal__section-title">
+                🎨 Subtitle Style
+              </span>
+              {subtitleTemplate && (
+                <span className="text-modal__selected-template">
+                  {subtitleTemplate.name}
+                </span>
+              )}
+            </div>
+            {showTemplates ? <FiChevronUp /> : <FiChevronDown />}
+          </button>
+          
+          {showTemplates && (
+            <div className="text-modal__templates-wrapper">
+              <SubtitleTemplateSelector
+                onSelectTemplate={handleTemplateSelect}
+                onSelectHook={handleApplyHook}
+                selectedTemplate={subtitleTemplate}
+              />
+            </div>
+          )}
         </section>
 
         {/* Divider */}
