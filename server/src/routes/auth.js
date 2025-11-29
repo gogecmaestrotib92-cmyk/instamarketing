@@ -156,17 +156,41 @@ router.post('/connect/instagram', auth, async (req, res) => {
 
     const appId = process.env.FACEBOOK_APP_ID;
     const appSecret = process.env.FACEBOOK_APP_SECRET;
-    const redirectUri = `${req.headers.origin || 'http://localhost:3000'}/auth/instagram/callback`;
+    
+    // Check if credentials are configured
+    if (!appId || !appSecret) {
+      console.error('Facebook OAuth Error: FACEBOOK_APP_ID or FACEBOOK_APP_SECRET not configured');
+      return res.status(500).json({ 
+        error: 'OAuth not configured. Please contact support.' 
+      });
+    }
+
+    // Get redirect URI from request origin or use production URL
+    const origin = req.headers.origin || req.headers.referer?.replace(/\/auth.*$/, '') || 'https://www.aiinstamarketing.com';
+    const redirectUri = `${origin}/auth/instagram/callback`;
+    
+    console.log('Instagram OAuth - Exchanging code for token...');
+    console.log('Redirect URI:', redirectUri);
 
     // Step 1: Exchange code for short-lived access token
-    const tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
-      params: {
-        client_id: appId,
-        client_secret: appSecret,
-        redirect_uri: redirectUri,
-        code: code
-      }
-    });
+    let tokenResponse;
+    try {
+      tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+        params: {
+          client_id: appId,
+          client_secret: appSecret,
+          redirect_uri: redirectUri,
+          code: code
+        }
+      });
+    } catch (tokenError) {
+      console.error('Token exchange error:', tokenError.response?.data || tokenError.message);
+      const errorMsg = tokenError.response?.data?.error?.message || 'Failed to exchange authorization code';
+      return res.status(400).json({ 
+        error: errorMsg,
+        details: 'The authorization code may have expired or the redirect URI may not match. Please try again.'
+      });
+    }
 
     const shortLivedToken = tokenResponse.data.access_token;
 

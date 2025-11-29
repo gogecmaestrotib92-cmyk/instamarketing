@@ -122,7 +122,7 @@ const Settings = () => {
   };
 
   const handleInstagramConnect = async () => {
-    // Use the auto-connect endpoint with pre-configured token
+    // First try auto-connect with pre-configured token (for demo/testing)
     setLoading(true);
     try {
       const response = await authAPI.autoConnectInstagram();
@@ -134,14 +134,32 @@ const Settings = () => {
         profilePicture: response.instagram.profilePicture
       });
       toast.success(`Connected to @${response.instagram.username}!`);
-    } catch (error) {
-      // If auto-connect fails, show manual connect option
-      console.log('Auto-connect failed:', error.response?.data?.error || error.message);
-      toast.info('Auto-connect failed. Try manual token entry.');
-      setShowManualConnect(true);
-    } finally {
       setLoading(false);
+      return;
+    } catch (error) {
+      console.log('Auto-connect not available, using OAuth flow');
     }
+    setLoading(false);
+    
+    // Use Facebook OAuth flow for Instagram Business Account
+    const appId = process.env.REACT_APP_FACEBOOK_APP_ID || '2955016021354200';
+    const redirectUri = `${window.location.origin}/auth/instagram/callback`;
+    
+    // Required permissions for Instagram Business Account
+    const scopes = [
+      'instagram_basic',
+      'instagram_content_publish', 
+      'instagram_manage_comments',
+      'instagram_manage_insights',
+      'pages_show_list',
+      'pages_read_engagement',
+      'business_management'
+    ].join(',');
+    
+    const oauthUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scopes}&response_type=code`;
+    
+    // Redirect to Facebook OAuth
+    window.location.href = oauthUrl;
   };
 
   const handleManualTokenConnect = async () => {
