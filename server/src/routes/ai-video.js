@@ -60,6 +60,7 @@ router.post('/status', auth, async (req, res) => {
 
     if (status === 'succeeded' && output) {
       let videoUrl = Array.isArray(output) ? output[0] : output;
+      let shotstackJobId = null; // Declare at top level so it's accessible in response
       
       // Use config from request body (serverless stateless)
       const metadata = {
@@ -122,8 +123,6 @@ router.post('/status', auth, async (req, res) => {
 
           console.log('🎵 Music URL:', musicUrl ? 'yes' : 'no');
           console.log('📝 Subtitles:', subtitles.length);
-
-          let shotstackJobId = null;
           
           if (musicUrl || subtitles.length > 0) {
             // Try Shotstack first (cloud-based, works on Vercel)
