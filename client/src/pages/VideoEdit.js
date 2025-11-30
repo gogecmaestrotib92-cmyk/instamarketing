@@ -444,11 +444,17 @@ const VideoEdit = () => {
             body: formData
           });
           
-          // Check for 413 payload too large
+          // Check for 413 payload too large BEFORE trying to parse JSON
           if (uploadRes.status === 413) {
-            toast.error('Video is too large to upload. Try a smaller video (< 4MB for cloud deploy).');
+            toast.error(`Video too large (${fileSizeMB.toFixed(1)}MB). Max upload size is ~4MB. Use AI-generated videos instead.`);
             setIsRendering(false);
             return;
+          }
+          
+          // Check for other error status codes
+          if (!uploadRes.ok) {
+            const errorText = await uploadRes.text();
+            throw new Error(errorText || `Upload failed with status ${uploadRes.status}`);
           }
           
           const uploadResult = await uploadRes.json();
@@ -778,21 +784,89 @@ const VideoEdit = () => {
     }
   };
 
-  // Handle video file upload
-  const handleFileUpload = (file) => {
-    if (file) {
-      const url = URL.createObjectURL(file);
-      const newVideo = {
-        id: Date.now(),
-        url,
-        prompt: file.name,
-        createdAt: new Date().toISOString(),
-        duration: 5
-      };
-      const updated = [newVideo, ...videos];
-      setVideos(updated);
-      setSelectedVideo(newVideo);
-      localStorage.setItem('aiVideos', JSON.stringify(updated));
+  // Handle video file upload - upload to Cloudinary immediately
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+    
+    // Check file size
+    const fileSizeMB = file.size / (1024 * 1024);
+    console.log('Uploading video file:', file.name, fileSizeMB.toFixed(2) + 'MB');
+    
+    if (fileSizeMB > 100) {
+      toast.error('Video is too large (max 100MB)');
+      return;
+    }
+    
+    // Show temporary blob URL for preview while uploading
+    const blobUrl = URL.createObjectURL(file);
+    const tempVideo = {
+      id: Date.now(),
+      url: blobUrl,
+      prompt: file.name,
+      createdAt: new Date().toISOString(),
+      duration: 5,
+      uploading: true
+    };
+    
+    setVideos(prev => [tempVideo, ...prev]);
+    setSelectedVideo(tempVideo);
+    
+    // Upload to Cloudinary via server
+    toast.info('Uploading video to cloud...');
+    
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+      
+      const uploadRes = await fetch('/api/ai/upload-video', {
+        method: 'POST',
+        body: formData
+      });
+      
+      // Check for 413 payload too large
+      if (uploadRes.status === 413) {
+        toast.error(`Video too large (${fileSizeMB.toFixed(1)}MB). Max upload is ~4MB for cloud. Try compressing the video.`);
+        // Remove the temp video
+        setVideos(prev => prev.filter(v => v.id !== tempVideo.id));
+        setSelectedVideo(null);
+        URL.revokeObjectURL(blobUrl);
+        return;
+      }
+      
+      if (!uploadRes.ok) {
+        throw new Error(`Upload failed: ${uploadRes.status}`);
+      }
+      
+      const uploadResult = await uploadRes.json();
+      
+      if (uploadResult.success && uploadResult.url) {
+        // Update video with cloud URL
+        const cloudVideo = {
+          ...tempVideo,
+          url: uploadResult.url,
+          videoUrl: uploadResult.url,
+          uploading: false
+        };
+        
+        setVideos(prev => {
+          const updated = prev.map(v => v.id === tempVideo.id ? cloudVideo : v);
+          localStorage.setItem('aiVideos', JSON.stringify(updated));
+          return updated;
+        });
+        setSelectedVideo(cloudVideo);
+        
+        URL.revokeObjectURL(blobUrl);
+        toast.success('Video uploaded successfully!');
+      } else {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error('Failed to upload: ' + err.message);
+      // Remove temp video on error
+      setVideos(prev => prev.filter(v => v.id !== tempVideo.id));
+      setSelectedVideo(null);
+      URL.revokeObjectURL(blobUrl);
     }
   };
 

@@ -1,7 +1,7 @@
 const express = require('express');
 const { auth } = require('../middleware/auth');
 const replicateService = require('../services/replicate');
-const { uploadToCloudinary } = require('../services/cloudinary');
+const { uploadToCloudinary, uploadBufferToCloudinary } = require('../services/cloudinary');
 const upload = require('../services/upload');
 const GeneratedVideo = require('../models/GeneratedVideo');
 
@@ -61,6 +61,31 @@ router.post('/status', auth, async (req, res) => {
     if (status === 'succeeded' && output) {
       let videoUrl = Array.isArray(output) ? output[0] : output;
       let shotstackJobId = null; // Declare at top level so it's accessible in response
+      
+      // ALWAYS upload to Cloudinary first - Replicate URLs expire!
+      if (videoUrl && videoUrl.includes('replicate.delivery')) {
+        console.log('📤 Uploading Replicate video to Cloudinary (URLs expire after a few hours)...');
+        try {
+          const fetch = (await import('node-fetch')).default;
+          const videoResponse = await fetch(videoUrl);
+          if (videoResponse.ok) {
+            const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+            const cloudinaryResult = await uploadBufferToCloudinary(videoBuffer, {
+              folder: 'instamarketing/ai-videos',
+              resource_type: 'video'
+            });
+            if (cloudinaryResult.success && cloudinaryResult.url) {
+              console.log('✅ Video uploaded to Cloudinary:', cloudinaryResult.url);
+              videoUrl = cloudinaryResult.url;
+            } else {
+              console.warn('⚠️ Cloudinary upload failed, using original URL');
+            }
+          }
+        } catch (uploadErr) {
+          console.error('⚠️ Cloudinary upload error:', uploadErr.message);
+          // Continue with Replicate URL (might still work if not expired)
+        }
+      }
       
       // Use config from request body (serverless stateless)
       const metadata = {

@@ -140,15 +140,27 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         console.log(`   Style mapping: "${requestedStyle}" -> "${finalStyle}"`);
         console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position} (${subtitle.start}s - ${subtitle.end}s)`);
 
-        // Using HtmlAsset for text overlay - more reliable than TextAsset
-        // HtmlAsset allows HTML/CSS styling and is well-supported
+        // Using 'text' asset type (the modern recommended approach)
+        // TextAsset replaces the deprecated TitleAsset and HtmlAsset
         const clip = {
           asset: {
-            type: 'html',
-            html: `<p style="font-family: 'Montserrat', sans-serif; font-size: 48px; font-weight: 700; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); text-align: center; padding: 20px; background: rgba(0,0,0,0.5); border-radius: 10px;">${subtitle.text}</p>`,
+            type: 'text',
+            text: subtitle.text,
+            font: {
+              family: 'Montserrat',
+              color: '#ffffff',
+              size: 42,
+              weight: 700
+            },
+            background: {
+              color: '#000000'
+            },
             width: 900,
-            height: 200,
-            background: 'transparent'
+            height: 150,
+            alignment: {
+              horizontal: 'center',
+              vertical: 'center'
+            }
           },
           start: subtitle.start,
           length: clipDuration,
