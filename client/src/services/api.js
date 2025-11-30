@@ -1,10 +1,9 @@
 import axios from 'axios';
 
-// Use relative URL in production to support custom domains
-// In development, use localhost:5000 via proxy or direct URL
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? '/api' 
-  : 'http://localhost:5000/api';
+// Use relative URL - the proxy in package.json handles routing to localhost:5000
+const API_URL = '/api';
+
+console.log('[API] Initializing with baseURL:', API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
@@ -15,6 +14,7 @@ const api = axios.create({
 
 // Add token to requests
 api.interceptors.request.use((config) => {
+  console.log('[API] Request:', config.method?.toUpperCase(), config.baseURL + config.url);
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -24,8 +24,12 @@ api.interceptors.request.use((config) => {
 
 // Handle response errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('[API] Response:', response.status, response.config.url);
+    return response;
+  },
   (error) => {
+    console.error('[API] Error:', error.response?.status, error.config?.url, error.message);
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token');

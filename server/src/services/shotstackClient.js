@@ -54,50 +54,42 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
     videoDuration = 6; // Default 6 seconds if nothing else
   }
 
-  // Build tracks array (bottom to top layering)
+  // Build tracks array - IMPORTANT: In Shotstack, tracks are layered with the FIRST track on TOP
+  // So we need to add text FIRST, then video LAST (so video is at the bottom)
   const tracks = [];
 
-  // Track 1: Main video (bottom layer)
-  tracks.push({
-    clips: [
-      {
-        asset: {
-          type: 'video',
-          src: videoUrl,
-          volume: videoVolume
-        },
-        start: 0,
-        length: videoDuration,
-        fit: 'cover', // Cover entire frame, crop if needed
-        scale: 1,
-        position: 'center'
-      }
-    ]
-  });
-
-  // Track 2: Subtitles/Text overlays (middle layer)
+  // We'll build text clips first, then add them to tracks array in correct order
+  let subtitleClips = [];
+  
+  // Build subtitle/text clips if any
   if (subtitles && subtitles.length > 0) {
     console.log('📝 Building subtitle/text clips:', subtitles.length, 'items');
+    console.log('📝 Raw subtitles data:', JSON.stringify(subtitles, null, 2));
     
     // Filter out invalid subtitles (must have text and valid duration)
-    const validSubtitles = subtitles.filter(sub => {
+    const validSubtitles = subtitles.filter((sub, idx) => {
+      console.log(`   [${idx}] Validating subtitle:`, JSON.stringify(sub));
+      
       if (!sub.text || sub.text.trim() === '') {
-        console.log('   Skipping empty text');
+        console.log(`   [${idx}] ❌ SKIPPED: Empty text`);
         return false;
       }
       if (typeof sub.start !== 'number' || typeof sub.end !== 'number') {
-        console.log('   Skipping invalid timing:', sub);
+        console.log(`   [${idx}] ❌ SKIPPED: Invalid timing - start: ${typeof sub.start} (${sub.start}), end: ${typeof sub.end} (${sub.end})`);
         return false;
       }
       if (sub.end <= sub.start) {
-        console.log('   Skipping zero/negative duration:', sub.start, '->', sub.end);
+        console.log(`   [${idx}] ❌ SKIPPED: Zero/negative duration - start: ${sub.start}, end: ${sub.end}, diff: ${sub.end - sub.start}`);
         return false;
       }
+      console.log(`   [${idx}] ✅ VALID: "${sub.text.substring(0, 20)}..." (${sub.start}s - ${sub.end}s, duration: ${sub.end - sub.start}s)`);
       return true;
     });
     
+    console.log(`📝 Valid subtitles after filtering: ${validSubtitles.length} of ${subtitles.length}`);
+    
     if (validSubtitles.length > 0) {
-      const subtitleClips = validSubtitles.map((subtitle, index) => {
+      subtitleClips = validSubtitles.map((subtitle, index) => {
         const isFirst = index === 0;
         const isLast = index === validSubtitles.length - 1;
         const clipDuration = Math.max(0.1, subtitle.end - subtitle.start); // Minimum 0.1s duration
@@ -125,31 +117,91 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
           offset = { x: 0, y: -0.35 };
         }
 
+        // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
+        const VALID_STYLES = ['minimal', 'blockbuster', 'vogue', 'sketchy', 'skinny', 'chunk', 'chunkLight', 'marker', 'future', 'subtitle'];
+        
+        // Map custom styles to valid Shotstack styles
+        const STYLE_MAP = {
+          'modern': 'blockbuster',
+          'classic': 'subtitle',
+          'bold': 'chunk',
+          'elegant': 'vogue',
+          'handwritten': 'marker',
+          'futuristic': 'future',
+          'simple': 'minimal',
+          'outline': 'skinny'
+        };
+        
+        let requestedStyle = subtitle.style || subtitleStyle.style || 'blockbuster';
+        let finalStyle = VALID_STYLES.includes(requestedStyle) 
+          ? requestedStyle 
+          : (STYLE_MAP[requestedStyle] || 'blockbuster');
+        
+        console.log(`   Style mapping: "${requestedStyle}" -> "${finalStyle}"`);
         console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position} (${subtitle.start}s - ${subtitle.end}s)`);
 
-        // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
-        return {
+        // Using HtmlAsset for text overlay - more reliable than TextAsset
+        // HtmlAsset allows HTML/CSS styling and is well-supported
+        const clip = {
           asset: {
-            type: 'title',
-            text: subtitle.text,
-            style: subtitle.style || subtitleStyle.style || 'blockbuster',
-            size: subtitleStyle.size || 'medium',
-            color: subtitleStyle.color || '#ffffff',
-            background: subtitleStyle.background || '#000000',
-            position: position,
-            offset: offset
+            type: 'html',
+            html: `<p style="font-family: 'Montserrat', sans-serif; font-size: 48px; font-weight: 700; color: #ffffff; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); text-align: center; padding: 20px; background: rgba(0,0,0,0.5); border-radius: 10px;">${subtitle.text}</p>`,
+            width: 900,
+            height: 200,
+            background: 'transparent'
           },
           start: subtitle.start,
           length: clipDuration,
+          position: position,
+          offset: offset,
           transition: Object.keys(transition).length > 0 ? transition : undefined
         };
+        
+        console.log(`   📦 Created clip ${index + 1}:`, JSON.stringify(clip, null, 2));
+        return clip;
       });
 
-      tracks.push({ clips: subtitleClips });
+      console.log(`   ✅ Adding ${subtitleClips.length} subtitle clips to timeline`);
+      // Store clips, we'll add them to tracks later in correct order
+    } else {
+      console.log('   ⚠️ No valid subtitles after filtering - text will NOT appear in video');
     }
   } else {
-    console.log('📝 No subtitles/text to render');
+    console.log('📝 No subtitles/text array provided or empty');
   }
+
+  // NOW build tracks in correct order
+  // Per Shotstack docs: "Tracks are layered on top of each other in the same order 
+  // they are added to the array with the TOP most track layered over those below it."
+  // This means FIRST track in array = TOP layer, LAST track = BOTTOM layer
+  // So we add TEXT FIRST (top), then VIDEO LAST (bottom)
+  
+  // Track 1: Subtitles/Text overlays (TOP layer - added FIRST!)
+  if (subtitleClips.length > 0) {
+    tracks.push({ clips: subtitleClips });
+    console.log(`   📊 Added text track as track ${tracks.length} (TOP layer - first in array)`);
+  }
+  
+  // Track 2: Main video (BOTTOM layer - added LAST!)
+  tracks.push({
+    clips: [
+      {
+        asset: {
+          type: 'video',
+          src: videoUrl,
+          volume: videoVolume
+        },
+        start: 0,
+        length: videoDuration,
+        fit: 'cover', // Cover entire frame, crop if needed
+        scale: 1,
+        position: 'center'
+      }
+    ]
+  });
+  console.log(`   📊 Added video track as track ${tracks.length} (BOTTOM layer - last in array)`);
+  
+  console.log(`   📊 Total tracks: ${tracks.length}`);
 
   // Build soundtrack object (not array!)
   let soundtrack = null;
@@ -211,7 +263,9 @@ async function createShotstackRender(videoUrl, audioUrl, subtitles = [], options
   // Build the timeline
   const editPayload = buildTimeline(videoUrl, audioUrl, subtitles, options);
 
-  console.log('📋 Timeline built:', JSON.stringify(editPayload, null, 2).substring(0, 500) + '...');
+  console.log('📋 Timeline built:', JSON.stringify(editPayload, null, 2));
+  console.log('📋 Full timeline JSON (for debugging):');
+  console.log(JSON.stringify(editPayload, null, 2));
 
   try {
     const response = await fetch(`${SHOTSTACK_HOST}/render`, {
@@ -249,7 +303,7 @@ async function createShotstackRender(videoUrl, audioUrl, subtitles = [], options
 }
 
 /**
- * Get the status of a render job
+ * Get the status of a render job with FULL details
  * 
  * @param {string} jobId - Shotstack render job ID
  * @returns {Promise<Object>} - { status, progress, url, error }
@@ -264,7 +318,8 @@ async function getRenderStatus(jobId) {
   }
 
   try {
-    const response = await fetch(`${SHOTSTACK_HOST}/render/${jobId}`, {
+    // Add ?data=true to get the full timeline data back
+    const response = await fetch(`${SHOTSTACK_HOST}/render/${jobId}?data=true`, {
       method: 'GET',
       headers: {
         'x-api-key': SHOTSTACK_API_KEY
@@ -280,11 +335,38 @@ async function getRenderStatus(jobId) {
     const renderResponse = data.response;
     const status = renderResponse.status;
 
+    // Log detailed render info
+    console.log(`📊 Render Status Details for ${jobId}:`);
+    console.log(`   Status: ${status}`);
+    console.log(`   Duration: ${renderResponse.duration || 'N/A'}s`);
+    console.log(`   Render Time: ${renderResponse.renderTime || 'N/A'}ms`);
+    
+    if (renderResponse.error) {
+      console.log(`   ❌ Error: ${renderResponse.error}`);
+    }
+    
+    // Log the tracks info if available
+    if (renderResponse.data?.timeline?.tracks) {
+      console.log(`   📹 Tracks in render:`);
+      renderResponse.data.timeline.tracks.forEach((track, i) => {
+        console.log(`      Track ${i + 1}: ${track.clips?.length || 0} clips`);
+        track.clips?.forEach((clip, j) => {
+          console.log(`         Clip ${j + 1}: type=${clip.asset?.type}, start=${clip.start}, length=${clip.length}`);
+          if (clip.asset?.type === 'text') {
+            console.log(`            Text: "${clip.asset.text}"`);
+          }
+        });
+      });
+    }
+
     return {
       status: status,
       progress: renderResponse.progress || 0,
       url: status === 'done' ? renderResponse.url : null,
       error: status === 'failed' ? (renderResponse.error || 'Render failed') : null,
+      duration: renderResponse.duration,
+      renderTime: renderResponse.renderTime,
+      data: renderResponse.data, // Include the full timeline data
       raw: renderResponse
     };
 

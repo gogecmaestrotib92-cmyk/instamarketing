@@ -294,23 +294,31 @@ const VideoEdit = () => {
   };
 
   const addTextOverlay = () => {
+    const videoDuration = duration || 5;
+    const textDuration = 3; // Default text duration
+    // If current time is near the end, adjust start time to fit the text
+    const adjustedStart = Math.min(currentTime, Math.max(0, videoDuration - textDuration));
     const newText = {
       id: Date.now(),
       text: 'Your text here',
       position: 'center',
       style: 'modern',
-      startTime: currentTime,
-      endTime: Math.min(currentTime + 3, duration || 5)
+      startTime: adjustedStart,
+      endTime: Math.min(adjustedStart + textDuration, videoDuration)
     };
     setTextOverlays([...textOverlays, newText]);
   };
 
   const addSubtitle = () => {
+    const videoDuration = duration || 5;
+    const subtitleDuration = 2; // Default subtitle duration
+    // If current time is near the end, adjust start time to fit the subtitle
+    const adjustedStart = Math.min(currentTime, Math.max(0, videoDuration - subtitleDuration));
     const newSubtitle = {
       id: Date.now(),
       text: 'Subtitle text',
-      startTime: currentTime,
-      endTime: Math.min(currentTime + 2, duration || 5)
+      startTime: adjustedStart,
+      endTime: Math.min(adjustedStart + subtitleDuration, videoDuration)
     };
     setSubtitles([...subtitles, newSubtitle]);
   };
