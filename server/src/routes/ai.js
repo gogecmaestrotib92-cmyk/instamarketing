@@ -8,9 +8,10 @@ const fetch = require('node-fetch');
 
 // Import Cloudinary for uploading assets before Shotstack
 let cloudinaryUpload = null;
+let cloudinaryService = null;
 try {
-  const cloudinary = require('../services/cloudinary');
-  cloudinaryUpload = cloudinary.uploadBufferToCloudinary;
+  cloudinaryService = require('../services/cloudinary');
+  cloudinaryUpload = cloudinaryService.uploadBufferToCloudinary;
   console.log('✅ Cloudinary loaded for AI routes');
 } catch (e) {
   console.log('Cloudinary not available:', e.message);
@@ -803,6 +804,148 @@ router.post('/upload-video', upload.single('video'), async (req, res) => {
     }
   } catch (error) {
     console.error('Video upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== Cloudinary Video Render (Alternative to Shotstack) ====================
+
+/**
+ * Render video with text overlays using Cloudinary transformations
+ * This is a simpler alternative to Shotstack that uses Cloudinary's built-in video transformations
+ * POST /api/ai/cloudinary/render
+ */
+router.post('/cloudinary/render', async (req, res) => {
+  try {
+    const { videoUrl, audioUrl, subtitles, options } = req.body;
+    
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'videoUrl is required' });
+    }
+    
+    if (!cloudinaryService) {
+      return res.status(503).json({ error: 'Cloudinary service not available' });
+    }
+    
+    console.log('🎬 Starting Cloudinary video render...');
+    console.log('   Video:', videoUrl);
+    console.log('   Audio:', audioUrl || 'none');
+    console.log('   Subtitles count:', subtitles?.length || 0);
+    
+    // Check if video is a Cloudinary URL
+    if (!videoUrl.includes('cloudinary.com')) {
+      return res.status(400).json({ 
+        error: 'Video must be uploaded to Cloudinary first. Please ensure the video URL is a Cloudinary URL.' 
+      });
+    }
+    
+    // Convert subtitles to text overlays format
+    const textOverlays = (subtitles || []).map(sub => ({
+      text: sub.text,
+      position: sub.position || 'bottom',
+      start: sub.start,
+      end: sub.end
+    }));
+    
+    // Generate the video URL with text overlays
+    // Note: Cloudinary URL transformations are instant but limited
+    // For more complex overlays, we'd need to use eager transformations
+    
+    if (textOverlays.length > 0) {
+      // For simplicity, we'll just add the first/main text overlay via URL
+      // Cloudinary's URL-based approach is limited for timed subtitles
+      const resultUrl = cloudinaryService.generateVideoWithTextOverlay(videoUrl, textOverlays);
+      
+      // Return immediately with the transformed URL
+      // Note: This is a "live" transformation, not pre-rendered
+      res.json({
+        success: true,
+        url: resultUrl,
+        status: 'done',
+        message: 'Video ready with text overlay (URL transformation)'
+      });
+    } else {
+      // No text overlays, return original video
+      res.json({
+        success: true,
+        url: videoUrl,
+        status: 'done',
+        message: 'No text overlays to add'
+      });
+    }
+  } catch (error) {
+    console.error('Cloudinary render error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Create a pre-rendered video with text overlays using Cloudinary eager transformations
+ * This actually processes and creates a new video file
+ * POST /api/ai/cloudinary/render-eager
+ */
+router.post('/cloudinary/render-eager', async (req, res) => {
+  try {
+    const { videoUrl, subtitles, options } = req.body;
+    
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'videoUrl is required' });
+    }
+    
+    if (!cloudinaryService) {
+      return res.status(503).json({ error: 'Cloudinary service not available' });
+    }
+    
+    console.log('🎬 Starting Cloudinary eager video render...');
+    console.log('   Video:', videoUrl);
+    console.log('   Subtitles count:', subtitles?.length || 0);
+    
+    // Extract public ID from the Cloudinary URL
+    if (!videoUrl.includes('cloudinary.com')) {
+      return res.status(400).json({ 
+        error: 'Video must be a Cloudinary URL' 
+      });
+    }
+    
+    // Parse public ID
+    const urlParts = videoUrl.split('/upload/');
+    if (urlParts.length !== 2) {
+      return res.status(400).json({ error: 'Invalid Cloudinary URL format' });
+    }
+    
+    const afterUpload = urlParts[1];
+    const publicIdWithExt = afterUpload.replace(/^v\d+\//, '');
+    const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+    
+    // Convert subtitles to text overlays
+    const textOverlays = (subtitles || []).map(sub => ({
+      text: sub.text,
+      position: sub.position || 'bottom'
+    }));
+    
+    if (textOverlays.length === 0) {
+      return res.json({
+        success: true,
+        url: videoUrl,
+        message: 'No text overlays to add'
+      });
+    }
+    
+    // Create video with eager transformation
+    const result = await cloudinaryService.createVideoWithTextOverlay(publicId, textOverlays);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        url: result.url,
+        publicId: result.publicId,
+        message: 'Video rendered with text overlays'
+      });
+    } else {
+      throw new Error(result.error || 'Render failed');
+    }
+  } catch (error) {
+    console.error('Cloudinary eager render error:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -488,8 +488,13 @@ const VideoEdit = () => {
         }
       }
       
-      // Step 1: Submit render job
-      const response = await fetch('/api/ai/shotstack/render', {
+      // Use Cloudinary for rendering (more reliable than Shotstack for text overlays)
+      console.log('Using Cloudinary render with subtitles:', subtitlesData);
+      setRenderProgress(20);
+      toast.info('Processing video with text overlays...');
+      
+      // Try the eager transformation for pre-rendered video
+      const response = await fetch('/api/ai/cloudinary/render-eager', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -506,50 +511,45 @@ const VideoEdit = () => {
       
       const result = await response.json();
       
-      if (!result.success || !result.jobId) {
-        throw new Error(result.error || 'Failed to start render');
-      }
-      
-      setRenderJobId(result.jobId);
-      setRenderProgress(20);
-      toast.info('Render started! This may take a minute...');
-      
-      // Step 2: Poll for completion
-      let attempts = 0;
-      const maxAttempts = 60;
-      
-      const pollInterval = setInterval(async () => {
-        attempts++;
+      if (!result.success) {
+        // Fallback to URL-based transformation
+        console.log('Eager transformation failed, trying URL transformation...');
+        const fallbackResponse = await fetch('/api/ai/cloudinary/render', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            videoUrl,
+            audioUrl,
+            subtitles: subtitlesData,
+            options: {
+              duration: duration || 5,
+              musicVolume: musicVolume / 100,
+              videoVolume: isMuted ? 0 : videoVolume / 100
+            }
+          })
+        });
         
-        try {
-          const statusRes = await fetch(`/api/ai/shotstack/status/${result.jobId}`);
-          const status = await statusRes.json();
-          
-          if (status.status === 'done' && status.url) {
-            clearInterval(pollInterval);
-            setRenderProgress(100);
-            setIsRendering(false);
-            setIsRendered(true);
-            setRenderedVideoUrl(status.url);
-            toast.success('Video rendered successfully!');
-          } else if (status.status === 'failed') {
-            clearInterval(pollInterval);
-            setIsRendering(false);
-            toast.error('Render failed: ' + (status.error || 'Unknown error'));
-          } else {
-            // Update progress
-            setRenderProgress(Math.min(20 + (status.progress || 0) * 0.8, 95));
-          }
-          
-          if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            setIsRendering(false);
-            toast.error('Render timed out. Please try again.');
-          }
-        } catch (pollError) {
-          console.error('Poll error:', pollError);
+        const fallbackResult = await fallbackResponse.json();
+        
+        if (fallbackResult.success && fallbackResult.url) {
+          setRenderProgress(100);
+          setIsRendering(false);
+          setIsRendered(true);
+          setRenderedVideoUrl(fallbackResult.url);
+          toast.success('Video rendered successfully!');
+        } else {
+          throw new Error(fallbackResult.error || 'Render failed');
         }
-      }, 5000);
+      } else if (result.url) {
+        // Success!
+        setRenderProgress(100);
+        setIsRendering(false);
+        setIsRendered(true);
+        setRenderedVideoUrl(result.url);
+        toast.success('Video rendered successfully!');
+      } else {
+        throw new Error('No URL returned from render');
+      }
       
     } catch (error) {
       console.error('Render error:', error);

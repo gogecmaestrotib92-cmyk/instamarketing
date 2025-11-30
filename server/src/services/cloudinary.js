@@ -127,10 +127,162 @@ const uploadBufferToCloudinary = async (buffer, options = {}) => {
   });
 };
 
+/**
+ * Generate video URL with text overlay using Cloudinary transformations
+ * @param {string} videoUrl - Original video URL (must be Cloudinary URL)
+ * @param {Array} textOverlays - Array of {text, position, start, end}
+ * @param {object} options - Additional options
+ * @returns {string} - Transformed video URL
+ */
+const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {}) => {
+  // Extract public ID from Cloudinary URL
+  // URL format: https://res.cloudinary.com/{cloud}/video/upload/{...}/{public_id}.mp4
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  
+  if (!videoUrl.includes('cloudinary.com')) {
+    console.warn('Video URL is not a Cloudinary URL, cannot add text overlay via URL');
+    return videoUrl;
+  }
+  
+  // Parse the URL to get the public ID
+  const urlParts = videoUrl.split('/upload/');
+  if (urlParts.length !== 2) {
+    return videoUrl;
+  }
+  
+  const afterUpload = urlParts[1];
+  // Remove version and get public ID with extension
+  const publicIdWithExt = afterUpload.replace(/^v\d+\//, '');
+  const publicId = publicIdWithExt.replace(/\.[^/.]+$/, ''); // Remove extension
+  
+  // Build transformation array
+  const transformations = [];
+  
+  // Add text overlays
+  textOverlays.forEach((overlay, index) => {
+    if (!overlay.text) return;
+    
+    // Encode text for URL (replace spaces with %20, etc)
+    const encodedText = encodeURIComponent(overlay.text).replace(/%20/g, '%20');
+    
+    // Determine gravity (position)
+    let gravity = 'south'; // default bottom
+    if (overlay.position === 'top') gravity = 'north';
+    else if (overlay.position === 'center' || overlay.position === 'middle') gravity = 'center';
+    
+    // Build text overlay transformation
+    // l_text: font_size_style:text
+    const textTransform = `l_text:Montserrat_48_bold:${encodedText},co_white,g_${gravity},y_100,b_rgb:00000080`;
+    
+    // Add timing if specified (so_start,eo_end in seconds)
+    let timing = '';
+    if (typeof overlay.start === 'number' && typeof overlay.end === 'number') {
+      timing = `,so_${overlay.start},eo_${overlay.end}`;
+    }
+    
+    transformations.push(textTransform + timing);
+  });
+  
+  // If no transformations, return original
+  if (transformations.length === 0) {
+    return videoUrl;
+  }
+  
+  // Build new URL with transformations
+  const transformString = transformations.join('/');
+  const newUrl = `https://res.cloudinary.com/${cloudName}/video/upload/${transformString}/${publicIdWithExt}`;
+  
+  console.log('📹 Generated Cloudinary video with text overlay:', newUrl);
+  return newUrl;
+};
+
+/**
+ * Create video with text overlay using Cloudinary's eager transformation
+ * This creates a new video file with the text baked in
+ * @param {string} publicId - Cloudinary public ID of the video
+ * @param {Array} textOverlays - Array of {text, position}
+ * @param {object} options - Additional options
+ * @returns {Promise<object>} - Result with new video URL
+ */
+const createVideoWithTextOverlay = async (publicId, textOverlays = [], options = {}) => {
+  try {
+    if (!textOverlays || textOverlays.length === 0) {
+      return {
+        success: false,
+        error: 'No text overlays provided'
+      };
+    }
+    
+    // Build transformation array for text overlays
+    const overlayTransformations = textOverlays.map((overlay) => {
+      if (!overlay.text) return null;
+      
+      let gravity = 'south';
+      let y = 100;
+      if (overlay.position === 'top') {
+        gravity = 'north';
+        y = 100;
+      } else if (overlay.position === 'center' || overlay.position === 'middle') {
+        gravity = 'center';
+        y = 0;
+      }
+      
+      return {
+        overlay: {
+          font_family: 'Montserrat',
+          font_size: 48,
+          font_weight: 'bold',
+          text: overlay.text
+        },
+        gravity: gravity,
+        y: y,
+        color: 'white',
+        background: 'rgb:00000080'
+      };
+    }).filter(Boolean);
+    
+    // Use explicit API to create a new rendition
+    const result = await cloudinary.uploader.explicit(publicId, {
+      type: 'upload',
+      resource_type: 'video',
+      eager: [
+        {
+          transformation: overlayTransformations,
+          format: 'mp4'
+        }
+      ],
+      eager_async: false // Wait for transformation to complete
+    });
+    
+    if (result.eager && result.eager[0]) {
+      return {
+        success: true,
+        url: result.eager[0].secure_url,
+        publicId: result.public_id,
+        width: result.eager[0].width,
+        height: result.eager[0].height
+      };
+    }
+    
+    return {
+      success: false,
+      error: 'Failed to generate eager transformation'
+    };
+  } catch (error) {
+    console.error('Cloudinary video overlay error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
 module.exports = {
   cloudinary,
   uploadToCloudinary,
   uploadMultipleToCloudinary,
   deleteFromCloudinary,
-  uploadBufferToCloudinary
+  uploadBufferToCloudinary,
+  generateVideoWithTextOverlay,
+  createVideoWithTextOverlay
 };
