@@ -1,16 +1,81 @@
 /* ================================================
-   DASHBOARD - 2-Column Layout
-   Clean, Subtle Borders, Dark Theme, Good Spacing
+   DASHBOARD - Simplified for Beta
+   Clean, Centered Instagram Connection Card
    ================================================ */
 
 /* Container */
 .dashboard {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 28px 24px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* Dashboard Content */
+.dashboard-content {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+/* Instagram Card - Centered and Prominent */
+.instagram-card {
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.instagram-card .card-header {
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.instagram-card .card-title {
+  justify-content: center;
+}
+
+.instagram-card .card-icon.instagram {
+  font-size: 2rem;
+  color: #E4405F;
+}
+
+/* Connect Prompt Styling */
+.connect-prompt {
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.connect-prompt .connect-icon {
+  font-size: 4rem;
+  color: #E4405F;
+  margin-bottom: 8px;
+}
+
+.connect-prompt h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.connect-prompt p {
+  color: #94a3b8;
+  font-size: 1rem;
+  margin: 0;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+.connect-prompt .btn-primary {
+  margin-top: 8px;
+  padding: 12px 32px;
+  font-size: 1rem;
 }
 
 /* Loading */

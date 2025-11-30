@@ -1,20 +1,17 @@
 import React from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   FiHome, 
   FiImage, 
   FiFilm, 
-  FiTarget, 
-  FiCalendar, 
-  FiBarChart2, 
   FiSettings,
   FiLogOut,
   FiMenu,
   FiX,
   FiZap,
-  FiCpu,
-  FiVideo
+  FiChevronDown,
+  FiEdit3
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import './Layout.css';
@@ -22,23 +19,40 @@ import './Layout.css';
 const Layout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [expandedItems, setExpandedItems] = React.useState({});
+
+  // Auto-expand parent when child is active
+  React.useEffect(() => {
+    if (location.pathname.startsWith('/app/ai-video')) {
+      setExpandedItems(prev => ({ ...prev, 'ai-video': true }));
+    }
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const toggleExpand = (key) => {
+    setExpandedItems(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const navItems = [
     { path: '/app/dashboard', icon: FiHome, label: 'Dashboard' },
     { path: '/app/posts', icon: FiImage, label: 'Posts' },
     { path: '/app/reels', icon: FiFilm, label: 'Reels' },
-    { path: '/app/ai-video', icon: FiZap, label: 'AI Video', badge: 'NEW' },
-    { path: '/app/ai-tools', icon: FiCpu, label: 'AI Tools', badge: 'NEW' },
-    { path: '/app/advanced-video', icon: FiVideo, label: 'Advanced Video', badge: 'PRO' },
-    { path: '/app/campaigns', icon: FiTarget, label: 'Campaigns' },
-    { path: '/app/schedule', icon: FiCalendar, label: 'Schedule' },
-    { path: '/app/analytics', icon: FiBarChart2, label: 'Analytics' },
+    { 
+      path: '/app/ai-video', 
+      icon: FiZap, 
+      label: 'AI Video', 
+      badge: 'NEW',
+      key: 'ai-video',
+      children: [
+        { path: '/app/ai-video/edit', icon: FiEdit3, label: 'Edit' }
+      ]
+    },
     { path: '/app/settings', icon: FiSettings, label: 'Settings' }
   ];
 
@@ -69,20 +83,64 @@ const Layout = () => {
 
         <nav className="sidebar-nav" aria-label="Main navigation">
           {navItems.map(item => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <item.icon className="nav-icon" aria-hidden="true" />
-              <span>{item.label}</span>
-              {item.badge && (
-                <span className={`nav-badge ${item.badge.toLowerCase()}`}>
-                  {item.badge}
-                </span>
+            <div key={item.path} className="nav-item-wrapper">
+              {item.children ? (
+                <>
+                  <div 
+                    className={`nav-item nav-item-parent ${location.pathname.startsWith(item.path) ? 'active' : ''}`}
+                    onClick={() => toggleExpand(item.key)}
+                  >
+                    <item.icon className="nav-icon" aria-hidden="true" />
+                    <span>{item.label}</span>
+                    {item.badge && (
+                      <span className={`nav-badge ${item.badge.toLowerCase()}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                    <FiChevronDown 
+                      className={`nav-expand-icon ${expandedItems[item.key] ? 'expanded' : ''}`} 
+                      aria-hidden="true" 
+                    />
+                  </div>
+                  <div className={`nav-children ${expandedItems[item.key] ? 'expanded' : ''}`}>
+                    <NavLink
+                      to={item.path}
+                      end
+                      className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
+                      onClick={() => setSidebarOpen(false)}
+                    >
+                      <item.icon className="nav-icon" aria-hidden="true" />
+                      <span>Generate</span>
+                    </NavLink>
+                    {item.children.map(child => (
+                      <NavLink
+                        key={child.path}
+                        to={child.path}
+                        className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <child.icon className="nav-icon" aria-hidden="true" />
+                        <span>{child.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon className="nav-icon" aria-hidden="true" />
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className={`nav-badge ${item.badge.toLowerCase()}`}>
+                      {item.badge}
+                    </span>
+                  )}
+                </NavLink>
               )}
-            </NavLink>
+            </div>
           ))}
         </nav>
 

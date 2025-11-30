@@ -649,4 +649,121 @@ router.post('/reel/finalize', async (req, res) => {
   }
 });
 
+// ==================== Video Edit Render Routes ====================
+
+/**
+ * Start a video render job with music and subtitles
+ * POST /api/ai/shotstack/render
+ */
+router.post('/shotstack/render', async (req, res) => {
+  try {
+    const { videoUrl, audioUrl, subtitles, options } = req.body;
+    
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'videoUrl is required' });
+    }
+    
+    if (!shotstackClient) {
+      return res.status(503).json({ error: 'Shotstack service not available' });
+    }
+    
+    console.log('🎬 Starting video edit render...');
+    console.log('   Video:', videoUrl);
+    console.log('   Audio:', audioUrl || 'none');
+    console.log('   Subtitles:', subtitles?.length || 0);
+    
+    const jobResult = await shotstackClient.createShotstackRender(
+      videoUrl,
+      audioUrl,
+      subtitles || [],
+      {
+        duration: options?.duration,
+        musicVolume: options?.musicVolume || 1,
+        videoVolume: options?.videoVolume || 0
+      }
+    );
+    
+    if (jobResult.success && jobResult.jobId) {
+      res.json({
+        success: true,
+        jobId: jobResult.jobId,
+        message: 'Render job started'
+      });
+    } else {
+      throw new Error(jobResult.error || 'Failed to start render job');
+    }
+  } catch (error) {
+    console.error('Shotstack render error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get render job status
+ * GET /api/ai/shotstack/status/:jobId
+ */
+router.get('/shotstack/status/:jobId', async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    
+    if (!jobId) {
+      return res.status(400).json({ error: 'jobId is required' });
+    }
+    
+    if (!shotstackClient) {
+      return res.status(503).json({ error: 'Shotstack service not available' });
+    }
+    
+    const status = await shotstackClient.getRenderStatus(jobId);
+    res.json(status);
+  } catch (error) {
+    console.error('Shotstack status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Upload video to Cloudinary for rendering
+ * POST /api/ai/upload-video
+ */
+const multer = require('multer');
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+});
+
+router.post('/upload-video', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No video file provided' });
+    }
+    
+    if (!cloudinaryUpload) {
+      return res.status(503).json({ error: 'Cloudinary service not available' });
+    }
+    
+    console.log('📤 Uploading video to Cloudinary...');
+    console.log('   Size:', (req.file.size / 1024 / 1024).toFixed(2), 'MB');
+    
+    const result = await cloudinaryUpload(req.file.buffer, {
+      resource_type: 'video',
+      folder: 'instamarketing/videos'
+    });
+    
+    if (result.success) {
+      console.log('✅ Video uploaded:', result.url);
+      res.json({
+        success: true,
+        url: result.url,
+        publicId: result.publicId
+      });
+    } else {
+      throw new Error(result.error || 'Upload failed');
+    }
+  } catch (error) {
+    console.error('Video upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

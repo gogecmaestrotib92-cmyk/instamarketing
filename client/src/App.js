@@ -25,6 +25,7 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import InstagramCallback from './pages/InstagramCallback';
 import AIVideo from './pages/AIVideo';
+import VideoEdit from './pages/VideoEdit';
 import AITools from './pages/AITools';
 import AdvancedVideoGenerator from './pages/AdvancedVideoGenerator';
 
@@ -136,6 +137,7 @@ function AppRoutes() {
         <Route path="reels/create" element={<CreateReel />} />
         <Route path="reels/edit/:id" element={<CreateReel />} />
         <Route path="ai-video" element={<AIVideo />} />
+        <Route path="ai-video/edit" element={<VideoEdit />} />
         <Route path="ai-tools" element={<AITools />} />
         <Route path="advanced-video" element={<AdvancedVideoGenerator />} />
         <Route path="campaigns" element={<Campaigns />} />
