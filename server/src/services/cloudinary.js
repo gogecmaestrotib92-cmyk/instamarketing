@@ -188,13 +188,15 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
       'top-left': 'north_west',
       'top-center': 'north',
       'top-right': 'north_east',
-      'middle-left': 'west',
+      'center-left': 'west',
       'center': 'center',
-      'middle-right': 'east',
+      'center-right': 'east',
       'bottom-left': 'south_west',
       'bottom-center': 'south',
       'bottom-right': 'south_east',
       // Legacy support
+      'middle-left': 'west',
+      'middle-right': 'east',
       'top': 'north',
       'middle': 'center',
       'bottom': 'south'
@@ -206,17 +208,34 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     // Get font size (default 42)
     const fontSize = overlay.fontSize || overlay.style?.fontSize || 42;
     
-    // Get offsets (default 0) + base offset for edge positions
-    let xOffset = overlay.offsetX || 0;
-    let yOffset = overlay.offsetY || 0;
+    // Get user offsets (default 0)
+    const userOffsetX = overlay.offsetX || 0;
+    const userOffsetY = overlay.offsetY || 0;
     
-    // Add base padding for edge positions
-    if (gravity.includes('north') || gravity.includes('south')) {
-      yOffset += 50; // Base padding from top/bottom edge
+    // Calculate precise base offsets for each position
+    // These values match the preview CSS for pixel-perfect accuracy
+    let baseX = 0;
+    let baseY = 0;
+    
+    // Vertical positioning
+    if (gravity.includes('north')) {
+      baseY = 40; // 40px from top edge
+    } else if (gravity.includes('south')) {
+      baseY = 100; // 100px from bottom edge (above controls)
     }
-    if (gravity.includes('west') || gravity.includes('east')) {
-      xOffset += 30; // Base padding from left/right edge
+    // Center vertical has no base offset
+    
+    // Horizontal positioning  
+    if (gravity.includes('west')) {
+      baseX = 40; // 40px from left edge
+    } else if (gravity.includes('east')) {
+      baseX = 40; // 40px from right edge
     }
+    // Center horizontal has no base offset
+    
+    // Final offsets = base + user adjustment
+    const xOffset = baseX + userOffsetX;
+    const yOffset = baseY + userOffsetY;
     
     // Build text overlay transformation with text wrapping
     // c_fit,w_800 makes text wrap at 800px width
