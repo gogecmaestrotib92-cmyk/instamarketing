@@ -771,6 +771,51 @@ router.post('/upload-audio', upload.single('audio'), async (req, res) => {
 });
 
 /**
+ * Transfer video from external URL to Cloudinary
+ * POST /api/ai/transfer-to-cloudinary
+ */
+router.post('/transfer-to-cloudinary', async (req, res) => {
+  try {
+    const { videoUrl } = req.body;
+    
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'videoUrl is required' });
+    }
+    
+    if (!cloudinaryService) {
+      return res.status(503).json({ error: 'Cloudinary service not available' });
+    }
+    
+    // If already a Cloudinary URL, just return it
+    if (videoUrl.includes('cloudinary.com')) {
+      return res.json({ success: true, url: videoUrl });
+    }
+    
+    console.log('📤 Transferring video to Cloudinary:', videoUrl);
+    
+    // Upload directly from URL using Cloudinary's upload API
+    const result = await cloudinaryService.uploadToCloudinary(videoUrl, {
+      resource_type: 'video',
+      folder: 'instamarketing/videos'
+    });
+    
+    if (result.success) {
+      console.log('✅ Video transferred:', result.url);
+      res.json({
+        success: true,
+        url: result.url,
+        publicId: result.publicId
+      });
+    } else {
+      throw new Error(result.error || 'Transfer failed');
+    }
+  } catch (error) {
+    console.error('Video transfer error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * Upload video to Cloudinary for rendering
  * POST /api/ai/upload-video
  */

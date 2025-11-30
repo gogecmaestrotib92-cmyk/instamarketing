@@ -479,6 +479,32 @@ const VideoEdit = () => {
       } else if (isCloudUrl) {
         console.log('Using existing cloud URL:', videoUrl);
         setRenderProgress(15);
+        
+        // If it's not a Cloudinary URL, we need to upload it to Cloudinary for text overlays
+        if (!videoUrl.includes('cloudinary.com')) {
+          toast.info('Transferring video to Cloudinary for text overlays...');
+          try {
+            // Use server endpoint to download and re-upload to Cloudinary
+            const transferRes = await fetch('/api/ai/transfer-to-cloudinary', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ videoUrl })
+            });
+            
+            if (transferRes.ok) {
+              const transferResult = await transferRes.json();
+              if (transferResult.success && transferResult.url) {
+                videoUrl = transferResult.url;
+                toast.success('Video transferred to Cloudinary!');
+              }
+            } else {
+              console.warn('Transfer failed, will try render anyway');
+            }
+          } catch (transferError) {
+            console.warn('Transfer error:', transferError);
+            // Continue anyway, render might still work
+          }
+        }
       } else if (videoUrl.includes('localhost')) {
         // Local server URL won't work in production
         if (window.location.hostname !== 'localhost') {
