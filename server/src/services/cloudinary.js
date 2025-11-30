@@ -173,17 +173,31 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
   textOverlays.forEach((overlay, index) => {
     if (!overlay.text) return;
     
-    // Encode text for URL (replace spaces with %20, etc)
-    const encodedText = encodeURIComponent(overlay.text).replace(/%20/g, '%20');
+    // Encode text for URL - need to double-escape special characters
+    // Replace spaces with %20, and escape % signs for Cloudinary
+    let encodedText = overlay.text
+      .replace(/%/g, '%25')  // Escape percent signs first
+      .replace(/,/g, '%252C') // Double-escape commas
+      .replace(/\//g, '%252F') // Double-escape slashes
+      .replace(/\n/g, '%250A'); // Newlines
+    encodedText = encodeURIComponent(encodedText)
+      .replace(/%25/g, '%'); // Restore single-escaped percent signs
     
     // Determine gravity (position)
     let gravity = 'south'; // default bottom
-    if (overlay.position === 'top') gravity = 'north';
-    else if (overlay.position === 'center' || overlay.position === 'middle') gravity = 'center';
+    let yOffset = 80;
+    if (overlay.position === 'top') {
+      gravity = 'north';
+      yOffset = 80;
+    } else if (overlay.position === 'center' || overlay.position === 'middle') {
+      gravity = 'center';
+      yOffset = 0;
+    }
     
-    // Build text overlay transformation
-    // l_text: font_size_style:text
-    const textTransform = `l_text:Montserrat_48_bold:${encodedText},co_white,g_${gravity},y_100,b_rgb:00000080/fl_layer_apply`;
+    // Build text overlay transformation with text wrapping
+    // c_fit,w_800 makes text wrap at 800px width
+    // text_align:center centers multi-line text
+    const textTransform = `l_text:Montserrat_42_bold_center:${encodedText},co_white,g_${gravity},y_${yOffset},b_rgb:00000080,c_fit,w_800/fl_layer_apply`;
     
     transformations.push(textTransform);
   });
