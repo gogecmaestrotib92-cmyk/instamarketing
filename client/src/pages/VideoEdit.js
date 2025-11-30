@@ -301,8 +301,11 @@ const VideoEdit = () => {
     const newText = {
       id: Date.now(),
       text: 'Your text here',
-      position: 'center',
+      position: 'bottom-center', // 9-grid: top-left, top-center, top-right, center-left, center, center-right, bottom-left, bottom-center, bottom-right
       style: 'modern',
+      fontSize: 42,
+      offsetX: 0,
+      offsetY: 0,
       startTime: adjustedStart,
       endTime: Math.min(adjustedStart + textDuration, videoDuration)
     };
@@ -1115,7 +1118,14 @@ const VideoEdit = () => {
                   currentTime >= overlay.startTime && currentTime <= overlay.endTime && (
                     <div 
                       key={overlay.id} 
-                      className={`preview-text-overlay position-${overlay.position} style-${overlay.style}`}
+                      className={`preview-text-overlay position-${overlay.position || 'bottom-center'} style-${overlay.style || 'modern'}`}
+                      style={{
+                        fontSize: `${overlay.fontSize || 18}px`,
+                        transform: `translate(calc(-50% + ${overlay.offsetX || 0}px), ${overlay.offsetY || 0}px)`,
+                        maxWidth: '90%',
+                        wordWrap: 'break-word',
+                        textAlign: 'center'
+                      }}
                     >
                       {overlay.text}
                     </div>
@@ -1472,31 +1482,93 @@ const VideoEdit = () => {
                   {textOverlays.length > 0 && (
                     <div className="text-list">
                       {textOverlays.map(overlay => (
-                        <div key={overlay.id} className="text-item">
-                          <input 
-                            type="text" 
-                            value={overlay.text}
-                            onChange={(e) => {
-                              setTextOverlays(textOverlays.map(t => 
-                                t.id === overlay.id ? { ...t, text: e.target.value } : t
-                              ));
-                            }}
-                          />
-                          <select 
-                            value={overlay.position}
-                            onChange={(e) => {
-                              setTextOverlays(textOverlays.map(t => 
-                                t.id === overlay.id ? { ...t, position: e.target.value } : t
-                              ));
-                            }}
-                          >
-                            <option value="top">Top</option>
-                            <option value="center">Center</option>
-                            <option value="bottom">Bottom</option>
-                          </select>
-                          <button onClick={() => setTextOverlays(textOverlays.filter(t => t.id !== overlay.id))}>
-                            <FiX />
-                          </button>
+                        <div key={overlay.id} className="text-item-enhanced">
+                          <div className="text-item-row">
+                            <input 
+                              type="text" 
+                              value={overlay.text}
+                              placeholder="Enter text..."
+                              className="text-input-main"
+                              onChange={(e) => {
+                                setTextOverlays(textOverlays.map(t => 
+                                  t.id === overlay.id ? { ...t, text: e.target.value } : t
+                                ));
+                              }}
+                            />
+                            <button className="text-delete-btn" onClick={() => setTextOverlays(textOverlays.filter(t => t.id !== overlay.id))}>
+                              <FiX />
+                            </button>
+                          </div>
+                          <div className="text-item-controls">
+                            <div className="control-group">
+                              <label>Position</label>
+                              <select 
+                                value={overlay.position || 'bottom-center'}
+                                onChange={(e) => {
+                                  setTextOverlays(textOverlays.map(t => 
+                                    t.id === overlay.id ? { ...t, position: e.target.value } : t
+                                  ));
+                                }}
+                              >
+                                <optgroup label="Top">
+                                  <option value="top-left">↖ Top Left</option>
+                                  <option value="top-center">↑ Top Center</option>
+                                  <option value="top-right">↗ Top Right</option>
+                                </optgroup>
+                                <optgroup label="Middle">
+                                  <option value="center-left">← Center Left</option>
+                                  <option value="center">● Center</option>
+                                  <option value="center-right">→ Center Right</option>
+                                </optgroup>
+                                <optgroup label="Bottom">
+                                  <option value="bottom-left">↙ Bottom Left</option>
+                                  <option value="bottom-center">↓ Bottom Center</option>
+                                  <option value="bottom-right">↘ Bottom Right</option>
+                                </optgroup>
+                              </select>
+                            </div>
+                            <div className="control-group">
+                              <label>Size</label>
+                              <input 
+                                type="range" 
+                                min="12" 
+                                max="72" 
+                                value={overlay.fontSize || 42}
+                                onChange={(e) => {
+                                  setTextOverlays(textOverlays.map(t => 
+                                    t.id === overlay.id ? { ...t, fontSize: parseInt(e.target.value) } : t
+                                  ));
+                                }}
+                              />
+                              <span className="size-value">{overlay.fontSize || 42}px</span>
+                            </div>
+                          </div>
+                          <div className="text-item-offsets">
+                            <div className="offset-group">
+                              <label>X Offset</label>
+                              <input 
+                                type="number" 
+                                value={overlay.offsetX || 0}
+                                onChange={(e) => {
+                                  setTextOverlays(textOverlays.map(t => 
+                                    t.id === overlay.id ? { ...t, offsetX: parseInt(e.target.value) || 0 } : t
+                                  ));
+                                }}
+                              />
+                            </div>
+                            <div className="offset-group">
+                              <label>Y Offset</label>
+                              <input 
+                                type="number" 
+                                value={overlay.offsetY || 0}
+                                onChange={(e) => {
+                                  setTextOverlays(textOverlays.map(t => 
+                                    t.id === overlay.id ? { ...t, offsetY: parseInt(e.target.value) || 0 } : t
+                                  ));
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>

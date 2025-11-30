@@ -183,21 +183,56 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     encodedText = encodeURIComponent(encodedText)
       .replace(/%25/g, '%'); // Restore single-escaped percent signs
     
-    // Determine gravity (position)
-    let gravity = 'south'; // default bottom
-    let yOffset = 80;
-    if (overlay.position === 'top') {
-      gravity = 'north';
-      yOffset = 80;
-    } else if (overlay.position === 'center' || overlay.position === 'middle') {
-      gravity = 'center';
-      yOffset = 0;
+    // Map 9-position grid to Cloudinary gravity
+    const positionToGravity = {
+      'top-left': 'north_west',
+      'top-center': 'north',
+      'top-right': 'north_east',
+      'middle-left': 'west',
+      'center': 'center',
+      'middle-right': 'east',
+      'bottom-left': 'south_west',
+      'bottom-center': 'south',
+      'bottom-right': 'south_east',
+      // Legacy support
+      'top': 'north',
+      'middle': 'center',
+      'bottom': 'south'
+    };
+    
+    // Determine gravity (position) - default to bottom-center
+    const gravity = positionToGravity[overlay.position] || 'south';
+    
+    // Get font size (default 42)
+    const fontSize = overlay.fontSize || overlay.style?.fontSize || 42;
+    
+    // Get offsets (default 0) + base offset for edge positions
+    let xOffset = overlay.offsetX || 0;
+    let yOffset = overlay.offsetY || 0;
+    
+    // Add base padding for edge positions
+    if (gravity.includes('north') || gravity.includes('south')) {
+      yOffset += 50; // Base padding from top/bottom edge
+    }
+    if (gravity.includes('west') || gravity.includes('east')) {
+      xOffset += 30; // Base padding from left/right edge
     }
     
     // Build text overlay transformation with text wrapping
     // c_fit,w_800 makes text wrap at 800px width
     // text_align:center centers multi-line text
-    const textTransform = `l_text:Montserrat_42_bold_center:${encodedText},co_white,g_${gravity},y_${yOffset},b_rgb:00000080,c_fit,w_800/fl_layer_apply`;
+    let textTransform = `l_text:Montserrat_${fontSize}_bold_center:${encodedText},co_white,g_${gravity}`;
+    
+    // Add offsets if non-zero
+    if (xOffset !== 0) {
+      textTransform += `,x_${xOffset}`;
+    }
+    if (yOffset !== 0) {
+      textTransform += `,y_${yOffset}`;
+    }
+    
+    // Add background and text wrapping
+    textTransform += `,b_rgb:00000080,c_fit,w_800/fl_layer_apply`;
     
     transformations.push(textTransform);
   });
