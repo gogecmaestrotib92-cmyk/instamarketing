@@ -90,7 +90,8 @@ router.post('/', auth, async (req, res) => {
     console.log('🎬 Starting video render...');
     console.log('   Video URL:', videoUrl);
     console.log('   Audio URL:', audioUrl || 'none');
-    console.log('   Subtitles:', subtitles?.length || 0);
+    console.log('   Subtitles count:', subtitles?.length || 0);
+    console.log('   Subtitles data:', JSON.stringify(subtitles, null, 2));
 
     // Perform full render workflow
     const result = await renderVideo(videoUrl, audioUrl, subtitles || [], {

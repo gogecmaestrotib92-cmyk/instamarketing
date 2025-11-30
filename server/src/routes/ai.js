@@ -670,10 +670,8 @@ router.post('/shotstack/render', async (req, res) => {
     console.log('🎬 Starting video edit render...');
     console.log('   Video:', videoUrl);
     console.log('   Audio:', audioUrl || 'none');
-    console.log('   Subtitles/Text count:', subtitles?.length || 0);
-    if (subtitles && subtitles.length > 0) {
-      console.log('   Subtitles data:', JSON.stringify(subtitles, null, 2));
-    }
+    console.log('   Subtitles count:', subtitles?.length || 0);
+    console.log('   Subtitles received:', JSON.stringify(subtitles, null, 2));
     console.log('   Options:', JSON.stringify(options, null, 2));
     
     const jobResult = await shotstackClient.createShotstackRender(
@@ -688,7 +686,6 @@ router.post('/shotstack/render', async (req, res) => {
     );
     
     if (jobResult.success && jobResult.jobId) {
-      console.log('✅ Render job created:', jobResult.jobId);
       res.json({
         success: true,
         jobId: jobResult.jobId,

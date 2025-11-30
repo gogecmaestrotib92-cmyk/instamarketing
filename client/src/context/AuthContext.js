@@ -37,14 +37,25 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const response = await api.post('/auth/login', { email, password });
-    const { token, user } = response.data;
+    console.log('[AUTH] Attempting login with email:', email);
+    console.log('[AUTH] API base URL:', api.defaults.baseURL);
     
-    localStorage.setItem('token', token);
-    setUser(user);
-    setIsAuthenticated(true);
-    
-    return user;
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      console.log('[AUTH] Login response:', response.data);
+      const { token, user } = response.data;
+      
+      localStorage.setItem('token', token);
+      setUser(user);
+      setIsAuthenticated(true);
+      
+      return user;
+    } catch (error) {
+      console.error('[AUTH] Login error:', error);
+      console.error('[AUTH] Error response:', error.response?.data);
+      console.error('[AUTH] Error status:', error.response?.status);
+      throw error;
+    }
   };
 
   const register = async (name, email, password, company) => {

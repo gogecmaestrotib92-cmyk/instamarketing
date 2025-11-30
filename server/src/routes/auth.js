@@ -52,43 +52,64 @@ router.post('/register', async (req, res) => {
 
 // Login
 router.post('/login', async (req, res) => {
+  console.log('[AUTH] Login request received');
+  console.log('[AUTH] Request body:', req.body);
+  
   try {
     const { email, password } = req.body;
+    console.log('[AUTH] Email:', email, 'Password length:', password?.length);
 
     if (!email || !password) {
+      console.log('[AUTH] Missing email or password');
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
     // Find user
+    console.log('[AUTH] Searching for user with email:', email);
     const user = await User.findOne({ email });
+    console.log('[AUTH] User found:', !!user);
     if (!user) {
+      console.log('[AUTH] User not found');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    console.log('[AUTH] Comparing password...');
+    console.log('[AUTH] User password hash exists:', !!user.password);
+    try {
+      const isMatch = await user.comparePassword(password);
+      console.log('[AUTH] Password match:', isMatch);
+      if (!isMatch) {
+        console.log('[AUTH] Password does not match');
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+    } catch (pwError) {
+      console.error('[AUTH] Password comparison error:', pwError);
+      return res.status(500).json({ error: 'Password verification failed' });
     }
 
     // Update last login
+    console.log('[AUTH] Updating last login...');
     user.lastLogin = new Date();
     await user.save();
 
     // Generate token
+    console.log('[AUTH] Generating JWT token...');
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '7d' }
     );
+    console.log('[AUTH] Token generated, sending response...');
 
     res.json({
       message: 'Login successful',
       token,
       user: user.toJSON()
     });
+    console.log('[AUTH] Login successful for:', email);
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[AUTH] Login error:', error);
     res.status(500).json({ error: 'Login failed' });
   }
 });
