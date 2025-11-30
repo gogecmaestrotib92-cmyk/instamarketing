@@ -128,10 +128,10 @@ const uploadBufferToCloudinary = async (buffer, options = {}) => {
 };
 
 /**
- * Generate video URL with text overlay using Cloudinary transformations
+ * Generate video URL with text overlay and optional audio using Cloudinary transformations
  * @param {string} videoUrl - Original video URL (must be Cloudinary URL)
  * @param {Array} textOverlays - Array of {text, position, start, end}
- * @param {object} options - Additional options
+ * @param {object} options - Additional options including audioUrl, audioPublicId
  * @returns {string} - Transformed video URL
  */
 const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {}) => {
@@ -158,6 +158,17 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
   // Build transformation array
   const transformations = [];
   
+  // Add audio overlay if provided (mute original video first, then add audio)
+  if (options.audioPublicId) {
+    // Mute original video audio
+    transformations.push('ac_none');
+    // Add audio overlay - replace slashes with colons for public ID
+    const audioId = options.audioPublicId.replace(/\//g, ':');
+    // Apply volume if specified
+    const volume = options.musicVolume !== undefined ? Math.round(options.musicVolume * 100) : 100;
+    transformations.push(`l_audio:${audioId}/e_volume:${volume}/fl_layer_apply`);
+  }
+  
   // Add text overlays
   textOverlays.forEach((overlay, index) => {
     if (!overlay.text) return;
@@ -172,15 +183,9 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     
     // Build text overlay transformation
     // l_text: font_size_style:text
-    const textTransform = `l_text:Montserrat_48_bold:${encodedText},co_white,g_${gravity},y_100,b_rgb:00000080`;
+    const textTransform = `l_text:Montserrat_48_bold:${encodedText},co_white,g_${gravity},y_100,b_rgb:00000080/fl_layer_apply`;
     
-    // Add timing if specified (so_start,eo_end in seconds)
-    let timing = '';
-    if (typeof overlay.start === 'number' && typeof overlay.end === 'number') {
-      timing = `,so_${overlay.start},eo_${overlay.end}`;
-    }
-    
-    transformations.push(textTransform + timing);
+    transformations.push(textTransform);
   });
   
   // If no transformations, return original

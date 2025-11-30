@@ -516,11 +516,12 @@ const VideoEdit = () => {
       
       // Use Cloudinary for rendering (more reliable than Shotstack for text overlays)
       console.log('Using Cloudinary render with subtitles:', subtitlesData);
+      console.log('Audio URL:', audioUrl);
       setRenderProgress(20);
-      toast.info('Processing video with text overlays...');
+      toast.info('Processing video with text and audio...');
       
-      // Try the eager transformation for pre-rendered video
-      const response = await fetch('/api/ai/cloudinary/render-eager', {
+      // Use URL-based transformation (supports both text and audio)
+      const response = await fetch('/api/ai/cloudinary/render', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -537,44 +538,14 @@ const VideoEdit = () => {
       
       const result = await response.json();
       
-      if (!result.success) {
-        // Fallback to URL-based transformation
-        console.log('Eager transformation failed, trying URL transformation...');
-        const fallbackResponse = await fetch('/api/ai/cloudinary/render', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            videoUrl,
-            audioUrl,
-            subtitles: subtitlesData,
-            options: {
-              duration: duration || 5,
-              musicVolume: musicVolume / 100,
-              videoVolume: isMuted ? 0 : videoVolume / 100
-            }
-          })
-        });
-        
-        const fallbackResult = await fallbackResponse.json();
-        
-        if (fallbackResult.success && fallbackResult.url) {
-          setRenderProgress(100);
-          setIsRendering(false);
-          setIsRendered(true);
-          setRenderedVideoUrl(fallbackResult.url);
-          toast.success('Video rendered successfully!');
-        } else {
-          throw new Error(fallbackResult.error || 'Render failed');
-        }
-      } else if (result.url) {
-        // Success!
+      if (result.success && result.url) {
         setRenderProgress(100);
         setIsRendering(false);
         setIsRendered(true);
         setRenderedVideoUrl(result.url);
         toast.success('Video rendered successfully!');
       } else {
-        throw new Error('No URL returned from render');
+        throw new Error(result.error || 'Render failed');
       }
       
     } catch (error) {

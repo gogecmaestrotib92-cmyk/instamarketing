@@ -856,7 +856,7 @@ router.post('/upload-video', upload.single('video'), async (req, res) => {
 // ==================== Cloudinary Video Render (Alternative to Shotstack) ====================
 
 /**
- * Render video with text overlays using Cloudinary transformations
+ * Render video with text overlays and audio using Cloudinary transformations
  * This is a simpler alternative to Shotstack that uses Cloudinary's built-in video transformations
  * POST /api/ai/cloudinary/render
  */
@@ -876,12 +876,27 @@ router.post('/cloudinary/render', async (req, res) => {
     console.log('   Video:', videoUrl);
     console.log('   Audio:', audioUrl || 'none');
     console.log('   Subtitles count:', subtitles?.length || 0);
+    console.log('   Options:', JSON.stringify(options));
     
     // Check if video is a Cloudinary URL
     if (!videoUrl.includes('cloudinary.com')) {
       return res.status(400).json({ 
         error: 'Video must be uploaded to Cloudinary first. Please ensure the video URL is a Cloudinary URL.' 
       });
+    }
+    
+    // Extract audio public ID if audio URL is from Cloudinary
+    let audioPublicId = null;
+    if (audioUrl && audioUrl.includes('cloudinary.com')) {
+      // Parse audio public ID from URL
+      // URL format: https://res.cloudinary.com/{cloud}/video/upload/{version}/{public_id}.mp3
+      const audioParts = audioUrl.split('/upload/');
+      if (audioParts.length === 2) {
+        const afterUpload = audioParts[1];
+        const audioIdWithExt = afterUpload.replace(/^v\d+\//, '');
+        audioPublicId = audioIdWithExt.replace(/\.[^/.]+$/, '');
+        console.log('   Audio Public ID:', audioPublicId);
+      }
     }
     
     // Convert subtitles to text overlays format
@@ -892,32 +907,22 @@ router.post('/cloudinary/render', async (req, res) => {
       end: sub.end
     }));
     
-    // Generate the video URL with text overlays
-    // Note: Cloudinary URL transformations are instant but limited
-    // For more complex overlays, we'd need to use eager transformations
+    // Build options for the transformation
+    const transformOptions = {
+      audioPublicId,
+      musicVolume: options?.musicVolume || 1
+    };
     
-    if (textOverlays.length > 0) {
-      // For simplicity, we'll just add the first/main text overlay via URL
-      // Cloudinary's URL-based approach is limited for timed subtitles
-      const resultUrl = cloudinaryService.generateVideoWithTextOverlay(videoUrl, textOverlays);
-      
-      // Return immediately with the transformed URL
-      // Note: This is a "live" transformation, not pre-rendered
-      res.json({
-        success: true,
-        url: resultUrl,
-        status: 'done',
-        message: 'Video ready with text overlay (URL transformation)'
-      });
-    } else {
-      // No text overlays, return original video
-      res.json({
-        success: true,
-        url: videoUrl,
-        status: 'done',
-        message: 'No text overlays to add'
-      });
-    }
+    // Generate the video URL with text overlays and audio
+    const resultUrl = cloudinaryService.generateVideoWithTextOverlay(videoUrl, textOverlays, transformOptions);
+    
+    // Return immediately with the transformed URL
+    res.json({
+      success: true,
+      url: resultUrl,
+      status: 'done',
+      message: audioPublicId ? 'Video ready with text and audio' : 'Video ready with text overlay'
+    });
   } catch (error) {
     console.error('Cloudinary render error:', error);
     res.status(500).json({ error: error.message });
