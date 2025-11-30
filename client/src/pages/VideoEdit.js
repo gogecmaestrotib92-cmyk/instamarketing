@@ -412,6 +412,11 @@ const VideoEdit = () => {
       
       // Get video URL - upload to cloud if it's a blob
       let videoUrl = selectedVideo.url || selectedVideo.videoUrl;
+      // Check if already a cloud URL (Cloudinary, Replicate, etc) - no need to re-upload
+      const isCloudUrl = videoUrl.startsWith('https://res.cloudinary.com') || 
+                         videoUrl.startsWith('https://replicate.delivery') ||
+                         (videoUrl.startsWith('http') && !videoUrl.includes('localhost') && !videoUrl.includes('blob:'));
+      
       if (videoUrl.startsWith('blob:')) {
         toast.info('Uploading video to cloud...');
         setRenderProgress(5);
@@ -421,6 +426,16 @@ const VideoEdit = () => {
           const blobResponse = await fetch(videoUrl);
           const blob = await blobResponse.blob();
           
+          // Check file size - warn if large
+          const fileSizeMB = blob.size / (1024 * 1024);
+          console.log('Video blob size:', fileSizeMB.toFixed(2) + 'MB');
+          
+          if (fileSizeMB > 50) {
+            toast.error('Video is too large (max 50MB). Please use a smaller video.');
+            setIsRendering(false);
+            return;
+          }
+          
           const formData = new FormData();
           formData.append('video', blob, 'video.mp4');
           
@@ -428,6 +443,13 @@ const VideoEdit = () => {
             method: 'POST',
             body: formData
           });
+          
+          // Check for 413 payload too large
+          if (uploadRes.status === 413) {
+            toast.error('Video is too large to upload. Try a smaller video (< 4MB for cloud deploy).');
+            setIsRendering(false);
+            return;
+          }
           
           const uploadResult = await uploadRes.json();
           
@@ -440,7 +462,21 @@ const VideoEdit = () => {
           }
         } catch (uploadError) {
           console.error('Upload error:', uploadError);
-          toast.error('Failed to upload video: ' + uploadError.message);
+          if (uploadError.message.includes('413') || uploadError.message.includes('payload')) {
+            toast.error('Video is too large. Please use a smaller video or one already on cloud.');
+          } else {
+            toast.error('Failed to upload video: ' + uploadError.message);
+          }
+          setIsRendering(false);
+          return;
+        }
+      } else if (isCloudUrl) {
+        console.log('Using existing cloud URL:', videoUrl);
+        setRenderProgress(15);
+      } else if (videoUrl.includes('localhost')) {
+        // Local server URL won't work in production
+        if (window.location.hostname !== 'localhost') {
+          toast.error('Local video URLs cannot be used in production. Please upload the video first.');
           setIsRendering(false);
           return;
         }
