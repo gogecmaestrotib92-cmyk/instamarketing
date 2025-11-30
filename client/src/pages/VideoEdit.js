@@ -299,20 +299,24 @@ const VideoEdit = () => {
       text: 'Your text here',
       position: 'center',
       style: 'modern',
-      startTime: currentTime,
-      endTime: Math.min(currentTime + 3, duration || 5)
+      startTime: 0, // Start from beginning for visibility
+      endTime: Math.max(duration || 5, 3) // Full video or at least 3 seconds
     };
-    setTextOverlays([...textOverlays, newText]);
+    console.log('Adding text overlay:', newText);
+    setTextOverlays(prev => [...prev, newText]);
+    toast.success('Text added! Edit it in the panel below.');
   };
 
   const addSubtitle = () => {
     const newSubtitle = {
       id: Date.now(),
       text: 'Subtitle text',
-      startTime: currentTime,
-      endTime: Math.min(currentTime + 2, duration || 5)
+      startTime: 0, // Start from beginning
+      endTime: Math.max(duration || 5, 2) // Full video or at least 2 seconds
     };
-    setSubtitles([...subtitles, newSubtitle]);
+    console.log('Adding subtitle:', newSubtitle);
+    setSubtitles(prev => [...prev, newSubtitle]);
+    toast.success('Subtitle added! Edit it in the panel below.');
   };
 
   const addSoundEffect = (sound) => {
@@ -355,7 +359,16 @@ const VideoEdit = () => {
         }))
       ];
       
-      console.log('Sending to render:', { subtitlesCount: subtitlesData.length, subtitlesData });
+      console.log('=== RENDER DEBUG ===');
+      console.log('Text overlays state:', textOverlays);
+      console.log('Subtitles state:', subtitles);
+      console.log('Combined subtitlesData:', subtitlesData);
+      console.log('Video URL:', selectedVideo.url || selectedVideo.videoUrl);
+      console.log('Duration:', duration);
+      
+      if (subtitlesData.length === 0) {
+        console.warn('No text or subtitles to render!');
+      }
       
       // Get the audio URL - need to upload to cloud if it's a local file
       let audioUrl = null;
@@ -402,8 +415,14 @@ const VideoEdit = () => {
         }
       }
       
-      // Get video URL - upload to cloud if it's a blob
+      // Get video URL - upload to cloud if it's a blob or local
       let videoUrl = selectedVideo.url || selectedVideo.videoUrl;
+      
+      // Check if already a cloud URL (Cloudinary, etc)
+      const isCloudUrl = videoUrl.startsWith('https://res.cloudinary.com') || 
+                         videoUrl.startsWith('https://replicate.delivery') ||
+                         (videoUrl.startsWith('http') && !videoUrl.includes('localhost'));
+      
       if (videoUrl.startsWith('blob:')) {
         toast.info('Uploading video to cloud...');
         setRenderProgress(5);
@@ -413,6 +432,16 @@ const VideoEdit = () => {
           const blobResponse = await fetch(videoUrl);
           const blob = await blobResponse.blob();
           
+          // Check file size - Vercel has ~4.5MB limit
+          const fileSizeMB = blob.size / (1024 * 1024);
+          console.log('Video blob size:', fileSizeMB.toFixed(2) + 'MB');
+          
+          if (fileSizeMB > 50) {
+            toast.error('Video is too large (max 50MB). Please use a smaller video.');
+            setIsRendering(false);
+            return;
+          }
+          
           const formData = new FormData();
           formData.append('video', blob, 'video.mp4');
           
@@ -420,6 +449,13 @@ const VideoEdit = () => {
             method: 'POST',
             body: formData
           });
+          
+          // Check for 413 payload too large
+          if (uploadRes.status === 413) {
+            toast.error('Video is too large to upload. Try a smaller video (< 4MB for production).');
+            setIsRendering(false);
+            return;
+          }
           
           const uploadResult = await uploadRes.json();
           
@@ -432,10 +468,27 @@ const VideoEdit = () => {
           }
         } catch (uploadError) {
           console.error('Upload error:', uploadError);
-          toast.error('Failed to upload video: ' + uploadError.message);
+          // Check if it's a network error from 413
+          if (uploadError.message.includes('413') || uploadError.message.includes('payload')) {
+            toast.error('Video is too large. Please use a smaller video or one already uploaded to cloud.');
+          } else {
+            toast.error('Failed to upload video: ' + uploadError.message);
+          }
           setIsRendering(false);
           return;
         }
+      } else if (!isCloudUrl && videoUrl.startsWith('http')) {
+        // Local server URL, might need to re-upload
+        console.log('Video URL is local server, using directly:', videoUrl);
+        // For localhost URLs, we can use them directly in dev but not in production
+        if (videoUrl.includes('localhost') && window.location.hostname !== 'localhost') {
+          toast.error('Local video URLs cannot be used in production. Please upload the video first.');
+          setIsRendering(false);
+          return;
+        }
+      } else if (isCloudUrl) {
+        console.log('Using existing cloud URL:', videoUrl);
+        setRenderProgress(15);
       }
       
       // Step 1: Submit render job
@@ -995,26 +1048,33 @@ const VideoEdit = () => {
                   </div>
                 )}
                     
-                {/* Text Overlays */}
-                {selectedVideo && textOverlays.map(overlay => (
-                  currentTime >= overlay.startTime && currentTime <= overlay.endTime && (
+                {/* Text Overlays - Always visible for editing, with opacity based on timing */}
+                {selectedVideo && textOverlays.map(overlay => {
+                  const isActive = currentTime >= overlay.startTime && currentTime <= overlay.endTime;
+                  return (
                     <div 
                       key={overlay.id} 
-                      className={`preview-text-overlay position-${overlay.position} style-${overlay.style}`}
+                      className={`preview-text-overlay position-${overlay.position} style-${overlay.style} ${isActive ? 'active' : 'inactive'}`}
+                      style={{ opacity: isActive ? 1 : 0.4 }}
                     >
                       {overlay.text}
                     </div>
-                  )
-                ))}
+                  );
+                })}
 
-                {/* Subtitles */}
-                {selectedVideo && subtitles.map(sub => (
-                  currentTime >= sub.startTime && currentTime <= sub.endTime && (
-                    <div key={sub.id} className="preview-subtitle">
+                {/* Subtitles - Always visible for editing */}
+                {selectedVideo && subtitles.map(sub => {
+                  const isActive = currentTime >= sub.startTime && currentTime <= sub.endTime;
+                  return (
+                    <div 
+                      key={sub.id} 
+                      className={`preview-subtitle ${isActive ? 'active' : 'inactive'}`}
+                      style={{ opacity: isActive ? 1 : 0.4 }}
+                    >
                       {sub.text}
                     </div>
-                  )
-                ))}
+                  );
+                })}
 
                 {/* Play button overlay */}
                 {selectedVideo && (

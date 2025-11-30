@@ -100,7 +100,7 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
       const subtitleClips = validSubtitles.map((subtitle, index) => {
         const isFirst = index === 0;
         const isLast = index === validSubtitles.length - 1;
-        const clipDuration = Math.max(0.1, subtitle.end - subtitle.start); // Minimum 0.1s duration
+        const clipDuration = Math.max(0.5, subtitle.end - subtitle.start); // Minimum 0.5s duration
 
         // Build transitions
         const transition = {};
@@ -111,41 +111,52 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
           transition.out = 'fade';
         }
 
-        // Determine position offset based on position type
-        let offset = { x: 0, y: -0.1 }; // default bottom
-        let position = subtitle.position || subtitleStyle.position || 'bottom';
+        // Determine position and offset based on position type
+        // For Shotstack: position is on clip level, offset adjusts within that position
+        let clipPosition = 'center';
+        let offset = { x: 0, y: 0 };
+        const positionType = subtitle.position || 'bottom';
         
-        // Map position names to offsets
-        if (position === 'top') {
-          offset = { x: 0, y: 0.35 };
-        } else if (position === 'center' || position === 'middle') {
+        // Map position names to Shotstack clip positions and offsets
+        if (positionType === 'top') {
+          clipPosition = 'top';
+          offset = { x: 0, y: 0.1 }; // Slight padding from top
+        } else if (positionType === 'center' || positionType === 'middle') {
+          clipPosition = 'center';
           offset = { x: 0, y: 0 };
-          position = 'center';
-        } else if (position === 'bottom') {
-          offset = { x: 0, y: -0.35 };
+        } else if (positionType === 'bottom') {
+          clipPosition = 'bottom';
+          offset = { x: 0, y: -0.1 }; // Slight padding from bottom
         }
 
-        console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position} (${subtitle.start}s - ${subtitle.end}s)`);
+        console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${clipPosition} (${subtitle.start}s - ${subtitle.end}s, duration: ${clipDuration}s)`);
 
-        // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
-        return {
+        // Valid Shotstack title styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
+        const clip = {
           asset: {
             type: 'title',
             text: subtitle.text,
-            style: subtitle.style || subtitleStyle.style || 'blockbuster',
-            size: subtitleStyle.size || 'medium',
-            color: subtitleStyle.color || '#ffffff',
-            background: subtitleStyle.background || '#000000',
-            position: position,
-            offset: offset
+            style: 'blockbuster', // Use a reliable style
+            size: 'medium'
           },
           start: subtitle.start,
           length: clipDuration,
-          transition: Object.keys(transition).length > 0 ? transition : undefined
+          position: clipPosition,
+          offset: offset
         };
+        
+        // Only add transition if we have one
+        if (Object.keys(transition).length > 0) {
+          clip.transition = transition;
+        }
+        
+        return clip;
       });
 
+      console.log('📝 Final subtitle clips:', JSON.stringify(subtitleClips, null, 2));
       tracks.push({ clips: subtitleClips });
+    } else {
+      console.log('📝 No valid subtitles after filtering');
     }
   } else {
     console.log('📝 No subtitles/text to render');
@@ -207,11 +218,15 @@ async function createShotstackRender(videoUrl, audioUrl, subtitles = [], options
   console.log('   Video URL:', videoUrl);
   console.log('   Audio URL:', audioUrl || 'none');
   console.log('   Subtitles:', subtitles.length);
+  if (subtitles.length > 0) {
+    console.log('   Subtitles data:', JSON.stringify(subtitles, null, 2));
+  }
 
   // Build the timeline
   const editPayload = buildTimeline(videoUrl, audioUrl, subtitles, options);
 
-  console.log('📋 Timeline built:', JSON.stringify(editPayload, null, 2).substring(0, 500) + '...');
+  console.log('📋 Full timeline payload:');
+  console.log(JSON.stringify(editPayload, null, 2));
 
   try {
     const response = await fetch(`${SHOTSTACK_HOST}/render`, {
