@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -22,13 +22,103 @@ const Layout = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [expandedItems, setExpandedItems] = React.useState({});
+  
+  // Refs for focus management
+  const sidebarRef = useRef(null);
+  const menuButtonRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const firstFocusableRef = useRef(null);
+  const lastFocusableRef = useRef(null);
 
   // Auto-expand parent when child is active
-  React.useEffect(() => {
+  useEffect(() => {
     if (location.pathname.startsWith('/app/ai-video')) {
       setExpandedItems(prev => ({ ...prev, 'ai-video': true }));
     }
   }, [location.pathname]);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location.pathname]);
+
+  // Handle escape key to close sidebar
+  const handleEscapeKey = useCallback((e) => {
+    if (e.key === 'Escape' && sidebarOpen) {
+      setSidebarOpen(false);
+      menuButtonRef.current?.focus();
+    }
+  }, [sidebarOpen]);
+
+  // Focus trap for accessibility
+  const handleTabKey = useCallback((e) => {
+    if (!sidebarOpen) return;
+    
+    const focusableElements = sidebarRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    if (!focusableElements || focusableElements.length === 0) return;
+    
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (e.key === 'Tab') {
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+      } else if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    }
+  }, [sidebarOpen]);
+
+  // Lock body scroll when sidebar is open
+  useEffect(() => {
+    if (sidebarOpen) {
+      // Add class to body for additional CSS control
+      document.body.classList.add('sidebar-open');
+      document.body.style.overflow = 'hidden';
+      // Prevent content shift by storing scroll position
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      // Focus the close button when opening
+      setTimeout(() => closeButtonRef.current?.focus(), 100);
+    } else {
+      // Restore scroll position
+      const scrollY = document.body.style.top;
+      document.body.classList.remove('sidebar-open');
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+      }
+    }
+    
+    return () => {
+      document.body.classList.remove('sidebar-open');
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+    };
+  }, [sidebarOpen]);
+
+  // Add keyboard event listeners
+  useEffect(() => {
+    document.addEventListener('keydown', handleEscapeKey);
+    document.addEventListener('keydown', handleTabKey);
+    
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+      document.removeEventListener('keydown', handleTabKey);
+    };
+  }, [handleEscapeKey, handleTabKey]);
 
   const handleLogout = () => {
     logout();
@@ -37,6 +127,15 @@ const Layout = () => {
 
   const toggleExpand = (key) => {
     setExpandedItems(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => !prev);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    menuButtonRef.current?.focus();
   };
 
   const navItems = [
@@ -61,12 +160,15 @@ const Layout = () => {
       {/* Mobile header */}
       <header className="mobile-header">
         <button 
+          ref={menuButtonRef}
           className="menu-toggle" 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          onClick={toggleSidebar}
           aria-label={sidebarOpen ? "Close menu" : "Open menu"}
           aria-expanded={sidebarOpen}
+          aria-controls="sidebar-nav"
         >
-          {sidebarOpen ? <FiX aria-hidden="true" /> : <FiMenu aria-hidden="true" />}
+          <FiMenu aria-hidden="true" />
+          <span className="sr-only">{sidebarOpen ? 'Close' : 'Open'} navigation menu</span>
         </button>
         <div className="mobile-logo">
           <FaInstagram className="logo-icon" aria-hidden="true" />
@@ -74,21 +176,56 @@ const Layout = () => {
         </div>
       </header>
 
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} aria-label="Sidebar">
-        <div className="sidebar-header">
+      {/* Overlay for mobile */}
+      <div 
+        className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
+        onClick={closeSidebar}
+        aria-hidden="true"
+      />
+
+      {/* Sidebar / Drawer */}
+      <aside 
+        ref={sidebarRef}
+        id="sidebar-nav"
+        className={`sidebar ${sidebarOpen ? 'open' : ''}`} 
+        aria-label="Main navigation"
+        aria-hidden={!sidebarOpen}
+        role="dialog"
+        aria-modal="true"
+      >
+        {/* Mobile close button */}
+        <div className="sidebar-mobile-header">
+          <div className="sidebar-header-content">
+            <FaInstagram className="logo-icon" aria-hidden="true" />
+            <span className="logo-text">AIInstaMarketing</span>
+          </div>
+          <button 
+            ref={closeButtonRef}
+            className="sidebar-close-btn"
+            onClick={closeSidebar}
+            aria-label="Close navigation menu"
+          >
+            <FiX aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Desktop logo (hidden on mobile) */}
+        <div className="sidebar-header desktop-only">
           <FaInstagram className="logo-icon" aria-hidden="true" />
           <span className="logo-text">AIInstaMarketing</span>
         </div>
 
-        <nav className="sidebar-nav" aria-label="Main navigation">
-          {navItems.map(item => (
+        <nav className="sidebar-nav" role="navigation">
+          {navItems.map((item, index) => (
             <div key={item.path} className="nav-item-wrapper">
               {item.children ? (
                 <>
-                  <div 
+                  <button 
                     className={`nav-item nav-item-parent ${location.pathname.startsWith(item.path) ? 'active' : ''}`}
                     onClick={() => toggleExpand(item.key)}
+                    aria-expanded={expandedItems[item.key]}
+                    aria-controls={`nav-children-${item.key}`}
+                    ref={index === 0 ? firstFocusableRef : null}
                   >
                     <item.icon className="nav-icon" aria-hidden="true" />
                     <span>{item.label}</span>
@@ -101,13 +238,18 @@ const Layout = () => {
                       className={`nav-expand-icon ${expandedItems[item.key] ? 'expanded' : ''}`} 
                       aria-hidden="true" 
                     />
-                  </div>
-                  <div className={`nav-children ${expandedItems[item.key] ? 'expanded' : ''}`}>
+                  </button>
+                  <div 
+                    id={`nav-children-${item.key}`}
+                    className={`nav-children ${expandedItems[item.key] ? 'expanded' : ''}`}
+                    role="group"
+                    aria-label={`${item.label} submenu`}
+                  >
                     <NavLink
                       to={item.path}
                       end
                       className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
-                      onClick={() => setSidebarOpen(false)}
+                      onClick={closeSidebar}
                     >
                       <item.icon className="nav-icon" aria-hidden="true" />
                       <span>Generate</span>
@@ -117,7 +259,7 @@ const Layout = () => {
                         key={child.path}
                         to={child.path}
                         className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={closeSidebar}
                       >
                         <child.icon className="nav-icon" aria-hidden="true" />
                         <span>{child.label}</span>
@@ -129,7 +271,8 @@ const Layout = () => {
                 <NavLink
                   to={item.path}
                   className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={closeSidebar}
+                  ref={index === 0 ? firstFocusableRef : null}
                 >
                   <item.icon className="nav-icon" aria-hidden="true" />
                   <span>{item.label}</span>
@@ -154,23 +297,19 @@ const Layout = () => {
               <span className="user-plan">{user?.plan || 'Free'} Plan</span>
             </div>
           </div>
-          <button className="logout-btn" onClick={handleLogout} aria-label="Log out">
+          <button 
+            ref={lastFocusableRef}
+            className="logout-btn" 
+            onClick={handleLogout} 
+            aria-label="Log out"
+          >
             <FiLogOut aria-hidden="true" />
           </button>
         </div>
       </aside>
 
-      {/* Overlay for mobile */}
-      {sidebarOpen && (
-        <div 
-          className="sidebar-overlay" 
-          onClick={() => setSidebarOpen(false)} 
-          aria-hidden="true"
-        />
-      )}
-
       {/* Main content */}
-      <main className="main-content" id="main-content">
+      <main className="main-content" id="main-content" tabIndex="-1">
         <Outlet />
       </main>
     </div>

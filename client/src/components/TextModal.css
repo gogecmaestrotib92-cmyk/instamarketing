@@ -526,25 +526,267 @@
   border: 1px solid #1e2433;
 }
 
-/* Responsive */
+/* ============================================================
+   MOBILE RESPONSIVE STYLES
+   ============================================================ */
+
+/* Tablet portrait */
+@media (max-width: 768px) {
+  .text-modal__overlay {
+    padding: 16px;
+    align-items: flex-end;
+  }
+  
+  .text-modal {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0;
+    animation: slideUpMobile 0.3s ease-out;
+  }
+  
+  @keyframes slideUpMobile {
+    from {
+      opacity: 0;
+      transform: translateY(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .text-modal__header {
+    padding: 16px 18px;
+  }
+  
+  .text-modal__section {
+    padding: 14px 18px;
+  }
+  
+  .text-modal__captions-list {
+    max-height: 150px;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 640px) {
+  .text-modal__overlay {
+    padding: 0;
+  }
+  
+  .text-modal {
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+  }
+  
+  .text-modal__header {
+    padding: 14px 16px;
+  }
+  
+  .text-modal__icon {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+  
+  .text-modal__title {
+    font-size: 16px;
+  }
+  
+  .text-modal__close {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .text-modal__section {
+    padding: 12px 16px;
+  }
+  
+  .text-modal__section-title {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+  
+  .text-modal__textarea {
+    min-height: 70px;
+    padding: 10px 12px;
+    font-size: 16px; /* Prevents iOS zoom */
+    border-radius: 10px;
+  }
+  
+  .text-modal__divider {
+    padding: 0 16px;
+    font-size: 10px;
+  }
+  
+  .text-modal__row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .text-modal__field--wide {
+    grid-column: 1 / -1;
+  }
+  
+  .text-modal__field--button {
+    grid-column: 1 / -1;
+  }
+  
+  .text-modal__label {
+    font-size: 11px;
+  }
+  
+  .text-modal__input {
+    padding: 10px;
+    font-size: 16px; /* Prevents iOS zoom */
+    border-radius: 8px;
+  }
+  
+  .text-modal__add-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+  
+  .text-modal__error {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  
+  .text-modal__captions-list {
+    max-height: 140px;
+    gap: 6px;
+  }
+  
+  .text-modal__caption-item {
+    padding: 10px;
+    border-radius: 8px;
+  }
+  
+  .text-modal__caption-text {
+    font-size: 13px;
+  }
+  
+  .text-modal__caption-time {
+    font-size: 11px;
+  }
+  
+  .text-modal__caption-remove {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .text-modal__footer {
+    padding: 14px 16px;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .text-modal__footer-right {
+    width: 100%;
+    gap: 8px;
+  }
+  
+  .text-modal__btn {
+    padding: 12px 16px;
+    font-size: 14px;
+    min-height: 44px;
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .text-modal__btn--danger {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .text-modal__empty {
+    padding: 24px 16px;
+  }
+  
+  .text-modal__empty-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+  
+  .text-modal__empty p {
+    font-size: 13px;
+  }
+  
+  .text-modal__section-toggle {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .text-modal__selected-template {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+  
+  .text-modal__templates-wrapper {
+    margin-top: 12px;
+    padding: 12px;
+  }
+}
+
+/* Small phones */
 @media (max-width: 480px) {
   .text-modal {
     max-height: 95vh;
-    border-radius: 16px;
+    border-radius: 14px 14px 0 0;
   }
 
   .text-modal__header,
   .text-modal__section,
   .text-modal__footer {
-    padding: 14px 16px;
+    padding: 12px 14px;
+  }
+  
+  .text-modal__title-row {
+    gap: 8px;
+  }
+  
+  .text-modal__icon {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
   }
 
   .text-modal__title {
-    font-size: 16px;
+    font-size: 15px;
+  }
+  
+  .text-modal__section-title {
+    font-size: 10px;
+  }
+  
+  .text-modal__row {
+    gap: 8px;
+  }
+  
+  .text-modal__label {
+    font-size: 10px;
+  }
+  
+  .text-modal__captions-list {
+    max-height: 120px;
+  }
+  
+  .text-modal__caption-item {
+    padding: 8px 10px;
+  }
+  
+  .text-modal__caption-text {
+    font-size: 12px;
+  }
+  
+  .text-modal__caption-time {
+    font-size: 10px;
   }
 
   .text-modal__footer {
-    flex-direction: column;
     gap: 10px;
   }
 
@@ -553,12 +795,92 @@
   }
 
   .text-modal__btn {
-    flex: 1;
-    justify-content: center;
+    font-size: 13px;
+    padding: 11px 14px;
   }
+}
 
+/* Extra small phones */
+@media (max-width: 360px) {
+  .text-modal__header,
+  .text-modal__section,
+  .text-modal__footer {
+    padding: 10px 12px;
+  }
+  
+  .text-modal__title {
+    font-size: 14px;
+  }
+  
+  .text-modal__textarea {
+    min-height: 60px;
+    padding: 8px 10px;
+  }
+  
+  .text-modal__input {
+    padding: 8px;
+  }
+  
+  .text-modal__add-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .text-modal__captions-list {
+    max-height: 100px;
+  }
+  
+  .text-modal__btn {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+}
+
+/* Landscape orientation on phones */
+@media (max-height: 500px) and (orientation: landscape) {
+  .text-modal__overlay {
+    padding: 10px;
+    align-items: center;
+  }
+  
+  .text-modal {
+    max-height: 95vh;
+    max-width: 600px;
+    border-radius: 16px;
+  }
+  
+  .text-modal__header,
+  .text-modal__section,
+  .text-modal__footer {
+    padding: 10px 16px;
+  }
+  
+  .text-modal__textarea {
+    min-height: 50px;
+  }
+  
+  .text-modal__captions-list {
+    max-height: 80px;
+  }
+  
+  .text-modal__empty {
+    padding: 16px;
+  }
+  
+  .text-modal__footer {
+    flex-direction: row;
+    gap: 10px;
+  }
+  
+  .text-modal__footer-right {
+    width: auto;
+  }
+  
+  .text-modal__btn {
+    flex: none;
+  }
+  
   .text-modal__btn--danger {
-    width: 100%;
-    justify-content: center;
+    width: auto;
   }
 }

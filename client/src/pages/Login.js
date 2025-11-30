@@ -52,21 +52,27 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="email" className="label">Email</label>
+            <label htmlFor="email" className="label">Email Address</label>
             <div className="input-wrapper">
               <FiMail className="input-icon" aria-hidden="true" />
               <input
                 id="email"
                 type="email"
                 className="input"
-                placeholder="Enter your email"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 aria-required="true"
+                aria-describedby="email-hint"
                 autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
               />
             </div>
+            <span id="email-hint" className="sr-only">Enter your registered email address</span>
           </div>
 
           <div className="form-group">
@@ -82,17 +88,23 @@ const Login = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 aria-required="true"
+                aria-describedby="password-hint"
                 autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
               >
                 {showPassword ? <FiEyeOff aria-hidden="true" /> : <FiEye aria-hidden="true" />}
               </button>
             </div>
+            <span id="password-hint" className="sr-only">Enter your account password</span>
           </div>
 
           <button 

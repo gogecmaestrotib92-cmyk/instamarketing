@@ -39,21 +39,25 @@ class ReplicateService {
   }
 
   /**
-   * Generate video from text prompt using Minimax (High Quality)
+   * Generate video from text prompt using Kling v1.6 Standard (supports 9:16)
    * @param {string} prompt - Text description of the video
    * @param {object} options - Generation options
    */
   async textToVideo(prompt, options = {}) {
     try {
-      console.log('🎬 Starting Replicate text-to-video generation (Minimax)...');
+      const { duration = 5, aspectRatio = '9:16' } = options;
+      console.log('🎬 Starting Replicate text-to-video generation (Kling v1.6 Standard)...');
       console.log('Prompt:', prompt);
+      console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
 
-      // Create prediction using Minimax Video-01 model
+      // Create prediction using Kling v1.6 Standard model
+      // Supports 5s and 10s videos in 720p at 30fps, with aspect ratios including 9:16
       const prediction = await this.replicate.predictions.create({
-        version: '5aa835260ff7f40f4069c41185f72036accf99e29957bb4a3b3a911f3b6c1912',
+        model: 'kwaivgi/kling-v1.6-standard',
         input: {
           prompt: prompt,
-          prompt_optimizer: true
+          duration: duration,
+          aspect_ratio: aspectRatio
         }
       });
 
@@ -81,16 +85,21 @@ class ReplicateService {
 
   /**
    * Start async video generation (returns immediately with prediction ID)
+   * Uses Kling v1.6 Standard which supports 9:16 aspect ratio for text-to-video
    */
   async startTextToVideo(prompt, options = {}) {
     try {
-      console.log('🎬 Starting async text-to-video generation (Minimax)...');
+      const { duration = 5, aspectRatio = '9:16' } = options;
+      console.log('🎬 Starting async text-to-video generation (Kling v1.6 Standard)...');
+      console.log('Prompt:', prompt);
+      console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
       
       const prediction = await this.replicate.predictions.create({
-        version: '5aa835260ff7f40f4069c41185f72036accf99e29957bb4a3b3a911f3b6c1912',
+        model: 'kwaivgi/kling-v1.6-standard',
         input: {
           prompt: prompt,
-          prompt_optimizer: true
+          duration: duration,
+          aspect_ratio: aspectRatio
         }
       });
 
@@ -110,26 +119,22 @@ class ReplicateService {
   }
 
   /**
-   * Start async image-to-video generation
+   * Start async image-to-video generation using Kling v2.1
    */
   async startImageToVideo(imageUrl, motionPrompt = '', options = {}) {
     try {
-      console.log('🎬 Starting async image-to-video generation...');
+      const { duration = 5, aspectRatio = '9:16' } = options;
+      console.log('🎬 Starting async image-to-video generation (Kling v2.1)...');
       console.log('Image URL:', imageUrl);
-      
-      const { motionBucketId = 127 } = options;
+      console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
 
       const prediction = await this.replicate.predictions.create({
-        version: '3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438',
+        model: 'kwaivgi/kling-v2.1',
         input: {
-          input_image: imageUrl,
-          video_length: "14_frames_with_svd",
-          sizing_strategy: "maintain_aspect_ratio",
-          frames_per_second: 8,
-          motion_bucket_id: motionBucketId,
-          cond_aug: 0.02,
-          decoding_t: 7,
-          seed: Math.floor(Math.random() * 1000000)
+          prompt: motionPrompt || 'Animate this image with natural motion',
+          start_image: imageUrl,
+          duration: duration,
+          aspect_ratio: aspectRatio
         }
       });
 
@@ -231,108 +236,92 @@ class ReplicateService {
   }
 
   /**
-   * Generate video from image using Stable Video Diffusion
+   * Generate video from image using Kling v2.1
    * @param {string} imageUrl - URL of the source image
    * @param {string} motionPrompt - Optional motion description
    * @param {object} options - Generation options
    */
   async imageToVideo(imageUrl, motionPrompt = '', options = {}) {
     try {
-      const {
-        duration = 4,
-        fps = 8,
-        motionBucketId = 127  // Controls motion amount (1-255)
-      } = options;
+      const { duration = 5, aspectRatio = '9:16' } = options;
 
-      console.log('🎬 Starting Replicate image-to-video generation...');
+      console.log('🎬 Starting Replicate image-to-video generation (Kling v2.1)...');
       console.log('Image URL:', imageUrl);
-      console.log('⚠️ Note: Free tier has rate limits. Add payment method for faster generation.');
+      console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
 
-      // Using Stable Video Diffusion XT for image-to-video
-      const output = await this.runWithRetry(
-        "stability-ai/stable-video-diffusion:3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438",
-        {
-          input_image: imageUrl,
-          video_length: "14_frames_with_svd",
-          sizing_strategy: "maintain_aspect_ratio",
-          frames_per_second: fps,
-          motion_bucket_id: motionBucketId,
-          cond_aug: 0.02,
-          decoding_t: 7,
-          seed: Math.floor(Math.random() * 1000000)
+      // Using Kling v2.1 for image-to-video
+      const prediction = await this.replicate.predictions.create({
+        model: 'kwaivgi/kling-v2.1',
+        input: {
+          prompt: motionPrompt || 'Animate this image with natural motion',
+          start_image: imageUrl,
+          duration: duration,
+          aspect_ratio: aspectRatio
         }
-      );
+      });
 
-      console.log('✅ Video generation complete!');
-      console.log('Output:', output);
+      console.log('📝 Prediction created:', prediction.id);
+      
+      // Wait for completion
+      const result = await this.waitForPrediction(prediction.id);
 
-      const videoUrl = Array.isArray(output) ? output[0] : output;
-
-      return {
-        success: true,
-        videoUrl: videoUrl,
-        duration: duration
-      };
+      if (result.success) {
+        console.log('✅ Video generation complete!');
+        const videoUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+        return {
+          success: true,
+          videoUrl: videoUrl,
+          duration: duration
+        };
+      } else {
+        throw new Error(result.error || 'Video generation failed');
+      }
 
     } catch (error) {
       console.error('Replicate image-to-video error:', error.message);
-      
-      if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-        return {
-          success: false,
-          error: 'Rate limit reached. Please wait 1 minute or add payment method at replicate.com/account/billing for faster access.'
-        };
-      }
-      
-      return {
-        success: false,
-        error: error.message
-      };
+      return this.handleError(error);
     }
   }
 
   /**
-   * Generate high-quality video using Minimax (Hailuo)
-   * Much better quality and longer duration (6s) than DAMO
+   * Generate high-quality video using Kling v1.6 Pro (Premium text-to-video)
+   * Best quality with 1080p resolution
    */
   async textToVideoPremium(prompt, options = {}) {
     try {
-      console.log('🎬 Starting premium video generation (Minimax)...');
+      const { duration = 5, aspectRatio = '9:16' } = options;
+      console.log('🎬 Starting premium video generation (Kling v1.6 Pro)...');
       console.log('Prompt:', prompt);
+      console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
 
-      // Minimax Video-01
-      // Produces 6s video at 25fps (150 frames)
-      const output = await this.runWithRetry(
-        "minimax/video-01:5aa835260ff7f40f4069c41185f72036accf99e29957bb4a3b3a911f3b6c1912",
-        {
+      // Kling v1.6 Pro - Premium version with 1080p quality
+      const prediction = await this.replicate.predictions.create({
+        model: 'kwaivgi/kling-v1.6-pro',
+        input: {
           prompt: prompt,
-          prompt_optimizer: true
+          duration: duration,
+          aspect_ratio: aspectRatio
         }
-      );
+      });
 
-      console.log('✅ Premium video generation complete!');
+      console.log('📝 Prediction created:', prediction.id);
       
-      const videoUrl = Array.isArray(output) ? output[0] : output;
+      const result = await this.waitForPrediction(prediction.id);
 
-      return {
-        success: true,
-        videoUrl: videoUrl
-      };
+      if (result.success) {
+        console.log('✅ Premium video generation complete!');
+        const videoUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+        return {
+          success: true,
+          videoUrl: videoUrl
+        };
+      } else {
+        throw new Error(result.error || 'Video generation failed');
+      }
 
     } catch (error) {
       console.error('Premium video generation error:', error.message);
-      
-      if (error.message?.includes('429') || error.message?.includes('rate limit')) {
-        return {
-          success: false,
-          error: 'Rate limit reached. Please wait 1 minute or add payment method at replicate.com/account/billing for faster access.'
-        };
-      }
-      
-      return {
-        success: false,
-        error: error.message
-      };
+      return this.handleError(error);
     }
   }
 
@@ -343,28 +332,31 @@ class ReplicateService {
     return {
       models: [
         {
-          id: 'animate-diff',
-          name: 'AnimateDiff Lightning',
-          description: 'Fast text-to-video, good for quick previews',
+          id: 'kling-v1.6-standard',
+          name: 'Kling v1.6 Standard',
+          description: 'Text-to-video, 720p at 30fps, supports 9:16 aspect ratio',
           type: 'text-to-video',
-          speed: 'fast',
-          quality: 'good'
-        },
-        {
-          id: 'stable-video-diffusion',
-          name: 'Stable Video Diffusion',
-          description: 'Image animation, smooth motion',
-          type: 'image-to-video',
           speed: 'medium',
-          quality: 'excellent'
+          quality: 'excellent',
+          aspectRatios: ['9:16', '16:9', '1:1']
         },
         {
-          id: 'minimax',
-          name: 'Minimax Video-01 (Hailuo)',
-          description: 'Highest quality text-to-video',
+          id: 'kling-v1.6-pro',
+          name: 'Kling v1.6 Pro',
+          description: 'Premium text-to-video with 1080p resolution',
           type: 'text-to-video',
           speed: 'slow',
-          quality: 'premium'
+          quality: 'premium',
+          aspectRatios: ['9:16', '16:9', '1:1']
+        },
+        {
+          id: 'kling-v2.1',
+          name: 'Kling v2.1',
+          description: 'Image-to-video with excellent quality',
+          type: 'image-to-video',
+          speed: 'medium',
+          quality: 'excellent',
+          aspectRatios: ['9:16', '16:9', '1:1']
         }
       ]
     };

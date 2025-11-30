@@ -105,34 +105,45 @@ const Contact = () => {
           <section className="contact-form-section" aria-labelledby="form-heading">
             <h2 id="form-heading">Send us a message</h2>
             <form onSubmit={handleSubmit} className="contact-form">
-              <div className="form-group">
-                <label htmlFor="name">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Your name"
-                />
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="name">Full Name <span className="required-mark" aria-hidden="true">*</span></label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    aria-required="true"
+                    placeholder="John Smith"
+                    autoComplete="name"
+                    autoCapitalize="words"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email">Email Address <span className="required-mark" aria-hidden="true">*</span></label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    aria-required="true"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
+                  />
+                </div>
               </div>
 
               <div className="form-group">
-                <label htmlFor="email">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="your@email.com"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="subject">Subject</label>
+                <label htmlFor="subject">Subject <span className="required-mark" aria-hidden="true">*</span></label>
                 <input
                   type="text"
                   id="subject"
@@ -140,20 +151,24 @@ const Contact = () => {
                   value={formData.subject}
                   onChange={handleChange}
                   required
+                  aria-required="true"
                   placeholder="How can we help you?"
+                  autoCapitalize="sentences"
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="message">Message</label>
+                <label htmlFor="message">Message <span className="required-mark" aria-hidden="true">*</span></label>
                 <textarea
                   id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
                   required
+                  aria-required="true"
                   rows={5}
-                  placeholder="Write your message here..."
+                  placeholder="Please describe your question or request..."
+                  autoCapitalize="sentences"
                 />
               </div>
 

@@ -75,41 +75,80 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
     ]
   });
 
-  // Track 2: Subtitles (middle layer)
+  // Track 2: Subtitles/Text overlays (middle layer)
   if (subtitles && subtitles.length > 0) {
-    const subtitleClips = subtitles.map((subtitle, index) => {
-      const isFirst = index === 0;
-      const isLast = index === subtitles.length - 1;
-      const clipDuration = subtitle.end - subtitle.start;
-
-      // Build transitions
-      const transition = {};
-      if (isFirst) {
-        transition.in = 'fade';
+    console.log('📝 Building subtitle/text clips:', subtitles.length, 'items');
+    
+    // Filter out invalid subtitles (must have text and valid duration)
+    const validSubtitles = subtitles.filter(sub => {
+      if (!sub.text || sub.text.trim() === '') {
+        console.log('   Skipping empty text');
+        return false;
       }
-      if (isLast) {
-        transition.out = 'fade';
+      if (typeof sub.start !== 'number' || typeof sub.end !== 'number') {
+        console.log('   Skipping invalid timing:', sub);
+        return false;
       }
-
-      // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
-      return {
-        asset: {
-          type: 'title',
-          text: subtitle.text,
-          style: subtitleStyle.style || 'blockbuster',
-          size: subtitleStyle.size || 'medium',
-          color: subtitleStyle.color || '#ffffff',
-          background: subtitleStyle.background || '#000000',
-          position: subtitleStyle.position || 'bottom',
-          offset: subtitleStyle.offset || { x: 0, y: -0.1 }
-        },
-        start: subtitle.start,
-        length: clipDuration,
-        transition: Object.keys(transition).length > 0 ? transition : undefined
-      };
+      if (sub.end <= sub.start) {
+        console.log('   Skipping zero/negative duration:', sub.start, '->', sub.end);
+        return false;
+      }
+      return true;
     });
+    
+    if (validSubtitles.length > 0) {
+      const subtitleClips = validSubtitles.map((subtitle, index) => {
+        const isFirst = index === 0;
+        const isLast = index === validSubtitles.length - 1;
+        const clipDuration = Math.max(0.1, subtitle.end - subtitle.start); // Minimum 0.1s duration
 
-    tracks.push({ clips: subtitleClips });
+        // Build transitions
+        const transition = {};
+        if (isFirst) {
+          transition.in = 'fade';
+        }
+        if (isLast) {
+          transition.out = 'fade';
+        }
+
+        // Determine position offset based on position type
+        let offset = { x: 0, y: -0.1 }; // default bottom
+        let position = subtitle.position || subtitleStyle.position || 'bottom';
+        
+        // Map position names to offsets
+        if (position === 'top') {
+          offset = { x: 0, y: 0.35 };
+        } else if (position === 'center' || position === 'middle') {
+          offset = { x: 0, y: 0 };
+          position = 'center';
+        } else if (position === 'bottom') {
+          offset = { x: 0, y: -0.35 };
+        }
+
+        console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position} (${subtitle.start}s - ${subtitle.end}s)`);
+
+        // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
+        return {
+          asset: {
+            type: 'title',
+            text: subtitle.text,
+            style: subtitle.style || subtitleStyle.style || 'blockbuster',
+            size: subtitleStyle.size || 'medium',
+            color: subtitleStyle.color || '#ffffff',
+            background: subtitleStyle.background || '#000000',
+            position: position,
+            offset: offset
+          },
+          start: subtitle.start,
+          length: clipDuration,
+          transition: Object.keys(transition).length > 0 ? transition : undefined
+        };
+      });
+
+      tracks.push({ clips: subtitleClips });
+    }
+  } else {
+    console.log('📝 No subtitles/text to render');
   }
 
   // Build soundtrack object (not array!)
@@ -187,7 +226,11 @@ async function createShotstackRender(videoUrl, audioUrl, subtitles = [], options
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('❌ Shotstack API error:', data);
+      console.error('❌ Shotstack API error:', JSON.stringify(data, null, 2));
+      // Log detailed validation errors
+      if (data.response?.errors) {
+        console.error('❌ Validation errors:', JSON.stringify(data.response.errors, null, 2));
+      }
       throw new Error(data.message || `Shotstack API error: ${response.status}`);
     }
 

@@ -435,20 +435,40 @@
   margin: 0 0 20px 0;
 }
 
-/* Responsive */
+/* ============================================================
+   MOBILE RESPONSIVE STYLES
+   ============================================================ */
+
+/* Tablet landscape */
 @media (max-width: 1024px) {
   .queue-stats {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
+/* Tablet portrait */
 @media (max-width: 768px) {
   .schedule-page {
     padding: 0 16px 40px;
   }
   
   .queue-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .queue-stat {
+    padding: 14px;
+  }
+  
+  .queue-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .queue-value {
+    font-size: 18px;
   }
   
   .schedule-item {
@@ -478,5 +498,354 @@
   .event-item {
     font-size: 10px;
     padding: 2px 6px;
+  }
+  
+  .calendar-header {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .calendar-title {
+    font-size: 14px;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 640px) {
+  .schedule-page {
+    padding: 0 12px 32px;
+  }
+  
+  /* View toggle */
+  .view-toggle {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  
+  .view-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  
+  /* Queue stats - horizontal scroll on mobile */
+  .queue-stats {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 8px;
+    margin: 0 -12px 16px;
+    padding-left: 12px;
+    padding-right: 12px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .queue-stats::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .queue-stat {
+    min-width: 140px;
+    flex-shrink: 0;
+    padding: 12px;
+  }
+  
+  .queue-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+    border-radius: 6px;
+  }
+  
+  .queue-value {
+    font-size: 16px;
+  }
+  
+  .queue-label {
+    font-size: 11px;
+  }
+  
+  /* Calendar - compact view */
+  .calendar-container {
+    border-radius: 10px;
+  }
+  
+  .calendar-header {
+    padding: 10px 12px;
+  }
+  
+  .calendar-nav {
+    gap: 8px;
+  }
+  
+  .nav-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+  }
+  
+  .calendar-title {
+    font-size: 13px;
+  }
+  
+  .today-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  
+  .calendar-day-header {
+    padding: 8px 2px;
+    font-size: 9px;
+  }
+  
+  .calendar-day {
+    min-height: 60px;
+    padding: 2px;
+  }
+  
+  .day-number {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    margin-bottom: 2px;
+    border-radius: 4px;
+  }
+  
+  .event-item {
+    font-size: 8px;
+    padding: 2px 4px;
+    border-radius: 2px;
+  }
+  
+  .day-events {
+    gap: 2px;
+  }
+  
+  .more-events {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+  
+  /* List view */
+  .schedule-list {
+    gap: 10px;
+  }
+  
+  .schedule-item {
+    padding: 12px;
+    border-radius: 8px;
+    gap: 10px;
+  }
+  
+  .schedule-date {
+    font-size: 12px;
+  }
+  
+  .schedule-hour {
+    font-size: 11px;
+  }
+  
+  .schedule-caption {
+    font-size: 13px;
+  }
+  
+  .schedule-meta {
+    gap: 8px;
+    font-size: 11px;
+  }
+  
+  .schedule-type {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+  
+  .schedule-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  
+  .schedule-actions .btn {
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* Empty state */
+  .schedule-empty {
+    padding: 40px 16px;
+    border-radius: 10px;
+  }
+  
+  .schedule-empty svg {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+  
+  .schedule-empty h3 {
+    font-size: 16px;
+  }
+  
+  .schedule-empty p {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+}
+
+/* Small phones - switch to abbreviated day names */
+@media (max-width: 480px) {
+  .schedule-page {
+    padding: 0 8px 24px;
+  }
+  
+  .view-toggle {
+    padding: 3px;
+    border-radius: 8px;
+  }
+  
+  .view-btn {
+    padding: 8px 10px;
+    font-size: 11px;
+    gap: 6px;
+    border-radius: 5px;
+  }
+  
+  .queue-stat {
+    min-width: 120px;
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .queue-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .queue-value {
+    font-size: 14px;
+  }
+  
+  .queue-label {
+    font-size: 10px;
+  }
+  
+  .calendar-header {
+    padding: 8px 10px;
+  }
+  
+  .nav-btn {
+    width: 26px;
+    height: 26px;
+  }
+  
+  .calendar-title {
+    font-size: 12px;
+  }
+  
+  .today-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  
+  .calendar-day-header {
+    padding: 6px 1px;
+    font-size: 8px;
+    letter-spacing: 0;
+  }
+  
+  .calendar-day {
+    min-height: 50px;
+    padding: 1px;
+  }
+  
+  .day-number {
+    width: 18px;
+    height: 18px;
+    font-size: 9px;
+    margin-bottom: 1px;
+  }
+  
+  .event-item {
+    font-size: 7px;
+    padding: 1px 3px;
+  }
+  
+  /* List view */
+  .schedule-item {
+    padding: 10px;
+  }
+  
+  .schedule-date {
+    font-size: 11px;
+  }
+  
+  .schedule-caption {
+    font-size: 12px;
+  }
+  
+  .schedule-actions .btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 360px) {
+  .calendar-day {
+    min-height: 44px;
+  }
+  
+  .day-number {
+    width: 16px;
+    height: 16px;
+    font-size: 8px;
+  }
+  
+  .event-item {
+    font-size: 6px;
+    padding: 1px 2px;
+  }
+  
+  .calendar-day-header {
+    font-size: 7px;
+  }
+  
+  .queue-stat {
+    min-width: 100px;
+  }
+}
+
+/* Landscape orientation on phones */
+@media (max-height: 500px) and (orientation: landscape) {
+  .schedule-page {
+    padding: 0 16px 24px;
+  }
+  
+  .view-toggle {
+    width: auto;
+    margin-bottom: 12px;
+  }
+  
+  .queue-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  
+  .queue-stat {
+    min-width: auto;
+    padding: 10px;
+  }
+  
+  .calendar-day {
+    min-height: 60px;
+  }
+  
+  .schedule-empty {
+    padding: 30px 16px;
   }
 }

@@ -328,20 +328,41 @@
   max-width: 300px;
 }
 
-/* Responsive */
+/* ============================================================
+   MOBILE RESPONSIVE STYLES
+   ============================================================ */
+
+/* Tablet landscape */
 @media (max-width: 1200px) {
   .campaign-stats {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
+/* Tablet portrait */
 @media (max-width: 768px) {
   .campaigns-page {
     padding: 0 16px 40px;
   }
   
   .campaign-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  .campaign-stat-card {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
   }
   
   .campaigns-grid {
@@ -352,10 +373,303 @@
     overflow-x: auto;
     padding-bottom: 8px;
     flex-wrap: nowrap;
+    margin: 0 -16px 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .campaign-filters::-webkit-scrollbar {
+    display: none;
   }
   
   .filter-btn {
     white-space: nowrap;
     flex-shrink: 0;
+  }
+  
+  .campaign-card {
+    padding: 16px;
+  }
+  
+  .campaign-metrics {
+    gap: 10px;
+  }
+  
+  .metric-value {
+    font-size: 16px;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 640px) {
+  .campaigns-page {
+    padding: 0 12px 32px;
+  }
+  
+  /* Stats - horizontal scroll */
+  .campaign-stats {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    margin: 0 -12px 16px;
+    padding: 0 12px 8px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .campaign-stats::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .campaign-stat-card {
+    min-width: 160px;
+    flex-shrink: 0;
+    padding: 14px;
+    border-radius: 10px;
+  }
+  
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+  
+  .stat-value {
+    font-size: 18px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+  }
+  
+  /* Filters */
+  .campaign-filters {
+    gap: 6px;
+    margin: 0 -12px 14px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  .filter-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+  
+  /* Campaign cards */
+  .campaign-card {
+    padding: 14px;
+    border-radius: 10px;
+  }
+  
+  .campaign-header {
+    margin-bottom: 14px;
+  }
+  
+  .campaign-name {
+    font-size: 15px;
+  }
+  
+  .campaign-date {
+    font-size: 11px;
+  }
+  
+  .campaign-status {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+  
+  /* Metrics - 2 columns on mobile */
+  .campaign-metrics {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+  }
+  
+  .metric-value {
+    font-size: 15px;
+  }
+  
+  .metric-label {
+    font-size: 10px;
+  }
+  
+  /* Budget */
+  .campaign-budget {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  
+  .budget-progress {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+  }
+  
+  .budget-value {
+    font-size: 15px;
+  }
+  
+  /* Actions */
+  .campaign-actions {
+    gap: 8px;
+  }
+  
+  .campaign-actions .btn {
+    padding: 10px 12px;
+    font-size: 12px;
+    min-height: 40px;
+  }
+  
+  /* Empty state */
+  .campaigns-empty {
+    padding: 40px 16px;
+    border-radius: 10px;
+  }
+  
+  .campaigns-empty svg {
+    font-size: 40px;
+    margin-bottom: 12px;
+  }
+  
+  .campaigns-empty h3 {
+    font-size: 16px;
+  }
+  
+  .campaigns-empty p {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .campaigns-page {
+    padding: 0 10px 24px;
+  }
+  
+  .campaign-stat-card {
+    min-width: 140px;
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .stat-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .stat-value {
+    font-size: 16px;
+  }
+  
+  .stat-label {
+    font-size: 10px;
+  }
+  
+  .filter-btn {
+    padding: 7px 12px;
+    font-size: 11px;
+  }
+  
+  .campaign-card {
+    padding: 12px;
+  }
+  
+  .campaign-name {
+    font-size: 14px;
+  }
+  
+  .campaign-metrics {
+    gap: 8px;
+  }
+  
+  .metric-value {
+    font-size: 14px;
+  }
+  
+  .campaign-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .campaign-actions .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 360px) {
+  .campaign-stat-card {
+    min-width: 120px;
+    padding: 10px;
+  }
+  
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .stat-value {
+    font-size: 14px;
+  }
+  
+  .campaign-card {
+    padding: 10px;
+  }
+  
+  .campaign-name {
+    font-size: 13px;
+  }
+  
+  .metric-value {
+    font-size: 13px;
+  }
+}
+
+/* Landscape orientation on phones */
+@media (max-height: 500px) and (orientation: landscape) {
+  .campaigns-page {
+    padding: 0 16px 24px;
+  }
+  
+  .campaign-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    overflow-x: visible;
+    margin: 0 0 16px;
+    padding: 0;
+  }
+  
+  .campaign-stat-card {
+    min-width: auto;
+    padding: 12px;
+  }
+  
+  .campaigns-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .campaign-metrics {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .campaign-actions {
+    flex-direction: row;
+  }
+  
+  .campaign-actions .btn {
+    width: auto;
+    flex: 1;
   }
 }

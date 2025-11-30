@@ -139,11 +139,39 @@
   margin-bottom: 24px;
 }
 
+/* Form row for side-by-side fields on desktop */
+.contact-form .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .contact-form .form-row {
+    flex-direction: row;
+  }
+  
+  .contact-form .form-row > .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
 .contact-form label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin-bottom: 8px;
   color: var(--text-secondary);
   font-weight: 500;
+  font-size: 15px;
+}
+
+/* Required field indicator */
+.contact-form .required-mark {
+  color: #E1306C;
+  font-weight: 600;
+  font-size: 1.1em;
 }
 
 .contact-form input,
@@ -154,8 +182,14 @@
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 16px; /* Prevents iOS zoom */
+  min-height: 56px;
   transition: all 0.2s;
+}
+
+.contact-form textarea {
+  min-height: 140px;
+  resize: vertical;
 }
 
 .contact-form input:focus,
@@ -164,6 +198,13 @@
   border-color: #E1306C;
   background: rgba(0, 0, 0, 0.3);
   box-shadow: 0 0 0 4px rgba(225, 48, 108, 0.1);
+}
+
+/* Focus visible for keyboard navigation */
+.contact-form input:focus-visible,
+.contact-form textarea:focus-visible {
+  outline: 2px solid #E1306C;
+  outline-offset: 2px;
 }
 
 .btn-full {
@@ -197,10 +238,206 @@
   }
   
   .contact-page .page-header h1 {
-    font-size: 2.5rem;
+    font-size: 2.25rem;
   }
   
   .contact-form-section {
     padding: 24px;
+  }
+  
+  .info-card, .social-card {
+    padding: 24px;
+    border-radius: 16px;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 640px) {
+  .contact-page {
+    padding: 24px 16px;
+  }
+  
+  .contact-page .page-header.center {
+    margin-bottom: 32px;
+  }
+  
+  .contact-page .page-header h1 {
+    font-size: 1.75rem;
+    margin-bottom: 12px;
+  }
+  
+  .contact-page .page-header p {
+    font-size: 1rem;
+  }
+  
+  .contact-grid {
+    gap: 24px;
+  }
+  
+  .info-card, .social-card {
+    padding: 20px;
+    border-radius: 14px;
+  }
+  
+  .info-card h3, .social-card h3 {
+    font-size: 1.125rem;
+    margin-bottom: 20px;
+  }
+  
+  .info-item {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  
+  .icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    font-size: 20px;
+  }
+  
+  .info-item .label {
+    font-size: 0.8rem;
+  }
+  
+  .info-item a, .info-item address {
+    font-size: 0.9rem;
+  }
+  
+  .social-links {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .social-links a {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .contact-form-section {
+    padding: 20px;
+    border-radius: 14px;
+  }
+  
+  .contact-form-section h2 {
+    font-size: 1.375rem;
+    margin-bottom: 24px;
+  }
+  
+  .contact-form .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .contact-form .form-row {
+    gap: 20px;
+  }
+  
+  .contact-form label {
+    font-size: 14px;
+  }
+  
+  /* Form inputs - 16px prevents iOS zoom */
+  .contact-form input,
+  .contact-form textarea {
+    font-size: 16px;
+    padding: 14px;
+    border-radius: 10px;
+    min-height: 52px;
+  }
+  
+  .contact-form textarea {
+    min-height: 120px;
+  }
+  
+  .btn-full {
+    padding: 14px;
+    font-size: 1rem;
+    min-height: 52px;
+  }
+}
+
+/* Small phones and foldables */
+@media (max-width: 480px) {
+  .contact-page {
+    padding: 20px 12px;
+  }
+  
+  .contact-page .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .contact-page .page-header p {
+    font-size: 0.9rem;
+  }
+  
+  .info-card, .social-card {
+    padding: 16px;
+  }
+  
+  .contact-form-section {
+    padding: 16px;
+  }
+  
+  .contact-form-section h2 {
+    font-size: 1.25rem;
+  }
+  
+  /* Ensure inputs are large enough for folded devices */
+  .contact-form input,
+  .contact-form textarea {
+    min-height: 52px;
+    padding: 14px;
+  }
+  
+  .contact-form textarea {
+    min-height: 100px;
+  }
+  
+  .contact-form .btn-full {
+    min-height: 52px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 360px) {
+  .contact-page .page-header h1 {
+    font-size: 1.375rem;
+  }
+  
+  .icon-box {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .social-links a {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Landscape */
+@media (max-height: 500px) and (orientation: landscape) {
+  .contact-page {
+    padding: 16px 20px;
+  }
+  
+  .contact-page .page-header.center {
+    margin-bottom: 24px;
+  }
+  
+  .contact-grid {
+    grid-template-columns: 1fr 2fr;
+    gap: 24px;
+  }
+  
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .info-card, .social-card {
+    margin-bottom: 0;
   }
 }

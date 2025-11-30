@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "@google-cloud/text-to-speech": "^6.4.0",
     "axios": "^1.6.2",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.8.0",
@@ -24,11 +25,8 @@
     "node-fetch": "^2.7.0",
     "openai": "^6.9.1",
     "replicate": "^1.4.0",
+    "sharp": "^0.34.5",
     "uuid": "^9.0.1"
-  },
-  "optionalDependencies": {
-    "@google-cloud/text-to-speech": "^6.4.0",
-    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

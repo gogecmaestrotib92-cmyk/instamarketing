@@ -1,0 +1,415 @@
+/* ============================================================
+   GLOBAL MOBILE UTILITIES
+   Consistent touch targets, spacing, and mobile patterns
+   ============================================================ */
+
+/* ========================
+   CSS VARIABLES FOR MOBILE
+   ======================== */
+:root {
+  /* Touch targets - minimum 44px per Apple/Google guidelines */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  
+  /* Mobile spacing */
+  --mobile-padding-xs: 8px;
+  --mobile-padding-sm: 12px;
+  --mobile-padding-md: 16px;
+  --mobile-padding-lg: 20px;
+  --mobile-padding-xl: 24px;
+  
+  /* Mobile font sizes */
+  --mobile-font-xs: 11px;
+  --mobile-font-sm: 12px;
+  --mobile-font-base: 14px;
+  --mobile-font-md: 16px;  /* Prevents iOS zoom on inputs */
+  --mobile-font-lg: 18px;
+  --mobile-font-xl: 20px;
+  
+  /* Safe area insets for notched devices */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+/* ========================
+   TOUCH-FRIENDLY BUTTONS
+   ======================== */
+@media (max-width: 768px) {
+  /* Ensure all buttons are touch-friendly */
+  button,
+  .btn,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+  
+  /* Larger tap targets for icon-only buttons */
+  .btn-icon,
+  .icon-btn,
+  button:has(svg:only-child) {
+    min-width: var(--touch-target-comfortable);
+    min-height: var(--touch-target-comfortable);
+  }
+}
+
+/* ========================
+   INPUT ZOOM PREVENTION (iOS)
+   ======================== */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="date"],
+  input[type="time"],
+  textarea,
+  select {
+    font-size: var(--mobile-font-md) !important; /* 16px prevents iOS zoom */
+  }
+}
+
+/* ========================
+   HORIZONTAL SCROLL CONTAINER
+   ======================== */
+.mobile-scroll-x {
+  display: flex;
+  overflow-x: auto;
+  gap: 12px;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.mobile-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-scroll-x > * {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* Full-bleed horizontal scroll (extends to screen edges) */
+.mobile-scroll-x-bleed {
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+/* ========================
+   BOTTOM SHEET MODAL
+   ======================== */
+@media (max-width: 640px) {
+  .modal-bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto !important;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0;
+    transform: translateY(0);
+    padding-bottom: calc(var(--safe-area-bottom) + 16px);
+  }
+  
+  .modal-bottom-sheet::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 8px auto 16px;
+  }
+}
+
+/* ========================
+   STACKED BUTTONS (MOBILE)
+   ======================== */
+@media (max-width: 480px) {
+  .btn-stack-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .btn-stack-mobile > * {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ========================
+   CARD GRID RESPONSIVE
+   ======================== */
+.card-grid-responsive {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 769px) {
+  .card-grid-responsive {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .card-grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-grid-responsive {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================
+   SAFE AREA PADDING
+   ======================== */
+.safe-area-top {
+  padding-top: var(--safe-area-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.safe-area-x {
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+}
+
+/* ========================
+   MOBILE TEXT UTILITIES
+   ======================== */
+@media (max-width: 640px) {
+  .text-truncate-mobile {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  
+  .text-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .text-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ========================
+   HIDE/SHOW ON MOBILE
+   ======================== */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .show-mobile-only {
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hide-small-mobile {
+    display: none !important;
+  }
+}
+
+/* ========================
+   STICKY MOBILE FOOTER
+   ======================== */
+@media (max-width: 640px) {
+  .sticky-bottom-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 16px;
+    padding-bottom: calc(var(--safe-area-bottom) + 12px);
+    background: linear-gradient(to top, rgba(15, 23, 42, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 100;
+  }
+  
+  /* Add padding to page content when sticky footer exists */
+  .has-sticky-footer {
+    padding-bottom: 80px !important;
+  }
+}
+
+/* ========================
+   MOBILE FORM LAYOUTS
+   ======================== */
+@media (max-width: 640px) {
+  .form-row-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .form-row-mobile > * {
+    width: 100%;
+  }
+}
+
+/* ========================
+   TOUCH SCROLL MOMENTUM
+   ======================== */
+.smooth-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ========================
+   LANDSCAPE OPTIMIZATIONS
+   ======================== */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape */
+  .compact-landscape {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  
+  /* Smaller modals in landscape */
+  .modal-landscape-compact {
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+}
+
+/* ========================
+   ACCESSIBILITY
+   ======================== */
+/* Visible focus indicators for keyboard navigation */
+@media (max-width: 768px) {
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========================
+   PULL-TO-REFRESH SPACING
+   ======================== */
+.pull-to-refresh-spacer {
+  height: 0;
+  transition: height 0.2s ease;
+}
+
+/* ========================
+   FLOATING ACTION BUTTON
+   ======================== */
+@media (max-width: 640px) {
+  .fab {
+    position: fixed;
+    bottom: calc(var(--safe-area-bottom) + 20px);
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    z-index: 99;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .fab:active {
+    transform: scale(0.95);
+  }
+  
+  /* Offset FAB when sticky footer exists */
+  .has-sticky-footer .fab {
+    bottom: calc(var(--safe-area-bottom) + 80px);
+  }
+}
+
+/* ========================
+   SWIPE INDICATOR
+   ======================== */
+.swipe-indicator {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .swipe-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+  }
+  
+  .swipe-indicator::before,
+  .swipe-indicator::after {
+    content: '←';
+    font-size: 14px;
+  }
+  
+  .swipe-indicator::after {
+    content: '→';
+  }
+}
+
+/* ========================
+   MOBILE CARD SHADOWS
+   ======================== */
+@media (max-width: 640px) {
+  .card-shadow-mobile {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Lighter shadows for better performance on mobile */
+  .shadow-light-mobile {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}

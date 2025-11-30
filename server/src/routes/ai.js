@@ -723,8 +723,8 @@ router.get('/shotstack/status/:jobId', async (req, res) => {
 });
 
 /**
- * Upload video to Cloudinary for rendering
- * POST /api/ai/upload-video
+ * Upload audio to Cloudinary for rendering
+ * POST /api/ai/upload-audio
  */
 const multer = require('multer');
 const upload = multer({ 
@@ -732,6 +732,45 @@ const upload = multer({
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
 });
 
+router.post('/upload-audio', upload.single('audio'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No audio file provided' });
+    }
+    
+    if (!cloudinaryUpload) {
+      return res.status(503).json({ error: 'Cloudinary service not available' });
+    }
+    
+    console.log('🎵 Uploading audio to Cloudinary...');
+    console.log('   Size:', (req.file.size / 1024 / 1024).toFixed(2), 'MB');
+    console.log('   Filename:', req.file.originalname);
+    
+    const result = await cloudinaryUpload(req.file.buffer, {
+      resource_type: 'video', // Cloudinary uses 'video' for audio files too
+      folder: 'instamarketing/audio'
+    });
+    
+    if (result.success) {
+      console.log('✅ Audio uploaded:', result.url);
+      res.json({
+        success: true,
+        url: result.url,
+        publicId: result.publicId
+      });
+    } else {
+      throw new Error(result.error || 'Upload failed');
+    }
+  } catch (error) {
+    console.error('Audio upload error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Upload video to Cloudinary for rendering
+ * POST /api/ai/upload-video
+ */
 router.post('/upload-video', upload.single('video'), async (req, res) => {
   try {
     if (!req.file) {

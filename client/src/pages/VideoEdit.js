@@ -51,6 +51,9 @@ const VideoEdit = () => {
   
   // Audio preview state
   const [playingPreviewId, setPlayingPreviewId] = useState(null);
+  
+  // Mobile video picker modal
+  const [showMobileVideoPicker, setShowMobileVideoPicker] = useState(false);
 
   // Filtered videos based on search
   const filteredVideos = videos.filter(video => 
@@ -88,16 +91,72 @@ const VideoEdit = () => {
   ];
 
   useEffect(() => {
-    // Load saved videos
+    // Load saved videos from localStorage
     const savedVideos = JSON.parse(localStorage.getItem('aiVideos') || '[]');
-    setVideos(savedVideos);
+    
+    // Filter out videos with invalid URLs
+    const normalizedVideos = savedVideos
+      .map(v => ({
+        ...v,
+        url: v.url || v.videoUrl
+      }))
+      .filter(v => {
+        const videoUrl = v.url || v.videoUrl;
+        
+        // Filter out blob URLs as they are session-specific
+        if (videoUrl && videoUrl.startsWith('blob:')) {
+          console.log('Removing invalid blob URL video:', v.id);
+          return false;
+        }
+        
+        // Filter out empty or invalid URLs
+        if (!videoUrl || videoUrl === 'undefined' || videoUrl === 'null') {
+          console.log('Removing video with invalid URL:', v.id);
+          return false;
+        }
+        
+        // Keep only videos with http/https URLs
+        if (!videoUrl.startsWith('http')) {
+          console.log('Removing video with non-http URL:', v.id, videoUrl);
+          return false;
+        }
+        
+        return true;
+      });
+    
+    // Update localStorage to remove invalid videos
+    if (normalizedVideos.length !== savedVideos.length) {
+      console.log(`Cleaned up ${savedVideos.length - normalizedVideos.length} invalid videos`);
+      localStorage.setItem('aiVideos', JSON.stringify(normalizedVideos));
+    }
+    
+    setVideos(normalizedVideos);
     
     // Check if video was passed from navigation
     if (location.state?.video) {
-      setSelectedVideo(location.state.video);
-    } else if (savedVideos.length > 0) {
+      // Normalize video object to ensure 'url' property exists
+      const navVideo = location.state.video;
+      const videoUrl = navVideo.url || navVideo.videoUrl;
+      
+      // Check if it's a valid URL
+      if (!videoUrl || videoUrl.startsWith('blob:') || !videoUrl.startsWith('http')) {
+        console.warn('Cannot use invalid URL from navigation:', videoUrl);
+        // Try to select first valid video instead
+        if (normalizedVideos.length > 0) {
+          setSelectedVideo(normalizedVideos[0]);
+        }
+      } else {
+        const normalizedVideo = {
+          ...navVideo,
+          url: videoUrl
+        };
+        console.log('Setting selected video from navigation:', normalizedVideo.url);
+        setSelectedVideo(normalizedVideo);
+      }
+    } else if (normalizedVideos.length > 0) {
       // Auto-select first video if available
-      setSelectedVideo(savedVideos[0]);
+      console.log('Auto-selecting first video:', normalizedVideos[0].url);
+      setSelectedVideo(normalizedVideos[0]);
     }
   }, [location.state]);
 
@@ -203,6 +262,12 @@ const VideoEdit = () => {
     }
   };
 
+  // Handle selecting video from mobile picker
+  const handleSelectVideoFromPicker = (video) => {
+    setSelectedVideo({ ...video, url: video.url || video.videoUrl });
+    setShowMobileVideoPicker(false);
+  };
+
   const formatTime = (time) => {
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
@@ -271,24 +336,74 @@ const VideoEdit = () => {
     setRenderedVideoUrl(null);
     
     try {
-      // Build subtitles array for backend
-      const subtitlesData = subtitles.map(sub => ({
-        text: sub.text,
-        start: sub.startTime,
-        end: sub.endTime
-      }));
+      // Build subtitles array for backend - include both subtitles AND text overlays
+      const subtitlesData = [
+        // Regular subtitles
+        ...subtitles.map(sub => ({
+          text: sub.text,
+          start: sub.startTime,
+          end: sub.endTime,
+          position: 'bottom'
+        })),
+        // Text overlays (converted to subtitle format for Shotstack)
+        ...textOverlays.map(overlay => ({
+          text: overlay.text,
+          start: overlay.startTime,
+          end: overlay.endTime,
+          position: overlay.position || 'center',
+          style: overlay.style || 'blockbuster'
+        }))
+      ];
       
-      // Get the audio URL (need to upload to cloud first if local)
+      console.log('Sending to render:', { subtitlesCount: subtitlesData.length, subtitlesData });
+      
+      // Get the audio URL - need to upload to cloud if it's a local file
       let audioUrl = null;
       if (musicTrack?.audioUrl) {
-        // If it's a local path, we need the full URL
-        audioUrl = musicTrack.audioUrl.startsWith('/') 
-          ? `${window.location.origin}${musicTrack.audioUrl}`
-          : musicTrack.audioUrl;
+        const localAudioPath = musicTrack.audioUrl;
+        
+        // Check if it's a local path that needs to be uploaded
+        if (localAudioPath.startsWith('/music/') || localAudioPath.startsWith('/')) {
+          toast.info('Uploading music to cloud...');
+          setRenderProgress(3);
+          
+          try {
+            // Fetch the local audio file
+            const audioResponse = await fetch(localAudioPath);
+            if (!audioResponse.ok) throw new Error('Failed to fetch audio file');
+            const audioBlob = await audioResponse.blob();
+            
+            // Upload to server (which will upload to Cloudinary)
+            const formData = new FormData();
+            formData.append('audio', audioBlob, localAudioPath.split('/').pop());
+            
+            const uploadRes = await fetch('/api/ai/upload-audio', {
+              method: 'POST',
+              body: formData
+            });
+            
+            const uploadResult = await uploadRes.json();
+            
+            if (uploadResult.success && uploadResult.url) {
+              audioUrl = uploadResult.url;
+              toast.success('Music uploaded!');
+              setRenderProgress(8);
+            } else {
+              console.warn('Audio upload failed, continuing without music:', uploadResult.error);
+              toast.warning('Continuing without music');
+            }
+          } catch (audioError) {
+            console.warn('Audio upload error, continuing without music:', audioError);
+            toast.warning('Continuing without music');
+          }
+        } else if (localAudioPath.startsWith('http')) {
+          // Already a cloud URL
+          audioUrl = localAudioPath;
+        }
       }
       
       // Get video URL - upload to cloud if it's a blob
-      let videoUrl = selectedVideo.url;
+      let videoUrl = selectedVideo.url || selectedVideo.videoUrl;
       if (videoUrl.startsWith('blob:')) {
         toast.info('Uploading video to cloud...');
         setRenderProgress(5);
@@ -398,11 +513,16 @@ const VideoEdit = () => {
     
     const editedVideo = {
       ...selectedVideo,
+      // Save the rendered video URL if available
+      url: renderedVideoUrl || selectedVideo.url,
+      videoUrl: renderedVideoUrl || selectedVideo.videoUrl,
+      renderedUrl: renderedVideoUrl,
       musicTrack,
       textOverlays,
       subtitles,
       soundEffects,
-      editedAt: new Date().toISOString()
+      editedAt: new Date().toISOString(),
+      isRendered: !!renderedVideoUrl
     };
     
     const updatedVideos = videos.map(v => 
@@ -410,8 +530,9 @@ const VideoEdit = () => {
     );
     
     setVideos(updatedVideos);
+    setSelectedVideo(editedVideo);
     localStorage.setItem('aiVideos', JSON.stringify(updatedVideos));
-    toast.success('Video saved!');
+    toast.success('Video saved successfully!');
   };
 
   const handlePostToInstagram = () => {
@@ -429,18 +550,51 @@ const VideoEdit = () => {
     toast.success('Video deleted');
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     // Prefer rendered video URL if available
-    const downloadUrl = renderedVideoUrl || selectedVideo?.url;
-    if (downloadUrl) {
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = `video-${selectedVideo?.id || Date.now()}.mp4`;
-      link.target = '_blank'; // Open in new tab for cloud URLs
-      link.click();
-      toast.success('Download started');
-    } else {
+    const downloadUrl = renderedVideoUrl || selectedVideo?.url || selectedVideo?.videoUrl;
+    if (!downloadUrl) {
       toast.error('No video available to download');
+      return;
+    }
+    
+    try {
+      toast.info('Preparing download...');
+      
+      // For cross-origin URLs (like Shotstack CDN), we need to fetch as blob
+      if (downloadUrl.startsWith('http') && !downloadUrl.startsWith(window.location.origin)) {
+        // Fetch the video as a blob
+        const response = await fetch(downloadUrl);
+        if (!response.ok) throw new Error('Failed to fetch video');
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `video-${selectedVideo?.id || Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up blob URL after a short delay
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      } else {
+        // For local/same-origin URLs, direct download works
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `video-${selectedVideo?.id || Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      toast.success('Download started!');
+    } catch (error) {
+      console.error('Download error:', error);
+      // Fallback: open in new tab
+      window.open(downloadUrl, '_blank');
+      toast.info('Video opened in new tab - right-click to save');
     }
   };
 
@@ -658,11 +812,20 @@ const VideoEdit = () => {
                     <div 
                       key={video.id} 
                       className={`video-item ${selectedVideo?.id === video.id ? 'active' : ''}`}
-                      onClick={() => setSelectedVideo(video)}
+                      onClick={() => setSelectedVideo({ ...video, url: video.url || video.videoUrl })}
                     >
                       <div className="video-thumb">
-                        {video.url ? (
-                          <video src={video.url} muted />
+                        {(video.url || video.videoUrl) ? (
+                          <video 
+                            src={video.url || video.videoUrl} 
+                            muted 
+                            playsInline 
+                            preload="metadata"
+                            onError={(e) => {
+                              // Hide broken video thumbnails
+                              e.target.style.display = 'none';
+                            }}
+                          />
                         ) : (
                           <FiVideo />
                         )}
@@ -674,16 +837,29 @@ const VideoEdit = () => {
                         <p className="video-title">{video.prompt?.slice(0, 40) || 'AI Video'}</p>
                         <span className="video-date">{formatDate(video.createdAt)}</span>
                       </div>
-                      <button 
-                        className="delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteVideo(video.id);
-                        }}
-                        title="Delete video"
-                      >
-                        <FiTrash2 />
-                      </button>
+                      <div className="video-item-actions">
+                        <button 
+                          className="add-to-edit-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedVideo({ ...video, url: video.url || video.videoUrl });
+                            toast.success('Video added to preview');
+                          }}
+                          title="Add to preview"
+                        >
+                          <FiPlus />
+                        </button>
+                        <button 
+                          className="delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteVideo(video.id);
+                          }}
+                          title="Delete video"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -694,18 +870,79 @@ const VideoEdit = () => {
 
         {/* CENTER PANEL - Hero Video Preview */}
         <div className="editor-main">
+          {/* Mobile Add Video Button - only shows on mobile */}
+          <div className="mobile-add-video-header">
+            <button 
+              className="mobile-add-video-btn"
+              onClick={() => setShowMobileVideoPicker(true)}
+            >
+              <FiPlus /> Add Video
+            </button>
+            {selectedVideo && (
+              <span className="mobile-video-indicator">
+                {selectedVideo.prompt?.slice(0, 20) || 'Video selected'}...
+              </span>
+            )}
+          </div>
+
           <div className="hero-preview-wrapper">
             {/* Glow Frame Container */}
             <div className="preview-glow-frame">
               {/* 9:16 Aspect Ratio Container */}
               <div className="preview-container-9-16">
-                {selectedVideo ? (
+                {selectedVideo && (selectedVideo.url || selectedVideo.videoUrl) ? (
                   <video 
                     ref={videoRef}
-                    src={selectedVideo.url}
+                    src={selectedVideo.url || selectedVideo.videoUrl}
                     className="preview-video-hero"
                     onClick={togglePlay}
                     muted={isMuted}
+                    playsInline
+                    preload="auto"
+                    onError={(e) => {
+                      const videoUrl = selectedVideo.url || selectedVideo.videoUrl;
+                      const errorCode = e.target.error?.code;
+                      const errorMsg = e.target.error?.message || 'Unknown error';
+                      
+                      console.error('Video load error:', { 
+                        code: errorCode, 
+                        message: errorMsg, 
+                        url: videoUrl 
+                      });
+                      
+                      // Error codes: 1=ABORTED, 2=NETWORK, 3=DECODE, 4=SRC_NOT_SUPPORTED
+                      // Remove video if it's a format error, decode error, or invalid source
+                      if (errorCode === 4 || errorCode === 3 || videoUrl?.startsWith('blob:')) {
+                        toast.error('Video format not supported or expired. Removing from library.');
+                        
+                        // Remove the invalid video from the list
+                        const updatedVideos = videos.filter(v => v.id !== selectedVideo.id);
+                        setVideos(updatedVideos);
+                        localStorage.setItem('aiVideos', JSON.stringify(updatedVideos));
+                        
+                        // Select another video if available
+                        if (updatedVideos.length > 0) {
+                          setSelectedVideo(updatedVideos[0]);
+                        } else {
+                          setSelectedVideo(null);
+                        }
+                      } else if (errorCode === 2) {
+                        toast.error('Network error loading video. Check your connection.');
+                      } else {
+                        toast.error('Failed to load video: ' + errorMsg);
+                      }
+                    }}
+                    onLoadedData={() => {
+                      console.log('Video loaded successfully:', selectedVideo.url || selectedVideo.videoUrl);
+                      if (videoRef.current) {
+                        setDuration(videoRef.current.duration || 5);
+                      }
+                    }}
+                    onLoadedMetadata={() => {
+                      if (videoRef.current) {
+                        setDuration(videoRef.current.duration || 5);
+                      }
+                    }}
                   />
                 ) : (
                   <div className="preview-empty-state">
@@ -713,14 +950,14 @@ const VideoEdit = () => {
                       <FiVideo />
                     </div>
                     <h3>No Video Selected</h3>
-                    <p>Choose from your library or upload a new file</p>
+                    <p>Choose from your saved videos or upload a new file</p>
                     <div className="empty-state-actions">
                       {videos.length > 0 && (
                         <button 
-                          className="empty-state-btn secondary"
-                          onClick={() => setSidebarCollapsed(false)}
+                          className="empty-state-btn primary"
+                          onClick={() => setShowMobileVideoPicker(true)}
                         >
-                          <FiVideo /> Browse Library
+                          <FiVideo /> Add Video
                         </button>
                       )}
                       <label className="empty-state-btn outline">
@@ -748,6 +985,12 @@ const VideoEdit = () => {
                           }}
                         />
                       </label>
+                      <button 
+                        className="empty-state-btn secondary"
+                        onClick={() => navigate('/app/ai-video')}
+                      >
+                        <FiZap /> Generate New
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1269,6 +1512,79 @@ const VideoEdit = () => {
             </div>
           </aside>
         </div>
+
+        {/* Mobile Video Picker Modal */}
+        {showMobileVideoPicker && (
+          <div className="mobile-video-picker-overlay" onClick={() => setShowMobileVideoPicker(false)}>
+            <div className="mobile-video-picker-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="picker-header">
+                <h3>Select Video</h3>
+                <button className="picker-close" onClick={() => setShowMobileVideoPicker(false)}>
+                  <FiX />
+                </button>
+              </div>
+              <div className="picker-videos-grid">
+                {videos.length > 0 ? (
+                  videos.map((video) => (
+                    <div 
+                      key={video.id} 
+                      className={`picker-video-card ${selectedVideo?.id === video.id ? 'selected' : ''}`}
+                    >
+                      <div 
+                        className="picker-video-thumbnail"
+                        onClick={() => handleSelectVideoFromPicker(video)}
+                      >
+                        <video 
+                          src={video.url || video.videoUrl} 
+                          muted 
+                          playsInline
+                          preload="metadata"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                        <div className="picker-play-icon"><FiPlay /></div>
+                      </div>
+                      <div className="picker-video-info">
+                        <span className="picker-video-title">{video.prompt?.slice(0, 25) || 'Untitled'}...</span>
+                        <span className="picker-video-date">
+                          {new Date(video.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="picker-video-actions">
+                        <button 
+                          className="picker-add-btn"
+                          onClick={() => handleSelectVideoFromPicker(video)}
+                          title="Add to preview"
+                        >
+                          <FiPlus /> Add
+                        </button>
+                        <button 
+                          className="picker-delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteVideo(video.id);
+                          }}
+                          title="Delete video"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="picker-empty">
+                    <FiVideo />
+                    <p>No videos yet</p>
+                    <button onClick={() => { setShowMobileVideoPicker(false); navigate('/app/ai-video'); }}>
+                      Generate Your First Video
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     );
   };

@@ -751,8 +751,11 @@
   display: flex;
   gap: 12px;
   padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
   background: #0f172a;
   border-top: 1px solid #334155;
+  position: sticky;
+  bottom: 0;
 }
 
 .chat-input input {
@@ -762,12 +765,18 @@
   border: 1px solid #334155;
   border-radius: 10px;
   color: #f1f5f9;
-  font-size: 14px;
+  font-size: 16px; /* Prevents iOS zoom */
+  min-height: 48px;
 }
 
 .chat-input input:focus {
   outline: none;
   border-color: #3b82f6;
+}
+
+/* Scroll input into view when focused on mobile */
+.chat-input input:focus-within {
+  scroll-margin-bottom: 100px;
 }
 
 .chat-input button {
@@ -812,21 +821,41 @@
 
 @media (max-width: 900px) {
   .ai-tabs {
-    padding: 12px;
+    padding: 10px;
     gap: 6px;
+    /* Horizontal scroll for tabs */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .ai-tabs::-webkit-scrollbar {
+    display: none;
   }
   
   .ai-tab {
     padding: 10px 14px;
     font-size: 13px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    min-height: 44px;
   }
   
+  /* Keep icon + short text visible */
   .ai-tab span {
-    display: none;
+    display: inline;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .ai-tab svg {
-    font-size: 20px;
+    font-size: 18px;
+    flex-shrink: 0;
   }
   
   .reel-workflow-info {
@@ -846,7 +875,7 @@
 
 @media (max-width: 600px) {
   .ai-tools-page {
-    padding: 16px;
+    padding: 16px 12px;
   }
   
   .ai-tools-page .page-header h1 {
@@ -854,7 +883,7 @@
   }
   
   .ai-content {
-    padding: 20px;
+    padding: 16px;
     border-radius: 12px;
   }
   
@@ -862,9 +891,18 @@
     font-size: 1.25rem;
   }
   
+  /* Form inputs - prevent iOS zoom */
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 16px;
+    padding: 14px 16px;
+  }
+  
   .generate-btn {
-    padding: 12px 20px;
-    font-size: 14px;
+    padding: 14px 20px;
+    font-size: 15px;
+    min-height: 48px;
   }
   
   .chat-container {
@@ -883,10 +921,188 @@
   .copy-btn {
     width: 100%;
     justify-content: center;
+    min-height: 44px;
   }
   
   .reel-workflow-info::before {
     left: 40px;
     right: 40px;
+  }
+  
+  /* Result boxes */
+  .result-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .result-header button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .result-content {
+    padding: 14px;
+    font-size: 14px;
+  }
+  
+  /* Idea cards */
+  .idea-card {
+    padding: 16px;
+  }
+  
+  .idea-card h3 {
+    font-size: 15px;
+  }
+  
+  /* Chat input */
+  .chat-input {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .chat-input input {
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+  
+  .chat-input button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .ai-tools-page {
+    padding: 12px 10px;
+  }
+  
+  .ai-tools-page .page-header h1 {
+    font-size: 1.375rem;
+  }
+  
+  .ai-tools-page .page-header p {
+    font-size: 0.875rem;
+  }
+  
+  .ai-tabs {
+    padding: 10px;
+    gap: 4px;
+  }
+  
+  .ai-tab {
+    padding: 10px 12px;
+  }
+  
+  .ai-content {
+    padding: 14px;
+  }
+  
+  .ai-section h2 {
+    font-size: 1.125rem;
+  }
+  
+  .ai-section > p {
+    font-size: 0.875rem;
+  }
+  
+  /* Workflow steps - horizontal scroll */
+  .reel-workflow-info {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 14px 12px;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .reel-workflow-info::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .reel-workflow-info::before {
+    display: none;
+  }
+  
+  .workflow-step {
+    min-width: 70px;
+  }
+  
+  .workflow-step .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+  
+  .workflow-step .step-label {
+    font-size: 9px;
+  }
+  
+  .chat-container {
+    height: 350px;
+  }
+  
+  .hashtags-grid {
+    padding: 14px;
+    gap: 8px;
+  }
+  
+  .hashtag-chip {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 360px) {
+  .ai-tools-page .page-header h1 {
+    font-size: 1.25rem;
+    gap: 8px;
+  }
+  
+  .ai-content {
+    padding: 12px;
+  }
+  
+  .generate-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+  
+  .chat-container {
+    height: 300px;
+  }
+}
+
+/* Landscape */
+@media (max-height: 500px) and (orientation: landscape) {
+  .ai-tools-page {
+    padding: 12px 16px;
+  }
+  
+  .ai-tools-page .page-header {
+    margin-bottom: 16px;
+  }
+  
+  .ai-tabs {
+    margin-bottom: 16px;
+  }
+  
+  .ai-tab span {
+    display: inline;
+  }
+  
+  .reel-workflow-info {
+    display: flex;
+    overflow-x: visible;
+  }
+  
+  .reel-workflow-info::before {
+    display: block;
+  }
+  
+  .chat-container {
+    height: 280px;
   }
 }

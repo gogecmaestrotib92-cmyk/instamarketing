@@ -1,22 +1,25 @@
 /* Global Mobile Optimizations */
 
 @media (max-width: 768px) {
-  /* Typography */
+  /* Typography - Keep base 16px to prevent iOS zoom issues */
   html {
-    font-size: 14px; /* Slightly smaller base font size */
+    font-size: 16px;
+    /* Prevent text size adjustment on orientation change */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   h1 {
-    font-size: 1.75rem !important;
-    line-height: 1.3;
+    font-size: 1.625rem !important;
+    line-height: 1.25;
   }
 
   h2 {
-    font-size: 1.5rem !important;
+    font-size: 1.375rem !important;
   }
 
   h3 {
-    font-size: 1.25rem !important;
+    font-size: 1.125rem !important;
   }
 
   /* Layout Containers */

@@ -71,7 +71,7 @@ const Register = () => {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="name" className="label">Full Name *</label>
+            <label htmlFor="name" className="label">Full Name <span aria-hidden="true">*</span></label>
             <div className="input-wrapper">
               <FiUser className="input-icon" aria-hidden="true" />
               <input
@@ -79,18 +79,21 @@ const Register = () => {
                 type="text"
                 name="name"
                 className="input"
-                placeholder="Enter your name"
+                placeholder="John Smith"
                 value={formData.name}
                 onChange={handleChange}
                 required
                 aria-required="true"
+                aria-describedby="name-hint"
                 autoComplete="name"
+                autoCapitalize="words"
               />
             </div>
+            <span id="name-hint" className="sr-only">Enter your first and last name</span>
           </div>
 
           <div className="form-group">
-            <label htmlFor="email" className="label">Email *</label>
+            <label htmlFor="email" className="label">Email Address <span aria-hidden="true">*</span></label>
             <div className="input-wrapper">
               <FiMail className="input-icon" aria-hidden="true" />
               <input
@@ -98,18 +101,24 @@ const Register = () => {
                 type="email"
                 name="email"
                 className="input"
-                placeholder="Enter your email"
+                placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
                 aria-required="true"
+                aria-describedby="reg-email-hint"
                 autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
               />
             </div>
+            <span id="reg-email-hint" className="sr-only">This will be your login email</span>
           </div>
 
           <div className="form-group">
-            <label htmlFor="company" className="label">Company (Optional)</label>
+            <label htmlFor="company" className="label">Company <span className="optional-label">(Optional)</span></label>
             <div className="input-wrapper">
               <FiBriefcase className="input-icon" aria-hidden="true" />
               <input
@@ -117,16 +126,17 @@ const Register = () => {
                 type="text"
                 name="company"
                 className="input"
-                placeholder="Enter company name"
+                placeholder="Your company name"
                 value={formData.company}
                 onChange={handleChange}
                 autoComplete="organization"
+                autoCapitalize="words"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="password" className="label">Password *</label>
+            <label htmlFor="password" className="label">Password <span aria-hidden="true">*</span></label>
             <div className="input-wrapper">
               <FiLock className="input-icon" aria-hidden="true" />
               <input
@@ -134,26 +144,33 @@ const Register = () => {
                 type={showPassword ? 'text' : 'password'}
                 name="password"
                 className="input"
-                placeholder="Create a password"
+                placeholder="Min. 6 characters"
                 value={formData.password}
                 onChange={handleChange}
                 required
                 aria-required="true"
+                aria-describedby="password-requirements"
                 autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                minLength={6}
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
               >
                 {showPassword ? <FiEyeOff aria-hidden="true" /> : <FiEye aria-hidden="true" />}
               </button>
             </div>
+            <span id="password-requirements" className="form-hint">Must be at least 6 characters</span>
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword" className="label">Confirm Password *</label>
+            <label htmlFor="confirmPassword" className="label">Confirm Password <span aria-hidden="true">*</span></label>
             <div className="input-wrapper">
               <FiLock className="input-icon" aria-hidden="true" />
               <input
@@ -161,14 +178,20 @@ const Register = () => {
                 type={showPassword ? 'text' : 'password'}
                 name="confirmPassword"
                 className="input"
-                placeholder="Confirm your password"
+                placeholder="Re-enter your password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
                 aria-required="true"
+                aria-describedby="confirm-hint"
                 autoComplete="new-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                minLength={6}
               />
             </div>
+            <span id="confirm-hint" className="sr-only">Re-enter the same password to confirm</span>
           </div>
 
           <button 

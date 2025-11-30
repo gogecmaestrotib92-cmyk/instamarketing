@@ -286,9 +286,13 @@ router.post('/text-to-video', auth, async (req, res) => {
 
     console.log('🎬 Starting async text-to-video generation...');
     console.log('Prompt:', prompt);
+    console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
 
     // Start async generation (returns immediately with predictionId)
-    const result = await replicateService.startTextToVideo(prompt, { quality });
+    const result = await replicateService.startTextToVideo(prompt, { 
+      duration: parseInt(duration), 
+      aspectRatio 
+    });
 
     if (!result.success) {
       return res.status(500).json({ error: result.error });
@@ -365,10 +369,12 @@ router.post('/image-to-video', auth, upload.single('image'), async (req, res) =>
     }
 
     console.log('🎬 Starting async image-to-video generation...');
+    console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
 
     // Start async generation
     const result = await replicateService.startImageToVideo(sourceImageUrl, prompt, {
-      duration: parseInt(duration)
+      duration: parseInt(duration),
+      aspectRatio
     });
 
     if (!result.success) {

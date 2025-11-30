@@ -51,3 +51,105 @@
   font-size: 13px;
   font-weight: 500;
 }
+
+/* ============================================================
+   MOBILE RESPONSIVE STYLES
+   ============================================================ */
+
+/* Tablet landscape - slightly smaller preview */
+@media (max-width: 1024px) {
+  .mobile-preview {
+    max-width: 200px;
+    border-radius: 20px;
+  }
+}
+
+/* Tablet portrait */
+@media (max-width: 768px) {
+  .mobile-preview {
+    max-width: 180px;
+    border-radius: 18px;
+    box-shadow: 
+      0 0 0 3px #1a1d28,
+      0 15px 40px rgba(0, 0, 0, 0.6);
+  }
+  
+  .mobile-preview__placeholder {
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .mobile-preview__placeholder svg {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .mobile-preview__placeholder span {
+    font-size: 12px;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 640px) {
+  .mobile-preview {
+    max-width: 160px;
+    border-radius: 16px;
+    box-shadow: 
+      0 0 0 2px #1a1d28,
+      0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  .mobile-preview__placeholder {
+    gap: 10px;
+    padding: 12px;
+  }
+  
+  .mobile-preview__placeholder svg {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .mobile-preview__placeholder span {
+    font-size: 11px;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .mobile-preview {
+    max-width: 140px;
+    border-radius: 14px;
+  }
+  
+  .mobile-preview__placeholder {
+    gap: 8px;
+    padding: 10px;
+  }
+  
+  .mobile-preview__placeholder svg {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .mobile-preview__placeholder span {
+    font-size: 10px;
+  }
+}
+
+/* Extra small phones */
+@media (max-width: 380px) {
+  .mobile-preview {
+    max-width: 120px;
+    border-radius: 12px;
+  }
+}
+
+/* Landscape orientation on phones - fit to viewport height */
+@media (max-height: 500px) and (orientation: landscape) {
+  .mobile-preview {
+    max-width: none;
+    width: auto;
+    height: 70vh;
+    max-height: 280px;
+  }
+}

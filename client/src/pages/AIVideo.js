@@ -52,8 +52,26 @@ const AIVideo = () => {
 
         if (status === 'completed' && video?.videoUrl) {
           setLoadingProgress(100);
-          toast.update(toastId, { render: 'Video ready', type: 'success', isLoading: false, autoClose: 3000 });
+          toast.update(toastId, { render: 'Video ready & saved!', type: 'success', isLoading: false, autoClose: 3000 });
           setGeneratedVideo(video);
+          
+          // Auto-save video to localStorage
+          const savedVideos = JSON.parse(localStorage.getItem('aiVideos') || '[]');
+          const newVideo = {
+            id: Date.now(),
+            url: video.videoUrl,
+            videoUrl: video.videoUrl,
+            prompt: config.prompt || prompt,
+            duration: config.duration || duration,
+            createdAt: new Date().toISOString()
+          };
+          // Check if video already exists (by URL)
+          const exists = savedVideos.find(v => v.url === video.videoUrl || v.videoUrl === video.videoUrl);
+          if (!exists) {
+            savedVideos.unshift(newVideo);
+            localStorage.setItem('aiVideos', JSON.stringify(savedVideos));
+          }
+          
           setLoading(false);
           setLoadingProgress(0);
           setLoadingStatus('');
@@ -134,7 +152,8 @@ const AIVideo = () => {
     const savedVideos = JSON.parse(localStorage.getItem('aiVideos') || '[]');
     const newVideo = {
       id: Date.now(),
-      ...generatedVideo,
+      url: generatedVideo.videoUrl, // Use 'url' for consistency with VideoEdit
+      videoUrl: generatedVideo.videoUrl,
       prompt,
       duration,
       createdAt: new Date().toISOString()
@@ -157,22 +176,27 @@ const AIVideo = () => {
 
   const handleEditVideo = () => {
     if (!generatedVideo) return;
+    
+    // Create video object with both url and videoUrl for compatibility
+    const videoForEdit = {
+      id: Date.now(),
+      url: generatedVideo.videoUrl,
+      videoUrl: generatedVideo.videoUrl,
+      prompt,
+      duration,
+      createdAt: new Date().toISOString()
+    };
+    
     // Save video to localStorage first
     const savedVideos = JSON.parse(localStorage.getItem('aiVideos') || '[]');
-    const videoExists = savedVideos.find(v => v.videoUrl === generatedVideo.videoUrl);
+    const videoExists = savedVideos.find(v => v.url === videoForEdit.url || v.videoUrl === videoForEdit.url);
     if (!videoExists) {
-      const newVideo = {
-        id: Date.now(),
-        ...generatedVideo,
-        prompt,
-        duration,
-        createdAt: new Date().toISOString()
-      };
-      savedVideos.unshift(newVideo);
+      savedVideos.unshift(videoForEdit);
       localStorage.setItem('aiVideos', JSON.stringify(savedVideos));
     }
-    // Navigate to edit page
-    navigate('/app/ai-video/edit', { state: { video: generatedVideo } });
+    
+    // Navigate to edit page with the properly formatted video
+    navigate('/app/ai-video/edit', { state: { video: videoForEdit } });
   };
 
   return (
