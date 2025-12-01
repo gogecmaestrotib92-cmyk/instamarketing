@@ -1118,15 +1118,53 @@ const VideoEdit = () => {
                 )}
                     
                 {/* Text Overlays */}
-                {selectedVideo && textOverlays.map(overlay => (
-                  currentTime >= overlay.startTime && currentTime <= overlay.endTime && (
+                {selectedVideo && textOverlays.map(overlay => {
+                  // Calculate position styles based on grid position
+                  const pos = overlay.position || 'bottom-center';
+                  const offsetX = overlay.offsetX || 0;
+                  const offsetY = overlay.offsetY || 0;
+                  
+                  let positionStyles = {};
+                  
+                  // Vertical positioning
+                  if (pos.startsWith('top')) {
+                    positionStyles.top = `calc(5% + ${offsetY}px)`;
+                    positionStyles.bottom = 'auto';
+                  } else if (pos.startsWith('center') || pos === 'center-left' || pos === 'center-right') {
+                    positionStyles.top = `calc(50% + ${offsetY}px)`;
+                    positionStyles.bottom = 'auto';
+                  } else if (pos.startsWith('bottom')) {
+                    positionStyles.bottom = `calc(12% - ${offsetY}px)`;
+                    positionStyles.top = 'auto';
+                  }
+                  
+                  // Horizontal positioning
+                  if (pos.endsWith('left')) {
+                    positionStyles.left = `calc(5% + ${offsetX}px)`;
+                    positionStyles.right = 'auto';
+                    positionStyles.transform = pos.includes('center') ? 'translateY(-50%)' : 'none';
+                  } else if (pos.endsWith('center') || pos === 'center') {
+                    positionStyles.left = `calc(50% + ${offsetX}px)`;
+                    positionStyles.right = 'auto';
+                    if (pos === 'center') {
+                      positionStyles.transform = 'translate(-50%, -50%)';
+                    } else {
+                      positionStyles.transform = 'translateX(-50%)';
+                    }
+                  } else if (pos.endsWith('right')) {
+                    positionStyles.right = `calc(5% - ${offsetX}px)`;
+                    positionStyles.left = 'auto';
+                    positionStyles.transform = pos.includes('center') ? 'translateY(-50%)' : 'none';
+                  }
+                  
+                  return currentTime >= overlay.startTime && currentTime <= overlay.endTime && (
                     <div 
                       key={overlay.id} 
-                      className={`preview-text-overlay position-${overlay.position || 'bottom-center'} style-${overlay.style || 'modern'}`}
+                      className={`preview-text-overlay style-${overlay.style || 'modern'}`}
                       style={{
-                        fontSize: `${overlay.fontSize || 18}px`,
-                        '--offset-x': `${overlay.offsetX || 0}px`,
-                        '--offset-y': `${overlay.offsetY || 0}px`,
+                        ...positionStyles,
+                        fontSize: `${overlay.fontSize || 24}px`,
+                        position: 'absolute',
                         maxWidth: '90%',
                         wordWrap: 'break-word',
                         textAlign: 'center'
@@ -1134,8 +1172,8 @@ const VideoEdit = () => {
                     >
                       {overlay.text}
                     </div>
-                  )
-                ))}
+                  );
+                })}
 
                 {/* Subtitles */}
                 {selectedVideo && subtitles.map(sub => (

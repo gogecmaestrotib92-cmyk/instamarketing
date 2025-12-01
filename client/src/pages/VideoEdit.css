@@ -1140,7 +1140,6 @@
 
 /* Preview Text Overlays */
 .preview-text-overlay {
-  position: absolute;
   padding: 10px 20px;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(8px);
@@ -1150,108 +1149,11 @@
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 10;
-  max-width: 90%;
-  word-wrap: break-word;
-  text-align: center;
   white-space: pre-wrap;
-  /* CSS variables for offset adjustments */
-  --offset-x: 0px;
-  --offset-y: 0px;
+  /* Positioning is handled by inline styles - DO NOT add position properties here */
 }
 
-/* 9-Grid Positioning - Precise positioning matching Cloudinary render */
-/* Top row */
-.preview-text-overlay.position-top-left { 
-  top: calc(5% + var(--offset-y)); 
-  left: calc(5% + var(--offset-x)); 
-  right: auto;
-  bottom: auto;
-  transform: none; 
-}
-.preview-text-overlay.position-top-center { 
-  top: calc(5% + var(--offset-y)); 
-  left: calc(50% + var(--offset-x)); 
-  right: auto;
-  bottom: auto;
-  transform: translateX(-50%); 
-}
-.preview-text-overlay.position-top-right { 
-  top: calc(5% + var(--offset-y)); 
-  right: calc(5% - var(--offset-x)); 
-  left: auto;
-  bottom: auto;
-  transform: none; 
-}
-
-/* Middle row - vertically centered */
-.preview-text-overlay.position-center-left { 
-  top: calc(50% + var(--offset-y)); 
-  left: calc(5% + var(--offset-x)); 
-  right: auto;
-  bottom: auto;
-  transform: translateY(-50%); 
-}
-.preview-text-overlay.position-center { 
-  top: calc(50% + var(--offset-y)); 
-  left: calc(50% + var(--offset-x)); 
-  right: auto;
-  bottom: auto;
-  transform: translate(-50%, -50%); 
-}
-.preview-text-overlay.position-center-right { 
-  top: calc(50% + var(--offset-y)); 
-  right: calc(5% - var(--offset-x)); 
-  left: auto;
-  bottom: auto;
-  transform: translateY(-50%); 
-}
-
-/* Bottom row */
-.preview-text-overlay.position-bottom-left { 
-  bottom: calc(12% - var(--offset-y)); 
-  top: auto;
-  left: calc(5% + var(--offset-x)); 
-  right: auto;
-  transform: none; 
-}
-.preview-text-overlay.position-bottom-center { 
-  bottom: calc(12% - var(--offset-y)); 
-  top: auto;
-  left: calc(50% + var(--offset-x)); 
-  right: auto;
-  transform: translateX(-50%); 
-}
-.preview-text-overlay.position-bottom-right { 
-  bottom: calc(12% - var(--offset-y)); 
-  top: auto;
-  right: calc(5% - var(--offset-x)); 
-  left: auto;
-  transform: none; 
-}
-
-/* Legacy position support */
-.preview-text-overlay.position-top { 
-  top: calc(5% + var(--offset-y)); 
-  left: calc(50% + var(--offset-x));
-  right: auto;
-  bottom: auto;
-  transform: translateX(-50%); 
-}
-.preview-text-overlay.position-middle { 
-  top: calc(50% + var(--offset-y)); 
-  left: calc(50% + var(--offset-x));
-  right: auto;
-  bottom: auto;
-  transform: translate(-50%, -50%); 
-}
-.preview-text-overlay.position-bottom { 
-  bottom: calc(12% - var(--offset-y)); 
-  top: auto;
-  left: calc(50% + var(--offset-x));
-  right: auto;
-  transform: translateX(-50%); 
-}
-
+/* Text overlay styles (position is set via inline styles in JavaScript) */
 .preview-text-overlay.style-neon {
   text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
   color: #00ffff;
