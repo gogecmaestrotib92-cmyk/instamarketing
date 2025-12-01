@@ -862,7 +862,7 @@ router.post('/upload-video', upload.single('video'), async (req, res) => {
  */
 router.post('/cloudinary/render', async (req, res) => {
   try {
-    const { videoUrl, audioUrl, subtitles, options } = req.body;
+    const { videoUrl, audioUrl, soundEffects, subtitles, options } = req.body;
     
     if (!videoUrl) {
       return res.status(400).json({ error: 'videoUrl is required' });
@@ -875,6 +875,7 @@ router.post('/cloudinary/render', async (req, res) => {
     console.log('🎬 Starting Cloudinary video render...');
     console.log('   Video:', videoUrl);
     console.log('   Audio:', audioUrl || 'none');
+    console.log('   Sound effects:', soundEffects?.length || 0);
     console.log('   Subtitles count:', subtitles?.length || 0);
     console.log('   Options:', JSON.stringify(options));
     
@@ -942,21 +943,49 @@ router.post('/cloudinary/render', async (req, res) => {
     
     console.log('📝 Final text overlays to render:', JSON.stringify(textOverlays));
     
+    // Extract public IDs from sound effects
+    const soundEffectIds = [];
+    if (soundEffects && soundEffects.length > 0) {
+      for (const effect of soundEffects) {
+        if (effect.url && effect.url.includes('cloudinary.com')) {
+          const effectParts = effect.url.split('/upload/');
+          if (effectParts.length === 2) {
+            const afterUpload = effectParts[1];
+            const effectIdWithExt = afterUpload.replace(/^v\d+\//, '');
+            const effectPublicId = effectIdWithExt.replace(/\.[^/.]+$/, '');
+            soundEffectIds.push({
+              publicId: effectPublicId,
+              startTime: effect.startTime || 0,
+              name: effect.name
+            });
+            console.log('🔊 Sound effect:', effect.name, 'Public ID:', effectPublicId, 'Start:', effect.startTime);
+          }
+        }
+      }
+    }
+    
     // Build options for the transformation
     const transformOptions = {
       audioPublicId,
-      musicVolume: options?.musicVolume || 1
+      musicVolume: options?.musicVolume || 1,
+      soundEffects: soundEffectIds
     };
     
     // Generate the video URL with text overlays and audio
     const resultUrl = cloudinaryService.generateVideoWithTextOverlay(finalVideoUrl, textOverlays, transformOptions);
+    
+    // Build response message
+    let message = 'Video ready';
+    if (audioPublicId) message += ' with music';
+    if (soundEffectIds.length > 0) message += ` and ${soundEffectIds.length} sound effect(s)`;
+    if (subtitles?.length > 0) message += ' with text overlay';
     
     // Return immediately with the transformed URL
     res.json({
       success: true,
       url: resultUrl,
       status: 'done',
-      message: audioPublicId ? 'Video ready with text and audio' : 'Video ready with text overlay'
+      message
     });
   } catch (error) {
     console.error('Cloudinary render error:', error);

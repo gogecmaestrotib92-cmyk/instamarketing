@@ -586,7 +586,47 @@ const VideoEdit = () => {
       // Use Cloudinary for rendering (more reliable than Shotstack for text overlays)
       console.log('Using Cloudinary render with subtitles:', subtitlesData);
       console.log('Audio URL:', audioUrl);
+      console.log('Sound effects:', soundEffects);
       setRenderProgress(20);
+      
+      // Upload sound effects to cloud if we have any
+      let soundEffectsData = [];
+      if (soundEffects.length > 0) {
+        toast.info('Uploading sound effects...');
+        setRenderProgress(25);
+        
+        for (const effect of soundEffects) {
+          try {
+            // Fetch the local sound file
+            const soundResponse = await fetch(effect.audioUrl);
+            if (!soundResponse.ok) continue;
+            const soundBlob = await soundResponse.blob();
+            
+            // Upload to server
+            const formData = new FormData();
+            formData.append('audio', soundBlob, effect.audioUrl.split('/').pop());
+            
+            const uploadRes = await fetch('/api/ai/upload-audio', {
+              method: 'POST',
+              body: formData
+            });
+            
+            const uploadResult = await uploadRes.json();
+            
+            if (uploadResult.success && uploadResult.url) {
+              soundEffectsData.push({
+                url: uploadResult.url,
+                startTime: effect.time || 0,
+                name: effect.name
+              });
+            }
+          } catch (err) {
+            console.warn('Failed to upload sound effect:', effect.name, err);
+          }
+        }
+        setRenderProgress(35);
+      }
+      
       toast.info('Processing video with text and audio...');
       
       // Use URL-based transformation (supports both text and audio)
@@ -596,6 +636,7 @@ const VideoEdit = () => {
         body: JSON.stringify({
           videoUrl,
           audioUrl,
+          soundEffects: soundEffectsData,
           subtitles: subtitlesData,
           options: {
             duration: duration || 5,
