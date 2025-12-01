@@ -202,10 +202,20 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
       'bottom': 'south'
     };
     
-    // Determine gravity (position) - default to bottom-center
-    const gravity = positionToGravity[overlay.position] || 'south';
+    // Determine gravity (position) - default to south (bottom-center)
+    const position = overlay.position || 'bottom-center';
+    const gravity = positionToGravity[position];
     
-    console.log(`📍 Text "${overlay.text?.substring(0, 20)}..." position: "${overlay.position}" -> gravity: "${gravity}"`);
+    // IMPORTANT: If position not found in map, log error and use south
+    if (!gravity) {
+      console.error(`❌ Unknown position "${position}" - defaulting to south`);
+    }
+    const finalGravity = gravity || 'south';
+    
+    console.log(`📍 Text overlay: "${overlay.text?.substring(0, 15)}..."`);
+    console.log(`   Position received: "${position}"`);
+    console.log(`   Gravity mapped: "${finalGravity}"`);
+    console.log(`   OffsetX: ${overlay.offsetX || 0}, OffsetY: ${overlay.offsetY || 0}`);
     
     // Get font size (default 42)
     const fontSize = overlay.fontSize || overlay.style?.fontSize || 42;
@@ -219,18 +229,18 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     let baseX = 0;
     let baseY = 0;
     
-    // Vertical positioning
-    if (gravity.includes('north')) {
+    // Vertical positioning based on finalGravity
+    if (finalGravity.includes('north')) {
       baseY = 40; // 40px from top edge
-    } else if (gravity.includes('south')) {
+    } else if (finalGravity.includes('south')) {
       baseY = 100; // 100px from bottom edge (above controls)
     }
     // Center vertical has no base offset
     
-    // Horizontal positioning  
-    if (gravity.includes('west')) {
+    // Horizontal positioning based on finalGravity
+    if (finalGravity.includes('west')) {
       baseX = 40; // 40px from left edge
-    } else if (gravity.includes('east')) {
+    } else if (finalGravity.includes('east')) {
       baseX = 40; // 40px from right edge
     }
     // Center horizontal has no base offset
@@ -242,7 +252,9 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     // Build text overlay transformation with text wrapping
     // c_fit,w_800 makes text wrap at 800px width
     // text_align:center centers multi-line text
-    let textTransform = `l_text:Montserrat_${fontSize}_bold_center:${encodedText},co_white,g_${gravity}`;
+    let textTransform = `l_text:Montserrat_${fontSize}_bold_center:${encodedText},co_white,g_${finalGravity}`;
+    
+    console.log(`   Final transform gravity: g_${finalGravity}, x_${xOffset}, y_${yOffset}`);
     
     // Add offsets if non-zero
     if (xOffset !== 0) {
