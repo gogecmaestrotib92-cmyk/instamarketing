@@ -5,7 +5,8 @@ import SEO from '../components/SEO';
 import { 
   FiPlay, FiPause, FiTrash2, FiVideo, FiMusic, FiType, 
   FiVolume2, FiVolumeX, FiDownload, FiSave, FiInstagram, FiX, FiCheck,
-  FiChevronLeft, FiChevronRight, FiChevronDown, FiLoader, FiPlus, FiSearch, FiZap
+  FiChevronLeft, FiChevronRight, FiChevronDown, FiLoader, FiPlus, FiSearch, FiZap,
+  FiMaximize2, FiMinimize2
 } from 'react-icons/fi';
 import './VideoEdit.css';
 
@@ -54,6 +55,10 @@ const VideoEdit = () => {
   
   // Mobile video picker modal
   const [showMobileVideoPicker, setShowMobileVideoPicker] = useState(false);
+  
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const fullscreenContainerRef = useRef(null);
 
   // Filtered videos based on search
   const filteredVideos = videos.filter(video => 
@@ -261,6 +266,52 @@ const VideoEdit = () => {
       videoRef.current.muted = !isMuted;
     }
   };
+  
+  // Fullscreen toggle function
+  const toggleFullscreen = () => {
+    if (!fullscreenContainerRef.current) return;
+    
+    if (!isFullscreen) {
+      // Enter fullscreen
+      if (fullscreenContainerRef.current.requestFullscreen) {
+        fullscreenContainerRef.current.requestFullscreen();
+      } else if (fullscreenContainerRef.current.webkitRequestFullscreen) {
+        fullscreenContainerRef.current.webkitRequestFullscreen();
+      } else if (fullscreenContainerRef.current.msRequestFullscreen) {
+        fullscreenContainerRef.current.msRequestFullscreen();
+      }
+    } else {
+      // Exit fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    }
+  };
+  
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.msFullscreenElement
+      ));
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('msfullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   // Handle selecting video from mobile picker
   const handleSelectVideoFromPicker = (video) => {
@@ -1009,7 +1060,18 @@ const VideoEdit = () => {
 
           <div className="hero-preview-wrapper">
             {/* Glow Frame Container */}
-            <div className="preview-glow-frame">
+            <div className={`preview-glow-frame ${isFullscreen ? 'fullscreen-mode' : ''}`} ref={fullscreenContainerRef}>
+              {/* Fullscreen Button */}
+              {selectedVideo && (
+                <button 
+                  className="fullscreen-btn"
+                  onClick={toggleFullscreen}
+                  title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                >
+                  {isFullscreen ? <FiMinimize2 /> : <FiMaximize2 />}
+                </button>
+              )}
+              
               {/* 9:16 Aspect Ratio Container */}
               <div className="preview-container-9-16">
                 {/* Show rendered video if available, otherwise show original */}

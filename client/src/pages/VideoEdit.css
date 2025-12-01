@@ -657,6 +657,106 @@
   font-size: 12px;
 }
 
+/* Fullscreen Button */
+.fullscreen-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 100;
+  color: #ffffff;
+}
+
+.fullscreen-btn:hover {
+  background: rgba(139, 92, 246, 0.7);
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: scale(1.05);
+}
+
+.fullscreen-btn svg {
+  font-size: 18px;
+}
+
+/* Fullscreen Mode Styles */
+.preview-glow-frame.fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  background: #000;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: none;
+  box-shadow: none;
+}
+
+.preview-glow-frame.fullscreen-mode .preview-container-9-16 {
+  width: auto;
+  height: 100vh;
+  max-height: 100vh;
+  min-height: auto;
+  aspect-ratio: 9 / 16;
+  border-radius: 0;
+}
+
+.preview-glow-frame.fullscreen-mode .fullscreen-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.preview-glow-frame.fullscreen-mode .hero-music-badge {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+}
+
+.preview-glow-frame.fullscreen-mode .hero-play-btn {
+  width: 100px;
+  height: 100px;
+}
+
+.preview-glow-frame.fullscreen-mode .hero-play-btn svg {
+  font-size: 40px;
+}
+
+.preview-glow-frame.fullscreen-mode .preview-video-hero {
+  object-fit: contain;
+}
+
+/* Fullscreen text overlays scaling */
+.preview-glow-frame.fullscreen-mode .preview-text-overlay {
+  font-size: 1.8em !important;
+}
+
+.preview-glow-frame.fullscreen-mode .preview-subtitle {
+  font-size: 1.5em;
+  bottom: 80px;
+}
+
 /* Playback Controls Bar */
 .playback-controls-bar {
   width: 100%;

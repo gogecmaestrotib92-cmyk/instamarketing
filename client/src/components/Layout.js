@@ -11,7 +11,10 @@ import {
   FiX,
   FiZap,
   FiChevronDown,
-  FiEdit3
+  FiEdit3,
+  FiCpu,
+  FiPlay,
+  FiGrid
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import './Layout.css';
@@ -34,6 +37,9 @@ const Layout = () => {
   useEffect(() => {
     if (location.pathname.startsWith('/app/ai-video')) {
       setExpandedItems(prev => ({ ...prev, 'ai-video': true }));
+    }
+    if (location.pathname.startsWith('/app/autopilot')) {
+      setExpandedItems(prev => ({ ...prev, 'autopilot': true }));
     }
   }, [location.pathname]);
 
@@ -150,6 +156,17 @@ const Layout = () => {
       key: 'ai-video',
       children: [
         { path: '/app/ai-video/edit', icon: FiEdit3, label: 'Edit' }
+      ]
+    },
+    { 
+      path: '/app/autopilot', 
+      icon: FiCpu, 
+      label: 'AI Auto-pilot', 
+      badge: 'NEW',
+      key: 'autopilot',
+      children: [
+        { path: '/app/autopilot/reels', icon: FiPlay, label: 'Reels' },
+        { path: '/app/autopilot/post', icon: FiGrid, label: 'Post' }
       ]
     },
     { path: '/app/settings', icon: FiSettings, label: 'Settings' }

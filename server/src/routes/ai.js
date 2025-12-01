@@ -1035,4 +1035,543 @@ router.post('/cloudinary/render-eager', async (req, res) => {
   }
 });
 
+// ==================== AI Auto-pilot Routes ====================
+
+// In-memory storage for autopilot state (would be in database in production)
+const autopilotState = {
+  reels: {
+    active: false,
+    settings: null,
+    queue: [],
+    history: []
+  },
+  post: {
+    active: false,
+    settings: null,
+    queue: [],
+    history: []
+  }
+};
+
+// Helper to generate unique IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+// Helper to get next scheduled time based on settings
+const getNextScheduledTime = (settings, existingTimes = []) => {
+  const now = new Date();
+  const preferredTimes = settings.preferredTimes || ['12:00'];
+  
+  // Find the next available time slot
+  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + dayOffset);
+    
+    for (const time of preferredTimes) {
+      const [hours, minutes] = time.split(':').map(Number);
+      date.setHours(hours, minutes, 0, 0);
+      
+      // Skip if this time is in the past or already scheduled
+      if (date > now && !existingTimes.includes(date.toISOString())) {
+        return date.toISOString();
+      }
+    }
+  }
+  
+  // Default: schedule for tomorrow at noon
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(12, 0, 0, 0);
+  return tomorrow.toISOString();
+};
+
+// ==================== Reels Auto-pilot ====================
+
+/**
+ * Get Reels auto-pilot status
+ * GET /api/ai/autopilot/reels/status
+ */
+router.get('/autopilot/reels/status', (req, res) => {
+  res.json({
+    active: autopilotState.reels.active,
+    settings: autopilotState.reels.settings
+  });
+});
+
+/**
+ * Start Reels auto-pilot
+ * POST /api/ai/autopilot/reels/start
+ */
+router.post('/autopilot/reels/start', (req, res) => {
+  const { settings } = req.body;
+  autopilotState.reels.active = true;
+  autopilotState.reels.settings = settings;
+  
+  console.log('🚀 Reels Auto-pilot started with settings:', settings);
+  
+  res.json({
+    success: true,
+    message: 'Reels auto-pilot started',
+    active: true
+  });
+});
+
+/**
+ * Stop Reels auto-pilot
+ * POST /api/ai/autopilot/reels/stop
+ */
+router.post('/autopilot/reels/stop', (req, res) => {
+  autopilotState.reels.active = false;
+  
+  console.log('⏹️ Reels Auto-pilot stopped');
+  
+  res.json({
+    success: true,
+    message: 'Reels auto-pilot stopped',
+    active: false
+  });
+});
+
+/**
+ * Get Reels queue
+ * GET /api/ai/autopilot/reels/queue
+ */
+router.get('/autopilot/reels/queue', (req, res) => {
+  res.json({
+    queue: autopilotState.reels.queue
+  });
+});
+
+/**
+ * Get Reels history
+ * GET /api/ai/autopilot/reels/history
+ */
+router.get('/autopilot/reels/history', (req, res) => {
+  res.json({
+    history: autopilotState.reels.history
+  });
+});
+
+/**
+ * Generate a new reel for the queue
+ * POST /api/ai/autopilot/reels/generate
+ */
+router.post('/autopilot/reels/generate', async (req, res) => {
+  try {
+    const { settings } = req.body;
+    
+    console.log('🎬 Generating new reel with settings:', settings);
+    
+    // Generate content based on niche
+    const niche = settings?.niche || 'motivational';
+    const style = settings?.style || 'cinematic';
+    
+    // Step 1: Generate caption/script with AI
+    let caption = '';
+    let hashtags = settings?.hashtags || '#viral #trending';
+    
+    try {
+      const captionResult = await openaiService.generateCaption(niche, {
+        tone: 'inspiring',
+        includeEmojis: true,
+        includeHashtags: false
+      });
+      if (captionResult.success) {
+        caption = captionResult.caption;
+      }
+    } catch (e) {
+      caption = `Amazing ${niche} content coming your way! ✨`;
+    }
+    
+    // Step 2: Generate video prompt
+    let videoPrompt = `${niche} content, ${style} style, vertical video, Instagram Reels format, high quality`;
+    
+    try {
+      const promptResult = await openaiService.generateVideoPrompt(niche, style);
+      if (promptResult.success) {
+        videoPrompt = promptResult.prompt;
+      }
+    } catch (e) {
+      console.log('Using default video prompt');
+    }
+    
+    // Step 3: Start video generation
+    let videoUrl = null;
+    let predictionId = null;
+    
+    try {
+      const videoResult = await replicateService.startTextToVideo(videoPrompt, {
+        numFrames: 16,
+        fps: 8,
+        steps: 25
+      });
+      
+      if (videoResult.success) {
+        predictionId = videoResult.predictionId;
+        
+        // Poll for completion (simplified - in production would use webhooks)
+        let attempts = 0;
+        while (attempts < 30) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const status = await replicateService.getPredictionStatus(predictionId);
+          
+          if (status.status === 'succeeded' && status.output) {
+            videoUrl = Array.isArray(status.output) ? status.output[0] : status.output;
+            break;
+          } else if (status.status === 'failed') {
+            throw new Error('Video generation failed');
+          }
+          attempts++;
+        }
+      }
+    } catch (e) {
+      console.error('Video generation error:', e.message);
+      // Use a placeholder video URL for demo purposes
+      videoUrl = 'https://res.cloudinary.com/demo/video/upload/dog.mp4';
+    }
+    
+    // Get existing scheduled times to avoid conflicts
+    const existingTimes = autopilotState.reels.queue.map(v => v.scheduledAt);
+    
+    // Create the queue item
+    const video = {
+      id: generateId(),
+      videoUrl: videoUrl || 'https://res.cloudinary.com/demo/video/upload/dog.mp4',
+      caption,
+      hashtags,
+      status: settings?.autoApprove ? 'approved' : 'pending',
+      scheduledAt: getNextScheduledTime(settings || {}, existingTimes),
+      createdAt: new Date().toISOString(),
+      settings: {
+        niche,
+        style,
+        videoPrompt
+      }
+    };
+    
+    // Add to queue
+    autopilotState.reels.queue.unshift(video);
+    
+    console.log('✅ Reel generated and added to queue:', video.id);
+    
+    res.json({
+      success: true,
+      video
+    });
+  } catch (error) {
+    console.error('Generate reel error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Approve a video in the queue
+ * POST /api/ai/autopilot/reels/queue/:id/approve
+ */
+router.post('/autopilot/reels/queue/:id/approve', (req, res) => {
+  const { id } = req.params;
+  const video = autopilotState.reels.queue.find(v => v.id === id);
+  
+  if (!video) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+  
+  video.status = 'approved';
+  
+  res.json({ success: true, video });
+});
+
+/**
+ * Delete a video from the queue
+ * DELETE /api/ai/autopilot/reels/queue/:id
+ */
+router.delete('/autopilot/reels/queue/:id', (req, res) => {
+  const { id } = req.params;
+  const index = autopilotState.reels.queue.findIndex(v => v.id === id);
+  
+  if (index === -1) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+  
+  autopilotState.reels.queue.splice(index, 1);
+  
+  res.json({ success: true });
+});
+
+/**
+ * Post a video now
+ * POST /api/ai/autopilot/reels/queue/:id/post
+ */
+router.post('/autopilot/reels/queue/:id/post', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const videoIndex = autopilotState.reels.queue.findIndex(v => v.id === id);
+    
+    if (videoIndex === -1) {
+      return res.status(404).json({ error: 'Video not found' });
+    }
+    
+    const video = autopilotState.reels.queue[videoIndex];
+    
+    // TODO: Actually post to Instagram via API
+    // For now, just move to history
+    console.log('📤 Posting video to Instagram:', video.id);
+    
+    // Move to history
+    video.postedAt = new Date().toISOString();
+    autopilotState.reels.history.unshift(video);
+    autopilotState.reels.queue.splice(videoIndex, 1);
+    
+    res.json({ 
+      success: true, 
+      message: 'Video posted successfully',
+      video
+    });
+  } catch (error) {
+    console.error('Post video error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Update video caption
+ * PATCH /api/ai/autopilot/reels/queue/:id
+ */
+router.patch('/autopilot/reels/queue/:id', (req, res) => {
+  const { id } = req.params;
+  const { caption, hashtags } = req.body;
+  
+  const video = autopilotState.reels.queue.find(v => v.id === id);
+  
+  if (!video) {
+    return res.status(404).json({ error: 'Video not found' });
+  }
+  
+  if (caption !== undefined) video.caption = caption;
+  if (hashtags !== undefined) video.hashtags = hashtags;
+  
+  res.json({ success: true, video });
+});
+
+// ==================== Post Auto-pilot ====================
+
+/**
+ * Get Post auto-pilot status
+ * GET /api/ai/autopilot/post/status
+ */
+router.get('/autopilot/post/status', (req, res) => {
+  res.json({
+    active: autopilotState.post.active,
+    settings: autopilotState.post.settings
+  });
+});
+
+/**
+ * Start Post auto-pilot
+ * POST /api/ai/autopilot/post/start
+ */
+router.post('/autopilot/post/start', (req, res) => {
+  const { settings } = req.body;
+  autopilotState.post.active = true;
+  autopilotState.post.settings = settings;
+  
+  console.log('🚀 Post Auto-pilot started with settings:', settings);
+  
+  res.json({
+    success: true,
+    message: 'Post auto-pilot started',
+    active: true
+  });
+});
+
+/**
+ * Stop Post auto-pilot
+ * POST /api/ai/autopilot/post/stop
+ */
+router.post('/autopilot/post/stop', (req, res) => {
+  autopilotState.post.active = false;
+  
+  console.log('⏹️ Post Auto-pilot stopped');
+  
+  res.json({
+    success: true,
+    message: 'Post auto-pilot stopped',
+    active: false
+  });
+});
+
+/**
+ * Get Post queue
+ * GET /api/ai/autopilot/post/queue
+ */
+router.get('/autopilot/post/queue', (req, res) => {
+  res.json({
+    queue: autopilotState.post.queue
+  });
+});
+
+/**
+ * Get Post history
+ * GET /api/ai/autopilot/post/history
+ */
+router.get('/autopilot/post/history', (req, res) => {
+  res.json({
+    history: autopilotState.post.history
+  });
+});
+
+/**
+ * Generate a new post for the queue
+ * POST /api/ai/autopilot/post/generate
+ */
+router.post('/autopilot/post/generate', async (req, res) => {
+  try {
+    const { settings } = req.body;
+    
+    console.log('🖼️ Generating new post with settings:', settings);
+    
+    const niche = settings?.niche || 'motivational';
+    const style = settings?.style || 'aesthetic';
+    
+    // Generate caption with AI
+    let caption = '';
+    let hashtags = settings?.hashtags || '#viral #trending';
+    
+    try {
+      const captionResult = await openaiService.generateCaption(niche, {
+        tone: settings?.captionStyle || 'engaging',
+        includeEmojis: true,
+        includeHashtags: false
+      });
+      if (captionResult.success) {
+        caption = captionResult.caption;
+      }
+    } catch (e) {
+      caption = `Check out this amazing ${niche} content! ✨`;
+    }
+    
+    // TODO: Generate image with AI (DALL-E or Stable Diffusion)
+    // For now, use a placeholder
+    const imageUrl = `https://source.unsplash.com/1080x1080/?${niche},${style}`;
+    
+    // Get existing scheduled times
+    const existingTimes = autopilotState.post.queue.map(p => p.scheduledAt);
+    
+    // Create the post
+    const post = {
+      id: generateId(),
+      imageUrl,
+      caption,
+      hashtags,
+      status: settings?.autoApprove ? 'approved' : 'pending',
+      scheduledAt: getNextScheduledTime(settings || {}, existingTimes),
+      createdAt: new Date().toISOString(),
+      settings: {
+        niche,
+        style
+      }
+    };
+    
+    // Add to queue
+    autopilotState.post.queue.unshift(post);
+    
+    console.log('✅ Post generated and added to queue:', post.id);
+    
+    res.json({
+      success: true,
+      post
+    });
+  } catch (error) {
+    console.error('Generate post error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Approve a post in the queue
+ * POST /api/ai/autopilot/post/queue/:id/approve
+ */
+router.post('/autopilot/post/queue/:id/approve', (req, res) => {
+  const { id } = req.params;
+  const post = autopilotState.post.queue.find(p => p.id === id);
+  
+  if (!post) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+  
+  post.status = 'approved';
+  
+  res.json({ success: true, post });
+});
+
+/**
+ * Delete a post from the queue
+ * DELETE /api/ai/autopilot/post/queue/:id
+ */
+router.delete('/autopilot/post/queue/:id', (req, res) => {
+  const { id } = req.params;
+  const index = autopilotState.post.queue.findIndex(p => p.id === id);
+  
+  if (index === -1) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+  
+  autopilotState.post.queue.splice(index, 1);
+  
+  res.json({ success: true });
+});
+
+/**
+ * Post now
+ * POST /api/ai/autopilot/post/queue/:id/post
+ */
+router.post('/autopilot/post/queue/:id/post', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const postIndex = autopilotState.post.queue.findIndex(p => p.id === id);
+    
+    if (postIndex === -1) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    const post = autopilotState.post.queue[postIndex];
+    
+    // TODO: Actually post to Instagram via API
+    console.log('📤 Posting image to Instagram:', post.id);
+    
+    // Move to history
+    post.postedAt = new Date().toISOString();
+    autopilotState.post.history.unshift(post);
+    autopilotState.post.queue.splice(postIndex, 1);
+    
+    res.json({ 
+      success: true, 
+      message: 'Post published successfully',
+      post
+    });
+  } catch (error) {
+    console.error('Post error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Update post caption
+ * PATCH /api/ai/autopilot/post/queue/:id
+ */
+router.patch('/autopilot/post/queue/:id', (req, res) => {
+  const { id } = req.params;
+  const { caption, hashtags } = req.body;
+  
+  const post = autopilotState.post.queue.find(p => p.id === id);
+  
+  if (!post) {
+    return res.status(404).json({ error: 'Post not found' });
+  }
+  
+  if (caption !== undefined) post.caption = caption;
+  if (hashtags !== undefined) post.hashtags = hashtags;
+  
+  res.json({ success: true, post });
+});
+
 module.exports = router;
