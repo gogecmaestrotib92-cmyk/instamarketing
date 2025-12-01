@@ -201,26 +201,18 @@ const AutopilotPost = () => {
     });
   };
 
-  const tabs = [
-    { id: 'queue', label: 'Queue', icon: FiList },
-    { id: 'settings', label: 'Settings', icon: FiSettings },
-    { id: 'history', label: 'History', icon: FiClock }
-  ];
-
   return (
-    <div className="autopilot-page post-autopilot">
+    <main className="autopilot-page post-autopilot">
       {/* Header */}
-      <div className="autopilot-header">
-        <div className="header-content">
-          <h1>
-            <FiImage />
-            Post Auto-pilot
-          </h1>
-          <p>AI automatically generates images and captions, then posts on your schedule</p>
-        </div>
+      <header className="page-header">
+        <h1>
+          <FiImage className="header-icon" aria-hidden="true" />
+          Post Auto-pilot
+        </h1>
+        <p>AI automatically generates images and captions, then posts on your schedule</p>
         <div className="header-actions">
           <button 
-            className="generate-btn"
+            className="btn-primary"
             onClick={generateNow}
             disabled={isGenerating}
           >
@@ -232,336 +224,334 @@ const AutopilotPost = () => {
             {isAutopilotActive ? 'Active' : 'Inactive'}
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Tabs */}
-      <div className="autopilot-tabs">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <tab.icon />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <nav className="tabs" role="tablist" aria-label="Autopilot tabs">
+        <button 
+          className={`tab ${activeTab === 'queue' ? 'active' : ''}`}
+          onClick={() => setActiveTab('queue')}
+          role="tab"
+          aria-selected={activeTab === 'queue'}
+        >
+          <FiList aria-hidden="true" /> Queue
+        </button>
+        <button 
+          className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+          role="tab"
+          aria-selected={activeTab === 'settings'}
+        >
+          <FiSettings aria-hidden="true" /> Settings
+        </button>
+        <button 
+          className={`tab ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+          role="tab"
+          aria-selected={activeTab === 'history'}
+        >
+          <FiClock aria-hidden="true" /> History
+        </button>
+      </nav>
 
-      {/* Content */}
-      <div className="autopilot-content">
-        {/* Main Control */}
-        <div className="control-card main-control">
-          <div className="control-header">
-            <FiCpu className="control-icon" />
-            <h2>Auto-pilot Control</h2>
-          </div>
-          <p className="control-description">
-            When active, AI will automatically generate and post images based on your settings
-          </p>
+      {/* Main Control */}
+      <section className="section control-section">
+        <h3><FiCpu aria-hidden="true" /> Auto-pilot Control</h3>
+        <p>When active, AI will automatically generate and post images based on your settings</p>
+        <div className="actions" style={{ marginTop: '20px', padding: '0' }}>
           <button
-            className={`autopilot-toggle-btn ${isAutopilotActive ? 'active' : ''}`}
+            className={`btn-primary ${isAutopilotActive ? 'btn-danger' : ''}`}
             onClick={toggleAutopilot}
             disabled={isLoading}
+            style={isAutopilotActive ? { background: 'linear-gradient(135deg, #ef4444, #dc2626)' } : {}}
           >
             {isLoading ? (
               <FiRefreshCw className="spin" />
             ) : isAutopilotActive ? (
               <>
-                <FiPause />
-                Stop Auto-pilot
+                <FiPause /> Stop Auto-pilot
               </>
             ) : (
               <>
-                <FiPlay />
-                Start Auto-pilot
+                <FiPlay /> Start Auto-pilot
               </>
             )}
           </button>
         </div>
+      </section>
 
-        {/* Queue Tab */}
-        {activeTab === 'queue' && (
-          <div className="queue-section">
-            {queue.length === 0 ? (
-              <div className="empty-state">
-                <FiImage className="empty-icon" />
-                <h3>No posts in queue</h3>
-                <p>Click "Generate Now" to create your first post, or start Auto-pilot</p>
-                <button className="generate-btn" onClick={generateNow} disabled={isGenerating}>
-                  <FiPlus />
-                  Generate Post
-                </button>
-              </div>
-            ) : (
-              <div className="post-queue-grid">
-                {queue.map(post => (
-                  <div key={post.id} className={`post-queue-item status-${post.status}`}>
-                    <div className="post-image-preview" onClick={() => setPreviewPost(post)}>
-                      <img src={post.imageUrl} alt="Post preview" />
-                      <button className="preview-btn">
-                        <FiEye />
-                      </button>
-                    </div>
-                    <div className="post-queue-content">
-                      <div className="post-queue-header">
-                        <span className={`status-badge ${post.status}`}>
-                          {post.status === 'approved' ? <FiCheckCircle /> : <FiClock />}
-                          {post.status}
-                        </span>
-                        <span className="scheduled-time">
-                          <FiCalendar />
-                          {formatScheduledTime(post.scheduledAt)}
-                        </span>
-                      </div>
-                      {editingCaption === post.id ? (
-                        <div className="caption-edit-form">
-                          <textarea
-                            defaultValue={post.caption}
-                            autoFocus
-                            onBlur={(e) => updateCaption(post.id, e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                updateCaption(post.id, e.target.value);
-                              }
-                              if (e.key === 'Escape') setEditingCaption(null);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <p className="caption-text" onClick={() => setEditingCaption(post.id)}>
-                          {post.caption?.substring(0, 100)}...
-                          <FiEdit2 className="edit-icon" />
-                        </p>
-                      )}
-                      <p className="hashtags-text">{post.hashtags}</p>
-                    </div>
-                    <div className="post-queue-actions">
-                      {post.status !== 'approved' && (
-                        <button className="action-btn approve" onClick={() => approvePost(post.id)}>
-                          <FiCheck />
-                        </button>
-                      )}
-                      <button className="action-btn post-now" onClick={() => postNow(post.id)}>
-                        <FiSend />
-                      </button>
-                      <button className="action-btn delete" onClick={() => deletePost(post.id)}>
-                        <FiTrash2 />
-                      </button>
-                    </div>
+      {/* Queue Tab */}
+      {activeTab === 'queue' && (
+        <section role="tabpanel">
+          {queue.length === 0 ? (
+            <div className="empty-state">
+              <FiImage />
+              <h3>No posts in queue</h3>
+              <p>Click "Generate Now" to create your first post, or start Auto-pilot</p>
+              <button className="btn-primary" onClick={generateNow} disabled={isGenerating}>
+                <FiPlus /> Generate Post
+              </button>
+            </div>
+          ) : (
+            <div className="post-queue-grid">
+              {queue.map(post => (
+                <article key={post.id} className={`post-queue-card ${post.status}`}>
+                  <div className="post-image-preview" onClick={() => setPreviewPost(post)}>
+                    <img src={post.imageUrl} alt="Post preview" />
+                    <button className="btn-preview">
+                      <FiEye />
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  <div className="post-queue-content">
+                    <div className="post-queue-header">
+                      <span className={`status-badge ${post.status}`}>
+                        {post.status === 'approved' ? <FiCheckCircle /> : <FiClock />}
+                        {post.status}
+                      </span>
+                      <span className="schedule-info">
+                        <FiCalendar />
+                        {formatScheduledTime(post.scheduledAt)}
+                      </span>
+                    </div>
+                    {editingCaption === post.id ? (
+                      <div className="caption-edit-form">
+                        <textarea
+                          defaultValue={post.caption}
+                          autoFocus
+                          onBlur={(e) => updateCaption(post.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              updateCaption(post.id, e.target.value);
+                            }
+                            if (e.key === 'Escape') setEditingCaption(null);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <p className="queue-caption" onClick={() => setEditingCaption(post.id)}>
+                        <span>{post.caption?.substring(0, 100)}...</span>
+                        <FiEdit2 className="edit-icon" />
+                      </p>
+                    )}
+                    <p className="queue-hashtags">{post.hashtags}</p>
+                  </div>
+                  <div className="post-queue-actions">
+                    {post.status !== 'approved' && (
+                      <button className="btn-action approve" onClick={() => approvePost(post.id)}>
+                        <FiCheck />
+                      </button>
+                    )}
+                    <button className="btn-action post" onClick={() => postNow(post.id)}>
+                      <FiSend />
+                    </button>
+                    <button className="btn-action delete" onClick={() => deletePost(post.id)}>
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <section role="tabpanel">
           <div className="settings-grid">
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiGrid className="setting-icon" />
-                <h3>Niche</h3>
+            {/* Niche */}
+            <div className="section">
+              <h3><FiGrid aria-hidden="true" /> Niche</h3>
+              <div className="form-group">
+                <select
+                  value={settings.niche}
+                  onChange={(e) => setSettings(prev => ({ ...prev, niche: e.target.value }))}
+                >
+                  <option value="motivational">Motivational Quotes</option>
+                  <option value="fitness">Fitness Tips</option>
+                  <option value="business">Business/Finance</option>
+                  <option value="lifestyle">Lifestyle</option>
+                  <option value="travel">Travel</option>
+                  <option value="food">Food</option>
+                  <option value="tech">Technology</option>
+                  <option value="fashion">Fashion</option>
+                  <option value="art">Art/Design</option>
+                  <option value="educational">Educational</option>
+                </select>
               </div>
-              <select
-                className="setting-select"
-                value={settings.niche}
-                onChange={(e) => setSettings(prev => ({ ...prev, niche: e.target.value }))}
-              >
-                <option value="motivational">Motivational Quotes</option>
-                <option value="fitness">Fitness Tips</option>
-                <option value="business">Business/Finance</option>
-                <option value="lifestyle">Lifestyle</option>
-                <option value="travel">Travel</option>
-                <option value="food">Food</option>
-                <option value="tech">Technology</option>
-                <option value="fashion">Fashion</option>
-                <option value="art">Art/Design</option>
-                <option value="educational">Educational</option>
-              </select>
             </div>
 
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiImage className="setting-icon" />
-                <h3>Image Style</h3>
+            {/* Image Style */}
+            <div className="section">
+              <h3><FiImage aria-hidden="true" /> Image Style</h3>
+              <div className="form-group">
+                <select
+                  value={settings.style}
+                  onChange={(e) => setSettings(prev => ({ ...prev, style: e.target.value }))}
+                >
+                  <option value="aesthetic">Aesthetic</option>
+                  <option value="minimal">Minimal</option>
+                  <option value="bold">Bold & Colorful</option>
+                  <option value="professional">Professional</option>
+                  <option value="artistic">Artistic</option>
+                  <option value="vintage">Vintage</option>
+                </select>
               </div>
-              <select
-                className="setting-select"
-                value={settings.style}
-                onChange={(e) => setSettings(prev => ({ ...prev, style: e.target.value }))}
-              >
-                <option value="aesthetic">Aesthetic</option>
-                <option value="minimal">Minimal</option>
-                <option value="bold">Bold & Colorful</option>
-                <option value="professional">Professional</option>
-                <option value="artistic">Artistic</option>
-                <option value="vintage">Vintage</option>
-              </select>
             </div>
 
-            <div className="setting-card wide">
-              <div className="setting-header">
-                <FiHash className="setting-icon" />
-                <h3>Default Hashtags</h3>
+            {/* Hashtags */}
+            <div className="section setting-card wide">
+              <h3><FiHash aria-hidden="true" /> Default Hashtags</h3>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={settings.hashtags}
+                  onChange={(e) => setSettings(prev => ({ ...prev, hashtags: e.target.value }))}
+                  placeholder="#hashtag1 #hashtag2 ..."
+                />
               </div>
-              <input
-                type="text"
-                className="setting-input"
-                value={settings.hashtags}
-                onChange={(e) => setSettings(prev => ({ ...prev, hashtags: e.target.value }))}
-                placeholder="#hashtag1 #hashtag2 ..."
-              />
             </div>
 
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiCalendar className="setting-icon" />
-                <h3>Posts Per Day</h3>
+            {/* Posts Per Day */}
+            <div className="section">
+              <h3><FiCalendar aria-hidden="true" /> Posts Per Day</h3>
+              <div className="form-group">
+                <select
+                  value={settings.postsPerDay}
+                  onChange={(e) => setSettings(prev => ({ ...prev, postsPerDay: parseInt(e.target.value) }))}
+                >
+                  <option value={1}>1 post/day</option>
+                  <option value={2}>2 posts/day</option>
+                  <option value={3}>3 posts/day</option>
+                  <option value={4}>4 posts/day</option>
+                </select>
               </div>
-              <select
-                className="setting-select"
-                value={settings.postsPerDay}
-                onChange={(e) => setSettings(prev => ({ ...prev, postsPerDay: parseInt(e.target.value) }))}
-              >
-                <option value={1}>1 post/day</option>
-                <option value={2}>2 posts/day</option>
-                <option value={3}>3 posts/day</option>
-                <option value={4}>4 posts/day</option>
-              </select>
             </div>
 
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiClock className="setting-icon" />
-                <h3>Preferred Times</h3>
-                <button className="add-time-btn" onClick={addPreferredTime}>
-                  <FiPlus />
-                </button>
-              </div>
-              <div className="time-slots">
+            {/* Preferred Times */}
+            <div className="section">
+              <h3><FiClock aria-hidden="true" /> Preferred Times</h3>
+              <div className="time-slots-container">
                 {settings.preferredTimes.map((time, index) => (
                   <div key={index} className="time-slot">
                     <input
                       type="time"
-                      className="time-input-small"
                       value={time}
                       onChange={(e) => updatePreferredTime(index, e.target.value)}
                     />
-                    <button className="remove-time-btn" onClick={() => removePreferredTime(index)}>
+                    <button className="btn-remove-time" onClick={() => removePreferredTime(index)}>
                       <FiX />
                     </button>
                   </div>
                 ))}
+                <button className="btn-add-time" onClick={addPreferredTime}>
+                  <FiPlus /> Add
+                </button>
               </div>
             </div>
 
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiType className="setting-icon" />
-                <h3>Caption Style</h3>
+            {/* Caption Style */}
+            <div className="section">
+              <h3><FiType aria-hidden="true" /> Caption Style</h3>
+              <div className="form-group">
+                <select
+                  value={settings.captionStyle}
+                  onChange={(e) => setSettings(prev => ({ ...prev, captionStyle: e.target.value }))}
+                >
+                  <option value="engaging">Engaging & Fun</option>
+                  <option value="professional">Professional</option>
+                  <option value="inspirational">Inspirational</option>
+                  <option value="informative">Informative</option>
+                  <option value="casual">Casual & Friendly</option>
+                </select>
               </div>
-              <select
-                className="setting-select"
-                value={settings.captionStyle}
-                onChange={(e) => setSettings(prev => ({ ...prev, captionStyle: e.target.value }))}
-              >
-                <option value="engaging">Engaging & Fun</option>
-                <option value="professional">Professional</option>
-                <option value="inspirational">Inspirational</option>
-                <option value="informative">Informative</option>
-                <option value="casual">Casual & Friendly</option>
-              </select>
             </div>
 
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiCheck className="setting-icon" />
-                <h3>Approval Mode</h3>
+            {/* Approval Mode */}
+            <div className="section">
+              <h3><FiCheck aria-hidden="true" /> Approval Mode</h3>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="postAutoApprove"
+                  checked={settings.autoApprove}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    autoApprove: e.target.checked,
+                    requireReview: !e.target.checked
+                  }))}
+                />
+                <label htmlFor="postAutoApprove">Auto-approve all posts</label>
               </div>
-              <div className="toggle-options">
-                <label className="toggle-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.autoApprove}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      autoApprove: e.target.checked,
-                      requireReview: !e.target.checked
-                    }))}
-                  />
-                  Auto-approve all posts
-                </label>
-                <label className="toggle-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.requireReview}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      requireReview: e.target.checked,
-                      autoApprove: !e.target.checked
-                    }))}
-                  />
-                  Require manual review
-                </label>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="postRequireReview"
+                  checked={settings.requireReview}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    requireReview: e.target.checked,
+                    autoApprove: !e.target.checked
+                  }))}
+                />
+                <label htmlFor="postRequireReview">Require manual review</label>
               </div>
             </div>
           </div>
-        )}
+        </section>
+      )}
 
-        {/* History Tab */}
-        {activeTab === 'history' && (
-          <div className="history-section">
-            {history.length === 0 ? (
-              <div className="empty-state">
-                <FiClock className="empty-icon" />
-                <h3>No posts yet</h3>
-                <p>Your posted content will appear here</p>
-              </div>
-            ) : (
-              <div className="history-grid">
-                {history.map(post => (
-                  <div key={post.id} className="history-item" onClick={() => setPreviewPost(post)}>
-                    <div className="history-item-image">
-                      <img src={post.imageUrl} alt="Posted content" />
-                    </div>
-                    <div className="history-item-content">
-                      <p>{post.caption?.substring(0, 60)}...</p>
-                      <span className="history-date">
-                        <FiCheckCircle />
-                        {formatScheduledTime(post.postedAt)}
-                      </span>
-                    </div>
+      {/* History Tab */}
+      {activeTab === 'history' && (
+        <section role="tabpanel">
+          {history.length === 0 ? (
+            <div className="empty-state">
+              <FiClock />
+              <h3>No posts yet</h3>
+              <p>Your posted content will appear here</p>
+            </div>
+          ) : (
+            <div className="post-history-grid">
+              {history.map(post => (
+                <article key={post.id} className="post-history-card" onClick={() => setPreviewPost(post)}>
+                  <div className="post-history-image">
+                    <img src={post.imageUrl} alt="Posted content" />
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                  <div className="post-history-info">
+                    <p>{post.caption?.substring(0, 60)}...</p>
+                    <span className="history-date">
+                      <FiCheckCircle />
+                      {formatScheduledTime(post.postedAt)}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Preview Modal */}
       {previewPost && (
-        <div className="preview-modal-overlay" onClick={() => setPreviewPost(null)}>
-          <div className="preview-modal post-preview" onClick={(e) => e.stopPropagation()}>
-            <button className="close-modal" onClick={() => setPreviewPost(null)}>
+        <div className="modal-overlay" onClick={() => setPreviewPost(null)}>
+          <div className="modal-content post-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="btn-close-modal" onClick={() => setPreviewPost(null)}>
               <FiX />
             </button>
             <img
-              className="preview-image"
+              className="modal-image"
               src={previewPost.imageUrl}
               alt="Post preview"
             />
-            <div className="preview-details">
+            <div className="modal-details">
               <p>{previewPost.caption}</p>
-              <p className="preview-hashtags">{previewPost.hashtags}</p>
+              <p className="modal-hashtags">{previewPost.hashtags}</p>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 };
 

@@ -19,7 +19,8 @@ import {
   FiEye,
   FiEdit2,
   FiHash,
-  FiCheckCircle
+  FiCheckCircle,
+  FiVideo
 } from 'react-icons/fi';
 import api from '../services/api';
 import './AutopilotReels.css';
@@ -67,7 +68,6 @@ const AutopilotReels = () => {
     requireReview: true
   });
 
-  // Load autopilot state on mount
   useEffect(() => {
     loadAutopilotStatus();
     loadQueue();
@@ -180,10 +180,9 @@ const AutopilotReels = () => {
   };
 
   const addPreferredTime = () => {
-    const newTime = '12:00';
     setSettings(prev => ({
       ...prev,
-      preferredTimes: [...prev.preferredTimes, newTime]
+      preferredTimes: [...prev.preferredTimes, '12:00']
     }));
   };
 
@@ -212,26 +211,18 @@ const AutopilotReels = () => {
     });
   };
 
-  const tabs = [
-    { id: 'queue', label: 'Queue', icon: FiList },
-    { id: 'settings', label: 'Settings', icon: FiSettings },
-    { id: 'history', label: 'History', icon: FiClock }
-  ];
-
   return (
-    <div className="autopilot-page">
+    <main className="autopilot-page">
       {/* Header */}
-      <div className="autopilot-header">
-        <div className="header-content">
-          <h1>
-            <FiCpu />
-            Reels Auto-pilot
-          </h1>
-          <p>AI automatically generates, edits, and posts Reels on your schedule</p>
-        </div>
+      <header className="page-header">
+        <h1>
+          <FiVideo className="header-icon" aria-hidden="true" />
+          Reels Auto-pilot
+        </h1>
+        <p>AI automatically generates, edits, and posts Reels on your schedule</p>
         <div className="header-actions">
           <button 
-            className="generate-btn"
+            className="btn-primary"
             onClick={generateNow}
             disabled={isGenerating}
           >
@@ -243,389 +234,377 @@ const AutopilotReels = () => {
             {isAutopilotActive ? 'Active' : 'Inactive'}
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Tabs */}
-      <div className="autopilot-tabs">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <tab.icon />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <nav className="tabs" role="tablist" aria-label="Autopilot tabs">
+        <button 
+          className={`tab ${activeTab === 'queue' ? 'active' : ''}`}
+          onClick={() => setActiveTab('queue')}
+          role="tab"
+          aria-selected={activeTab === 'queue'}
+        >
+          <FiList aria-hidden="true" /> Queue
+        </button>
+        <button 
+          className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+          role="tab"
+          aria-selected={activeTab === 'settings'}
+        >
+          <FiSettings aria-hidden="true" /> Settings
+        </button>
+        <button 
+          className={`tab ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+          role="tab"
+          aria-selected={activeTab === 'history'}
+        >
+          <FiClock aria-hidden="true" /> History
+        </button>
+      </nav>
 
-      {/* Content */}
-      <div className="autopilot-content">
-        {/* Main Control */}
-        <div className="control-card main-control">
-          <div className="control-header">
-            <FiCpu className="control-icon" />
-            <h2>Auto-pilot Control</h2>
-          </div>
-          <p className="control-description">
-            When active, AI will automatically generate and post Reels based on your settings
-          </p>
+      {/* Main Control */}
+      <section className="section control-section">
+        <h3><FiCpu aria-hidden="true" /> Auto-pilot Control</h3>
+        <p>When active, AI will automatically generate and post Reels based on your settings</p>
+        <div className="actions" style={{ marginTop: '20px', padding: '0' }}>
           <button
-            className={`autopilot-toggle-btn ${isAutopilotActive ? 'active' : ''}`}
+            className={`btn-primary ${isAutopilotActive ? 'btn-danger' : ''}`}
             onClick={toggleAutopilot}
             disabled={isLoading}
+            style={isAutopilotActive ? { background: 'linear-gradient(135deg, #ef4444, #dc2626)' } : {}}
           >
             {isLoading ? (
               <FiRefreshCw className="spin" />
             ) : isAutopilotActive ? (
               <>
-                <FiPause />
-                Stop Auto-pilot
+                <FiPause /> Stop Auto-pilot
               </>
             ) : (
               <>
-                <FiPlay />
-                Start Auto-pilot
+                <FiPlay /> Start Auto-pilot
               </>
             )}
           </button>
         </div>
+      </section>
 
-        {/* Queue Tab */}
-        {activeTab === 'queue' && (
-          <div className="queue-section">
-            {queue.length === 0 ? (
-              <div className="empty-state">
-                <FiList className="empty-icon" />
-                <h3>No videos in queue</h3>
-                <p>Click "Generate Now" to create your first video, or start Auto-pilot</p>
-                <button className="generate-btn" onClick={generateNow} disabled={isGenerating}>
-                  <FiPlus />
-                  Generate Video
-                </button>
-              </div>
-            ) : (
-              <div className="queue-list">
-                {queue.map(video => (
-                  <div key={video.id} className={`queue-item status-${video.status}`}>
-                    <div className="queue-item-preview">
-                      <video src={video.videoUrl} muted />
-                      <button className="preview-btn" onClick={() => setPreviewVideo(video)}>
-                        <FiEye />
-                      </button>
+      {/* Queue Tab */}
+      {activeTab === 'queue' && (
+        <section role="tabpanel">
+          {queue.length === 0 ? (
+            <div className="empty-state">
+              <FiList />
+              <h3>No videos in queue</h3>
+              <p>Click "Generate Now" to create your first video, or start Auto-pilot</p>
+              <button className="btn-primary" onClick={generateNow} disabled={isGenerating}>
+                <FiPlus /> Generate Video
+              </button>
+            </div>
+          ) : (
+            <div className="queue-grid">
+              {queue.map(video => (
+                <article key={video.id} className={`queue-card ${video.status}`}>
+                  <div className="queue-preview">
+                    <video src={video.videoUrl} muted />
+                    <button className="btn-preview" onClick={() => setPreviewVideo(video)}>
+                      <FiEye />
+                    </button>
+                  </div>
+                  <div className="queue-content">
+                    <div className="queue-header">
+                      <span className={`status-badge ${video.status}`}>
+                        {video.status === 'approved' ? <FiCheckCircle /> : <FiClock />}
+                        {video.status}
+                      </span>
+                      <span className="schedule-info">
+                        <FiCalendar />
+                        {formatScheduledTime(video.scheduledAt)}
+                      </span>
                     </div>
-                    <div className="queue-item-content">
-                      <div className="queue-item-header">
-                        <span className={`status-badge ${video.status}`}>
-                          {video.status === 'approved' ? <FiCheckCircle /> : <FiClock />}
-                          {video.status}
-                        </span>
-                        <span className="scheduled-time">
-                          <FiCalendar />
-                          {formatScheduledTime(video.scheduledAt)}
-                        </span>
+                    {editingCaption === video.id ? (
+                      <div className="caption-edit-form">
+                        <textarea
+                          defaultValue={video.caption}
+                          autoFocus
+                          onBlur={(e) => updateCaption(video.id, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              updateCaption(video.id, e.target.value);
+                            }
+                            if (e.key === 'Escape') setEditingCaption(null);
+                          }}
+                        />
                       </div>
-                      {editingCaption === video.id ? (
-                        <div className="caption-edit-form">
-                          <textarea
-                            defaultValue={video.caption}
-                            autoFocus
-                            onBlur={(e) => updateCaption(video.id, e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                updateCaption(video.id, e.target.value);
-                              }
-                              if (e.key === 'Escape') setEditingCaption(null);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <p className="caption-text" onClick={() => setEditingCaption(video.id)}>
-                          {video.caption}
-                          <FiEdit2 className="edit-icon" />
-                        </p>
-                      )}
-                      <p className="hashtags-text">{video.hashtags}</p>
-                    </div>
-                    <div className="queue-item-actions">
+                    ) : (
+                      <p className="queue-caption" onClick={() => setEditingCaption(video.id)}>
+                        <span>{video.caption}</span>
+                        <FiEdit2 className="edit-icon" />
+                      </p>
+                    )}
+                    <p className="queue-hashtags">{video.hashtags}</p>
+                    <div className="queue-actions">
                       {video.status !== 'approved' && (
-                        <button className="action-btn approve" onClick={() => approveVideo(video.id)}>
-                          <FiCheck />
-                          Approve
+                        <button className="btn-action approve" onClick={() => approveVideo(video.id)}>
+                          <FiCheck /> Approve
                         </button>
                       )}
-                      <button className="action-btn post-now" onClick={() => postNow(video.id)}>
-                        <FiSend />
-                        Post Now
+                      <button className="btn-action post" onClick={() => postNow(video.id)}>
+                        <FiSend /> Post Now
                       </button>
-                      <button className="action-btn delete" onClick={() => deleteVideo(video.id)}>
+                      <button className="btn-action delete" onClick={() => deleteVideo(video.id)}>
                         <FiTrash2 />
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <section role="tabpanel">
           <div className="settings-grid">
-            {/* Content Settings */}
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiGrid className="setting-icon" />
-                <h3>Niche</h3>
+            {/* Niche */}
+            <div className="section">
+              <h3><FiGrid aria-hidden="true" /> Niche</h3>
+              <div className="form-group">
+                <select
+                  value={settings.niche}
+                  onChange={(e) => setSettings(prev => ({ ...prev, niche: e.target.value }))}
+                >
+                  <option value="motivational">Motivational</option>
+                  <option value="fitness">Fitness</option>
+                  <option value="business">Business/Finance</option>
+                  <option value="lifestyle">Lifestyle</option>
+                  <option value="travel">Travel</option>
+                  <option value="food">Food</option>
+                  <option value="tech">Technology</option>
+                  <option value="fashion">Fashion</option>
+                  <option value="comedy">Comedy</option>
+                  <option value="educational">Educational</option>
+                </select>
               </div>
-              <select
-                className="setting-select"
-                value={settings.niche}
-                onChange={(e) => setSettings(prev => ({ ...prev, niche: e.target.value }))}
-              >
-                <option value="motivational">Motivational</option>
-                <option value="fitness">Fitness</option>
-                <option value="business">Business/Finance</option>
-                <option value="lifestyle">Lifestyle</option>
-                <option value="travel">Travel</option>
-                <option value="food">Food</option>
-                <option value="tech">Technology</option>
-                <option value="fashion">Fashion</option>
-                <option value="comedy">Comedy</option>
-                <option value="educational">Educational</option>
-              </select>
             </div>
 
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiPlay className="setting-icon" />
-                <h3>Video Style</h3>
+            {/* Video Style */}
+            <div className="section">
+              <h3><FiPlay aria-hidden="true" /> Video Style</h3>
+              <div className="form-group">
+                <select
+                  value={settings.style}
+                  onChange={(e) => setSettings(prev => ({ ...prev, style: e.target.value }))}
+                >
+                  <option value="cinematic">Cinematic</option>
+                  <option value="energetic">Energetic</option>
+                  <option value="minimal">Minimal</option>
+                  <option value="aesthetic">Aesthetic</option>
+                  <option value="bold">Bold</option>
+                  <option value="vintage">Vintage</option>
+                </select>
               </div>
-              <select
-                className="setting-select"
-                value={settings.style}
-                onChange={(e) => setSettings(prev => ({ ...prev, style: e.target.value }))}
-              >
-                <option value="cinematic">Cinematic</option>
-                <option value="energetic">Energetic</option>
-                <option value="minimal">Minimal</option>
-                <option value="aesthetic">Aesthetic</option>
-                <option value="bold">Bold</option>
-                <option value="vintage">Vintage</option>
-              </select>
             </div>
 
-            <div className="setting-card wide">
-              <div className="setting-header">
-                <FiHash className="setting-icon" />
-                <h3>Default Hashtags</h3>
+            {/* Hashtags */}
+            <div className="section setting-card wide">
+              <h3><FiHash aria-hidden="true" /> Default Hashtags</h3>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={settings.hashtags}
+                  onChange={(e) => setSettings(prev => ({ ...prev, hashtags: e.target.value }))}
+                  placeholder="#hashtag1 #hashtag2 ..."
+                />
               </div>
-              <input
-                type="text"
-                className="setting-input"
-                value={settings.hashtags}
-                onChange={(e) => setSettings(prev => ({ ...prev, hashtags: e.target.value }))}
-                placeholder="#hashtag1 #hashtag2 ..."
-              />
             </div>
 
-            {/* Schedule Settings */}
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiCalendar className="setting-icon" />
-                <h3>Posts Per Day</h3>
+            {/* Posts Per Day */}
+            <div className="section">
+              <h3><FiCalendar aria-hidden="true" /> Posts Per Day</h3>
+              <div className="form-group">
+                <select
+                  value={settings.postsPerDay}
+                  onChange={(e) => setSettings(prev => ({ ...prev, postsPerDay: parseInt(e.target.value) }))}
+                >
+                  <option value={1}>1 post/day</option>
+                  <option value={2}>2 posts/day</option>
+                  <option value={3}>3 posts/day</option>
+                  <option value={4}>4 posts/day</option>
+                  <option value={5}>5 posts/day</option>
+                </select>
               </div>
-              <select
-                className="setting-select"
-                value={settings.postsPerDay}
-                onChange={(e) => setSettings(prev => ({ ...prev, postsPerDay: parseInt(e.target.value) }))}
-              >
-                <option value={1}>1 post/day</option>
-                <option value={2}>2 posts/day</option>
-                <option value={3}>3 posts/day</option>
-                <option value={4}>4 posts/day</option>
-                <option value={5}>5 posts/day</option>
-              </select>
             </div>
 
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiClock className="setting-icon" />
-                <h3>Preferred Times</h3>
-                <button className="add-time-btn" onClick={addPreferredTime}>
-                  <FiPlus />
-                </button>
-              </div>
-              <div className="time-slots">
+            {/* Preferred Times */}
+            <div className="section">
+              <h3><FiClock aria-hidden="true" /> Preferred Times</h3>
+              <div className="time-slots-container">
                 {settings.preferredTimes.map((time, index) => (
                   <div key={index} className="time-slot">
                     <input
                       type="time"
-                      className="time-input-small"
                       value={time}
                       onChange={(e) => updatePreferredTime(index, e.target.value)}
                     />
-                    <button className="remove-time-btn" onClick={() => removePreferredTime(index)}>
+                    <button className="btn-remove-time" onClick={() => removePreferredTime(index)}>
                       <FiX />
                     </button>
                   </div>
                 ))}
+                <button className="btn-add-time" onClick={addPreferredTime}>
+                  <FiPlus /> Add
+                </button>
               </div>
             </div>
 
-            {/* Text Overlay Settings */}
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiType className="setting-icon" />
-                <h3>Text Overlay</h3>
+            {/* Text Overlay */}
+            <div className="section">
+              <h3><FiType aria-hidden="true" /> Text Overlay</h3>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="textOverlayEnabled"
+                  checked={settings.textOverlay.enabled}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    textOverlay: { ...prev.textOverlay, enabled: e.target.checked }
+                  }))}
+                />
+                <label htmlFor="textOverlayEnabled">Enable text overlays</label>
               </div>
-              <div className="toggle-options">
-                <label className="toggle-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.textOverlay.enabled}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      textOverlay: { ...prev.textOverlay, enabled: e.target.checked }
-                    }))}
-                  />
-                  Enable text overlays
-                </label>
-                <label className="toggle-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.textOverlay.autoGenerate}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      textOverlay: { ...prev.textOverlay, autoGenerate: e.target.checked }
-                    }))}
-                  />
-                  AI-generate captions
-                </label>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="textOverlayAuto"
+                  checked={settings.textOverlay.autoGenerate}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    textOverlay: { ...prev.textOverlay, autoGenerate: e.target.checked }
+                  }))}
+                />
+                <label htmlFor="textOverlayAuto">AI-generate captions</label>
               </div>
             </div>
 
-            {/* Music Settings */}
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiMusic className="setting-icon" />
-                <h3>Background Music</h3>
+            {/* Music */}
+            <div className="section">
+              <h3><FiMusic aria-hidden="true" /> Background Music</h3>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="musicEnabled"
+                  checked={settings.music.enabled}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    music: { ...prev.music, enabled: e.target.checked }
+                  }))}
+                />
+                <label htmlFor="musicEnabled">Add background music</label>
               </div>
-              <div className="toggle-options">
-                <label className="toggle-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.music.enabled}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      music: { ...prev.music, enabled: e.target.checked }
-                    }))}
-                  />
-                  Add background music
-                </label>
-                <label className="toggle-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.music.autoSelect}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      music: { ...prev.music, autoSelect: e.target.checked }
-                    }))}
-                  />
-                  Auto-select trending music
-                </label>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="musicAutoSelect"
+                  checked={settings.music.autoSelect}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    music: { ...prev.music, autoSelect: e.target.checked }
+                  }))}
+                />
+                <label htmlFor="musicAutoSelect">Auto-select trending music</label>
               </div>
             </div>
 
-            {/* Auto-approve */}
-            <div className="setting-card">
-              <div className="setting-header">
-                <FiCheck className="setting-icon" />
-                <h3>Approval Mode</h3>
+            {/* Approval Mode */}
+            <div className="section">
+              <h3><FiCheck aria-hidden="true" /> Approval Mode</h3>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="autoApprove"
+                  checked={settings.autoApprove}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    autoApprove: e.target.checked,
+                    requireReview: !e.target.checked
+                  }))}
+                />
+                <label htmlFor="autoApprove">Auto-approve all videos</label>
               </div>
-              <div className="toggle-options">
-                <label className="toggle-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.autoApprove}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      autoApprove: e.target.checked,
-                      requireReview: !e.target.checked
-                    }))}
-                  />
-                  Auto-approve all videos
-                </label>
-                <label className="toggle-option">
-                  <input
-                    type="checkbox"
-                    checked={settings.requireReview}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      requireReview: e.target.checked,
-                      autoApprove: !e.target.checked
-                    }))}
-                  />
-                  Require manual review
-                </label>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="requireReview"
+                  checked={settings.requireReview}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    requireReview: e.target.checked,
+                    autoApprove: !e.target.checked
+                  }))}
+                />
+                <label htmlFor="requireReview">Require manual review</label>
               </div>
             </div>
           </div>
-        )}
+        </section>
+      )}
 
-        {/* History Tab */}
-        {activeTab === 'history' && (
-          <div className="history-section">
-            {history.length === 0 ? (
-              <div className="empty-state">
-                <FiClock className="empty-icon" />
-                <h3>No posts yet</h3>
-                <p>Your posted Reels will appear here</p>
-              </div>
-            ) : (
-              <div className="history-list">
-                {history.map(video => (
-                  <div key={video.id} className="history-item">
-                    <div className="history-item-preview">
-                      <video src={video.videoUrl} muted onClick={() => setPreviewVideo(video)} />
-                    </div>
-                    <div className="history-item-content">
-                      <p>{video.caption}</p>
-                      <span className="history-date">
-                        <FiCheckCircle />
-                        Posted {formatScheduledTime(video.postedAt)}
-                      </span>
-                    </div>
+      {/* History Tab */}
+      {activeTab === 'history' && (
+        <section role="tabpanel">
+          {history.length === 0 ? (
+            <div className="empty-state">
+              <FiClock />
+              <h3>No posts yet</h3>
+              <p>Your posted Reels will appear here</p>
+            </div>
+          ) : (
+            <div className="history-grid">
+              {history.map(video => (
+                <article key={video.id} className="history-card" onClick={() => setPreviewVideo(video)}>
+                  <div className="history-preview">
+                    <video src={video.videoUrl} muted />
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                  <div className="history-info">
+                    <p>{video.caption}</p>
+                    <span className="history-date">
+                      <FiCheckCircle />
+                      Posted {formatScheduledTime(video.postedAt)}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Preview Modal */}
       {previewVideo && (
-        <div className="preview-modal-overlay" onClick={() => setPreviewVideo(null)}>
-          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="close-modal" onClick={() => setPreviewVideo(null)}>
+        <div className="modal-overlay" onClick={() => setPreviewVideo(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="btn-close-modal" onClick={() => setPreviewVideo(null)}>
               <FiX />
             </button>
             <video
-              className="preview-video"
+              className="modal-video"
               src={previewVideo.videoUrl}
               controls
               autoPlay
             />
-            <div className="preview-details">
+            <div className="modal-details">
               <p>{previewVideo.caption}</p>
-              <p className="preview-hashtags">{previewVideo.hashtags}</p>
+              <p className="modal-hashtags">{previewVideo.hashtags}</p>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 };
 
