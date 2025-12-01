@@ -205,6 +205,8 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     // Determine gravity (position) - default to bottom-center
     const gravity = positionToGravity[overlay.position] || 'south';
     
+    console.log(`📍 Text "${overlay.text?.substring(0, 20)}..." position: "${overlay.position}" -> gravity: "${gravity}"`);
+    
     // Get font size (default 42)
     const fontSize = overlay.fontSize || overlay.style?.fontSize || 42;
     

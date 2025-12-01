@@ -921,15 +921,20 @@ router.post('/cloudinary/render', async (req, res) => {
     }
     
     // Convert subtitles to text overlays format - include fontSize and offsets
-    const textOverlays = (subtitles || []).map(sub => ({
-      text: sub.text,
-      position: sub.position || 'bottom-center',
-      fontSize: sub.fontSize || sub.style?.fontSize || 42,
-      offsetX: sub.offsetX || 0,
-      offsetY: sub.offsetY || 0,
-      start: sub.start,
-      end: sub.end
-    }));
+    const textOverlays = (subtitles || []).map(sub => {
+      console.log('📝 Text overlay received:', JSON.stringify(sub));
+      return {
+        text: sub.text,
+        position: sub.position || 'bottom-center',
+        fontSize: sub.fontSize || sub.style?.fontSize || 42,
+        offsetX: sub.offsetX || 0,
+        offsetY: sub.offsetY || 0,
+        start: sub.start,
+        end: sub.end
+      };
+    });
+    
+    console.log('📝 Final text overlays to render:', JSON.stringify(textOverlays));
     
     // Build options for the transformation
     const transformOptions = {

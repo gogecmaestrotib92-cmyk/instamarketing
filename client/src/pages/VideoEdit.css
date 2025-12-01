@@ -1154,82 +1154,101 @@
   word-wrap: break-word;
   text-align: center;
   white-space: pre-wrap;
+  /* CSS variables for offset adjustments */
+  --offset-x: 0px;
+  --offset-y: 0px;
 }
 
-/* 9-Grid Positioning - Precise pixel values matching Cloudinary render */
-/* Top row - 40px from top, accounting for safe area */
+/* 9-Grid Positioning - Precise positioning matching Cloudinary render */
+/* Top row */
 .preview-text-overlay.position-top-left { 
-  top: 5%; 
-  left: 5%; 
+  top: calc(5% + var(--offset-y)); 
+  left: calc(5% + var(--offset-x)); 
+  right: auto;
+  bottom: auto;
   transform: none; 
 }
 .preview-text-overlay.position-top-center { 
-  top: 5%; 
-  left: 50%; 
+  top: calc(5% + var(--offset-y)); 
+  left: calc(50% + var(--offset-x)); 
+  right: auto;
+  bottom: auto;
   transform: translateX(-50%); 
 }
 .preview-text-overlay.position-top-right { 
-  top: 5%; 
-  right: 5%; 
+  top: calc(5% + var(--offset-y)); 
+  right: calc(5% - var(--offset-x)); 
   left: auto;
+  bottom: auto;
   transform: none; 
 }
 
 /* Middle row - vertically centered */
 .preview-text-overlay.position-center-left { 
-  top: 50%; 
-  left: 5%; 
+  top: calc(50% + var(--offset-y)); 
+  left: calc(5% + var(--offset-x)); 
+  right: auto;
+  bottom: auto;
   transform: translateY(-50%); 
 }
 .preview-text-overlay.position-center { 
-  top: 50%; 
-  left: 50%; 
+  top: calc(50% + var(--offset-y)); 
+  left: calc(50% + var(--offset-x)); 
+  right: auto;
+  bottom: auto;
   transform: translate(-50%, -50%); 
 }
 .preview-text-overlay.position-center-right { 
-  top: 50%; 
-  right: 5%; 
+  top: calc(50% + var(--offset-y)); 
+  right: calc(5% - var(--offset-x)); 
   left: auto;
+  bottom: auto;
   transform: translateY(-50%); 
 }
 
-/* Bottom row - 12% from bottom to stay above video controls */
+/* Bottom row */
 .preview-text-overlay.position-bottom-left { 
-  bottom: 12%; 
+  bottom: calc(12% - var(--offset-y)); 
   top: auto;
-  left: 5%; 
+  left: calc(5% + var(--offset-x)); 
+  right: auto;
   transform: none; 
 }
 .preview-text-overlay.position-bottom-center { 
-  bottom: 12%; 
+  bottom: calc(12% - var(--offset-y)); 
   top: auto;
-  left: 50%; 
+  left: calc(50% + var(--offset-x)); 
+  right: auto;
   transform: translateX(-50%); 
 }
 .preview-text-overlay.position-bottom-right { 
-  bottom: 12%; 
+  bottom: calc(12% - var(--offset-y)); 
   top: auto;
-  right: 5%; 
+  right: calc(5% - var(--offset-x)); 
   left: auto;
   transform: none; 
 }
 
 /* Legacy position support */
 .preview-text-overlay.position-top { 
-  top: 5%; 
-  left: 50%; 
+  top: calc(5% + var(--offset-y)); 
+  left: calc(50% + var(--offset-x));
+  right: auto;
+  bottom: auto;
   transform: translateX(-50%); 
 }
-.preview-text-overlay.position-middle,
-.preview-text-overlay.position-center.legacy { 
-  top: 50%; 
-  left: 50%;
+.preview-text-overlay.position-middle { 
+  top: calc(50% + var(--offset-y)); 
+  left: calc(50% + var(--offset-x));
+  right: auto;
+  bottom: auto;
   transform: translate(-50%, -50%); 
 }
 .preview-text-overlay.position-bottom { 
-  bottom: 12%; 
+  bottom: calc(12% - var(--offset-y)); 
   top: auto;
-  left: 50%; 
+  left: calc(50% + var(--offset-x));
+  right: auto;
   transform: translateX(-50%); 
 }
 

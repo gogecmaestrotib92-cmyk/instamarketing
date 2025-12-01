@@ -1125,7 +1125,8 @@ const VideoEdit = () => {
                       className={`preview-text-overlay position-${overlay.position || 'bottom-center'} style-${overlay.style || 'modern'}`}
                       style={{
                         fontSize: `${overlay.fontSize || 18}px`,
-                        transform: `translate(calc(-50% + ${overlay.offsetX || 0}px), ${overlay.offsetY || 0}px)`,
+                        '--offset-x': `${overlay.offsetX || 0}px`,
+                        '--offset-y': `${overlay.offsetY || 0}px`,
                         maxWidth: '90%',
                         wordWrap: 'break-word',
                         textAlign: 'center'
