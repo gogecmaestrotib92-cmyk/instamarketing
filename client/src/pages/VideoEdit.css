@@ -392,7 +392,7 @@
   flex-direction: column;
   overflow: hidden;
   background: #08080c;
-  padding: 24px 32px;
+  padding: 16px 24px;
   max-height: 100%;
 }
 
@@ -441,13 +441,13 @@
   }
 }
 
-/* 9:16 Aspect Ratio Container */
+/* 9:16 Aspect Ratio Container - Expanded for better editing */
 .preview-container-9-16 {
   position: relative;
   width: auto;
-  height: calc(100vh - 520px);
-  min-height: 280px;
-  max-height: 450px;
+  height: calc(100vh - 320px);
+  min-height: 400px;
+  max-height: 650px;
   aspect-ratio: 9 / 16;
   background: #000000;
   border-radius: 18px;
@@ -3063,6 +3063,38 @@
   .sound-card:active {
     transform: scale(0.98);
     opacity: 0.9;
+  }
+}
+
+/* Large screens - maximize preview size */
+@media (min-width: 1400px) {
+  .preview-container-9-16 {
+    height: calc(100vh - 280px);
+    min-height: 500px;
+    max-height: 750px;
+  }
+  
+  .editor-main {
+    padding: 20px 32px;
+  }
+  
+  .preview-text-overlay {
+    font-size: 22px;
+    padding: 12px 24px;
+  }
+}
+
+/* Extra large screens */
+@media (min-width: 1800px) {
+  .preview-container-9-16 {
+    height: calc(100vh - 240px);
+    min-height: 600px;
+    max-height: 850px;
+  }
+  
+  .preview-text-overlay {
+    font-size: 26px;
+    padding: 14px 28px;
   }
 }
 
