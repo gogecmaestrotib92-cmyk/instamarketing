@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaInstagram, FaRobot, FaChartLine, FaCalendarAlt, FaBullhorn, FaVideo, FaStar, FaQuoteLeft } from 'react-icons/fa';
-import { FiCheck, FiArrowRight, FiAward, FiShield, FiUsers, FiGlobe } from 'react-icons/fi';
+import { FiCheck, FiArrowRight, FiAward, FiShield, FiUsers, FiGlobe, FiUserPlus, FiLink, FiZap, FiLayout, FiTrendingUp } from 'react-icons/fi';
 import SEO from '../components/SEO';
 import './Home.css';
 
@@ -291,27 +291,42 @@ const Home = () => {
         </div>
         <ol className="steps">
           <li className="step" id="step-1">
-            <div className="step-number" aria-hidden="true">1</div>
+            <div className="step-icon-wrapper" aria-hidden="true">
+              <FiUserPlus className="step-icon" />
+              <span className="step-badge">1</span>
+            </div>
             <h3>Start Your Free Trial</h3>
             <p>Create an account in less than 1 minute. Free trial available - no credit card required.</p>
           </li>
           <li className="step" id="step-2">
-            <div className="step-number" aria-hidden="true">2</div>
+            <div className="step-icon-wrapper" aria-hidden="true">
+              <FiLink className="step-icon" />
+              <span className="step-badge">2</span>
+            </div>
             <h3>Connect Your Social Profiles</h3>
             <p>Securely connect your Instagram and Facebook accounts via the official Meta API for AI in social media management.</p>
           </li>
           <li className="step" id="step-3">
-            <div className="step-number" aria-hidden="true">3</div>
+            <div className="step-icon-wrapper" aria-hidden="true">
+              <FiZap className="step-icon" />
+              <span className="step-badge">3</span>
+            </div>
             <h3>Use AI to Create Content</h3>
             <p>Help you create content using AI content generation. Generate videos, captions, and hashtags with our AI agent technology.</p>
           </li>
           <li className="step" id="step-4">
-            <div className="step-number" aria-hidden="true">4</div>
+            <div className="step-icon-wrapper" aria-hidden="true">
+              <FiLayout className="step-icon" />
+              <span className="step-badge">4</span>
+            </div>
             <h3>Fill Your Content Calendar</h3>
             <p>AI automation helps fill your content calendar with post ideas. Scheduling tools optimize posting times for your social strategy.</p>
           </li>
           <li className="step" id="step-5">
-            <div className="step-number" aria-hidden="true">5</div>
+            <div className="step-icon-wrapper" aria-hidden="true">
+              <FiTrendingUp className="step-icon" />
+              <span className="step-badge">5</span>
+            </div>
             <h3>Keeping Your Social Presence Optimized</h3>
             <p>Tools analyze results and AI helps adjust your marketing strategies based on data-driven recommendations.</p>
           </li>
