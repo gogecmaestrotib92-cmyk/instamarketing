@@ -1012,7 +1012,25 @@ const VideoEdit = () => {
             <div className="preview-glow-frame">
               {/* 9:16 Aspect Ratio Container */}
               <div className="preview-container-9-16">
-                {selectedVideo && (selectedVideo.url || selectedVideo.videoUrl) ? (
+                {/* Show rendered video if available, otherwise show original */}
+                {renderedVideoUrl ? (
+                  <video 
+                    ref={videoRef}
+                    src={renderedVideoUrl}
+                    className="preview-video-hero"
+                    onClick={togglePlay}
+                    muted={isMuted}
+                    playsInline
+                    preload="auto"
+                    controls
+                    onLoadedData={() => {
+                      console.log('Rendered video loaded:', renderedVideoUrl);
+                      if (videoRef.current) {
+                        setDuration(videoRef.current.duration || 5);
+                      }
+                    }}
+                  />
+                ) : selectedVideo && (selectedVideo.url || selectedVideo.videoUrl) ? (
                   <video 
                     ref={videoRef}
                     src={selectedVideo.url || selectedVideo.videoUrl}
@@ -1831,15 +1849,74 @@ const VideoEdit = () => {
                   )}
                 </button>
               ) : (
-                <div className="export-actions">
-                  <button className="action-btn save" onClick={handleSaveVideo}>
-                    <FiSave /> Save
-                  </button>
-                  <button className="action-btn download" onClick={handleDownload}>
-                    <FiDownload /> Download
-                  </button>
-                  <button className="action-btn instagram" onClick={handlePostToInstagram}>
-                    <FiInstagram /> Post
+                <div className="export-actions-wrapper">
+                  {/* Debug: Show rendered URL */}
+                  <div className="rendered-url-debug" style={{
+                    fontSize: '10px',
+                    color: '#9ca3af',
+                    wordBreak: 'break-all',
+                    marginBottom: '8px',
+                    padding: '8px',
+                    background: 'rgba(0,0,0,0.3)',
+                    borderRadius: '6px',
+                    maxHeight: '60px',
+                    overflow: 'auto'
+                  }}>
+                    <strong>Debug URL:</strong><br/>
+                    {renderedVideoUrl}
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(renderedVideoUrl);
+                        toast.success('URL copied!');
+                      }}
+                      style={{
+                        marginLeft: '8px',
+                        padding: '2px 6px',
+                        fontSize: '9px',
+                        background: '#8b5cf6',
+                        border: 'none',
+                        borderRadius: '4px',
+                        color: 'white',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  
+                  <div className="export-actions">
+                    <button className="action-btn save" onClick={handleSaveVideo}>
+                      <FiSave /> Save
+                    </button>
+                    <button className="action-btn download" onClick={handleDownload}>
+                      <FiDownload /> Download
+                    </button>
+                    <button className="action-btn instagram" onClick={handlePostToInstagram}>
+                      <FiInstagram /> Post
+                    </button>
+                  </div>
+                  
+                  {/* Edit Again button */}
+                  <button 
+                    className="edit-again-btn"
+                    onClick={() => {
+                      setIsRendered(false);
+                      setRenderedVideoUrl(null);
+                      toast.info('You can now edit the video again');
+                    }}
+                    style={{
+                      marginTop: '8px',
+                      padding: '8px 16px',
+                      background: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      color: '#9ca3af',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      width: '100%'
+                    }}
+                  >
+                    ← Edit Again
                   </button>
                 </div>
               )}
