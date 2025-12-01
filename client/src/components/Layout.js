@@ -262,15 +262,6 @@ const Layout = () => {
                     role="group"
                     aria-label={`${item.label} submenu`}
                   >
-                    <NavLink
-                      to={item.path}
-                      end
-                      className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
-                      onClick={closeSidebar}
-                    >
-                      <item.icon className="nav-icon" aria-hidden="true" />
-                      <span>Generate</span>
-                    </NavLink>
                     {item.children.map(child => (
                       <NavLink
                         key={child.path}
