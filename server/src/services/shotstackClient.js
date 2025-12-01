@@ -42,7 +42,8 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
     videoVolume = 0, // Mute original video audio by default
     musicVolume = 1,
     fps = 25,
-    resolution = 'hd' // hd = 1080p
+    resolution = 'hd', // hd = 1080p
+    soundEffects = [] // Array of {url, startTime, name}
   } = options;
 
   // Calculate duration from subtitles if not provided
@@ -212,6 +213,26 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
     ]
   });
   console.log(`   📊 Added video track as track ${tracks.length} (BOTTOM layer - last in array)`);
+  
+  // Track 3: Sound effects (audio clips)
+  if (soundEffects && soundEffects.length > 0) {
+    console.log(`   🔊 Adding ${soundEffects.length} sound effect(s)...`);
+    const soundClips = soundEffects.map((effect, index) => {
+      console.log(`   🔊 Sound ${index + 1}: "${effect.name}" at ${effect.startTime || 0}s - URL: ${effect.url}`);
+      return {
+        asset: {
+          type: 'audio',
+          src: effect.url,
+          volume: 1.5 // Boost sound effects volume
+        },
+        start: effect.startTime || 0,
+        length: 10 // Max 10 seconds for sound effects (will be trimmed if shorter)
+      };
+    });
+    
+    tracks.push({ clips: soundClips });
+    console.log(`   📊 Added sound effects track as track ${tracks.length}`);
+  }
   
   console.log(`   📊 Total tracks: ${tracks.length}`);
 

@@ -971,55 +971,54 @@ router.post('/cloudinary/render', async (req, res) => {
       soundEffects: soundEffectIds
     };
     
-    // If we have sound effects, we need to use the explicit API for proper audio mixing
-    // URL transformations don't properly mix multiple audio tracks
-    if (soundEffectIds.length > 0) {
-      console.log('🔊 Using explicit API for audio mixing...');
+    // If we have sound effects, use Shotstack for proper audio mixing
+    // Cloudinary URL transformations don't properly mix multiple audio tracks
+    if (soundEffectIds.length > 0 && shotstackClient) {
+      console.log('🔊 Using Shotstack for audio mixing (sound effects detected)...');
       
-      // Extract video public ID
-      const videoUrlParts = finalVideoUrl.split('/upload/');
-      if (videoUrlParts.length !== 2) {
-        throw new Error('Invalid video URL format');
-      }
-      const afterUpload = videoUrlParts[1];
-      const videoPublicId = afterUpload.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
-      
-      // Build audio tracks array
-      const audioTracks = soundEffectIds.map(effect => ({
-        publicId: effect.publicId,
-        startTime: effect.startTime || 0,
-        volume: 150 // Boost volume for sound effects
-      }));
-      
-      // Add music track if present
-      if (audioPublicId) {
-        audioTracks.unshift({
-          publicId: audioPublicId,
-          startTime: 0,
-          volume: Math.round((options?.musicVolume || 1) * 100)
-        });
-      }
-      
-      // Use mergeAudioIntoVideo for proper audio processing
-      const mergeResult = await cloudinaryService.mergeAudioIntoVideo(videoPublicId, audioTracks);
-      
-      if (mergeResult.success) {
-        // Now apply text overlays to the audio-merged video
-        let finalUrl = mergeResult.url;
-        if (textOverlays.length > 0) {
-          finalUrl = cloudinaryService.generateVideoWithTextOverlay(mergeResult.url, textOverlays, {});
-        }
+      try {
+        // Build sound effects data for Shotstack
+        const soundEffectsForShotstack = soundEffects.map(effect => ({
+          url: effect.url,
+          startTime: effect.startTime || 0,
+          name: effect.name
+        }));
         
-        res.json({
-          success: true,
-          url: finalUrl,
-          status: 'done',
-          message: `Video ready with ${audioTracks.length} audio track(s)` + (textOverlays.length > 0 ? ' and text' : '')
-        });
-        return;
-      } else {
-        console.warn('Audio merge failed, falling back to URL transformation:', mergeResult.error);
-        // Fall through to URL transformation as fallback
+        // Create Shotstack render with sound effects
+        const shotstackResult = await shotstackClient.createShotstackRender(
+          finalVideoUrl,
+          audioUrl, // Music track (if any)
+          subtitles || [],
+          {
+            duration: options?.duration || 10,
+            musicVolume: options?.musicVolume || 1,
+            videoVolume: options?.videoVolume || 0,
+            soundEffects: soundEffectsForShotstack
+          }
+        );
+        
+        if (shotstackResult.success && shotstackResult.jobId) {
+          console.log('🔊 Shotstack job submitted:', shotstackResult.jobId);
+          
+          // Poll for completion
+          const pollResult = await shotstackClient.pollRenderStatus(shotstackResult.jobId, 120);
+          
+          if (pollResult.success && pollResult.url) {
+            res.json({
+              success: true,
+              url: pollResult.url,
+              status: 'done',
+              message: `Video ready with ${soundEffectsForShotstack.length} sound effect(s)` + (audioUrl ? ' and music' : '')
+            });
+            return;
+          } else {
+            console.warn('Shotstack render failed:', pollResult.error);
+            // Fall through to Cloudinary
+          }
+        }
+      } catch (shotstackErr) {
+        console.warn('Shotstack error, falling back to Cloudinary:', shotstackErr.message);
+        // Fall through to Cloudinary
       }
     }
     
@@ -1029,7 +1028,7 @@ router.post('/cloudinary/render', async (req, res) => {
     // Build response message
     let message = 'Video ready';
     if (audioPublicId) message += ' with music';
-    if (soundEffectIds.length > 0) message += ` and ${soundEffectIds.length} sound effect(s)`;
+    if (soundEffectIds.length > 0) message += ` (sound effects may not be audible - Cloudinary limitation)`;
     if (subtitles?.length > 0) message += ' with text overlay';
     
     // Return immediately with the transformed URL
