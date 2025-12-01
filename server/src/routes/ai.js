@@ -927,7 +927,7 @@ router.post('/cloudinary/render', async (req, res) => {
       console.log('⚠️ Audio URL is not from Cloudinary, cannot include in render');
     }
     
-    // Convert subtitles to text overlays format - include fontSize and offsets
+    // Convert subtitles to text overlays format - include fontSize, offsets, and style
     const textOverlays = (subtitles || []).map(sub => {
       console.log('📝 Text overlay received:', JSON.stringify(sub));
       return {
@@ -937,7 +937,8 @@ router.post('/cloudinary/render', async (req, res) => {
         offsetX: sub.offsetX || 0,
         offsetY: sub.offsetY || 0,
         start: sub.start,
-        end: sub.end
+        end: sub.end,
+        style: sub.style || 'tiktok' // Pass the style ID
       };
     });
     

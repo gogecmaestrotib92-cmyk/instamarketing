@@ -280,11 +280,121 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     // For Cloudinary videos, we need to use a specific format
     // The overlay syntax for videos: l_text:font_size:text/fl_layer_apply,g_gravity,y_offset
     
-    // First, create the text layer
-    let textTransform = `l_text:Montserrat_${fontSize}_bold:${encodedText}`;
+    // Get the text style (default to tiktok)
+    const textStyle = overlay.style || 'tiktok';
     
-    // Add text styling (color and background)
-    textTransform += `,co_white,b_rgb:00000080`;
+    // Define style configurations for each viral style
+    const styleConfig = {
+      tiktok: {
+        font: 'Arial Black',
+        color: 'white',
+        background: null,
+        stroke: 'black',
+        strokeWidth: 3
+      },
+      hormozi: {
+        font: 'Arial Black',
+        color: 'black',
+        background: 'rgb:FFE135',
+        stroke: null,
+        strokeWidth: 0
+      },
+      mrbeast: {
+        font: 'Impact',
+        color: 'rgb:FF0000',
+        background: null,
+        stroke: 'rgb:FFFF00',
+        strokeWidth: 4
+      },
+      karaoke: {
+        font: 'Arial Black',
+        color: 'rgb:00D4FF',
+        background: 'rgb:00000099',
+        stroke: 'white',
+        strokeWidth: 2
+      },
+      netflix: {
+        font: 'Helvetica',
+        color: 'white',
+        background: null,
+        stroke: null,
+        strokeWidth: 0
+      },
+      glitch: {
+        font: 'Courier New',
+        color: 'rgb:00FF00',
+        background: 'rgb:000000CC',
+        stroke: 'rgb:FF00FF',
+        strokeWidth: 1
+      },
+      gradient: {
+        font: 'Arial Black',
+        color: 'rgb:FF6B6B',
+        background: null,
+        stroke: 'rgb:4ECDC4',
+        strokeWidth: 2
+      },
+      outline: {
+        font: 'Arial Black',
+        color: 'rgb:00000000',
+        background: null,
+        stroke: 'white',
+        strokeWidth: 4
+      },
+      shadow3d: {
+        font: 'Impact',
+        color: 'white',
+        background: null,
+        stroke: 'rgb:333333',
+        strokeWidth: 5
+      },
+      neon: {
+        font: 'Arial Black',
+        color: 'rgb:FF00FF',
+        background: null,
+        stroke: 'rgb:00FFFF',
+        strokeWidth: 3
+      },
+      typewriter: {
+        font: 'Courier New',
+        color: 'rgb:33FF33',
+        background: 'rgb:0D0D0D',
+        stroke: null,
+        strokeWidth: 0
+      },
+      handwritten: {
+        font: 'Comic Sans MS',
+        color: 'white',
+        background: null,
+        stroke: 'rgb:FF69B4',
+        strokeWidth: 2
+      }
+    };
+    
+    // Get config for the selected style (fallback to tiktok)
+    const config = styleConfig[textStyle] || styleConfig.tiktok;
+    
+    // Sanitize font name for Cloudinary (replace spaces with %20)
+    const fontName = config.font.replace(/ /g, '%20');
+    
+    // First, create the text layer
+    let textTransform = `l_text:${fontName}_${fontSize}_bold:${encodedText}`;
+    
+    // Add text styling based on the style config
+    // Color
+    textTransform += `,co_${config.color}`;
+    
+    // Background (if specified)
+    if (config.background) {
+      textTransform += `,b_${config.background}`;
+    }
+    
+    // Stroke/border (if specified)
+    if (config.stroke && config.strokeWidth > 0) {
+      textTransform += `,bo_${config.strokeWidth}px_solid_${config.stroke}`;
+    }
+    
+    console.log(`🎨 Text style: ${textStyle}, font: ${config.font}, color: ${config.color}`);
     
     // Close with fl_layer_apply AND positioning
     // For videos, gravity and position go AFTER fl_layer_apply
