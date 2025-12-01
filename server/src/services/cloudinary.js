@@ -249,23 +249,30 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     const xOffset = baseX + userOffsetX;
     const yOffset = baseY + userOffsetY;
     
-    // Build text overlay transformation with text wrapping
-    // c_fit,w_800 makes text wrap at 800px width
-    // text_align:center centers multi-line text
-    let textTransform = `l_text:Montserrat_${fontSize}_bold_center:${encodedText},co_white,g_${finalGravity}`;
+    // Build text overlay transformation
+    // For Cloudinary video text overlays, the format is:
+    // l_text:FontFamily_Size_Style:Text,co_color,g_gravity,x_offset,y_offset/fl_layer_apply
     
-    console.log(`   Final transform gravity: g_${finalGravity}, x_${xOffset}, y_${yOffset}`);
+    // Simple, clean transformation - just text with position
+    let textTransform = `l_text:Montserrat_${fontSize}_bold:${encodedText},co_white,g_${finalGravity}`;
     
-    // Add offsets if non-zero
+    // Add x offset
     if (xOffset !== 0) {
       textTransform += `,x_${xOffset}`;
     }
+    
+    // Add y offset  
     if (yOffset !== 0) {
       textTransform += `,y_${yOffset}`;
     }
     
-    // Add background and text wrapping
-    textTransform += `,b_rgb:00000080,c_fit,w_800/fl_layer_apply`;
+    // Add semi-transparent background
+    textTransform += `,b_rgb:00000080`;
+    
+    // Close the layer
+    textTransform += `/fl_layer_apply`;
+    
+    console.log(`   Full transform: ${textTransform}`);
     
     transformations.push(textTransform);
   });
@@ -277,7 +284,10 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
   
   // Build new URL with transformations
   const transformString = transformations.join('/');
-  const newUrl = `https://res.cloudinary.com/${cloudName}/video/upload/${transformString}/${publicIdWithExt}`;
+  
+  // Add cache-busting timestamp to force regeneration
+  const cacheBuster = Date.now();
+  const newUrl = `https://res.cloudinary.com/${cloudName}/video/upload/${transformString}/${publicIdWithExt}?_cb=${cacheBuster}`;
   
   console.log('📹 Generated Cloudinary video with text overlay:', newUrl);
   return newUrl;
