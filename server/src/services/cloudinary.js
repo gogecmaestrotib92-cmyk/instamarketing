@@ -158,8 +158,12 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
   // Build transformation array
   const transformations = [];
   
+  // Determine if we need to mute original video
+  const hasMusic = !!options.audioPublicId;
+  const hasSounds = options.soundEffects && options.soundEffects.length > 0;
+  
   // Add audio overlay if provided (mute original video first, then add audio)
-  if (options.audioPublicId) {
+  if (hasMusic) {
     console.log('🎵 Adding audio overlay with public ID:', options.audioPublicId);
     // Mute original video audio
     transformations.push('ac_none');
@@ -167,27 +171,26 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     const audioId = options.audioPublicId.replace(/\//g, ':');
     // Apply volume if specified
     const volume = options.musicVolume !== undefined ? Math.round(options.musicVolume * 100) : 100;
-    const audioTransform = `l_audio:${audioId}/e_volume:${volume}/fl_layer_apply`;
+    const audioTransform = `l_video:${audioId}/e_volume:${volume}/fl_layer_apply`;
     console.log('🎵 Audio transform:', audioTransform);
     transformations.push(audioTransform);
-  } else if (options.soundEffects && options.soundEffects.length > 0) {
-    // If no music but we have sound effects, still mute original
+  } else if (hasSounds) {
+    // If no music but we have sound effects, mute original so sounds are audible
     transformations.push('ac_none');
-    console.log('🎵 No music, but muting original for sound effects');
+    console.log('🎵 No music, muting original for sound effects');
   } else {
     console.log('🎵 No audio public ID provided');
   }
   
   // Add sound effects as additional audio layers
-  if (options.soundEffects && options.soundEffects.length > 0) {
+  if (hasSounds) {
     console.log('🔊 Adding', options.soundEffects.length, 'sound effect(s)...');
     for (const effect of options.soundEffects) {
       const effectId = effect.publicId.replace(/\//g, ':');
-      // Use so_ (start offset) for timing the sound effect
-      const startOffset = effect.startTime ? `so_${effect.startTime}` : '';
-      const effectTransform = startOffset 
-        ? `l_audio:${effectId}/${startOffset}/fl_layer_apply`
-        : `l_audio:${effectId}/fl_layer_apply`;
+      // Use l_video for audio files (Cloudinary stores audio as video resource type)
+      // so_ is start offset in seconds
+      const startOffset = effect.startTime > 0 ? `/so_${Math.round(effect.startTime)}` : '';
+      const effectTransform = `l_video:${effectId}${startOffset}/e_volume:150/fl_layer_apply`;
       console.log('🔊 Sound effect transform:', effect.name, '->', effectTransform);
       transformations.push(effectTransform);
     }
