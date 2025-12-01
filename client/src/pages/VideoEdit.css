@@ -1253,16 +1253,163 @@
   /* Positioning is handled by inline styles - DO NOT add position properties here */
 }
 
-/* Text overlay styles (position is set via inline styles in JavaScript) */
-.preview-text-overlay.style-neon {
-  text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-  color: #00ffff;
+/* ========== TEXT OVERLAY STYLES FOR VIDEO PREVIEW ========== */
+
+/* TikTok Classic - The most viral style */
+.preview-text-overlay.style-tiktok {
+  font-family: 'Arial Black', 'Impact', sans-serif;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 
+    -3px -3px 0 #000,
+    3px -3px 0 #000,
+    -3px 3px 0 #000,
+    3px 3px 0 #000,
+    0 4px 0 #000;
+  background: transparent;
 }
 
-.preview-text-overlay.style-bold {
-  font-size: 24px;
-  font-weight: 800;
+/* Hormozi Style - Yellow highlight like Alex Hormozi */
+.preview-text-overlay.style-hormozi {
+  font-family: 'Arial Black', sans-serif;
+  font-weight: 900;
+  color: #000;
+  background: linear-gradient(180deg, #FFE135 0%, #FFD700 100%);
+  padding: 8px 16px;
+  border-radius: 6px;
   text-transform: uppercase;
+  text-shadow: none;
+}
+
+/* MrBeast Style - Big colorful impact */
+.preview-text-overlay.style-mrbeast {
+  font-family: 'Impact', 'Arial Black', sans-serif;
+  font-weight: 900;
+  color: #FF0000;
+  text-shadow: 
+    4px 4px 0 #FFFF00,
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    2px 2px 0 #000;
+  text-transform: uppercase;
+  background: transparent;
+  font-size: 28px;
+}
+
+/* Karaoke Style - Word highlight */
+.preview-text-overlay.style-karaoke {
+  font-family: 'Arial', sans-serif;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(90deg, #8B5CF6 100%, transparent 100%);
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Netflix Style - Cinematic clean */
+.preview-text-overlay.style-netflix {
+  font-family: 'Helvetica Neue', 'Arial', sans-serif;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 12px 24px;
+  border-radius: 4px;
+}
+
+/* Glitch Effect */
+.preview-text-overlay.style-glitch {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #00ff00;
+  text-shadow: 
+    3px 0 #ff0000,
+    -3px 0 #00ffff;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 8px 16px;
+  animation: glitchPreview 0.2s infinite;
+}
+
+@keyframes glitchPreview {
+  0%, 100% { text-shadow: 3px 0 #ff0000, -3px 0 #00ffff; }
+  25% { text-shadow: -3px 0 #ff0000, 3px 0 #00ffff; }
+  50% { text-shadow: 3px 2px #ff0000, -3px -2px #00ffff; }
+  75% { text-shadow: -2px -3px #ff0000, 2px 3px #00ffff; }
+}
+
+/* Gradient Text */
+.preview-text-overlay.style-gradient {
+  font-family: 'Arial Black', sans-serif;
+  font-weight: 900;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+}
+
+/* Outline Only */
+.preview-text-overlay.style-outline {
+  font-family: 'Arial Black', sans-serif;
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 3px #ffffff;
+  text-stroke: 3px #ffffff;
+  background: transparent;
+  filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.8));
+}
+
+/* 3D Shadow */
+.preview-text-overlay.style-shadow3d {
+  font-family: 'Impact', sans-serif;
+  font-weight: 900;
+  color: #fff;
+  background: transparent;
+  text-shadow: 
+    1px 1px 0 #8B5CF6,
+    2px 2px 0 #7C3AED,
+    3px 3px 0 #6D28D9,
+    4px 4px 0 #5B21B6,
+    5px 5px 0 #4C1D95,
+    6px 6px 15px rgba(0,0,0,0.6);
+}
+
+/* Neon Glow */
+.preview-text-overlay.style-neon {
+  font-family: 'Arial', sans-serif;
+  font-weight: 700;
+  color: #00ffff;
+  background: transparent;
+  text-shadow: 
+    0 0 7px #00ffff,
+    0 0 14px #00ffff,
+    0 0 28px #00ffff,
+    0 0 56px #0080ff;
+}
+
+/* Typewriter */
+.preview-text-overlay.style-typewriter {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-weight: 600;
+  color: #00ff00;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 12px 20px;
+  border-left: 4px solid #00ff00;
+  border-radius: 0;
+}
+
+/* Handwritten */
+.preview-text-overlay.style-handwritten {
+  font-family: 'Comic Sans MS', 'Marker Felt', cursive;
+  font-weight: 400;
+  color: #fff;
+  background: transparent;
+  text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+  transform: rotate(-3deg);
+  font-size: 26px;
 }
 
 /* Preview Subtitles */
@@ -2018,18 +2165,20 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .style-btn {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 10px;
-  padding: 12px 16px;
+  padding: 12px 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   transition: all 0.2s ease;
   color: #f3f4f6;
 }
@@ -2039,31 +2188,161 @@
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+.style-btn.active {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
 .style-preview {
-  font-family: var(--font-primary);
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
+  padding: 2px 6px;
 }
 
-.style-preview.style-neon {
-  text-shadow: 0 0 8px #00ffff;
-}
-
-.style-preview.style-bold {
+/* TikTok Classic - Bold white with heavy black stroke */
+.style-preview.style-tiktok {
+  font-family: 'Arial Black', 'Impact', sans-serif;
   font-weight: 900;
+  color: #ffffff;
+  text-shadow: 
+    -2px -2px 0 #000,
+    2px -2px 0 #000,
+    -2px 2px 0 #000,
+    2px 2px 0 #000,
+    0 3px 0 #000;
 }
 
-.style-preview.style-minimal {
-  font-weight: 300;
+/* Hormozi Style - Yellow highlight boxes like Alex Hormozi */
+.style-preview.style-hormozi {
+  font-family: 'Arial Black', sans-serif;
+  font-weight: 900;
+  color: #000;
+  background: linear-gradient(180deg, #FFE135 0%, #FFD700 100%);
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* MrBeast Style - Big colorful with shadow */
+.style-preview.style-mrbeast {
+  font-family: 'Impact', 'Arial Black', sans-serif;
+  font-weight: 900;
+  color: #FF0000;
+  text-shadow: 
+    3px 3px 0 #FFFF00,
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+  text-transform: uppercase;
+}
+
+/* Karaoke Style - Highlight effect */
+.style-preview.style-karaoke {
+  font-family: 'Arial', sans-serif;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(90deg, #8B5CF6 50%, transparent 50%);
+  padding: 4px 8px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Netflix Style - Clean cinematic */
+.style-preview.style-netflix {
+  font-family: 'Helvetica Neue', 'Arial', sans-serif;
+  font-weight: 600;
+  color: #E50914;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Glitch Effect */
+.style-preview.style-glitch {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  color: #00ff00;
+  text-shadow: 
+    2px 0 #ff0000,
+    -2px 0 #00ffff;
+  animation: glitch 0.3s infinite;
+}
+
+@keyframes glitch {
+  0%, 100% { text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; }
+  50% { text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; }
+}
+
+/* Gradient Text */
+.style-preview.style-gradient {
+  font-family: 'Arial Black', sans-serif;
+  font-weight: 900;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Outline Only */
+.style-preview.style-outline {
+  font-family: 'Arial Black', sans-serif;
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 2px #ffffff;
+  text-stroke: 2px #ffffff;
+}
+
+/* 3D Shadow */
+.style-preview.style-shadow3d {
+  font-family: 'Impact', sans-serif;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 
+    1px 1px 0 #8B5CF6,
+    2px 2px 0 #7C3AED,
+    3px 3px 0 #6D28D9,
+    4px 4px 0 #5B21B6,
+    5px 5px 10px rgba(0,0,0,0.5);
+}
+
+/* Neon Glow */
+.style-preview.style-neon {
+  font-family: 'Arial', sans-serif;
+  font-weight: 700;
+  color: #00ffff;
+  text-shadow: 
+    0 0 5px #00ffff,
+    0 0 10px #00ffff,
+    0 0 20px #00ffff,
+    0 0 40px #00ffff;
+}
+
+/* Typewriter */
+.style-preview.style-typewriter {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-weight: 600;
+  color: #f0f0f0;
+  background: rgba(0,0,0,0.7);
+  padding: 4px 8px;
+  border-left: 3px solid #00ff00;
+}
+
+/* Handwritten */
+.style-preview.style-handwritten {
+  font-family: 'Comic Sans MS', 'Marker Felt', cursive;
+  font-weight: 400;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  transform: rotate(-2deg);
 }
 
 .style-btn span:last-child {
   font-family: var(--font-primary);
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 500;
   color: #6b7280;
   letter-spacing: -0.01em;
+  text-align: center;
 }
 
 .text-list,

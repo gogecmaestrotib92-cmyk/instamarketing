@@ -98,12 +98,20 @@ const VideoEdit = () => {
     { id: 11, name: 'Thunder Storm', icon: '⛈️', type: 'ambient', audioUrl: '/sounds/thunder-storm-and-raining-sound-effect-444739.mp3' },
   ];
 
-  // Text styles
+  // Text styles - Most viral & modern styles from TikTok, Reels, YouTube Shorts
   const textStyles = [
-    { id: 'modern', name: 'Modern', preview: 'Aa' },
-    { id: 'bold', name: 'Bold', preview: 'Aa' },
-    { id: 'minimal', name: 'Minimal', preview: 'Aa' },
-    { id: 'neon', name: 'Neon', preview: 'Aa' },
+    { id: 'tiktok', name: 'TikTok Classic', preview: 'Aa', description: 'Bold white with black stroke' },
+    { id: 'hormozi', name: 'Hormozi', preview: 'Aa', description: 'Yellow highlight boxes' },
+    { id: 'mrbeast', name: 'MrBeast', preview: 'Aa', description: 'Big bold colorful' },
+    { id: 'karaoke', name: 'Karaoke', preview: 'Aa', description: 'Word-by-word highlight' },
+    { id: 'netflix', name: 'Netflix', preview: 'Aa', description: 'Clean cinematic' },
+    { id: 'glitch', name: 'Glitch', preview: 'Aa', description: 'Cyberpunk effect' },
+    { id: 'gradient', name: 'Gradient', preview: 'Aa', description: 'Colorful gradient text' },
+    { id: 'outline', name: 'Outline', preview: 'Aa', description: 'Hollow text effect' },
+    { id: 'shadow3d', name: '3D Shadow', preview: 'Aa', description: 'Deep 3D shadow' },
+    { id: 'neon', name: 'Neon Glow', preview: 'Aa', description: 'Bright neon glow' },
+    { id: 'typewriter', name: 'Typewriter', preview: 'Aa', description: 'Retro mono font' },
+    { id: 'handwritten', name: 'Handwritten', preview: 'Aa', description: 'Casual script look' },
   ];
 
   useEffect(() => {
