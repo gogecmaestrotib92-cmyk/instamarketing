@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import './NewVideoForm.css';
 
 const NewVideoForm = ({
@@ -14,8 +14,70 @@ const NewVideoForm = ({
   onGenerate,
   imagePreview,
   onImageChange,
-  onImageRemove
+  onImageRemove,
+  imagePosition,
+  onImagePositionChange
 }) => {
+  // Image pan/zoom state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+  
+  // Default position if not provided
+  const position = imagePosition || { x: 0, y: 0, scale: 1 };
+  
+  const handleMouseDown = useCallback((e) => {
+    if (!imagePreview) return;
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  }, [imagePreview, position.x, position.y]);
+  
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    onImagePositionChange?.({ ...position, x: newX, y: newY });
+  }, [isDragging, dragStart, position, onImagePositionChange]);
+  
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+  
+  const handleTouchStart = useCallback((e) => {
+    if (!imagePreview) return;
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setDragStart({
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y
+    });
+  }, [imagePreview, position.x, position.y]);
+  
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const newX = touch.clientX - dragStart.x;
+    const newY = touch.clientY - dragStart.y;
+    onImagePositionChange?.({ ...position, x: newX, y: newY });
+  }, [isDragging, dragStart, position, onImagePositionChange]);
+  
+  const handleWheel = useCallback((e) => {
+    if (!imagePreview) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    const newScale = Math.min(3, Math.max(0.5, position.scale + delta));
+    onImagePositionChange?.({ ...position, scale: newScale });
+  }, [imagePreview, position, onImagePositionChange]);
+  
+  const resetPosition = useCallback(() => {
+    onImagePositionChange?.({ x: 0, y: 0, scale: 1 });
+  }, [onImagePositionChange]);
+
   return (
     <div className="nvf-container">
       {/* Loading Overlay */}
@@ -59,9 +121,50 @@ const NewVideoForm = ({
       {activeTab === 'image-to-video' && (
         <div className="nvf-image-area">
           {imagePreview ? (
-            <div className="nvf-image-preview">
-              <img src={imagePreview} alt="Preview" />
-              <button className="nvf-remove-btn" onClick={onImageRemove}>Remove</button>
+            <div 
+              className={`nvf-image-preview ${isDragging ? 'nvf-dragging' : ''}`}
+              ref={containerRef}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleMouseUp}
+              onWheel={handleWheel}
+            >
+              <div className="nvf-image-viewport">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  style={{
+                    transform: `translate(${position.x}px, ${position.y}px) scale(${position.scale})`,
+                    cursor: isDragging ? 'grabbing' : 'grab'
+                  }}
+                  draggable={false}
+                />
+              </div>
+              <div className="nvf-image-controls">
+                <button 
+                  className="nvf-reset-btn" 
+                  onClick={(e) => { e.stopPropagation(); resetPosition(); }}
+                  title="Reset position"
+                >
+                  ↺ Reset
+                </button>
+                <span className="nvf-zoom-indicator">
+                  {Math.round(position.scale * 100)}%
+                </span>
+                <button 
+                  className="nvf-remove-btn" 
+                  onClick={(e) => { e.stopPropagation(); onImageRemove(); }}
+                >
+                  Remove
+                </button>
+              </div>
+              <div className="nvf-image-hint">
+                Drag to reposition • Scroll to zoom
+              </div>
             </div>
           ) : (
             <label className="nvf-upload">

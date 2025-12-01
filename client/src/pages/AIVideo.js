@@ -16,6 +16,7 @@ const AIVideo = () => {
   const [aspectRatio] = useState('9:16');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0, scale: 1 });
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStatus, setLoadingStatus] = useState('');
@@ -26,7 +27,14 @@ const AIVideo = () => {
     if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
+      setImagePosition({ x: 0, y: 0, scale: 1 }); // Reset position on new image
     }
+  };
+  
+  const handleImageRemove = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setImagePosition({ x: 0, y: 0, scale: 1 });
   };
 
   const getStatusMessage = (progress) => {
@@ -216,7 +224,9 @@ const AIVideo = () => {
         onGenerate={handleGenerate}
         imagePreview={imagePreview}
         onImageChange={handleImageChange}
-        onImageRemove={() => { setImageFile(null); setImagePreview(null); }}
+        onImageRemove={handleImageRemove}
+        imagePosition={imagePosition}
+        onImagePositionChange={setImagePosition}
       />
 
       {generatedVideo && (
