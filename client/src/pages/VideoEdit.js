@@ -354,14 +354,18 @@ const VideoEdit = () => {
           text: sub.text,
           start: sub.startTime,
           end: sub.endTime,
-          position: 'bottom'
+          position: 'bottom-center',
+          fontSize: 42
         })),
-        // Text overlays (converted to subtitle format for Shotstack)
+        // Text overlays with position, fontSize, and offsets
         ...textOverlays.map(overlay => ({
           text: overlay.text,
           start: overlay.startTime,
           end: overlay.endTime,
-          position: overlay.position || 'center',
+          position: overlay.position || 'bottom-center',
+          fontSize: overlay.fontSize || 42,
+          offsetX: overlay.offsetX || 0,
+          offsetY: overlay.offsetY || 0,
           style: overlay.style || 'blockbuster'
         }))
       ];

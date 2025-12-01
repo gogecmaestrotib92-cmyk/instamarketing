@@ -878,11 +878,32 @@ router.post('/cloudinary/render', async (req, res) => {
     console.log('   Subtitles count:', subtitles?.length || 0);
     console.log('   Options:', JSON.stringify(options));
     
-    // Check if video is a Cloudinary URL
+    // Check if video is a Cloudinary URL - if not, auto-transfer it
+    let finalVideoUrl = videoUrl;
     if (!videoUrl.includes('cloudinary.com')) {
-      return res.status(400).json({ 
-        error: 'Video must be uploaded to Cloudinary first. Please ensure the video URL is a Cloudinary URL.' 
-      });
+      console.log('⚠️ Video is not on Cloudinary, transferring automatically...');
+      try {
+        const transferResult = await cloudinaryService.uploadToCloudinary(videoUrl, {
+          resource_type: 'video',
+          folder: 'instamarketing/videos'
+        });
+        
+        if (transferResult.success && transferResult.url) {
+          finalVideoUrl = transferResult.url;
+          console.log('✅ Video auto-transferred:', finalVideoUrl);
+        } else {
+          return res.status(400).json({ 
+            error: 'Failed to transfer video to Cloudinary: ' + (transferResult.error || 'Unknown error'),
+            hint: 'Try uploading the video directly or use a different video source'
+          });
+        }
+      } catch (transferError) {
+        console.error('Auto-transfer failed:', transferError);
+        return res.status(400).json({ 
+          error: 'Video must be on Cloudinary for rendering. Auto-transfer failed: ' + transferError.message,
+          hint: 'Try a different video or ensure the video URL is accessible'
+        });
+      }
     }
     
     // Extract audio public ID if audio URL is from Cloudinary
@@ -899,10 +920,13 @@ router.post('/cloudinary/render', async (req, res) => {
       }
     }
     
-    // Convert subtitles to text overlays format
+    // Convert subtitles to text overlays format - include fontSize and offsets
     const textOverlays = (subtitles || []).map(sub => ({
       text: sub.text,
-      position: sub.position || 'bottom',
+      position: sub.position || 'bottom-center',
+      fontSize: sub.fontSize || sub.style?.fontSize || 42,
+      offsetX: sub.offsetX || 0,
+      offsetY: sub.offsetY || 0,
       start: sub.start,
       end: sub.end
     }));
@@ -914,7 +938,7 @@ router.post('/cloudinary/render', async (req, res) => {
     };
     
     // Generate the video URL with text overlays and audio
-    const resultUrl = cloudinaryService.generateVideoWithTextOverlay(videoUrl, textOverlays, transformOptions);
+    const resultUrl = cloudinaryService.generateVideoWithTextOverlay(finalVideoUrl, textOverlays, transformOptions);
     
     // Return immediately with the transformed URL
     res.json({
