@@ -54,6 +54,13 @@ const userSchema = new mongoose.Schema({
     reelsThisMonth: { type: Number, default: 0 },
     adsCreated: { type: Number, default: 0 }
   },
+  // Notification preferences
+  notifications: {
+    emailNotifications: { type: Boolean, default: true },
+    postPublished: { type: Boolean, default: true },
+    campaignUpdates: { type: Boolean, default: true },
+    weeklyReport: { type: Boolean, default: true }
+  },
   isActive: {
     type: Boolean,
     default: true

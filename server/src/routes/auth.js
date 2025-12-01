@@ -122,11 +122,21 @@ router.get('/me', auth, async (req, res) => {
 // Update user profile
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { name, company } = req.body;
+    const { name, company, notifications } = req.body;
     
     const user = req.user;
     if (name) user.name = name;
     if (company !== undefined) user.company = company;
+    
+    // Handle notifications update
+    if (notifications) {
+      user.notifications = {
+        emailNotifications: notifications.emailNotifications ?? user.notifications?.emailNotifications ?? true,
+        postPublished: notifications.postPublished ?? user.notifications?.postPublished ?? true,
+        campaignUpdates: notifications.campaignUpdates ?? user.notifications?.campaignUpdates ?? true,
+        weeklyReport: notifications.weeklyReport ?? user.notifications?.weeklyReport ?? true
+      };
+    }
     
     await user.save();
     

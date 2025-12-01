@@ -62,6 +62,15 @@ const Settings = () => {
         followers: user.instagram?.followers || 0,
         profilePicture: user.instagram?.profilePicture || ''
       });
+      // Load notification preferences from user data
+      if (user.notifications) {
+        setNotifications({
+          emailNotifications: user.notifications.emailNotifications ?? true,
+          postPublished: user.notifications.postPublished ?? true,
+          campaignUpdates: user.notifications.campaignUpdates ?? true,
+          weeklyReport: user.notifications.weeklyReport ?? true
+        });
+      }
     }
   }, [user]);
 
