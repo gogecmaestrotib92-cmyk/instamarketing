@@ -66,7 +66,7 @@ const AutopilotPost = () => {
 
   const loadAutopilotStatus = async () => {
     try {
-      const response = await api.get('/api/ai/autopilot/post/status');
+      const response = await api.get('/ai/autopilot/post/status');
       setIsAutopilotActive(response.data.active);
       if (response.data.settings) {
         setSettings(prev => ({ ...prev, ...response.data.settings }));
@@ -78,7 +78,7 @@ const AutopilotPost = () => {
 
   const loadQueue = async () => {
     try {
-      const response = await api.get('/api/ai/autopilot/post/queue');
+      const response = await api.get('/ai/autopilot/post/queue');
       setQueue(response.data.queue || []);
     } catch (error) {
       console.error('Failed to load queue:', error);
@@ -87,7 +87,7 @@ const AutopilotPost = () => {
 
   const loadHistory = async () => {
     try {
-      const response = await api.get('/api/ai/autopilot/post/history');
+      const response = await api.get('/ai/autopilot/post/history');
       setHistory(response.data.history || []);
     } catch (error) {
       console.error('Failed to load history:', error);
@@ -98,10 +98,10 @@ const AutopilotPost = () => {
     setIsLoading(true);
     try {
       if (isAutopilotActive) {
-        await api.post('/api/ai/autopilot/post/stop');
+        await api.post('/ai/autopilot/post/stop');
         setIsAutopilotActive(false);
       } else {
-        await api.post('/api/ai/autopilot/post/start', { settings });
+        await api.post('/ai/autopilot/post/start', { settings });
         setIsAutopilotActive(true);
       }
     } catch (error) {
@@ -114,7 +114,7 @@ const AutopilotPost = () => {
   const generateNow = async () => {
     setIsGenerating(true);
     try {
-      const response = await api.post('/api/ai/autopilot/post/generate', { settings });
+      const response = await api.post('/ai/autopilot/post/generate', { settings });
       if (response.data.post) {
         setQueue(prev => [response.data.post, ...prev]);
         setActiveTab('queue');
@@ -128,7 +128,7 @@ const AutopilotPost = () => {
 
   const approvePost = async (postId) => {
     try {
-      await api.post(`/api/ai/autopilot/post/queue/${postId}/approve`);
+      await api.post(`/ai/autopilot/post/queue/${postId}/approve`);
       setQueue(prev => prev.map(p => p.id === postId ? { ...p, status: 'approved' } : p));
     } catch (error) {
       console.error('Failed to approve:', error);
@@ -138,7 +138,7 @@ const AutopilotPost = () => {
   const deletePost = async (postId) => {
     if (!window.confirm('Delete this post from queue?')) return;
     try {
-      await api.delete(`/api/ai/autopilot/post/queue/${postId}`);
+      await api.delete(`/ai/autopilot/post/queue/${postId}`);
       setQueue(prev => prev.filter(p => p.id !== postId));
     } catch (error) {
       console.error('Failed to delete:', error);
@@ -147,7 +147,7 @@ const AutopilotPost = () => {
 
   const postNow = async (postId) => {
     try {
-      await api.post(`/api/ai/autopilot/post/queue/${postId}/post`);
+      await api.post(`/ai/autopilot/post/queue/${postId}/post`);
       const post = queue.find(p => p.id === postId);
       if (post) {
         setHistory(prev => [{ ...post, postedAt: new Date().toISOString() }, ...prev]);
@@ -161,7 +161,7 @@ const AutopilotPost = () => {
 
   const updateCaption = async (postId, newCaption) => {
     try {
-      await api.patch(`/api/ai/autopilot/post/queue/${postId}`, { caption: newCaption });
+      await api.patch(`/ai/autopilot/post/queue/${postId}`, { caption: newCaption });
       setQueue(prev => prev.map(p => p.id === postId ? { ...p, caption: newCaption } : p));
       setEditingCaption(null);
     } catch (error) {

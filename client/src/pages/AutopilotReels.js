@@ -76,7 +76,7 @@ const AutopilotReels = () => {
 
   const loadAutopilotStatus = async () => {
     try {
-      const response = await api.get('/api/ai/autopilot/reels/status');
+      const response = await api.get('/ai/autopilot/reels/status');
       setIsAutopilotActive(response.data.active);
       if (response.data.settings) {
         setSettings(prev => ({ ...prev, ...response.data.settings }));
@@ -88,7 +88,7 @@ const AutopilotReels = () => {
 
   const loadQueue = async () => {
     try {
-      const response = await api.get('/api/ai/autopilot/reels/queue');
+      const response = await api.get('/ai/autopilot/reels/queue');
       setQueue(response.data.queue || []);
     } catch (error) {
       console.error('Failed to load queue:', error);
@@ -97,7 +97,7 @@ const AutopilotReels = () => {
 
   const loadHistory = async () => {
     try {
-      const response = await api.get('/api/ai/autopilot/reels/history');
+      const response = await api.get('/ai/autopilot/reels/history');
       setHistory(response.data.history || []);
     } catch (error) {
       console.error('Failed to load history:', error);
@@ -108,10 +108,10 @@ const AutopilotReels = () => {
     setIsLoading(true);
     try {
       if (isAutopilotActive) {
-        await api.post('/api/ai/autopilot/reels/stop');
+        await api.post('/ai/autopilot/reels/stop');
         setIsAutopilotActive(false);
       } else {
-        await api.post('/api/ai/autopilot/reels/start', { settings });
+        await api.post('/ai/autopilot/reels/start', { settings });
         setIsAutopilotActive(true);
       }
     } catch (error) {
@@ -124,7 +124,7 @@ const AutopilotReels = () => {
   const generateNow = async () => {
     setIsGenerating(true);
     try {
-      const response = await api.post('/api/ai/autopilot/reels/generate', { settings });
+      const response = await api.post('/ai/autopilot/reels/generate', { settings });
       if (response.data.video) {
         setQueue(prev => [response.data.video, ...prev]);
         setActiveTab('queue');
@@ -138,7 +138,7 @@ const AutopilotReels = () => {
 
   const approveVideo = async (videoId) => {
     try {
-      await api.post(`/api/ai/autopilot/reels/queue/${videoId}/approve`);
+      await api.post(`/ai/autopilot/reels/queue/${videoId}/approve`);
       setQueue(prev => prev.map(v => v.id === videoId ? { ...v, status: 'approved' } : v));
     } catch (error) {
       console.error('Failed to approve:', error);
@@ -148,7 +148,7 @@ const AutopilotReels = () => {
   const deleteVideo = async (videoId) => {
     if (!window.confirm('Delete this video from queue?')) return;
     try {
-      await api.delete(`/api/ai/autopilot/reels/queue/${videoId}`);
+      await api.delete(`/ai/autopilot/reels/queue/${videoId}`);
       setQueue(prev => prev.filter(v => v.id !== videoId));
     } catch (error) {
       console.error('Failed to delete:', error);
@@ -157,7 +157,7 @@ const AutopilotReels = () => {
 
   const postNow = async (videoId) => {
     try {
-      await api.post(`/api/ai/autopilot/reels/queue/${videoId}/post`);
+      await api.post(`/ai/autopilot/reels/queue/${videoId}/post`);
       const video = queue.find(v => v.id === videoId);
       if (video) {
         setHistory(prev => [{ ...video, postedAt: new Date().toISOString() }, ...prev]);
@@ -171,7 +171,7 @@ const AutopilotReels = () => {
 
   const updateCaption = async (videoId, newCaption) => {
     try {
-      await api.patch(`/api/ai/autopilot/reels/queue/${videoId}`, { caption: newCaption });
+      await api.patch(`/ai/autopilot/reels/queue/${videoId}`, { caption: newCaption });
       setQueue(prev => prev.map(v => v.id === videoId ? { ...v, caption: newCaption } : v));
       setEditingCaption(null);
     } catch (error) {

@@ -66,28 +66,36 @@ const VideoEdit = () => {
     formatDate(video.createdAt).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Sound effects library with actual audio files
+  // Music library (songs for background)
   const musicLibrary = [
-    { id: 1, name: 'Alert', duration: '0:03', mood: 'notification', icon: '🔔', audioUrl: '/sounds/alerte-346112.mp3' },
-    { id: 2, name: 'Robot Footstep', duration: '0:02', mood: 'sci-fi', icon: '🤖', audioUrl: '/sounds/big-robot-footstep-014-445104.mp3' },
-    { id: 3, name: 'Calming Rain', duration: '1:00', mood: 'relaxing', icon: '🌧️', audioUrl: '/sounds/calming-rain-257596.mp3' },
-    { id: 4, name: 'Fire Sound', duration: '0:30', mood: 'intense', icon: '🔥', audioUrl: '/sounds/fire-sound-334130.mp3' },
-    { id: 5, name: 'Pool Splash', duration: '0:05', mood: 'fun', icon: '🏊', audioUrl: '/sounds/jumping-into-swimming-pool-438546.mp3' },
-    { id: 6, name: 'Mouse Click', duration: '0:01', mood: 'tech', icon: '🖱️', audioUrl: '/sounds/mouse-click-290204.mp3' },
-    { id: 7, name: 'Pig Grunting', duration: '0:10', mood: 'funny', icon: '🐷', audioUrl: '/sounds/pig-grunting-playing-in-mud-sound-effect-440220.mp3' },
-    { id: 8, name: 'Clock Ticking', duration: '0:15', mood: 'cinematic', icon: '⏰', audioUrl: '/sounds/slow-cinematic-clock-ticking-357979.mp3' },
-    { id: 9, name: 'Clock Ticking Alt', duration: '0:20', mood: 'suspense', icon: '🕐', audioUrl: '/sounds/slow-cinematic-clock-ticking-405471.mp3' },
-    { id: 10, name: 'Motorcycle', duration: '0:08', mood: 'action', icon: '🏍️', audioUrl: '/sounds/small-off-road-motorcycle-passing-445143.mp3' },
-    { id: 11, name: 'Thunder Storm', duration: '0:45', mood: 'dramatic', icon: '⛈️', audioUrl: '/sounds/thunder-storm-and-raining-sound-effect-444739.mp3' },
+    { id: 1, name: 'Christmas Happy', duration: '2:30', mood: 'festive', icon: '🎄', audioUrl: '/music/christmas-happy-background-442036.mp3' },
+    { id: 2, name: 'Comic Humor TikTok', duration: '1:45', mood: 'funny', icon: '😂', audioUrl: '/music/comic-humor-memes-tiktok-music-357342.mp3' },
+    { id: 3, name: 'D3ath', duration: '2:00', mood: 'intense', icon: '💀', audioUrl: '/music/d3ath-202001.mp3' },
+    { id: 4, name: 'Dark Horror Suspense', duration: '2:15', mood: 'horror', icon: '👻', audioUrl: '/music/dark-horror-suspense-442042.mp3' },
+    { id: 5, name: 'Hold Me Tight', duration: '2:30', mood: 'romantic', icon: '💕', audioUrl: '/music/hold-me-tight-278286.mp3' },
+    { id: 6, name: 'Leather', duration: '2:00', mood: 'edgy', icon: '🎸', audioUrl: '/music/leather-442654.mp3' },
+    { id: 7, name: 'Phonk Music', duration: '1:30', mood: 'phonk', icon: '🔊', audioUrl: '/music/phonk-music-439636.mp3' },
+    { id: 8, name: 'Phonk TikTok', duration: '1:45', mood: 'viral', icon: '📱', audioUrl: '/music/phonk-tiktok-instagram-youtube-music-303287.mp3' },
+    { id: 9, name: 'Piano Music', duration: '3:00', mood: 'calm', icon: '🎹', audioUrl: '/music/piano-music-443004.mp3' },
+    { id: 10, name: 'Play House', duration: '2:30', mood: 'electronic', icon: '🎧', audioUrl: '/music/play-house-thousand-sounds-official-audio-382805.mp3' },
+    { id: 11, name: 'Rap Beat', duration: '2:00', mood: 'hiphop', icon: '🎤', audioUrl: '/music/rap-beat-183034.mp3' },
+    { id: 12, name: 'Viral Energy Pop', duration: '1:30', mood: 'energetic', icon: '⚡', audioUrl: '/music/viral-energy-pop-fashion-sports-dubstep-promo-reels-312770.mp3' },
+    { id: 13, name: 'YouTube Background', duration: '2:45', mood: 'chill', icon: '▶️', audioUrl: '/music/youtube-background-music-409205.mp3' },
   ];
 
-  // Sound effects library (quick effects)
+  // Sound effects library (ambient & effects)
   const soundsLibrary = [
-    { id: 1, name: 'Alert', icon: '🔔', type: 'alert', audioUrl: '/sounds/alerte-346112.mp3' },
-    { id: 2, name: 'Click', icon: '🖱️', type: 'click', audioUrl: '/sounds/mouse-click-290204.mp3' },
-    { id: 3, name: 'Splash', icon: '🏊', type: 'splash', audioUrl: '/sounds/jumping-into-swimming-pool-438546.mp3' },
-    { id: 4, name: 'Fire', icon: '🔥', type: 'fire', audioUrl: '/sounds/fire-sound-334130.mp3' },
-    { id: 5, name: 'Thunder', icon: '⛈️', type: 'thunder', audioUrl: '/sounds/thunder-storm-and-raining-sound-effect-444739.mp3' },
+    { id: 1, name: 'Alert', icon: '🔔', type: 'notification', audioUrl: '/sounds/alerte-346112.mp3' },
+    { id: 2, name: 'Robot Footstep', icon: '🤖', type: 'sci-fi', audioUrl: '/sounds/big-robot-footstep-014-445104.mp3' },
+    { id: 3, name: 'Calming Rain', icon: '🌧️', type: 'ambient', audioUrl: '/sounds/calming-rain-257596.mp3' },
+    { id: 4, name: 'Fire Sound', icon: '🔥', type: 'ambient', audioUrl: '/sounds/fire-sound-334130.mp3' },
+    { id: 5, name: 'Pool Splash', icon: '🏊', type: 'action', audioUrl: '/sounds/jumping-into-swimming-pool-438546.mp3' },
+    { id: 6, name: 'Mouse Click', icon: '🖱️', type: 'tech', audioUrl: '/sounds/mouse-click-290204.mp3' },
+    { id: 7, name: 'Pig Grunting', icon: '🐷', type: 'funny', audioUrl: '/sounds/pig-grunting-playing-in-mud-sound-effect-440220.mp3' },
+    { id: 8, name: 'Clock Ticking', icon: '⏰', type: 'suspense', audioUrl: '/sounds/slow-cinematic-clock-ticking-357979.mp3' },
+    { id: 9, name: 'Clock Ticking Alt', icon: '🕐', type: 'suspense', audioUrl: '/sounds/slow-cinematic-clock-ticking-405471.mp3' },
+    { id: 10, name: 'Motorcycle', icon: '🏍️', type: 'action', audioUrl: '/sounds/small-off-road-motorcycle-passing-445143.mp3' },
+    { id: 11, name: 'Thunder Storm', icon: '⛈️', type: 'ambient', audioUrl: '/sounds/thunder-storm-and-raining-sound-effect-444739.mp3' },
   ];
 
   // Text styles
