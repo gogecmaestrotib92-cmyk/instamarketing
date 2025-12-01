@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const openaiService = require('../services/openai');
 const googleTTSService = require('../services/googleTTS');
+const elevenlabsService = require('../services/elevenlabs');
 const replicateService = require('../services/replicate');
 const videoComposerService = require('../services/videoComposer');
 const fetch = require('node-fetch');
@@ -343,6 +344,194 @@ router.post('/full-voiceover', async (req, res) => {
     });
   } catch (error) {
     console.error('Full voiceover error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== ElevenLabs TTS Routes ====================
+
+/**
+ * Get ElevenLabs service status
+ * GET /api/ai/elevenlabs/status
+ */
+router.get('/elevenlabs/status', async (req, res) => {
+  try {
+    const isAvailable = elevenlabsService.isAvailable();
+    if (!isAvailable) {
+      return res.json({ 
+        available: false, 
+        message: 'ElevenLabs API key not configured. Add ELEVENLABS_API_KEY to your environment.' 
+      });
+    }
+    
+    const subscription = await elevenlabsService.getSubscriptionInfo();
+    res.json({ 
+      available: true,
+      subscription: subscription.success ? subscription.subscription : null
+    });
+  } catch (error) {
+    console.error('ElevenLabs status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get available ElevenLabs voices
+ * GET /api/ai/elevenlabs/voices
+ */
+router.get('/elevenlabs/voices', async (req, res) => {
+  try {
+    if (!elevenlabsService.isAvailable()) {
+      // Return recommended voices even without API key (for UI)
+      const recommended = elevenlabsService.getRecommendedVoices();
+      return res.json({ 
+        success: true, 
+        voices: recommended,
+        source: 'recommended'
+      });
+    }
+    
+    const result = await elevenlabsService.getVoices();
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+    res.json({ success: true, voices: result.voices, source: 'api' });
+  } catch (error) {
+    console.error('ElevenLabs voices error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get recommended voices for autopilot
+ * GET /api/ai/elevenlabs/voices/recommended
+ */
+router.get('/elevenlabs/voices/recommended', (req, res) => {
+  const voices = elevenlabsService.getRecommendedVoices();
+  res.json({ success: true, voices });
+});
+
+/**
+ * ElevenLabs Text to Speech
+ * POST /api/ai/elevenlabs/tts
+ */
+router.post('/elevenlabs/tts', async (req, res) => {
+  try {
+    const { text, voiceId, stability, similarityBoost, style } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
+
+    if (!elevenlabsService.isAvailable()) {
+      return res.status(503).json({ error: 'ElevenLabs service not available. Configure ELEVENLABS_API_KEY.' });
+    }
+
+    const result = await elevenlabsService.textToSpeech(text, {
+      voiceId,
+      stability,
+      similarityBoost,
+      style
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    res.json({
+      success: true,
+      audioUrl: result.audioUrl,
+      voiceId: result.voiceId,
+      model: result.model
+    });
+  } catch (error) {
+    console.error('ElevenLabs TTS error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Generate voiceover with style presets (ElevenLabs)
+ * POST /api/ai/elevenlabs/voiceover
+ */
+router.post('/elevenlabs/voiceover', async (req, res) => {
+  try {
+    const { script, style, voiceId } = req.body;
+
+    if (!script) {
+      return res.status(400).json({ error: 'Script is required' });
+    }
+
+    if (!elevenlabsService.isAvailable()) {
+      return res.status(503).json({ error: 'ElevenLabs service not available. Configure ELEVENLABS_API_KEY.' });
+    }
+
+    let result;
+    if (voiceId) {
+      // Use specific voice
+      result = await elevenlabsService.textToSpeech(script, { voiceId });
+    } else {
+      // Use style preset
+      result = await elevenlabsService.generateVoiceover(script, style || 'energetic');
+    }
+
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    res.json({
+      success: true,
+      audioUrl: result.audioUrl,
+      voiceId: result.voiceId
+    });
+  } catch (error) {
+    console.error('ElevenLabs voiceover error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Full workflow: Generate script + ElevenLabs voiceover
+ * POST /api/ai/elevenlabs/full-voiceover
+ */
+router.post('/elevenlabs/full-voiceover', async (req, res) => {
+  try {
+    const { topic, duration, voiceStyle, voiceId } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+
+    if (!elevenlabsService.isAvailable()) {
+      return res.status(503).json({ error: 'ElevenLabs service not available. Configure ELEVENLABS_API_KEY.' });
+    }
+
+    // Step 1: Generate script
+    const scriptResult = await openaiService.generateReelScript(topic, duration || 30);
+    if (!scriptResult.success) {
+      return res.status(500).json({ error: 'Failed to generate script: ' + scriptResult.error });
+    }
+
+    // Step 2: Generate voiceover with ElevenLabs
+    let voiceResult;
+    if (voiceId) {
+      voiceResult = await elevenlabsService.textToSpeech(scriptResult.script, { voiceId });
+    } else {
+      voiceResult = await elevenlabsService.generateVoiceover(scriptResult.script, voiceStyle || 'energetic');
+    }
+    
+    if (!voiceResult.success) {
+      return res.status(500).json({ error: 'Failed to generate voiceover: ' + voiceResult.error });
+    }
+
+    res.json({
+      success: true,
+      script: scriptResult.script,
+      audioUrl: voiceResult.audioUrl,
+      voiceId: voiceResult.voiceId
+    });
+  } catch (error) {
+    console.error('ElevenLabs full voiceover error:', error);
     res.status(500).json({ error: error.message });
   }
 });

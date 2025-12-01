@@ -64,15 +64,43 @@ const AutopilotReels = () => {
       genre: 'trending',
       autoSelect: true
     },
+    voiceover: {
+      enabled: false,
+      provider: 'elevenlabs',
+      voiceId: '21m00Tcm4TlvDq8ikWAM', // Rachel - default
+      voiceName: 'Rachel',
+      style: 'conversational'
+    },
     autoApprove: false,
     requireReview: true
   });
+
+  // ElevenLabs voices
+  const [elevenLabsVoices, setElevenLabsVoices] = useState([]);
+  const [elevenLabsStatus, setElevenLabsStatus] = useState({ available: false });
 
   useEffect(() => {
     loadAutopilotStatus();
     loadQueue();
     loadHistory();
+    loadElevenLabsVoices();
   }, []);
+
+  const loadElevenLabsVoices = async () => {
+    try {
+      // Check status first
+      const statusRes = await api.get('/ai/elevenlabs/status');
+      setElevenLabsStatus(statusRes.data);
+      
+      // Load recommended voices
+      const voicesRes = await api.get('/ai/elevenlabs/voices/recommended');
+      if (voicesRes.data.success) {
+        setElevenLabsVoices(voicesRes.data.voices);
+      }
+    } catch (error) {
+      console.log('ElevenLabs not available:', error.message);
+    }
+  };
 
   const loadAutopilotStatus = async () => {
     try {
@@ -518,6 +546,77 @@ const AutopilotReels = () => {
                 />
                 <label htmlFor="musicAutoSelect">Auto-select trending music</label>
               </div>
+            </div>
+
+            {/* Voiceover - ElevenLabs */}
+            <div className="section">
+              <h3>🎙️ AI Voiceover (ElevenLabs)</h3>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="voiceoverEnabled"
+                  checked={settings.voiceover.enabled}
+                  onChange={(e) => setSettings(prev => ({
+                    ...prev,
+                    voiceover: { ...prev.voiceover, enabled: e.target.checked }
+                  }))}
+                />
+                <label htmlFor="voiceoverEnabled">Add AI voiceover to videos</label>
+              </div>
+              
+              {settings.voiceover.enabled && (
+                <>
+                  {!elevenLabsStatus.available && (
+                    <div className="warning-banner">
+                      ⚠️ ElevenLabs API key not configured. Add ELEVENLABS_API_KEY to enable.
+                    </div>
+                  )}
+                  
+                  <div className="form-group">
+                    <label>Voice</label>
+                    <select
+                      value={settings.voiceover.voiceId}
+                      onChange={(e) => {
+                        const voice = elevenLabsVoices.find(v => v.id === e.target.value);
+                        setSettings(prev => ({
+                          ...prev,
+                          voiceover: { 
+                            ...prev.voiceover, 
+                            voiceId: e.target.value,
+                            voiceName: voice?.name || 'Custom'
+                          }
+                        }));
+                      }}
+                    >
+                      {elevenLabsVoices.map(voice => (
+                        <option key={voice.id} value={voice.id}>
+                          {voice.name} - {voice.description}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Voice Style</label>
+                    <select
+                      value={settings.voiceover.style}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        voiceover: { ...prev.voiceover, style: e.target.value }
+                      }))}
+                    >
+                      <option value="energetic">Energetic</option>
+                      <option value="conversational">Conversational</option>
+                      <option value="professional">Professional</option>
+                      <option value="dramatic">Dramatic</option>
+                      <option value="calm">Calm</option>
+                      <option value="narrator">Narrator</option>
+                      <option value="youthful">Youthful</option>
+                      <option value="dynamic">Dynamic</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Approval Mode */}
