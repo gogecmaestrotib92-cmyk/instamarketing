@@ -1135,8 +1135,8 @@ const VideoEdit = () => {
                   </div>
                 )}
                     
-                {/* Text Overlays Container - Absolutely positioned to avoid flexbox interference */}
-                {selectedVideo && textOverlays.length > 0 && (
+                {/* Text Overlays Container - Only show when NOT rendered (preview mode only) */}
+                {selectedVideo && textOverlays.length > 0 && !renderedVideoUrl && (
                   <div 
                     className="text-overlays-container"
                     style={{
@@ -1158,55 +1158,58 @@ const VideoEdit = () => {
                       const pos = overlay.position || 'bottom-center';
                       const offsetX = overlay.offsetX || 0;
                       const offsetY = overlay.offsetY || 0;
-                      const fontSize = overlay.fontSize || 24;
+                      // Scale down font size for preview (preview is smaller than actual video)
+                      // Actual video is ~1080px wide, preview is ~300px, so scale by ~0.35
+                      const fontSize = Math.round((overlay.fontSize || 24) * 0.4);
                       
                       // Build style object based on 9-grid position
                       let style = {
                         position: 'absolute',
                         fontSize: `${fontSize}px`,
-                        maxWidth: '90%',
+                        maxWidth: '85%',
                         wordWrap: 'break-word',
                         textAlign: 'center',
-                        pointerEvents: 'auto'
+                        pointerEvents: 'auto',
+                        padding: '4px 8px'
                       };
                       
                       // TOP ROW
                       if (pos === 'top-left') {
-                        style.top = `calc(5% + ${offsetY}px)`;
-                        style.left = `calc(5% + ${offsetX}px)`;
+                        style.top = `calc(5% + ${offsetY * 0.4}px)`;
+                        style.left = `calc(5% + ${offsetX * 0.4}px)`;
                       } else if (pos === 'top-center') {
-                        style.top = `calc(5% + ${offsetY}px)`;
+                        style.top = `calc(5% + ${offsetY * 0.4}px)`;
                         style.left = '50%';
-                        style.transform = `translateX(calc(-50% + ${offsetX}px))`;
+                        style.transform = `translateX(calc(-50% + ${offsetX * 0.4}px))`;
                       } else if (pos === 'top-right') {
-                        style.top = `calc(5% + ${offsetY}px)`;
-                        style.right = `calc(5% - ${offsetX}px)`;
+                        style.top = `calc(5% + ${offsetY * 0.4}px)`;
+                        style.right = `calc(5% - ${offsetX * 0.4}px)`;
                       }
                       // MIDDLE ROW  
                       else if (pos === 'center-left') {
                         style.top = '50%';
-                        style.left = `calc(5% + ${offsetX}px)`;
-                        style.transform = `translateY(calc(-50% + ${offsetY}px))`;
+                        style.left = `calc(5% + ${offsetX * 0.4}px)`;
+                        style.transform = `translateY(calc(-50% + ${offsetY * 0.4}px))`;
                       } else if (pos === 'center') {
                         style.top = '50%';
                         style.left = '50%';
-                        style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+                        style.transform = `translate(calc(-50% + ${offsetX * 0.4}px), calc(-50% + ${offsetY * 0.4}px))`;
                       } else if (pos === 'center-right') {
                         style.top = '50%';
-                        style.right = `calc(5% - ${offsetX}px)`;
-                        style.transform = `translateY(calc(-50% + ${offsetY}px))`;
+                        style.right = `calc(5% - ${offsetX * 0.4}px)`;
+                        style.transform = `translateY(calc(-50% + ${offsetY * 0.4}px))`;
                       }
                       // BOTTOM ROW
                       else if (pos === 'bottom-left') {
-                        style.bottom = `calc(12% - ${offsetY}px)`;
-                        style.left = `calc(5% + ${offsetX}px)`;
+                        style.bottom = `calc(12% - ${offsetY * 0.4}px)`;
+                        style.left = `calc(5% + ${offsetX * 0.4}px)`;
                       } else if (pos === 'bottom-center') {
-                        style.bottom = `calc(12% - ${offsetY}px)`;
+                        style.bottom = `calc(12% - ${offsetY * 0.4}px)`;
                         style.left = '50%';
-                        style.transform = `translateX(calc(-50% + ${offsetX}px))`;
+                        style.transform = `translateX(calc(-50% + ${offsetX * 0.4}px))`;
                       } else if (pos === 'bottom-right') {
-                        style.bottom = `calc(12% - ${offsetY}px)`;
-                        style.right = `calc(5% - ${offsetX}px)`;
+                        style.bottom = `calc(12% - ${offsetY * 0.4}px)`;
+                        style.right = `calc(5% - ${offsetX * 0.4}px)`;
                       }
                       
                       return (

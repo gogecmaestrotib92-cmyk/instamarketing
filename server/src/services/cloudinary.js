@@ -160,13 +160,18 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
   
   // Add audio overlay if provided (mute original video first, then add audio)
   if (options.audioPublicId) {
+    console.log('🎵 Adding audio overlay with public ID:', options.audioPublicId);
     // Mute original video audio
     transformations.push('ac_none');
     // Add audio overlay - replace slashes with colons for public ID
     const audioId = options.audioPublicId.replace(/\//g, ':');
     // Apply volume if specified
     const volume = options.musicVolume !== undefined ? Math.round(options.musicVolume * 100) : 100;
-    transformations.push(`l_audio:${audioId}/e_volume:${volume}/fl_layer_apply`);
+    const audioTransform = `l_audio:${audioId}/e_volume:${volume}/fl_layer_apply`;
+    console.log('🎵 Audio transform:', audioTransform);
+    transformations.push(audioTransform);
+  } else {
+    console.log('🎵 No audio public ID provided');
   }
   
   // Add text overlays

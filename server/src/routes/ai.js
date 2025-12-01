@@ -908,16 +908,22 @@ router.post('/cloudinary/render', async (req, res) => {
     
     // Extract audio public ID if audio URL is from Cloudinary
     let audioPublicId = null;
+    console.log('🎵 Audio URL received:', audioUrl);
+    
     if (audioUrl && audioUrl.includes('cloudinary.com')) {
       // Parse audio public ID from URL
       // URL format: https://res.cloudinary.com/{cloud}/video/upload/{version}/{public_id}.mp3
       const audioParts = audioUrl.split('/upload/');
+      console.log('🎵 Audio URL parts:', audioParts);
+      
       if (audioParts.length === 2) {
         const afterUpload = audioParts[1];
         const audioIdWithExt = afterUpload.replace(/^v\d+\//, '');
         audioPublicId = audioIdWithExt.replace(/\.[^/.]+$/, '');
-        console.log('   Audio Public ID:', audioPublicId);
+        console.log('🎵 Extracted Audio Public ID:', audioPublicId);
       }
+    } else if (audioUrl) {
+      console.log('⚠️ Audio URL is not from Cloudinary, cannot include in render');
     }
     
     // Convert subtitles to text overlays format - include fontSize and offsets
