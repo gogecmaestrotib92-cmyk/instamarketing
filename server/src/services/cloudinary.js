@@ -249,28 +249,27 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     const xOffset = baseX + userOffsetX;
     const yOffset = baseY + userOffsetY;
     
-    // Build text overlay transformation
-    // For Cloudinary video text overlays, the format is:
-    // l_text:FontFamily_Size_Style:Text,co_color,g_gravity,x_offset,y_offset/fl_layer_apply
+    // Build text overlay transformation for VIDEO
+    // For Cloudinary videos, we need to use a specific format
+    // The overlay syntax for videos: l_text:font_size:text/fl_layer_apply,g_gravity,y_offset
     
-    // Simple, clean transformation - just text with position
-    let textTransform = `l_text:Montserrat_${fontSize}_bold:${encodedText},co_white,g_${finalGravity}`;
+    // First, create the text layer
+    let textTransform = `l_text:Montserrat_${fontSize}_bold:${encodedText}`;
     
-    // Add x offset
+    // Add text styling (color and background)
+    textTransform += `,co_white,b_rgb:00000080`;
+    
+    // Close with fl_layer_apply AND positioning
+    // For videos, gravity and position go AFTER fl_layer_apply
+    textTransform += `/fl_layer_apply,g_${finalGravity}`;
+    
+    // Add offsets
     if (xOffset !== 0) {
       textTransform += `,x_${xOffset}`;
     }
-    
-    // Add y offset  
     if (yOffset !== 0) {
       textTransform += `,y_${yOffset}`;
     }
-    
-    // Add semi-transparent background
-    textTransform += `,b_rgb:00000080`;
-    
-    // Close the layer
-    textTransform += `/fl_layer_apply`;
     
     console.log(`   Full transform: ${textTransform}`);
     
