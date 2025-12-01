@@ -592,26 +592,39 @@ const VideoEdit = () => {
       // Upload sound effects to cloud if we have any
       let soundEffectsData = [];
       if (soundEffects.length > 0) {
-        toast.info('Uploading sound effects...');
+        toast.info(`Uploading ${soundEffects.length} sound effect(s)...`);
+        console.log('🔊 Sound effects to upload:', soundEffects);
         setRenderProgress(25);
         
         for (const effect of soundEffects) {
           try {
+            console.log('🔊 Fetching sound:', effect.name, effect.audioUrl);
             // Fetch the local sound file
             const soundResponse = await fetch(effect.audioUrl);
-            if (!soundResponse.ok) continue;
+            console.log('🔊 Fetch response:', soundResponse.status, soundResponse.ok);
+            
+            if (!soundResponse.ok) {
+              console.error('🔊 Failed to fetch sound file:', effect.audioUrl);
+              toast.warning(`Could not load sound: ${effect.name}`);
+              continue;
+            }
+            
             const soundBlob = await soundResponse.blob();
+            console.log('🔊 Sound blob size:', soundBlob.size, 'bytes');
             
             // Upload to server
             const formData = new FormData();
             formData.append('audio', soundBlob, effect.audioUrl.split('/').pop());
             
+            console.log('🔊 Uploading to Cloudinary...');
             const uploadRes = await fetch('/api/ai/upload-audio', {
               method: 'POST',
               body: formData
             });
             
+            console.log('🔊 Upload response status:', uploadRes.status);
             const uploadResult = await uploadRes.json();
+            console.log('🔊 Upload result:', uploadResult);
             
             if (uploadResult.success && uploadResult.url) {
               soundEffectsData.push({
@@ -619,10 +632,22 @@ const VideoEdit = () => {
                 startTime: effect.time || 0,
                 name: effect.name
               });
+              console.log('🔊 Sound uploaded successfully:', effect.name, uploadResult.url);
+            } else {
+              console.error('🔊 Upload failed for:', effect.name, uploadResult.error);
+              toast.warning(`Failed to upload: ${effect.name}`);
             }
           } catch (err) {
-            console.warn('Failed to upload sound effect:', effect.name, err);
+            console.error('🔊 Error uploading sound effect:', effect.name, err);
+            toast.warning(`Error with sound: ${effect.name}`);
           }
+        }
+        
+        console.log('🔊 Final sound effects data:', soundEffectsData);
+        if (soundEffectsData.length > 0) {
+          toast.success(`${soundEffectsData.length} sound(s) uploaded!`);
+        } else {
+          toast.warning('No sounds were uploaded successfully');
         }
         setRenderProgress(35);
       }
