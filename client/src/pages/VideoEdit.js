@@ -1117,63 +1117,92 @@ const VideoEdit = () => {
                   </div>
                 )}
                     
-                {/* Text Overlays */}
-                {selectedVideo && textOverlays.map(overlay => {
-                  // Calculate position styles based on grid position
-                  const pos = overlay.position || 'bottom-center';
-                  const offsetX = overlay.offsetX || 0;
-                  const offsetY = overlay.offsetY || 0;
-                  
-                  let positionStyles = {};
-                  
-                  // Vertical positioning
-                  if (pos.startsWith('top')) {
-                    positionStyles.top = `calc(5% + ${offsetY}px)`;
-                    positionStyles.bottom = 'auto';
-                  } else if (pos.startsWith('center') || pos === 'center-left' || pos === 'center-right') {
-                    positionStyles.top = `calc(50% + ${offsetY}px)`;
-                    positionStyles.bottom = 'auto';
-                  } else if (pos.startsWith('bottom')) {
-                    positionStyles.bottom = `calc(12% - ${offsetY}px)`;
-                    positionStyles.top = 'auto';
-                  }
-                  
-                  // Horizontal positioning
-                  if (pos.endsWith('left')) {
-                    positionStyles.left = `calc(5% + ${offsetX}px)`;
-                    positionStyles.right = 'auto';
-                    positionStyles.transform = pos.includes('center') ? 'translateY(-50%)' : 'none';
-                  } else if (pos.endsWith('center') || pos === 'center') {
-                    positionStyles.left = `calc(50% + ${offsetX}px)`;
-                    positionStyles.right = 'auto';
-                    if (pos === 'center') {
-                      positionStyles.transform = 'translate(-50%, -50%)';
-                    } else {
-                      positionStyles.transform = 'translateX(-50%)';
-                    }
-                  } else if (pos.endsWith('right')) {
-                    positionStyles.right = `calc(5% - ${offsetX}px)`;
-                    positionStyles.left = 'auto';
-                    positionStyles.transform = pos.includes('center') ? 'translateY(-50%)' : 'none';
-                  }
-                  
-                  return currentTime >= overlay.startTime && currentTime <= overlay.endTime && (
-                    <div 
-                      key={overlay.id} 
-                      className={`preview-text-overlay style-${overlay.style || 'modern'}`}
-                      style={{
-                        ...positionStyles,
-                        fontSize: `${overlay.fontSize || 24}px`,
+                {/* Text Overlays Container - Absolutely positioned to avoid flexbox interference */}
+                {selectedVideo && textOverlays.length > 0 && (
+                  <div 
+                    className="text-overlays-container"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      pointerEvents: 'none',
+                      zIndex: 15
+                    }}
+                  >
+                    {textOverlays.map(overlay => {
+                      // Only show if within time range
+                      if (currentTime < overlay.startTime || currentTime > overlay.endTime) {
+                        return null;
+                      }
+                      
+                      const pos = overlay.position || 'bottom-center';
+                      const offsetX = overlay.offsetX || 0;
+                      const offsetY = overlay.offsetY || 0;
+                      const fontSize = overlay.fontSize || 24;
+                      
+                      // Build style object based on 9-grid position
+                      let style = {
                         position: 'absolute',
+                        fontSize: `${fontSize}px`,
                         maxWidth: '90%',
                         wordWrap: 'break-word',
-                        textAlign: 'center'
-                      }}
-                    >
-                      {overlay.text}
-                    </div>
-                  );
-                })}
+                        textAlign: 'center',
+                        pointerEvents: 'auto'
+                      };
+                      
+                      // TOP ROW
+                      if (pos === 'top-left') {
+                        style.top = `calc(5% + ${offsetY}px)`;
+                        style.left = `calc(5% + ${offsetX}px)`;
+                      } else if (pos === 'top-center') {
+                        style.top = `calc(5% + ${offsetY}px)`;
+                        style.left = '50%';
+                        style.transform = `translateX(calc(-50% + ${offsetX}px))`;
+                      } else if (pos === 'top-right') {
+                        style.top = `calc(5% + ${offsetY}px)`;
+                        style.right = `calc(5% - ${offsetX}px)`;
+                      }
+                      // MIDDLE ROW  
+                      else if (pos === 'center-left') {
+                        style.top = '50%';
+                        style.left = `calc(5% + ${offsetX}px)`;
+                        style.transform = `translateY(calc(-50% + ${offsetY}px))`;
+                      } else if (pos === 'center') {
+                        style.top = '50%';
+                        style.left = '50%';
+                        style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+                      } else if (pos === 'center-right') {
+                        style.top = '50%';
+                        style.right = `calc(5% - ${offsetX}px)`;
+                        style.transform = `translateY(calc(-50% + ${offsetY}px))`;
+                      }
+                      // BOTTOM ROW
+                      else if (pos === 'bottom-left') {
+                        style.bottom = `calc(12% - ${offsetY}px)`;
+                        style.left = `calc(5% + ${offsetX}px)`;
+                      } else if (pos === 'bottom-center') {
+                        style.bottom = `calc(12% - ${offsetY}px)`;
+                        style.left = '50%';
+                        style.transform = `translateX(calc(-50% + ${offsetX}px))`;
+                      } else if (pos === 'bottom-right') {
+                        style.bottom = `calc(12% - ${offsetY}px)`;
+                        style.right = `calc(5% - ${offsetX}px)`;
+                      }
+                      
+                      return (
+                        <div 
+                          key={overlay.id} 
+                          className={`preview-text-overlay style-${overlay.style || 'modern'}`}
+                          style={style}
+                        >
+                          {overlay.text}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {/* Subtitles */}
                 {selectedVideo && subtitles.map(sub => (
