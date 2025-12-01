@@ -386,14 +386,17 @@ const VideoEdit = () => {
   };
 
   const applyTextStyle = (styleId) => {
+    console.log('applyTextStyle called with:', styleId, 'selectedTextId:', selectedTextId, 'textOverlays:', textOverlays.length);
     if (selectedTextId) {
       // Apply to selected text
+      console.log('Applying style to selected text:', selectedTextId);
       setTextOverlays(textOverlays.map(t => 
         t.id === selectedTextId ? { ...t, style: styleId } : t
       ));
     } else if (textOverlays.length > 0) {
       // Apply to the last text if none selected
       const lastText = textOverlays[textOverlays.length - 1];
+      console.log('No selection, applying to last text:', lastText.id);
       setTextOverlays(textOverlays.map(t => 
         t.id === lastText.id ? { ...t, style: styleId } : t
       ));
