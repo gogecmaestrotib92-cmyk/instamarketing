@@ -1686,8 +1686,14 @@ const VideoEdit = () => {
                         <button 
                           key={style.id} 
                           className={`style-btn ${isActive ? 'active' : ''}`}
-                          onClick={() => applyTextStyle(style.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('Button clicked:', style.id);
+                            applyTextStyle(style.id);
+                          }}
                           title={style.description}
+                          type="button"
                         >
                           <span className={`style-preview style-${style.id}`}>{style.preview}</span>
                           <span>{style.name}</span>
