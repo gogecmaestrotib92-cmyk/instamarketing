@@ -118,23 +118,45 @@ class OpenAIService {
   }
 
   /**
-   * Generate video script for Reels
+   * Generate VIRAL video script for Reels
+   * Uses proven viral formulas: Hook → Value → CTA
    */
-  async generateReelScript(topic, duration = 30) {
+  async generateReelScript(topic, duration = 15) {
     try {
       const response = await this.client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { 
             role: 'system', 
-            content: `You are a viral Reels scriptwriter. Create engaging ${duration}-second video scripts.
-            Include: hook (first 3 seconds), main content, call-to-action.
-            Format with timestamps and visual directions.` 
+            content: `You are an expert viral content creator who has studied MrBeast, Alex Hormozi, and top TikTok creators.
+
+Write a ${duration}-second script that WILL go viral using these proven formulas:
+
+VIRAL HOOKS (pick one style):
+- "Stop scrolling if you..." 
+- "Nobody talks about this but..."
+- "The secret that [industry] doesn't want you to know..."
+- "I can't believe [shocking statement]..."
+- "This changed everything for me..."
+- "POV: You just discovered..."
+
+STRUCTURE:
+1. HOOK (0-3 sec): Pattern interrupt - make them stop scrolling
+2. VALUE (3-12 sec): Deliver the promise - one powerful insight
+3. CTA (12-15 sec): "Follow for more" or "Save this"
+
+RULES:
+- Write for SPEAKING, not reading
+- Short punchy sentences
+- Create curiosity gaps
+- Use emotional triggers
+- NO timestamps or brackets - just the spoken words
+- Keep it under 50 words total` 
           },
-          { role: 'user', content: `Write a Reel script about: ${topic}` }
+          { role: 'user', content: `Write a viral Reel script about: ${topic}` }
         ],
-        max_tokens: 800,
-        temperature: 0.8
+        max_tokens: 300,
+        temperature: 0.9
       });
 
       return {
@@ -177,24 +199,46 @@ class OpenAIService {
   }
 
   /**
-   * Generate video prompt for AI video generation
+   * Generate video prompt for AI video generation (optimized for Kling/Replicate)
    */
   async generateVideoPrompt(topic, style = 'cinematic') {
     try {
+      const styleGuides = {
+        cinematic: 'dramatic lighting, film grain, wide shots, slow motion, epic feel, 4K quality',
+        energetic: 'fast cuts, vibrant colors, dynamic movement, high energy, pop aesthetic',
+        minimal: 'clean background, soft lighting, simple composition, modern, aesthetic',
+        luxury: 'gold accents, marble textures, elegant, high-end, sophisticated lighting',
+        nature: 'natural lighting, outdoor scenery, organic textures, peaceful, serene',
+        tech: 'neon lights, futuristic, digital effects, cyberpunk aesthetic, blue tones',
+        vintage: 'warm tones, film grain, retro aesthetic, nostalgic, golden hour'
+      };
+      
+      const styleGuide = styleGuides[style] || styleGuides.cinematic;
+      
       const response = await this.client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
           { 
             role: 'system', 
-            content: `You are an AI video prompt engineer. Create detailed, descriptive prompts for AI video generation.
-            Style: ${style}
-            Include: scene description, lighting, camera movement, mood, colors.
-            Be specific and visual. One paragraph, no line breaks.` 
+            content: `You are an expert at writing prompts for AI video generation (Kling AI).
+
+Create a prompt that will generate an ENGAGING vertical video (9:16 aspect ratio).
+
+Style requirements: ${styleGuide}
+
+PROMPT STRUCTURE:
+1. Main subject/action (what's happening)
+2. Visual style (${style})
+3. Camera movement (slow zoom, pan, static, etc.)
+4. Lighting and mood
+5. Always end with: "vertical format, 9:16 aspect ratio, high quality, smooth motion"
+
+Keep it under 80 words. No line breaks. Be specific and visual.` 
           },
-          { role: 'user', content: `Create a video prompt for: ${topic}` }
+          { role: 'user', content: `Create a video prompt for ${topic} content` }
         ],
-        max_tokens: 300,
-        temperature: 0.8
+        max_tokens: 200,
+        temperature: 0.85
       });
 
       return {

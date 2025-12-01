@@ -1422,26 +1422,49 @@ router.get('/autopilot/reels/history', (req, res) => {
 });
 
 /**
- * Generate a new reel for the queue
+ * Generate a new reel for the queue - FULL VIRAL PIPELINE
  * POST /api/ai/autopilot/reels/generate
+ * Pipeline: AI Script → AI Video → ElevenLabs Voiceover → Music → Text → Shotstack Render
  */
 router.post('/autopilot/reels/generate', async (req, res) => {
   try {
     const { settings } = req.body;
     
-    console.log('🎬 Generating new reel with settings:', settings);
+    console.log('🎬 [AUTOPILOT] Starting full viral video pipeline...');
+    console.log('📋 Settings:', JSON.stringify(settings, null, 2));
     
-    // Generate content based on niche
+    // Extract settings
     const niche = settings?.niche || 'motivational';
     const style = settings?.style || 'cinematic';
+    const voiceoverSettings = settings?.voiceover || { enabled: false };
+    const musicSettings = settings?.music || { enabled: true };
+    const textSettings = settings?.textOverlay || { enabled: true };
     
-    // Step 1: Generate caption/script with AI
+    // ==================== STEP 1: Generate Viral Script ====================
+    console.log('📝 Step 1: Generating viral script...');
+    let script = '';
     let caption = '';
-    let hashtags = settings?.hashtags || '#viral #trending';
+    let hashtags = settings?.hashtags || '#viral #trending #reels';
     
     try {
+      // Generate a script for voiceover
+      const scriptResult = await openaiService.generateReelScript(niche, 15);
+      if (scriptResult.success) {
+        script = scriptResult.script;
+      }
+    } catch (e) {
+      console.log('Script generation fallback:', e.message);
+    }
+    
+    // Fallback script
+    if (!script) {
+      script = `Here's something incredible about ${niche} that will change how you think. Most people don't know this, but it's a game changer. Save this for later!`;
+    }
+    
+    // Generate caption
+    try {
       const captionResult = await openaiService.generateCaption(niche, {
-        tone: 'inspiring',
+        tone: 'viral',
         includeEmojis: true,
         includeHashtags: false
       });
@@ -1449,43 +1472,38 @@ router.post('/autopilot/reels/generate', async (req, res) => {
         caption = captionResult.caption;
       }
     } catch (e) {
-      caption = `Amazing ${niche} content coming your way! ✨`;
+      caption = `🔥 Amazing ${niche} content! You need to see this ✨`;
     }
     
-    // Step 2: Generate video prompt
-    let videoPrompt = `${niche} content, ${style} style, vertical video, Instagram Reels format, high quality`;
+    console.log('✅ Script:', script.substring(0, 80) + '...');
     
+    // ==================== STEP 2: Generate AI Video ====================
+    console.log('🎥 Step 2: Generating AI video with Replicate...');
+    let rawVideoUrl = null;
+    
+    let videoPrompt = `${niche} content, ${style} style, vertical 9:16, Instagram Reels, cinematic, high quality`;
     try {
       const promptResult = await openaiService.generateVideoPrompt(niche, style);
       if (promptResult.success) {
         videoPrompt = promptResult.prompt;
       }
-    } catch (e) {
-      console.log('Using default video prompt');
-    }
-    
-    // Step 3: Start video generation
-    let videoUrl = null;
-    let predictionId = null;
+    } catch (e) {}
     
     try {
       const videoResult = await replicateService.startTextToVideo(videoPrompt, {
-        numFrames: 16,
-        fps: 8,
-        steps: 25
+        aspectRatio: '9:16',
+        duration: 5
       });
       
       if (videoResult.success) {
-        predictionId = videoResult.predictionId;
-        
-        // Poll for completion (simplified - in production would use webhooks)
         let attempts = 0;
-        while (attempts < 30) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          const status = await replicateService.getPredictionStatus(predictionId);
+        while (attempts < 60) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          const status = await replicateService.getPredictionStatus(videoResult.predictionId);
           
           if (status.status === 'succeeded' && status.output) {
-            videoUrl = Array.isArray(status.output) ? status.output[0] : status.output;
+            rawVideoUrl = Array.isArray(status.output) ? status.output[0] : status.output;
+            console.log('✅ Video generated:', rawVideoUrl);
             break;
           } else if (status.status === 'failed') {
             throw new Error('Video generation failed');
@@ -1495,40 +1513,177 @@ router.post('/autopilot/reels/generate', async (req, res) => {
       }
     } catch (e) {
       console.error('Video generation error:', e.message);
-      // Use a placeholder video URL for demo purposes
-      videoUrl = 'https://res.cloudinary.com/demo/video/upload/dog.mp4';
+      rawVideoUrl = 'https://res.cloudinary.com/demo/video/upload/dog.mp4';
     }
     
-    // Get existing scheduled times to avoid conflicts
+    // ==================== STEP 3: Generate Voiceover (ElevenLabs) ====================
+    let voiceoverUrl = null;
+    
+    if (voiceoverSettings.enabled && elevenlabsService && elevenlabsService.isAvailable()) {
+      console.log('🎤 Step 3: Generating ElevenLabs voiceover...');
+      try {
+        // Clean script for voiceover (remove timestamps/directions)
+        const cleanScript = script.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
+        
+        const voiceResult = await elevenlabsService.textToSpeech(cleanScript, {
+          voiceId: voiceoverSettings.voiceId || '21m00Tcm4TlvDq8ikWAM',
+          stability: 0.5,
+          similarityBoost: 0.75
+        });
+        
+        if (voiceResult.success) {
+          voiceoverUrl = voiceResult.audioUrl;
+          console.log('✅ Voiceover generated:', voiceoverUrl);
+        }
+      } catch (e) {
+        console.error('Voiceover error:', e.message);
+      }
+    } else {
+      console.log('⏭️ Step 3: Voiceover disabled or unavailable');
+    }
+    
+    // ==================== STEP 4: Select Background Music ====================
+    let musicUrl = null;
+    
+    if (musicSettings.enabled) {
+      console.log('🎵 Step 4: Selecting background music...');
+      
+      const musicByMood = {
+        upbeat: [
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'
+        ],
+        chill: [
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'
+        ],
+        cinematic: [
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3'
+        ],
+        electronic: [
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+          'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3'
+        ]
+      };
+      
+      const nicheMood = {
+        motivational: 'cinematic', fitness: 'upbeat', comedy: 'upbeat',
+        education: 'chill', lifestyle: 'chill', tech: 'electronic',
+        gaming: 'electronic', fashion: 'upbeat', food: 'chill', travel: 'cinematic'
+      };
+      
+      const mood = nicheMood[niche] || 'upbeat';
+      const tracks = musicByMood[mood] || musicByMood.upbeat;
+      musicUrl = tracks[Math.floor(Math.random() * tracks.length)];
+      console.log('✅ Music selected:', musicUrl);
+    }
+    
+    // ==================== STEP 5: Build Text Overlays ====================
+    let textOverlays = [];
+    
+    if (textSettings.enabled && script) {
+      console.log('📝 Step 5: Building text overlays...');
+      
+      // Create simple text segments from script
+      const sentences = script.split(/[.!?]+/).filter(s => s.trim().length > 5);
+      const videoDuration = 5;
+      const segmentDuration = videoDuration / Math.min(sentences.length, 3);
+      
+      sentences.slice(0, 3).forEach((sentence, i) => {
+        textOverlays.push({
+          text: sentence.trim().substring(0, 40),
+          start: i * segmentDuration,
+          end: (i + 1) * segmentDuration,
+          position: 'center',
+          style: textSettings.style || 'tiktok'
+        });
+      });
+      
+      console.log('✅ Text overlays:', textOverlays.length);
+    }
+    
+    // ==================== STEP 6: Render Final Video (Shotstack) ====================
+    let finalVideoUrl = rawVideoUrl;
+    
+    const needsRender = voiceoverUrl || musicUrl || textOverlays.length > 0;
+    
+    if (needsRender && shotstackClient) {
+      console.log('🎬 Step 6: Rendering final video with Shotstack...');
+      
+      try {
+        const audioUrl = voiceoverUrl || musicUrl;
+        
+        const renderResult = await shotstackClient.renderVideo(rawVideoUrl, audioUrl, textOverlays, {
+          duration: 5,
+          musicVolume: voiceoverUrl ? 0.2 : 0.8,
+          videoVolume: 0,
+          subtitleStyle: { style: 'blockbuster', color: '#ffffff', size: 'large', position: 'center' }
+        });
+        
+        if (renderResult.success && renderResult.renderId) {
+          console.log('⏳ Waiting for Shotstack render...');
+          let attempts = 0;
+          
+          while (attempts < 40) {
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            const status = await shotstackClient.getRenderStatus(renderResult.renderId);
+            
+            if (status.status === 'done' && status.url) {
+              finalVideoUrl = status.url;
+              console.log('✅ Final video rendered:', finalVideoUrl);
+              break;
+            } else if (status.status === 'failed') {
+              console.error('Render failed');
+              break;
+            }
+            attempts++;
+          }
+        }
+      } catch (e) {
+        console.error('Shotstack error:', e.message);
+      }
+    }
+    
+    // ==================== STEP 7: Add to Queue ====================
+    console.log('📋 Step 7: Adding to queue...');
+    
     const existingTimes = autopilotState.reels.queue.map(v => v.scheduledAt);
     
-    // Create the queue item
     const video = {
       id: generateId(),
-      videoUrl: videoUrl || 'https://res.cloudinary.com/demo/video/upload/dog.mp4',
-      caption,
+      videoUrl: finalVideoUrl,
+      rawVideoUrl,
+      voiceoverUrl,
+      musicUrl,
+      caption: caption + '\n\n' + hashtags,
       hashtags,
+      script,
       status: settings?.autoApprove ? 'approved' : 'pending',
       scheduledAt: getNextScheduledTime(settings || {}, existingTimes),
       createdAt: new Date().toISOString(),
-      settings: {
-        niche,
-        style,
-        videoPrompt
-      }
+      settings: { niche, style, videoPrompt, voiceover: voiceoverSettings, music: musicSettings }
     };
     
-    // Add to queue
     autopilotState.reels.queue.unshift(video);
     
-    console.log('✅ Reel generated and added to queue:', video.id);
+    console.log('✅ [AUTOPILOT] Pipeline complete! Video ID:', video.id);
     
     res.json({
       success: true,
-      video
+      video,
+      pipeline: {
+        script: !!script,
+        video: !!rawVideoUrl,
+        voiceover: !!voiceoverUrl,
+        music: !!musicUrl,
+        textOverlays: textOverlays.length,
+        rendered: finalVideoUrl !== rawVideoUrl
+      }
     });
   } catch (error) {
-    console.error('Generate reel error:', error);
+    console.error('❌ [AUTOPILOT] Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
