@@ -38,6 +38,7 @@ const VideoEdit = () => {
   const [subtitles, setSubtitles] = useState([]);
   const [textOverlays, setTextOverlays] = useState([]);
   const [soundEffects, setSoundEffects] = useState([]);
+  const [selectedTextId, setSelectedTextId] = useState(null);
   
   // Render state
   const [isRendering, setIsRendering] = useState(false);
@@ -368,11 +369,12 @@ const VideoEdit = () => {
     const textDuration = 3; // Default text duration
     // If current time is near the end, adjust start time to fit the text
     const adjustedStart = Math.min(currentTime, Math.max(0, videoDuration - textDuration));
+    const newId = Date.now();
     const newText = {
-      id: Date.now(),
+      id: newId,
       text: 'Your text here',
       position: 'bottom-center', // 9-grid: top-left, top-center, top-right, center-left, center, center-right, bottom-left, bottom-center, bottom-right
-      style: 'modern',
+      style: 'tiktok', // Default to most popular style
       fontSize: 42,
       offsetX: 0,
       offsetY: 0,
@@ -380,6 +382,43 @@ const VideoEdit = () => {
       endTime: Math.min(adjustedStart + textDuration, videoDuration)
     };
     setTextOverlays([...textOverlays, newText]);
+    setSelectedTextId(newId); // Auto-select the new text
+  };
+
+  const applyTextStyle = (styleId) => {
+    if (selectedTextId) {
+      // Apply to selected text
+      setTextOverlays(textOverlays.map(t => 
+        t.id === selectedTextId ? { ...t, style: styleId } : t
+      ));
+    } else if (textOverlays.length > 0) {
+      // Apply to the last text if none selected
+      const lastText = textOverlays[textOverlays.length - 1];
+      setTextOverlays(textOverlays.map(t => 
+        t.id === lastText.id ? { ...t, style: styleId } : t
+      ));
+      setSelectedTextId(lastText.id);
+    } else {
+      // Create new text with this style
+      const videoDuration = duration || 5;
+      const textDuration = 3;
+      const adjustedStart = Math.min(currentTime, Math.max(0, videoDuration - textDuration));
+      const newId = Date.now();
+      const newText = {
+        id: newId,
+        text: 'Your text here',
+        position: 'bottom-center',
+        style: styleId,
+        fontSize: 42,
+        offsetX: 0,
+        offsetY: 0,
+        startTime: adjustedStart,
+        endTime: Math.min(adjustedStart + textDuration, videoDuration)
+      };
+      setTextOverlays([...textOverlays, newText]);
+      setSelectedTextId(newId);
+    }
+    toast.success(`Style applied: ${styleId}`);
   };
 
   const addSubtitle = () => {
@@ -1631,18 +1670,36 @@ const VideoEdit = () => {
                   <button className="add-element-btn" onClick={addTextOverlay}>
                     <FiPlus /> Add Text
                   </button>
+                  
+                  <div className="text-styles-header">
+                    <span>Text Styles</span>
+                    {selectedTextId && <span className="selected-indicator">● Editing</span>}
+                  </div>
                   <div className="text-styles">
-                    {textStyles.map(style => (
-                      <button key={style.id} className="style-btn">
-                        <span className={`style-preview style-${style.id}`}>{style.preview}</span>
-                        <span>{style.name}</span>
-                      </button>
-                    ))}
+                    {textStyles.map(style => {
+                      const selectedText = textOverlays.find(t => t.id === selectedTextId);
+                      const isActive = selectedText?.style === style.id;
+                      return (
+                        <button 
+                          key={style.id} 
+                          className={`style-btn ${isActive ? 'active' : ''}`}
+                          onClick={() => applyTextStyle(style.id)}
+                          title={style.description}
+                        >
+                          <span className={`style-preview style-${style.id}`}>{style.preview}</span>
+                          <span>{style.name}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                   {textOverlays.length > 0 && (
                     <div className="text-list">
                       {textOverlays.map(overlay => (
-                        <div key={overlay.id} className="text-item-enhanced">
+                        <div 
+                          key={overlay.id} 
+                          className={`text-item-enhanced ${selectedTextId === overlay.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedTextId(overlay.id)}
+                        >
                           <div className="text-item-row">
                             <input 
                               type="text" 
@@ -1654,8 +1711,13 @@ const VideoEdit = () => {
                                   t.id === overlay.id ? { ...t, text: e.target.value } : t
                                 ));
                               }}
+                              onFocus={() => setSelectedTextId(overlay.id)}
                             />
-                            <button className="text-delete-btn" onClick={() => setTextOverlays(textOverlays.filter(t => t.id !== overlay.id))}>
+                            <button className="text-delete-btn" onClick={(e) => {
+                              e.stopPropagation();
+                              setTextOverlays(textOverlays.filter(t => t.id !== overlay.id));
+                              if (selectedTextId === overlay.id) setSelectedTextId(null);
+                            }}>
                               <FiX />
                             </button>
                           </div>
