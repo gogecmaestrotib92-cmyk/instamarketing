@@ -724,77 +724,7 @@ const VideoEdit = () => {
     });
   };
 
-  // Audio preview functions using Web Audio API
-  const audioContextRef = useRef(null);
-  
-  const getAudioContext = () => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return audioContextRef.current;
-  };
-
-  // Generate different sounds based on type
-  const playGeneratedSound = (type, isMusic = false) => {
-    const ctx = getAudioContext();
-    const duration = isMusic ? 3 : 0.5;
-    
-    // Sound configurations
-    const soundConfigs = {
-      // Music types
-      upbeat: { freq: 440, type: 'square', pattern: [1, 0.8, 1, 0.6, 1, 0.8] },
-      chill: { freq: 220, type: 'sine', pattern: [0.5, 0.6, 0.5, 0.4] },
-      epic: { freq: 150, type: 'sawtooth', pattern: [0.3, 0.5, 0.7, 1, 0.7, 0.5] },
-      lofi: { freq: 330, type: 'triangle', pattern: [0.4, 0.5, 0.4, 0.3] },
-      pop: { freq: 392, type: 'square', pattern: [1, 0.5, 0.8, 0.5, 1, 0.5] },
-      acoustic: { freq: 294, type: 'triangle', pattern: [0.6, 0.8, 0.6, 0.5, 0.7] },
-      // Sound effect types
-      whoosh: { freq: 800, type: 'sawtooth', sweep: true, sweepEnd: 200 },
-      ding: { freq: 880, type: 'sine', decay: true },
-      swoosh: { freq: 600, type: 'triangle', sweep: true, sweepEnd: 100 },
-      click: { freq: 1000, type: 'square', short: true },
-    };
-
-    const config = soundConfigs[type] || soundConfigs.ding;
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    oscillator.type = config.type;
-    oscillator.frequency.setValueAtTime(config.freq, ctx.currentTime);
-    
-    // Apply effects based on config
-    if (config.sweep) {
-      oscillator.frequency.exponentialRampToValueAtTime(config.sweepEnd, ctx.currentTime + duration);
-    }
-    
-    if (config.short) {
-      gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
-    } else if (config.decay) {
-      gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-    } else if (isMusic && config.pattern) {
-      // Create rhythm pattern for music
-      const stepDuration = duration / config.pattern.length;
-      config.pattern.forEach((vol, i) => {
-        gainNode.gain.setValueAtTime(vol * 0.3, ctx.currentTime + i * stepDuration);
-      });
-      gainNode.gain.setValueAtTime(0.01, ctx.currentTime + duration);
-    } else {
-      gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-    }
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + duration);
-    
-    return { oscillator, duration };
-  };
-
-  const playPreview = (id, audioUrlOrType, isMusic = false) => {
+  const playPreview = (id, audioUrl) => {
     if (playingPreviewId === id) {
       // Stop current preview
       if (audioPreviewRef.current) {
@@ -812,36 +742,26 @@ const VideoEdit = () => {
       setPlayingPreviewId(id);
       
       try {
-        if (isMusic && audioUrlOrType.startsWith('/')) {
-          // Play actual audio file for music
-          const audio = new Audio(audioUrlOrType);
-          audioPreviewRef.current = audio;
-          audio.volume = 0.7;
-          
-          audio.onended = () => {
-            setPlayingPreviewId(prev => prev === id ? null : prev);
-          };
-          
-          audio.onerror = () => {
-            console.log('Audio load error');
-            toast.error('Could not load audio');
-            setPlayingPreviewId(null);
-          };
-          
-          audio.play().catch(e => {
-            console.log('Audio play error:', e);
-            toast.error('Could not play audio');
-            setPlayingPreviewId(null);
-          });
-        } else {
-          // Use generated sounds for sound effects
-          const { duration } = playGeneratedSound(audioUrlOrType, isMusic);
-          
-          // Auto-stop after duration
-          setTimeout(() => {
-            setPlayingPreviewId(prev => prev === id ? null : prev);
-          }, duration * 1000);
-        }
+        // Play actual audio file
+        const audio = new Audio(audioUrl);
+        audioPreviewRef.current = audio;
+        audio.volume = 0.7;
+        
+        audio.onended = () => {
+          setPlayingPreviewId(prev => prev === id ? null : prev);
+        };
+        
+        audio.onerror = () => {
+          console.log('Audio load error');
+          toast.error('Could not load audio');
+          setPlayingPreviewId(null);
+        };
+        
+        audio.play().catch(e => {
+          console.log('Audio play error:', e);
+          toast.error('Could not play audio');
+          setPlayingPreviewId(null);
+        });
       } catch (e) {
         console.log('Audio error:', e);
         toast.error('Could not play audio');
@@ -1561,7 +1481,7 @@ const VideoEdit = () => {
                       >
                         <button 
                           className={`music-preview-btn ${playingPreviewId === `music-${track.id}` ? 'playing' : ''}`}
-                          onClick={() => playPreview(`music-${track.id}`, track.audioUrl, true)}
+                          onClick={() => playPreview(`music-${track.id}`, track.audioUrl)}
                           title={playingPreviewId === `music-${track.id}` ? 'Stop preview' : 'Preview'}
                         >
                           {playingPreviewId === `music-${track.id}` ? <FiPause /> : <FiPlay />}
@@ -1595,7 +1515,7 @@ const VideoEdit = () => {
                       >
                         <button 
                           className={`sound-preview-btn ${playingPreviewId === `sound-${sound.id}` ? 'playing' : ''}`}
-                          onClick={() => playPreview(`sound-${sound.id}`, sound.type, false)}
+                          onClick={() => playPreview(`sound-${sound.id}`, sound.audioUrl)}
                           title={playingPreviewId === `sound-${sound.id}` ? 'Stop preview' : 'Preview'}
                         >
                           {playingPreviewId === `sound-${sound.id}` ? <FiPause /> : <FiPlay />}
