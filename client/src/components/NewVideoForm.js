@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import './NewVideoForm.css';
 
 const NewVideoForm = ({
@@ -23,8 +23,8 @@ const NewVideoForm = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
   
-  // Default position if not provided
-  const position = imagePosition || { x: 0, y: 0, scale: 1 };
+  // Default position if not provided - memoized to avoid recreation
+  const position = useMemo(() => imagePosition || { x: 0, y: 0, scale: 1 }, [imagePosition]);
   
   const handleMouseDown = useCallback((e) => {
     if (!imagePreview) return;
