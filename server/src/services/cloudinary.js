@@ -400,6 +400,75 @@ const createVideoWithTextOverlay = async (publicId, textOverlays = [], options =
   }
 };
 
+/**
+ * Merge audio into video using Cloudinary's explicit API
+ * This creates a new processed video file with audio properly embedded
+ * @param {string} videoPublicId - Public ID of the video
+ * @param {Array} audioTracks - Array of {publicId, startTime, volume}
+ * @returns {Promise<object>} - Result with new video URL
+ */
+const mergeAudioIntoVideo = async (videoPublicId, audioTracks = []) => {
+  try {
+    console.log('🎬 Merging audio into video...');
+    console.log('   Video:', videoPublicId);
+    console.log('   Audio tracks:', audioTracks.length);
+    
+    // Build transformation array
+    const transformations = [];
+    
+    // First mute original video
+    transformations.push({ effect: 'volume:mute' });
+    
+    // Add each audio track as overlay
+    for (const track of audioTracks) {
+      const overlay = {
+        overlay: {
+          resource_type: 'video',
+          public_id: track.publicId
+        },
+        flags: 'layer_apply',
+        effect: `volume:${track.volume || 100}`
+      };
+      
+      if (track.startTime > 0) {
+        overlay.start_offset = track.startTime;
+      }
+      
+      transformations.push(overlay);
+    }
+    
+    console.log('   Transformations:', JSON.stringify(transformations));
+    
+    // Use explicit to process the video
+    const result = await cloudinary.uploader.explicit(videoPublicId, {
+      type: 'upload',
+      resource_type: 'video',
+      eager: [{ transformation: transformations }],
+      eager_async: false
+    });
+    
+    console.log('   Result:', result.eager?.[0]?.secure_url || 'No URL');
+    
+    if (result.eager && result.eager[0] && result.eager[0].secure_url) {
+      return {
+        success: true,
+        url: result.eager[0].secure_url
+      };
+    }
+    
+    return {
+      success: false,
+      error: 'Failed to process video with audio'
+    };
+  } catch (error) {
+    console.error('Audio merge error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
 module.exports = {
   cloudinary,
   uploadToCloudinary,
@@ -407,5 +476,6 @@ module.exports = {
   deleteFromCloudinary,
   uploadBufferToCloudinary,
   generateVideoWithTextOverlay,
-  createVideoWithTextOverlay
+  createVideoWithTextOverlay,
+  mergeAudioIntoVideo
 };

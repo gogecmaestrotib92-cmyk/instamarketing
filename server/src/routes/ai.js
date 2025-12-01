@@ -971,7 +971,59 @@ router.post('/cloudinary/render', async (req, res) => {
       soundEffects: soundEffectIds
     };
     
-    // Generate the video URL with text overlays and audio
+    // If we have sound effects, we need to use the explicit API for proper audio mixing
+    // URL transformations don't properly mix multiple audio tracks
+    if (soundEffectIds.length > 0) {
+      console.log('🔊 Using explicit API for audio mixing...');
+      
+      // Extract video public ID
+      const videoUrlParts = finalVideoUrl.split('/upload/');
+      if (videoUrlParts.length !== 2) {
+        throw new Error('Invalid video URL format');
+      }
+      const afterUpload = videoUrlParts[1];
+      const videoPublicId = afterUpload.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
+      
+      // Build audio tracks array
+      const audioTracks = soundEffectIds.map(effect => ({
+        publicId: effect.publicId,
+        startTime: effect.startTime || 0,
+        volume: 150 // Boost volume for sound effects
+      }));
+      
+      // Add music track if present
+      if (audioPublicId) {
+        audioTracks.unshift({
+          publicId: audioPublicId,
+          startTime: 0,
+          volume: Math.round((options?.musicVolume || 1) * 100)
+        });
+      }
+      
+      // Use mergeAudioIntoVideo for proper audio processing
+      const mergeResult = await cloudinaryService.mergeAudioIntoVideo(videoPublicId, audioTracks);
+      
+      if (mergeResult.success) {
+        // Now apply text overlays to the audio-merged video
+        let finalUrl = mergeResult.url;
+        if (textOverlays.length > 0) {
+          finalUrl = cloudinaryService.generateVideoWithTextOverlay(mergeResult.url, textOverlays, {});
+        }
+        
+        res.json({
+          success: true,
+          url: finalUrl,
+          status: 'done',
+          message: `Video ready with ${audioTracks.length} audio track(s)` + (textOverlays.length > 0 ? ' and text' : '')
+        });
+        return;
+      } else {
+        console.warn('Audio merge failed, falling back to URL transformation:', mergeResult.error);
+        // Fall through to URL transformation as fallback
+      }
+    }
+    
+    // Generate the video URL with text overlays and audio (fallback/no sound effects)
     const resultUrl = cloudinaryService.generateVideoWithTextOverlay(finalVideoUrl, textOverlays, transformOptions);
     
     // Build response message
