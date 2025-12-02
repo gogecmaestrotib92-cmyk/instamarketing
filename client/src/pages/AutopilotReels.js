@@ -40,7 +40,6 @@ const AutopilotReels = () => {
   
   // Background jobs state
   const [backgroundJobs, setBackgroundJobs] = useState([]);
-  const [pollingJobIds, setPollingJobIds] = useState([]);
 
   // Load saved settings from localStorage or use defaults
   const getDefaultSettings = () => ({
