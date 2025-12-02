@@ -82,6 +82,36 @@
   50% { opacity: 0.5; transform: scale(1.2); }
 }
 
+/* Generation Status Banner */
+.generation-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  color: #a78bfa;
+  font-size: 0.95rem;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+.generation-status-banner svg {
+  font-size: 1.1rem;
+}
+
+.generation-status-banner svg.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Tabs - Matching Generate Section */
 .tabs {
   display: flex;

@@ -30,6 +30,7 @@ const AutopilotReels = () => {
   const [isAutopilotActive, setIsAutopilotActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState('');
   const [queue, setQueue] = useState([]);
   const [history, setHistory] = useState([]);
   const [previewVideo, setPreviewVideo] = useState(null);
@@ -151,14 +152,39 @@ const AutopilotReels = () => {
 
   const generateNow = async () => {
     setIsGenerating(true);
+    setGenerationStatus('Starting viral video pipeline...');
     try {
+      // Show progress simulation (actual progress comes from server)
+      const statusMessages = [
+        '✍️ Generating viral script with AI...',
+        '🎬 Creating video with Replicate (this may take 2-3 minutes)...',
+        '🎤 Adding voiceover...',
+        '🎵 Selecting music...',
+        '📝 Creating text overlays...',
+        '🎨 Rendering final video...'
+      ];
+      
+      let statusIndex = 0;
+      const statusInterval = setInterval(() => {
+        if (statusIndex < statusMessages.length - 1) {
+          statusIndex++;
+          setGenerationStatus(statusMessages[statusIndex]);
+        }
+      }, 15000); // Update every 15 seconds
+      
       const response = await api.post('/ai/autopilot/reels/generate', { settings });
+      
+      clearInterval(statusInterval);
+      
       if (response.data.video) {
+        setGenerationStatus('✅ Video created successfully!');
         setQueue(prev => [response.data.video, ...prev]);
         setActiveTab('queue');
+        setTimeout(() => setGenerationStatus(''), 3000);
       }
     } catch (error) {
       console.error('Failed to generate:', error);
+      setGenerationStatus('');
       alert('Failed to generate video: ' + (error.response?.data?.message || error.message));
     }
     setIsGenerating(false);
@@ -262,6 +288,12 @@ const AutopilotReels = () => {
             {isAutopilotActive ? 'Active' : 'Inactive'}
           </div>
         </div>
+        {generationStatus && (
+          <div className="generation-status-banner">
+            <FiRefreshCw className={isGenerating ? 'spin' : ''} />
+            <span>{generationStatus}</span>
+          </div>
+        )}
       </header>
 
       {/* Tabs */}
@@ -335,7 +367,14 @@ const AutopilotReels = () => {
               {queue.map(video => (
                 <article key={video.id} className={`queue-card ${video.status}`}>
                   <div className="queue-preview">
-                    <video src={video.videoUrl} muted />
+                    {video.videoUrl && !video.videoUrl.includes('demo/video') ? (
+                      <video src={video.videoUrl} muted playsInline />
+                    ) : (
+                      <div className="video-placeholder">
+                        <FiVideo />
+                        <span>Video generating...</span>
+                      </div>
+                    )}
                     <button className="btn-preview" onClick={() => setPreviewVideo(video)}>
                       <FiEye />
                     </button>

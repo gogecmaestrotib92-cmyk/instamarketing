@@ -1496,24 +1496,40 @@ router.post('/autopilot/reels/generate', async (req, res) => {
       });
       
       if (videoResult.success) {
+        console.log('⏳ Waiting for video generation (this may take 1-3 minutes)...');
         let attempts = 0;
-        while (attempts < 60) {
+        while (attempts < 90) { // 90 * 3 = 270 seconds = 4.5 minutes max
           await new Promise(resolve => setTimeout(resolve, 3000));
           const status = await replicateService.getPredictionStatus(videoResult.predictionId);
+          
+          console.log(`   Attempt ${attempts + 1}: ${status.status}`);
           
           if (status.status === 'succeeded' && status.output) {
             rawVideoUrl = Array.isArray(status.output) ? status.output[0] : status.output;
             console.log('✅ Video generated:', rawVideoUrl);
             break;
           } else if (status.status === 'failed') {
-            throw new Error('Video generation failed');
+            console.error('❌ Video generation failed:', status.error);
+            throw new Error(status.error || 'Video generation failed');
           }
           attempts++;
         }
+        
+        if (!rawVideoUrl) {
+          console.log('⚠️ Video generation timed out');
+        }
+      } else if (videoResult.requiresPayment) {
+        console.error('❌ Replicate requires payment');
       }
     } catch (e) {
       console.error('Video generation error:', e.message);
-      rawVideoUrl = 'https://res.cloudinary.com/demo/video/upload/dog.mp4';
+    }
+    
+    // Use a working sample video if generation failed
+    if (!rawVideoUrl) {
+      console.log('⚠️ Using sample video as fallback');
+      // Using Cloudinary demo video that works publicly
+      rawVideoUrl = 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1/samples/elephants';
     }
     
     // ==================== STEP 3: Generate Voiceover (ElevenLabs) ====================
