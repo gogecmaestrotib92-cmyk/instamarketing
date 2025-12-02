@@ -1272,10 +1272,14 @@ router.post('/cloudinary/render-eager', async (req, res) => {
     const publicIdWithExt = afterUpload.replace(/^v\d+\//, '');
     const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
     
-    // Convert subtitles to text overlays
+    // Convert subtitles to text overlays - PRESERVE start/end timing for timed captions
     const textOverlays = (subtitles || []).map(sub => ({
       text: sub.text,
-      position: sub.position || 'bottom'
+      position: sub.position || 'bottom-center',
+      start: sub.start,
+      end: sub.end,
+      fontSize: sub.fontSize || 42,
+      style: sub.style || 'tiktok'
     }));
     
     if (textOverlays.length === 0) {
@@ -1602,22 +1606,22 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     if (textSettings.enabled && script) {
       console.log('📝 Step 5: Building text overlays...');
       
-      // Create simple text segments from script
+      // Create simple text segments from script - one at a time with proper timing
       const sentences = script.split(/[.!?]+/).filter(s => s.trim().length > 5);
       const videoDuration = 10;
       const segmentDuration = videoDuration / Math.min(sentences.length, 3);
       
       sentences.slice(0, 3).forEach((sentence, i) => {
         textOverlays.push({
-          text: sentence.trim().substring(0, 40),
+          text: sentence.trim().substring(0, 50),
           start: i * segmentDuration,
           end: (i + 1) * segmentDuration,
-          position: 'center',
+          position: 'bottom-center', // Show at bottom so they don't overlap
           style: textSettings.style || 'tiktok'
         });
       });
       
-      console.log('✅ Text overlays:', textOverlays.length);
+      console.log('✅ Text overlays:', textOverlays.length, 'with timing');
     }
     
     // ==================== STEP 6: Render Final Video (Cloudinary) ====================

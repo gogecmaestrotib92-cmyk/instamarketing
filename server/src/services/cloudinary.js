@@ -436,6 +436,15 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     // For videos, gravity and position go AFTER fl_layer_apply
     textTransform += `/fl_layer_apply,g_${finalGravity}`;
     
+    // Add timing for video text overlays (so_ = start offset, eo_ = end offset)
+    // This makes text appear only during its designated time window
+    if (overlay.start !== undefined && overlay.start !== null) {
+      textTransform += `,so_${parseFloat(overlay.start).toFixed(1)}`;
+    }
+    if (overlay.end !== undefined && overlay.end !== null) {
+      textTransform += `,eo_${parseFloat(overlay.end).toFixed(1)}`;
+    }
+    
     // Add offsets
     if (xOffset !== 0) {
       textTransform += `,x_${xOffset}`;
@@ -444,6 +453,7 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
       textTransform += `,y_${yOffset}`;
     }
     
+    console.log(`   Timing: start=${overlay.start}, end=${overlay.end}`);
     console.log(`   Full transform: ${textTransform}`);
     
     transformations.push(textTransform);
