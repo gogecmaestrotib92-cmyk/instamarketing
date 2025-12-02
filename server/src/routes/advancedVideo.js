@@ -62,12 +62,9 @@ router.post('/generate', auth, async (req, res) => {
     };
 
     const generationOptions = {
-      model: model || 'damo-text2video',
-      numFrames: numFrames || 16,
-      numInferenceSteps: numInferenceSteps || 50,
-      fps: fps || 8,
-      guidanceScale: guidanceScale || 7.5,
-      seed
+      model: model || 'luma-ray-flash',
+      duration: duration || 5,
+      aspectRatio: aspectRatio || '9:16'
     };
 
     // Generate the base video
@@ -181,12 +178,10 @@ router.post('/generate-bracketed', auth, async (req, res) => {
     };
 
     const generationOptions = {
-      numVariations: numVariations || 3,
-      model: model || 'damo-text2video',
-      numFrames: numFrames || 16,
-      numInferenceSteps: numInferenceSteps || 50,
-      fps: fps || 8,
-      guidanceScale: guidanceScale || 7.5
+      numVariations: numVariations || 1,
+      model: model || 'luma-ray-flash',
+      duration: duration || 5,
+      aspectRatio: aspectRatio || '9:16'
     };
 
     const result = await advancedVideoGenerator.generateWithBracketing(promptOptions, generationOptions);

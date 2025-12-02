@@ -31,10 +31,8 @@ export const useVideoGenerator = (options = {}) => {
     action: '',
     style: 'cinematic',
     aspectRatio: '9:16',
-    duration: 10,
-    model: 'damo-text2video',
-    numFrames: 16,
-    fps: 8
+    duration: 5,
+    model: 'luma-ray-flash'
   });
 
   // Voiceover settings
@@ -337,10 +335,8 @@ export const useVideoGenerator = (options = {}) => {
       action: '',
       style: 'cinematic',
       aspectRatio: '9:16',
-      duration: 10,
-      model: 'damo-text2video',
-      numFrames: 16,
-      fps: 8
+      duration: 5,
+      model: 'luma-ray-flash'
     });
     setVoiceoverSettings({
       enabled: false,

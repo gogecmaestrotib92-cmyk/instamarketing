@@ -470,7 +470,7 @@ class AdvancedVideoGenerator {
    */
   async generateSingle(promptOptions, options = {}) {
     const {
-      model = 'damo-text2video',
+      model = 'luma-ray-flash',
       numFrames = 16,
       numInferenceSteps = 50,
       fps = 8,
@@ -483,40 +483,29 @@ class AdvancedVideoGenerator {
     } = options;
 
     const prompt = this.buildOptimizedPrompt(promptOptions);
-    const modelConfig = VIDEO_MODELS[model] || VIDEO_MODELS['damo-text2video'];
+    const modelConfig = VIDEO_MODELS[model] || VIDEO_MODELS['luma-ray-flash'];
 
     let input = {};
-    const generatedSeed = seed || Math.floor(Math.random() * 2147483647);
 
     if (model === 'minimax') {
       input = {
         prompt: prompt.positive,
-        prompt_optimizer: true,
-        seed: generatedSeed,
-        // 9:16 vertical format
-        aspect_ratio: aspectRatio
+        prompt_optimizer: true
       };
     } else {
+      // Luma Ray Flash 2 - default
+      const lumaDuration = parseInt(duration || 5) >= 9 ? 9 : 5;
       input = {
         prompt: prompt.positive,
-        num_frames: Math.min(numFrames, modelConfig.maxFrames),
-        num_inference_steps: numInferenceSteps,
-        fps: fps,
-        guidance_scale: guidanceScale,
-        seed: generatedSeed,
-        // 9:16 vertical dimensions for TikTok/Reels
-        width: width,
-        height: height
+        duration: lumaDuration,
+        aspect_ratio: aspectRatio,
+        loop: false
       };
-
-      if (modelConfig.supportsNegativePrompt) {
-        input.negative_prompt = prompt.negative;
-      }
     }
 
     try {
       const prediction = await replicate.predictions.create({
-        version: modelConfig.version,
+        model: modelConfig.model,
         input
       });
 

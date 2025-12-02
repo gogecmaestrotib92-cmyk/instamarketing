@@ -39,7 +39,7 @@ export const useVideoGeneration = () => {
         setting: videoOptions.setting,
         mood: videoOptions.mood,
         negatives: videoOptions.negatives,
-        model: videoOptions.model || 'damo-text2video',
+        model: videoOptions.model || 'luma-ray-flash',
         numFrames: videoOptions.numFrames || 16,
         fps: videoOptions.fps || 8,
         guidanceScale: videoOptions.guidanceScale || 7.5,
