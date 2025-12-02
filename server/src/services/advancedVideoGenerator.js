@@ -471,6 +471,8 @@ class AdvancedVideoGenerator {
   async generateSingle(promptOptions, options = {}) {
     const {
       model = 'luma-ray-flash',
+      duration = 5,
+      aspectRatio = '9:16',
       numFrames = 16,
       numInferenceSteps = 50,
       fps = 8,
@@ -478,8 +480,7 @@ class AdvancedVideoGenerator {
       seed = null,
       // 9:16 vertical format for TikTok/Instagram Reels
       width = 576,
-      height = 1024,
-      aspectRatio = '9:16'
+      height = 1024
     } = options;
 
     const prompt = this.buildOptimizedPrompt(promptOptions);
@@ -494,7 +495,7 @@ class AdvancedVideoGenerator {
       };
     } else {
       // Luma Ray Flash 2 - default
-      const lumaDuration = parseInt(duration || 5) >= 9 ? 9 : 5;
+      const lumaDuration = parseInt(duration) >= 9 ? 9 : 5;
       input = {
         prompt: prompt.positive,
         duration: lumaDuration,

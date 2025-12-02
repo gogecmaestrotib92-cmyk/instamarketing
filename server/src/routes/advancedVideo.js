@@ -28,6 +28,8 @@ router.post('/generate', auth, async (req, res) => {
       template,
       // Generation options
       model,
+      duration,
+      aspectRatio,
       numFrames,
       numInferenceSteps,
       fps,
@@ -152,6 +154,8 @@ router.post('/generate-bracketed', auth, async (req, res) => {
       // Generation options
       numVariations,
       model,
+      duration,
+      aspectRatio,
       numFrames,
       numInferenceSteps,
       fps,

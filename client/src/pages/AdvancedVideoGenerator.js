@@ -154,9 +154,16 @@ const AdvancedVideoGenerator = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let finalValue = type === 'checkbox' ? checked : value;
+    
+    // Parse duration as integer for API compatibility
+    if (name === 'duration') {
+      finalValue = parseInt(value, 10);
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: finalValue
     }));
   };
 
