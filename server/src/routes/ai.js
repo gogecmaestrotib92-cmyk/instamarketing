@@ -1386,7 +1386,9 @@ const autopilotState = {
     active: false,
     settings: null,
     queue: [],
-    history: []
+    history: [],
+    // Background jobs that continue even when user leaves page
+    backgroundJobs: []
   },
   post: {
     active: false,
@@ -1969,6 +1971,482 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     console.error('❌ [AUTOPILOT] Error:', error);
     res.status(500).json({ error: error.message });
   }
+});
+
+// ==================== BACKGROUND JOB SYSTEM ====================
+// Allows video generation to continue even when user leaves the page
+
+/**
+ * Internal function to run the full generation pipeline
+ * Returns the generated video data
+ */
+async function runGenerationPipeline(settings, jobId) {
+  const updateJobProgress = (step, progress, message) => {
+    const job = autopilotState.reels.backgroundJobs.find(j => j.id === jobId);
+    if (job) {
+      job.currentStep = step;
+      job.progress = progress;
+      job.stepMessage = message;
+      job.updatedAt = new Date().toISOString();
+    }
+  };
+  
+  console.log(`🎬 [JOB ${jobId}] Starting full viral video pipeline...`);
+  console.log('📋 Settings:', JSON.stringify(settings, null, 2));
+  
+  // Extract business identity settings
+  const businessName = settings?.businessName || '';
+  const businessType = settings?.businessType || 'personal_brand';
+  const targetAudience = settings?.targetAudience || '';
+  const brandTone = settings?.brandTone || 'professional';
+  const callToAction = settings?.callToAction || 'Follow for more!';
+  
+  // Extract content settings
+  const niche = settings?.niche || 'motivational';
+  const style = settings?.style || 'cinematic';
+  const contentGoal = settings?.contentGoal || 'engagement';
+  const hookStyle = settings?.hookStyle || 'question';
+  const topics = settings?.topics || '';
+  
+  // Extract caption settings  
+  const captionStyle = settings?.captionStyle || 'short';
+  const includeEmojis = settings?.includeEmojis !== false;
+  const includeCTA = settings?.includeCTA !== false;
+  
+  // Extract audio/visual settings
+  const voiceoverSettings = settings?.voiceover || { enabled: true, voiceId: '21m00Tcm4TlvDq8ikWAM' };
+  const musicSettings = settings?.music || { enabled: true, mood: 'upbeat' };
+  const textSettings = settings?.textOverlay || { enabled: true, style: 'chunk', position: 'bottom' };
+  
+  // ==================== STEP 1: Generate Viral Script ====================
+  updateJobProgress('script', 10, 'Generating viral script...');
+  console.log(`📝 [JOB ${jobId}] Step 1: Generating viral script...`);
+  let script = '';
+  let caption = '';
+  let hashtags = settings?.hashtags || '#viral #trending #reels';
+  
+  try {
+    const scriptContext = {
+      niche,
+      businessName,
+      businessType,
+      targetAudience,
+      brandTone,
+      hookStyle,
+      contentGoal,
+      topics: topics ? topics.split('\n').filter(t => t.trim()) : []
+    };
+    
+    const scriptResult = await openaiService.generateReelScript(niche, 9, scriptContext);
+    if (scriptResult.success) {
+      script = scriptResult.script;
+    }
+  } catch (e) {
+    console.log(`[JOB ${jobId}] Script generation fallback:`, e.message);
+  }
+  
+  // Fallback script
+  if (!script) {
+    const hookTemplates = {
+      question: `Did you know this about ${niche}? Most people get this wrong. Here's the truth.`,
+      statistic: `90% of people fail at ${niche}. Here's how to be in the top 10%.`,
+      bold_claim: `This ${niche} secret changed everything. You need to hear this.`,
+      story: `I discovered something about ${niche} that blew my mind. Let me share it.`,
+      problem: `Struggling with ${niche}? Here's the solution no one talks about.`,
+      curiosity: `What if I told you ${niche} is not what you think? Watch this.`,
+      stop_scroll: `Stop scrolling. This ${niche} tip will change your life.`,
+      secret: `The hidden truth about ${niche} that experts won't tell you.`
+    };
+    script = hookTemplates[hookStyle] || hookTemplates.question;
+  }
+  
+  // Generate caption
+  try {
+    const captionOptions = {
+      tone: brandTone,
+      includeEmojis,
+      includeHashtags: false,
+      captionStyle,
+      businessName,
+      callToAction: includeCTA ? callToAction : ''
+    };
+    
+    const captionResult = await openaiService.generateCaption(niche, captionOptions);
+    if (captionResult.success) {
+      caption = captionResult.caption;
+      if (includeCTA && callToAction && !caption.includes(callToAction)) {
+        caption += `\n\n${callToAction}`;
+      }
+    }
+  } catch (e) {
+    caption = includeEmojis 
+      ? `🔥 ${businessName ? businessName + ' - ' : ''}Amazing ${niche} content! ${includeCTA ? callToAction : ''} ✨`
+      : `${businessName ? businessName + ' - ' : ''}Amazing ${niche} content! ${includeCTA ? callToAction : ''}`;
+  }
+  
+  updateJobProgress('script', 20, 'Script generated');
+  console.log(`✅ [JOB ${jobId}] Script:`, script.substring(0, 80) + '...');
+  
+  // ==================== STEP 2: Generate AI Video ====================
+  updateJobProgress('video', 25, 'Generating AI video...');
+  console.log(`🎥 [JOB ${jobId}] Step 2: Generating AI video with Replicate...`);
+  let rawVideoUrl = null;
+  
+  let videoPrompt = `${niche} content, ${style} style, vertical 9:16, Instagram Reels, cinematic, high quality`;
+  try {
+    const promptResult = await openaiService.generateVideoPrompt(niche, style);
+    if (promptResult.success) {
+      videoPrompt = promptResult.prompt;
+    }
+  } catch (e) {}
+  
+  try {
+    const videoResult = await replicateService.startTextToVideo(videoPrompt, {
+      aspectRatio: '9:16',
+      duration: 9
+    });
+    
+    if (videoResult.success) {
+      console.log(`⏳ [JOB ${jobId}] Waiting for video generation...`);
+      let attempts = 0;
+      while (attempts < 90) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const status = await replicateService.getPredictionStatus(videoResult.predictionId);
+        
+        // Update progress based on attempts
+        const videoProgress = Math.min(25 + Math.floor(attempts * 0.5), 55);
+        updateJobProgress('video', videoProgress, `Generating video... ${Math.floor((attempts / 90) * 100)}%`);
+        
+        console.log(`   [JOB ${jobId}] Attempt ${attempts + 1}: ${status.status}`);
+        
+        if (status.status === 'succeeded' && status.output) {
+          rawVideoUrl = Array.isArray(status.output) ? status.output[0] : status.output;
+          console.log(`✅ [JOB ${jobId}] Video generated:`, rawVideoUrl);
+          break;
+        } else if (status.status === 'failed') {
+          console.error(`❌ [JOB ${jobId}] Video generation failed:`, status.error);
+          throw new Error(status.error || 'Video generation failed');
+        }
+        attempts++;
+      }
+    } else if (videoResult.requiresPayment) {
+      console.error(`❌ [JOB ${jobId}] Replicate requires payment`);
+    }
+  } catch (e) {
+    console.error(`[JOB ${jobId}] Video generation error:`, e.message);
+  }
+  
+  if (!rawVideoUrl) {
+    console.log(`⚠️ [JOB ${jobId}] Using sample video as fallback`);
+    rawVideoUrl = 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1/samples/elephants';
+  }
+  
+  updateJobProgress('video', 55, 'Video generated');
+  
+  // ==================== STEP 3: Generate Voiceover ====================
+  let voiceoverUrl = null;
+  
+  if (voiceoverSettings.enabled && elevenlabsService && elevenlabsService.isAvailable()) {
+    updateJobProgress('voiceover', 60, 'Generating voiceover...');
+    console.log(`🎤 [JOB ${jobId}] Step 3: Generating ElevenLabs voiceover...`);
+    try {
+      const cleanScript = script.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
+      
+      const voiceResult = await elevenlabsService.textToSpeech(cleanScript, {
+        voiceId: voiceoverSettings.voiceId || '21m00Tcm4TlvDq8ikWAM',
+        stability: 0.5,
+        similarityBoost: 0.75
+      });
+      
+      if (voiceResult.success) {
+        voiceoverUrl = voiceResult.audioUrl;
+        console.log(`✅ [JOB ${jobId}] Voiceover generated:`, voiceoverUrl);
+      }
+    } catch (e) {
+      console.error(`❌ [JOB ${jobId}] Voiceover error:`, e.message);
+    }
+  }
+  
+  updateJobProgress('voiceover', 70, 'Voiceover complete');
+  
+  // ==================== STEP 4: Select Background Music ====================
+  let musicUrl = null;
+  
+  if (musicSettings.enabled) {
+    updateJobProgress('music', 72, 'Selecting music...');
+    console.log(`🎵 [JOB ${jobId}] Step 4: Selecting background music...`);
+    
+    const musicByMood = {
+      upbeat: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'],
+      chill: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'],
+      cinematic: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3'],
+      electronic: ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3']
+    };
+    
+    const nicheMood = {
+      motivational: 'cinematic', fitness: 'upbeat', comedy: 'upbeat',
+      education: 'chill', lifestyle: 'chill', tech: 'electronic'
+    };
+    
+    const mood = nicheMood[niche] || 'upbeat';
+    const tracks = musicByMood[mood] || musicByMood.upbeat;
+    musicUrl = tracks[Math.floor(Math.random() * tracks.length)];
+    console.log(`✅ [JOB ${jobId}] Music selected:`, musicUrl);
+  }
+  
+  updateJobProgress('music', 75, 'Music selected');
+  
+  // ==================== STEP 5: Build Text Overlays ====================
+  let textOverlays = [];
+  const videoDuration = 9;
+  
+  if (textSettings.enabled && script) {
+    updateJobProgress('text', 78, 'Building subtitles...');
+    console.log(`📝 [JOB ${jobId}] Step 5: Building text overlays...`);
+    
+    const wordsPerSecond = 2.5;
+    const maxWords = Math.floor(videoDuration * wordsPerSecond);
+    const wordsPerCaption = 4;
+    
+    const words = script.replace(/[.!?,]/g, '').split(/\s+/).filter(w => w.trim());
+    const wordsToUse = words.slice(0, maxWords);
+    
+    const numCaptions = Math.ceil(wordsToUse.length / wordsPerCaption);
+    const captionDuration = videoDuration / numCaptions;
+    
+    for (let i = 0; i < wordsToUse.length; i += wordsPerCaption) {
+      const chunk = wordsToUse.slice(i, i + wordsPerCaption).join(' ');
+      const captionIndex = Math.floor(i / wordsPerCaption);
+      
+      textOverlays.push({
+        text: chunk,
+        start: Math.round(captionIndex * captionDuration * 10) / 10,
+        end: Math.round((captionIndex + 1) * captionDuration * 10) / 10,
+        position: 'bottom',
+        style: textSettings.style || 'blockbuster'
+      });
+    }
+    
+    console.log(`✅ [JOB ${jobId}] Text overlays:`, textOverlays.length, 'captions');
+  }
+  
+  updateJobProgress('text', 80, 'Subtitles ready');
+  
+  // ==================== STEP 6: Render Final Video ====================
+  let finalVideoUrl = rawVideoUrl;
+  const needsRender = voiceoverUrl || musicUrl || textOverlays.length > 0;
+  
+  if (needsRender && shotstackClient && textOverlays.length > 0) {
+    updateJobProgress('render', 82, 'Rendering final video...');
+    console.log(`🎬 [JOB ${jobId}] Step 6: Rendering with Shotstack...`);
+    
+    try {
+      let processedVideoUrl = rawVideoUrl;
+      if (cloudinaryService && !rawVideoUrl.includes('cloudinary.com')) {
+        const videoUpload = await cloudinaryService.uploadFromUrl(rawVideoUrl, {
+          resource_type: 'video',
+          folder: 'autopilot/videos'
+        });
+        if (videoUpload.success) {
+          processedVideoUrl = videoUpload.url;
+        }
+      }
+      
+      let processedAudioUrl = voiceoverUrl || musicUrl;
+      if (processedAudioUrl && cloudinaryService && !processedAudioUrl.includes('cloudinary.com')) {
+        const audioUpload = await cloudinaryService.uploadFromUrl(processedAudioUrl, {
+          resource_type: 'video',
+          folder: 'autopilot/audio'
+        });
+        if (audioUpload.success) {
+          processedAudioUrl = audioUpload.url;
+        }
+      }
+      
+      // Update progress during Shotstack render
+      updateJobProgress('render', 85, 'Shotstack rendering...');
+      
+      const result = await shotstackClient.renderVideo(
+        processedVideoUrl,
+        processedAudioUrl,
+        textOverlays,
+        {
+          duration: 9,
+          videoVolume: 0,
+          musicVolume: voiceoverUrl ? 1 : 0.7,
+          maxAttempts: 60,
+          pollInterval: 3000
+        }
+      );
+      
+      if (result.success && result.url) {
+        finalVideoUrl = result.url;
+        console.log(`✅ [JOB ${jobId}] Shotstack render complete:`, finalVideoUrl);
+      }
+    } catch (e) {
+      console.error(`❌ [JOB ${jobId}] Shotstack error:`, e.message);
+    }
+  }
+  
+  updateJobProgress('complete', 100, 'Video ready!');
+  
+  // Return the video data
+  return {
+    videoUrl: finalVideoUrl,
+    rawVideoUrl,
+    voiceoverUrl,
+    musicUrl,
+    caption: caption + '\n\n' + hashtags,
+    hashtags,
+    script,
+    status: settings?.autoApprove ? 'approved' : 'pending',
+    settings: { niche, style, videoPrompt, voiceover: voiceoverSettings, music: musicSettings },
+    textOverlays
+  };
+}
+
+/**
+ * Start a background video generation job
+ * POST /api/ai/autopilot/reels/generate/background
+ * Returns immediately with a job ID
+ */
+router.post('/autopilot/reels/generate/background', async (req, res) => {
+  try {
+    const { settings } = req.body;
+    
+    // Create a new background job
+    const jobId = generateId();
+    const job = {
+      id: jobId,
+      status: 'processing',
+      currentStep: 'starting',
+      progress: 0,
+      stepMessage: 'Starting generation...',
+      settings,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      result: null,
+      error: null
+    };
+    
+    autopilotState.reels.backgroundJobs.push(job);
+    
+    console.log(`🚀 [BACKGROUND JOB] Created job ${jobId}`);
+    
+    // Return immediately with job ID
+    res.json({
+      success: true,
+      jobId,
+      message: 'Background job started. You can leave this page and check back later.'
+    });
+    
+    // Run the pipeline in the background (don't await)
+    runGenerationPipeline(settings, jobId)
+      .then(videoData => {
+        const job = autopilotState.reels.backgroundJobs.find(j => j.id === jobId);
+        if (job) {
+          job.status = 'completed';
+          job.progress = 100;
+          job.stepMessage = 'Video ready!';
+          job.result = videoData;
+          job.completedAt = new Date().toISOString();
+          
+          // Also add to queue
+          const existingTimes = autopilotState.reels.queue.map(v => v.scheduledAt);
+          const video = {
+            id: generateId(),
+            ...videoData,
+            scheduledAt: getNextScheduledTime(settings || {}, existingTimes),
+            createdAt: new Date().toISOString()
+          };
+          autopilotState.reels.queue.unshift(video);
+          
+          console.log(`✅ [BACKGROUND JOB] Job ${jobId} completed`);
+        }
+      })
+      .catch(error => {
+        const job = autopilotState.reels.backgroundJobs.find(j => j.id === jobId);
+        if (job) {
+          job.status = 'failed';
+          job.error = error.message;
+          job.completedAt = new Date().toISOString();
+          console.error(`❌ [BACKGROUND JOB] Job ${jobId} failed:`, error.message);
+        }
+      });
+      
+  } catch (error) {
+    console.error('Background job creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get background job status
+ * GET /api/ai/autopilot/reels/jobs/:id
+ */
+router.get('/autopilot/reels/jobs/:id', (req, res) => {
+  const { id } = req.params;
+  const job = autopilotState.reels.backgroundJobs.find(j => j.id === id);
+  
+  if (!job) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+  
+  res.json({
+    success: true,
+    job: {
+      id: job.id,
+      status: job.status,
+      currentStep: job.currentStep,
+      progress: job.progress,
+      stepMessage: job.stepMessage,
+      createdAt: job.createdAt,
+      updatedAt: job.updatedAt,
+      completedAt: job.completedAt,
+      result: job.result,
+      error: job.error
+    }
+  });
+});
+
+/**
+ * Get all background jobs
+ * GET /api/ai/autopilot/reels/jobs
+ */
+router.get('/autopilot/reels/jobs', (req, res) => {
+  const jobs = autopilotState.reels.backgroundJobs.map(job => ({
+    id: job.id,
+    status: job.status,
+    currentStep: job.currentStep,
+    progress: job.progress,
+    stepMessage: job.stepMessage,
+    createdAt: job.createdAt,
+    completedAt: job.completedAt,
+    error: job.error
+  }));
+  
+  res.json({
+    success: true,
+    jobs: jobs.slice(-20) // Last 20 jobs
+  });
+});
+
+/**
+ * Cancel a background job (if still processing)
+ * DELETE /api/ai/autopilot/reels/jobs/:id
+ */
+router.delete('/autopilot/reels/jobs/:id', (req, res) => {
+  const { id } = req.params;
+  const jobIndex = autopilotState.reels.backgroundJobs.findIndex(j => j.id === id);
+  
+  if (jobIndex === -1) {
+    return res.status(404).json({ error: 'Job not found' });
+  }
+  
+  // Remove the job
+  autopilotState.reels.backgroundJobs.splice(jobIndex, 1);
+  
+  res.json({ success: true, message: 'Job removed' });
 });
 
 /**

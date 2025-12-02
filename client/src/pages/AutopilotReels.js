@@ -37,6 +37,10 @@ const AutopilotReels = () => {
   const [previewVideo, setPreviewVideo] = useState(null);
   const [editingCaption, setEditingCaption] = useState(null);
   const [settingsSaved, setSettingsSaved] = useState(false);
+  
+  // Background jobs state
+  const [backgroundJobs, setBackgroundJobs] = useState([]);
+  const [pollingJobIds, setPollingJobIds] = useState([]);
 
   // Load saved settings from localStorage or use defaults
   const getDefaultSettings = () => ({
@@ -160,7 +164,48 @@ const AutopilotReels = () => {
     loadQueue();
     loadHistory();
     loadElevenLabsVoices();
+    loadBackgroundJobs(); // Load any existing background jobs
   }, []);
+
+  // Poll for background job updates
+  useEffect(() => {
+    const processingJobs = backgroundJobs.filter(j => j.status === 'processing');
+    
+    if (processingJobs.length === 0) return;
+    
+    const pollInterval = setInterval(async () => {
+      for (const job of processingJobs) {
+        try {
+          const response = await api.get(`/ai/autopilot/reels/jobs/${job.id}`);
+          if (response.data.job) {
+            setBackgroundJobs(prev => prev.map(j => 
+              j.id === job.id ? response.data.job : j
+            ));
+            
+            // If completed, refresh the queue
+            if (response.data.job.status === 'completed') {
+              loadQueue();
+            }
+          }
+        } catch (error) {
+          console.error('Failed to poll job:', error);
+        }
+      }
+    }, 3000); // Poll every 3 seconds
+    
+    return () => clearInterval(pollInterval);
+  }, [backgroundJobs]);
+
+  const loadBackgroundJobs = async () => {
+    try {
+      const response = await api.get('/ai/autopilot/reels/jobs');
+      if (response.data.jobs) {
+        setBackgroundJobs(response.data.jobs);
+      }
+    } catch (error) {
+      console.log('No background jobs');
+    }
+  };
 
   const loadElevenLabsVoices = async () => {
     try {
@@ -227,58 +272,46 @@ const AutopilotReels = () => {
 
   const generateNow = async () => {
     setIsGenerating(true);
-    setGenerationStatus('Starting viral video pipeline...');
+    setGenerationStatus('Starting background generation...');
     try {
-      // Show progress simulation (actual progress comes from server)
-      const statusMessages = [
-        '✍️ Generating viral script with AI...',
-        '🎬 Creating video with Replicate (this may take 2-3 minutes)...',
-        '🎤 Adding voiceover...',
-        '🎵 Selecting music...',
-        '📝 Creating text overlays...',
-        '🎨 Rendering final video...'
-      ];
+      // Use background generation endpoint
+      const response = await api.post('/ai/autopilot/reels/generate/background', { settings });
       
-      let statusIndex = 0;
-      const statusInterval = setInterval(() => {
-        if (statusIndex < statusMessages.length - 1) {
-          statusIndex++;
-          setGenerationStatus(statusMessages[statusIndex]);
-        }
-      }, 15000); // Update every 15 seconds
-      
-      const response = await api.post('/ai/autopilot/reels/generate', { settings });
-      
-      clearInterval(statusInterval);
-      
-      if (response.data.video) {
-        console.log('Video generated:', response.data.video);
-        console.log('Pipeline info:', response.data.pipeline);
+      if (response.data.success && response.data.jobId) {
+        const jobId = response.data.jobId;
         
-        const pipeline = response.data.pipeline;
-        let statusMsg = '✅ Video created! ';
-        if (pipeline) {
-          const steps = [];
-          if (pipeline.script) steps.push('Script');
-          if (pipeline.video) steps.push('Video');
-          if (pipeline.voiceover) steps.push('Voiceover');
-          if (pipeline.music) steps.push('Music');
-          if (pipeline.textOverlays) steps.push(`${pipeline.textOverlays} Text Overlays`);
-          if (pipeline.rendered) steps.push('Rendered');
-          statusMsg += `(${steps.join(' + ')})`;
-        }
+        // Add job to state
+        const newJob = {
+          id: jobId,
+          status: 'processing',
+          progress: 0,
+          stepMessage: 'Starting...',
+          createdAt: new Date().toISOString()
+        };
+        setBackgroundJobs(prev => [newJob, ...prev]);
         
-        setGenerationStatus(statusMsg);
-        setQueue(prev => [response.data.video, ...prev]);
-        setActiveTab('queue');
+        setGenerationStatus('🚀 Video generating in background! You can leave this page.');
+        setActiveTab('queue'); // Switch to queue to show progress
+        
+        // Clear status after a few seconds
         setTimeout(() => setGenerationStatus(''), 5000);
       }
     } catch (error) {
-      console.error('Failed to generate:', error);
+      console.error('Failed to start generation:', error);
       setGenerationStatus('');
-      alert('Failed to generate video: ' + (error.response?.data?.message || error.message));
+      alert('Failed to start video generation: ' + (error.response?.data?.message || error.message));
     }
     setIsGenerating(false);
+  };
+
+  // Cancel a background job
+  const cancelBackgroundJob = async (jobId) => {
+    try {
+      await api.delete(`/ai/autopilot/reels/jobs/${jobId}`);
+      setBackgroundJobs(prev => prev.filter(j => j.id !== jobId));
+    } catch (error) {
+      console.error('Failed to cancel job:', error);
+    }
   };
 
   const approveVideo = async (videoId) => {
@@ -444,7 +477,38 @@ const AutopilotReels = () => {
       {/* Queue Tab */}
       {activeTab === 'queue' && (
         <section role="tabpanel">
-          {queue.length === 0 ? (
+          {/* Background Jobs Section */}
+          {backgroundJobs.filter(j => j.status === 'processing').length > 0 && (
+            <div className="background-jobs-section">
+              <h3><FiRefreshCw className="spin" /> Generating in Background</h3>
+              <p className="background-jobs-hint">These videos will continue generating even if you leave this page</p>
+              <div className="background-jobs-list">
+                {backgroundJobs.filter(j => j.status === 'processing').map(job => (
+                  <div key={job.id} className="background-job-card">
+                    <div className="job-progress-bar">
+                      <div 
+                        className="job-progress-fill" 
+                        style={{ width: `${job.progress || 0}%` }}
+                      />
+                    </div>
+                    <div className="job-info">
+                      <span className="job-step">{job.stepMessage || 'Processing...'}</span>
+                      <span className="job-percent">{job.progress || 0}%</span>
+                    </div>
+                    <button 
+                      className="btn-cancel-job" 
+                      onClick={() => cancelBackgroundJob(job.id)}
+                      title="Cancel job"
+                    >
+                      <FiX />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {queue.length === 0 && backgroundJobs.filter(j => j.status === 'processing').length === 0 ? (
             <div className="empty-state">
               <FiList />
               <h3>No videos in queue</h3>
@@ -453,7 +517,7 @@ const AutopilotReels = () => {
                 <FiPlus /> Generate Video
               </button>
             </div>
-          ) : (
+          ) : queue.length > 0 ? (
             <div className="queue-grid">
               {queue.map(video => (
                 <article key={video.id} className={`queue-card ${video.status}`}>
@@ -539,7 +603,7 @@ const AutopilotReels = () => {
                 </article>
               ))}
             </div>
-          )}
+          ) : null}
         </section>
       )}
 

@@ -1688,3 +1688,102 @@
     margin: 10px;
   }
 }
+
+/* ==================== Background Jobs Section ==================== */
+
+.background-jobs-section {
+  background: linear-gradient(135deg, var(--accent-primary-light, rgba(59, 130, 246, 0.1)) 0%, var(--accent-secondary-light, rgba(139, 92, 246, 0.1)) 100%);
+  border: 1px solid var(--accent-primary);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.background-jobs-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.background-jobs-section h3 .spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.background-jobs-hint {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+}
+
+.background-jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.background-job-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+}
+
+.job-progress-bar {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.job-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary, #8b5cf6) 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.job-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.job-step {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.job-percent {
+  font-size: 0.875rem;
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.btn-cancel-job {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-cancel-job:hover {
+  background: var(--danger-bg, rgba(239, 68, 68, 0.1));
+  color: var(--danger, #ef4444);
+}
