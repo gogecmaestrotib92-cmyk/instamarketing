@@ -189,16 +189,17 @@ function AppRoutes() {
         <Route path="create/virtual-actor" element={<ComingSoon title="Virtual Actor" description="UGC for storytelling and ads" />} />
         <Route path="create/virtual-actor-ecomm" element={<ComingSoon title="Virtual Actor E-COMM" description="E-commerce UGC content" />} />
         
-        {/* Business */}
-        <Route path="business/trending" element={<ComingSoon title="Trending" description="Faceless subtitle videos & AI voices" />} />
-        <Route path="business/video" element={<ComingSoon title="Video" description="Short, impactful promo videos" />} />
-        <Route path="business/ad-creatives" element={<ComingSoon title="Ad Creatives" description="Ads for your business" />} />
+        {/* Business (under Create) */}
+        <Route path="create/trending" element={<ComingSoon title="Trending" description="Faceless subtitle videos & AI voices" />} />
+        <Route path="create/video" element={<ComingSoon title="Video" description="Short, impactful promo videos" />} />
+        <Route path="create/ad-creatives" element={<ComingSoon title="Ad Creatives" description="Ads for your business" />} />
         
-        {/* E-Commerce */}
-        <Route path="ecommerce/product-creatives" element={<ComingSoon title="Product Creatives" description="Convert Products to static Ad" />} />
-        <Route path="ecommerce/product-carousels" element={<ComingSoon title="Product Carousels" description="Convert Products to carousel slides" />} />
-        <Route path="ecommerce/product-videos" element={<ComingSoon title="Product Videos" description="Short animated product videos" />} />
-        <Route path="ecommerce/product-photoshoot" element={<ComingSoon title="Product Photo Shoot" description="Product with AI backgrounds" />} />
+        {/* E-Commerce (under Create) */}
+        <Route path="create/product-creatives" element={<ComingSoon title="Product Creatives" description="Convert Products to static Ad" />} />
+        <Route path="create/product-carousels" element={<ComingSoon title="Product Carousels" description="Convert Products to carousel slides" />} />
+        <Route path="create/product-videos" element={<ComingSoon title="Product Videos" description="Short animated product videos" />} />
+        <Route path="create/product-photoshoot" element={<ComingSoon title="Product Photo Shoot" description="Product with AI backgrounds" />} />
+
         <Route path="autopilot" element={<AutoPilotNew />} />
         <Route path="asset-hub" element={<AssetHub />} />
         <Route path="calendar" element={<ContentCalendar />} />

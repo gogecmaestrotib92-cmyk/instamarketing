@@ -17,7 +17,6 @@ import {
   FiPlusCircle,
   FiUser,
   FiShoppingBag,
-  FiBriefcase,
   FiTrendingUp,
   FiVideo,
   FiTarget,
@@ -48,10 +47,6 @@ const Layout = () => {
   useEffect(() => {
     if (location.pathname.startsWith('/app/create')) {
       setExpandedItems(prev => ({ ...prev, 'create-new': true }));
-    } else if (location.pathname.startsWith('/app/business')) {
-      setExpandedItems(prev => ({ ...prev, 'business': true }));
-    } else if (location.pathname.startsWith('/app/ecommerce')) {
-      setExpandedItems(prev => ({ ...prev, 'ecommerce': true }));
     }
   }, [location.pathname]);
 
@@ -164,31 +159,20 @@ const Layout = () => {
       label: 'Create New',
       key: 'create-new',
       children: [
+        // Virtual Actor
         { path: '/app/create/virtual-actor', icon: FiUser, label: 'Virtual Actor', description: 'UGC for storytelling and ads' },
-        { path: '/app/create/virtual-actor-ecomm', icon: FiShoppingBag, label: 'Virtual Actor E-COMM', description: 'E-commerce UGC content' }
-      ]
-    },
-    { 
-      path: '/app/business', 
-      icon: FiBriefcase, 
-      label: 'Business',
-      key: 'business',
-      children: [
-        { path: '/app/business/trending', icon: FiTrendingUp, label: 'Trending', description: 'Voiceover Video' },
-        { path: '/app/business/video', icon: FiVideo, label: 'Video', description: 'Short, impactful promo videos' },
-        { path: '/app/business/ad-creatives', icon: FiTarget, label: 'Ad Creatives', description: 'Ads for your business' }
-      ]
-    },
-    { 
-      path: '/app/ecommerce', 
-      icon: FiShoppingBag, 
-      label: 'E-Commerce',
-      key: 'ecommerce',
-      children: [
-        { path: '/app/ecommerce/product-creatives', icon: FiBox, label: 'Product Creatives', description: 'Convert Products to static Ad' },
-        { path: '/app/ecommerce/product-carousels', icon: FiLayers, label: 'Product Carousels', description: 'Convert Products to carousel slides' },
-        { path: '/app/ecommerce/product-videos', icon: FiFilm, label: 'Product Videos', description: 'Short animated product videos' },
-        { path: '/app/ecommerce/product-photoshoot', icon: FiCamera, label: 'Product Photo Shoot', description: 'Product with AI backgrounds' }
+        { path: '/app/create/virtual-actor-ecomm', icon: FiShoppingBag, label: 'Virtual Actor E-COMM', description: 'E-commerce UGC content' },
+        // Business
+        { type: 'divider', label: 'Business' },
+        { path: '/app/create/trending', icon: FiTrendingUp, label: 'Trending', description: 'Voiceover Video' },
+        { path: '/app/create/video', icon: FiVideo, label: 'Video', description: 'Short, impactful promo videos' },
+        { path: '/app/create/ad-creatives', icon: FiTarget, label: 'Ad Creatives', description: 'Ads for your business' },
+        // E-Commerce
+        { type: 'divider', label: 'E-Commerce' },
+        { path: '/app/create/product-creatives', icon: FiBox, label: 'Product Creatives', description: 'Convert Products to static Ad' },
+        { path: '/app/create/product-carousels', icon: FiLayers, label: 'Product Carousels', description: 'Convert Products to carousel slides' },
+        { path: '/app/create/product-videos', icon: FiFilm, label: 'Product Videos', description: 'Short animated product videos' },
+        { path: '/app/create/product-photoshoot', icon: FiCamera, label: 'Product Photo Shoot', description: 'Product with AI backgrounds' }
       ]
     },
     { path: '/app/autopilot', icon: FiCpu, label: 'AI Auto-Pilot', badge: 'NEW' },
@@ -289,16 +273,22 @@ const Layout = () => {
                     role="group"
                     aria-label={`${item.label} submenu`}
                   >
-                    {item.children.map(child => (
-                      <NavLink
-                        key={child.path}
-                        to={child.path}
-                        className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
-                        onClick={closeSidebar}
-                      >
-                        <child.icon className="nav-icon" aria-hidden="true" />
-                        <span>{child.label}</span>
-                      </NavLink>
+                    {item.children.map((child, childIndex) => (
+                      child.type === 'divider' ? (
+                        <div key={`divider-${childIndex}`} className="nav-divider">
+                          <span>{child.label}</span>
+                        </div>
+                      ) : (
+                        <NavLink
+                          key={child.path}
+                          to={child.path}
+                          className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
+                          onClick={closeSidebar}
+                        >
+                          <child.icon className="nav-icon" aria-hidden="true" />
+                          <span>{child.label}</span>
+                        </NavLink>
+                      )
                     ))}
                   </div>
                 </>
