@@ -3,7 +3,6 @@ import {
   FiCalendar, 
   FiChevronLeft, 
   FiChevronRight, 
-  FiPlus,
   FiClock,
   FiImage,
   FiVideo,

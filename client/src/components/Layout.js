@@ -19,7 +19,6 @@ import {
   FiShoppingBag,
   FiBriefcase,
   FiTrendingUp,
-  FiMic,
   FiVideo,
   FiTarget,
   FiBox,
