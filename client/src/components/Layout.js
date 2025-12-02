@@ -42,9 +42,6 @@ const Layout = () => {
     if (location.pathname.startsWith('/app/ai-video')) {
       setExpandedItems(prev => ({ ...prev, 'ai-video': true }));
     }
-    if (location.pathname.startsWith('/app/autopilot')) {
-      setExpandedItems(prev => ({ ...prev, 'autopilot': true }));
-    }
   }, [location.pathname]);
 
   // Close sidebar on route change (mobile)
@@ -163,18 +160,7 @@ const Layout = () => {
         { path: '/app/ai-video/edit', icon: FiEdit3, label: 'Edit' }
       ]
     },
-    { 
-      path: '/app/autopilot', 
-      icon: FiCpu, 
-      label: 'AI Auto-pilot', 
-      badge: 'NEW',
-      key: 'autopilot',
-      children: [
-        { path: '/app/autopilot/reels', icon: FiPlay, label: 'Reels' },
-        { path: '/app/autopilot/post', icon: FiGrid, label: 'Post' },
-        { path: '/app/autopilot/new', icon: FiZap, label: 'New Setup', badge: 'BETA' }
-      ]
-    },
+    { path: '/app/autopilot', icon: FiCpu, label: 'AI Auto-Pilot', badge: 'NEW' },
     { path: '/app/settings', icon: FiSettings, label: 'Settings' }
   ];
 
