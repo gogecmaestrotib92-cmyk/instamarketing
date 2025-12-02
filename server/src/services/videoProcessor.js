@@ -20,6 +20,23 @@ try {
   console.log('FFmpeg not available:', e.message);
 }
 
+// Try to load Cloudinary service for fallback
+let cloudinaryService = null;
+try {
+  cloudinaryService = require('./cloudinary');
+} catch (e) {
+  console.log('Cloudinary service not available:', e.message);
+}
+
+// Try to load Shotstack for proper subtitle rendering
+let shotstackClient = null;
+try {
+  shotstackClient = require('./shotstackClient');
+  console.log('Shotstack client available for video processing');
+} catch (e) {
+  console.log('Shotstack client not available:', e.message);
+}
+
 class VideoProcessor {
   constructor() {
     this.tempDir = path.join(__dirname, '../../uploads/temp');
@@ -74,7 +91,114 @@ class VideoProcessor {
   async processVideo({ videoUrl, voiceoverUrl, musicUrl, overlays, aspectRatio = '9:16' }) {
     // Check if ffmpeg is available
     if (!ffmpegAvailable) {
-      console.log('FFmpeg not available - returning original video URL');
+      console.log('FFmpeg not available - using cloud fallback');
+      
+      // PRIORITY 1: Use Shotstack for proper subtitle timing
+      if (shotstackClient && overlays && overlays.length > 0) {
+        console.log('🎬 Using Shotstack for timed subtitles...');
+        try {
+          // First, upload video to Cloudinary if needed (Shotstack needs public URLs)
+          let processedVideoUrl = videoUrl;
+          
+          if (cloudinaryService && !videoUrl.includes('cloudinary.com')) {
+            console.log('📤 Uploading video to Cloudinary for Shotstack...');
+            const videoUpload = await cloudinaryService.uploadFromUrl(videoUrl, {
+              resource_type: 'video',
+              folder: 'autopilot/videos'
+            });
+            if (videoUpload.success) {
+              processedVideoUrl = videoUpload.url;
+              console.log('✅ Video uploaded:', processedVideoUrl);
+            }
+          }
+          
+          // Upload audio if provided
+          let processedAudioUrl = voiceoverUrl || musicUrl;
+          if (processedAudioUrl && cloudinaryService && !processedAudioUrl.includes('cloudinary.com')) {
+            console.log('📤 Uploading audio to Cloudinary for Shotstack...');
+            const audioUpload = await cloudinaryService.uploadFromUrl(processedAudioUrl, {
+              resource_type: 'video',
+              folder: 'autopilot/audio'
+            });
+            if (audioUpload.success) {
+              processedAudioUrl = audioUpload.url;
+              console.log('✅ Audio uploaded:', processedAudioUrl);
+            }
+          }
+          
+          // Format overlays as subtitles for Shotstack
+          const subtitles = overlays.map(o => ({
+            text: o.text,
+            start: parseFloat(o.start) || 0,
+            end: parseFloat(o.end) || (parseFloat(o.start) + 3),
+            position: o.position || 'bottom',
+            style: o.style || 'blockbuster'
+          }));
+          
+          console.log('📝 Subtitles for Shotstack:', JSON.stringify(subtitles));
+          
+          // Render with Shotstack
+          const result = await shotstackClient.renderVideo(
+            processedVideoUrl,
+            processedAudioUrl,
+            subtitles,
+            {
+              duration: 10,
+              videoVolume: 0,
+              musicVolume: voiceoverUrl ? 1 : 0.7,
+              maxAttempts: 60,
+              pollInterval: 3000
+            }
+          );
+          
+          if (result.success && result.url) {
+            console.log('✅ Shotstack render complete:', result.url);
+            return result.url;
+          } else {
+            console.error('❌ Shotstack render failed:', result.error);
+          }
+        } catch (e) {
+          console.error('Shotstack fallback failed:', e.message);
+        }
+      }
+      
+      // PRIORITY 2: Use Cloudinary (limited - no proper subtitle timing)
+      if (cloudinaryService && videoUrl.includes('cloudinary.com')) {
+        try {
+          // Upload audio to Cloudinary if provided
+          let audioPublicId = null;
+          const audioUrl = voiceoverUrl || musicUrl;
+          
+          if (audioUrl) {
+            console.log('📤 Uploading audio to Cloudinary...');
+            const audioUpload = await cloudinaryService.uploadFromUrl(audioUrl, {
+              resource_type: 'video',
+              folder: 'autopilot/audio'
+            });
+            if (audioUpload.success) {
+              audioPublicId = audioUpload.publicId;
+              console.log('✅ Audio uploaded:', audioPublicId);
+            }
+          }
+          
+          // Generate video with text overlays and audio
+          const finalUrl = cloudinaryService.generateVideoWithTextOverlay(
+            videoUrl,
+            overlays || [],
+            {
+              audioPublicId: audioPublicId,
+              musicVolume: voiceoverUrl ? 0.3 : 0.7
+            }
+          );
+          
+          console.log('✅ Cloudinary fallback video generated');
+          return finalUrl;
+        } catch (e) {
+          console.error('Cloudinary fallback failed:', e.message);
+          return videoUrl;
+        }
+      }
+      
       return videoUrl; // Return the original video if we can't process it
     }
 

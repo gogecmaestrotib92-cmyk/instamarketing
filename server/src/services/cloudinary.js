@@ -434,24 +434,27 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     
     // Close with fl_layer_apply AND positioning
     // For videos, gravity and position go AFTER fl_layer_apply
-    textTransform += `/fl_layer_apply,g_${finalGravity}`;
+    // Also add timing using so_ (start offset) and eo_ (end offset) for when the overlay appears
+    let applyParams = `fl_layer_apply,g_${finalGravity}`;
     
-    // Add timing for video text overlays (so_ = start offset, eo_ = end offset)
-    // This makes text appear only during its designated time window
+    // Add timing for video text overlays
+    // so_ = start offset (when overlay appears), eo_ = end offset (when it disappears)
     if (overlay.start !== undefined && overlay.start !== null) {
-      textTransform += `,so_${parseFloat(overlay.start).toFixed(1)}`;
+      applyParams += `,so_${parseFloat(overlay.start).toFixed(1)}`;
     }
     if (overlay.end !== undefined && overlay.end !== null) {
-      textTransform += `,eo_${parseFloat(overlay.end).toFixed(1)}`;
+      applyParams += `,eo_${parseFloat(overlay.end).toFixed(1)}`;
     }
     
-    // Add offsets
+    // Add position offsets
     if (xOffset !== 0) {
-      textTransform += `,x_${xOffset}`;
+      applyParams += `,x_${xOffset}`;
     }
     if (yOffset !== 0) {
-      textTransform += `,y_${yOffset}`;
+      applyParams += `,y_${yOffset}`;
     }
+    
+    textTransform += `/${applyParams}`;
     
     console.log(`   Timing: start=${overlay.start}, end=${overlay.end}`);
     console.log(`   Full transform: ${textTransform}`);
