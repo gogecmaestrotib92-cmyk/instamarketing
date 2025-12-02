@@ -139,21 +139,20 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         let requestedStyle = subtitle.style || subtitleStyle.style || 'blockbuster';
         let finalStyle = VALID_STYLES.includes(requestedStyle) 
           ? requestedStyle 
-          : (STYLE_MAP[requestedStyle] || 'blockbuster');
+          : (STYLE_MAP[requestedStyle] || 'chunk');
         
         console.log(`   Style mapping: "${requestedStyle}" -> "${finalStyle}"`);
         console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position}, offset: ${JSON.stringify(offset)}`);
 
-        // Using 'title' asset type which is more reliable for text overlays
-        // Title asset is specifically designed for text captions/subtitles
+        // Instagram/YouTube Reels style - bold, punchy text
+        // Using 'chunk' style for that viral TikTok/Reels look
         const clip = {
           asset: {
             type: 'title',
-            text: subtitle.text,
-            style: 'subtitle', // Use 'subtitle' style - cleaner and more compact
-            size: 'small', // small size to ensure it fits on screen
-            background: '#000000AA', // Semi-transparent black background
-            color: '#ffffff'
+            text: subtitle.text.toUpperCase(), // ALL CAPS for viral style
+            style: 'chunk', // Bold chunky style like viral reels
+            size: 'medium', // Medium size - visible but fits on screen
+            color: '#ffffff' // Pure white text
           },
           start: subtitle.start,
           length: clipDuration,
