@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiTrendingUp, FiVideo, FiTarget, FiArrowRight } from 'react-icons/fi';
+import { FiTrendingUp, FiVideo, FiTarget, FiImage, FiArrowRight } from 'react-icons/fi';
 import './BusinessCreate.css';
 
 const BusinessCreate = () => {
@@ -24,6 +24,15 @@ const BusinessCreate = () => {
       description: 'Short, impactful promo videos. Perfect for social media marketing.',
       color: '#3b82f6',
       path: '/app/create/business/video'
+    },
+    {
+      id: 'image',
+      icon: FiImage,
+      title: 'Image',
+      subtitle: 'AD & Stacking Design',
+      description: 'Create stunning ad images and stacking designs for your business campaigns.',
+      color: '#10b981',
+      path: '/app/create/business/image'
     },
     {
       id: 'ad-creatives',
