@@ -15,43 +15,36 @@ const replicate = new Replicate({
  * VIDEO GENERATION MODELS with their capabilities
  */
 const VIDEO_MODELS = {
-  // High quality text-to-video
-  'damo-text2video': {
-    version: '1e205ea73084bd17a0a3b43396e49ba0d6bc2e754e9283b2df49fad2dcf95755',
-    name: 'DAMO Text-to-Video',
-    maxFrames: 16,
-    defaultFps: 8,
-    supportsNegativePrompt: true,
-    quality: 'medium',
-    speed: 'fast'
-  },
-  // Stable Video Diffusion - Image to Video
-  'stable-video-diffusion': {
-    version: '3f0457e4619daac51203dedb472816fd4af51f3149fa7a9e0b5ffcf1b8172438',
-    name: 'Stable Video Diffusion',
-    type: 'image-to-video',
-    maxFrames: 25,
-    defaultFps: 6,
+  // Luma Ray Flash 2 - Best quality text-to-video
+  'luma-ray-flash': {
+    model: 'luma/ray-flash-2-720p',
+    name: 'Luma Ray Flash 2',
+    maxDuration: 9,
+    defaultDuration: 5,
+    supportedDurations: [5, 9],
+    aspectRatios: ['9:16', '16:9', '1:1', '4:3', '3:4'],
     supportsNegativePrompt: false,
-    quality: 'high',
-    speed: 'medium'
+    quality: 'excellent',
+    speed: 'fast',
+    resolution: '720p'
   },
-  // AnimateDiff for consistent animation
-  'animatediff': {
-    version: 'beecf59c4aee8d81fc04b0381033f7e7c1c5c42f43ea5a7f9e4b2b8b9f8a3c74',
-    name: 'AnimateDiff',
-    maxFrames: 16,
-    defaultFps: 8,
-    supportsNegativePrompt: true,
-    quality: 'high',
-    speed: 'slow'
+  // Kling v2.1 - Image to Video
+  'kling-i2v': {
+    model: 'kwaivgi/kling-v2.1',
+    name: 'Kling v2.1',
+    type: 'image-to-video',
+    maxDuration: 10,
+    defaultDuration: 5,
+    aspectRatios: ['9:16', '16:9', '1:1'],
+    quality: 'excellent',
+    speed: 'medium'
   },
   // Minimax (Hailuo) - High Quality & Longer
   'minimax': {
-    version: '5aa835260ff7f40f4069c41185f72036accf99e29957bb4a3b3a911f3b6c1912',
+    model: 'minimax/video-01',
     name: 'Minimax Video-01',
-    maxFrames: 150, // 6s * 25fps
-    defaultFps: 25,
+    maxDuration: 6,
+    defaultDuration: 6,
     supportsNegativePrompt: false,
     quality: 'premium',
     speed: 'slow'
@@ -311,15 +304,9 @@ class AdvancedVideoGenerator {
    */
   async generateWithBracketing(promptOptions, generationOptions = {}) {
     const {
-      numVariations = 3,
-      model = 'damo-text2video',
-      numFrames = 16,
-      numInferenceSteps = 50,
-      fps = 8,
-      guidanceScale = 7.5,
-      // 9:16 vertical format for TikTok/Instagram Reels
-      width = 576,
-      height = 1024,
+      numVariations = 1,
+      model = 'luma-ray-flash',
+      duration = 5,
       aspectRatio = '9:16'
     } = generationOptions;
 
@@ -327,58 +314,50 @@ class AdvancedVideoGenerator {
     const jobId = uuidv4();
     
     console.log('Generated prompt:', prompt.positive);
-    console.log('Negative prompt:', prompt.negative);
 
-    const modelConfig = VIDEO_MODELS[model] || VIDEO_MODELS['damo-text2video'];
-    const seeds = [];
+    const modelConfig = VIDEO_MODELS[model] || VIDEO_MODELS['luma-ray-flash'];
     const predictions = [];
 
-    // Generate seeds
-    for (let i = 0; i < numVariations; i++) {
-      seeds.push(Math.floor(Math.random() * 2147483647));
-    }
-
-    // Start all generations
+    // Start generations
     for (let i = 0; i < numVariations; i++) {
       try {
         let input = {};
+        let predictionConfig = {};
         
         if (model === 'minimax') {
           input = {
             prompt: prompt.positive,
-            prompt_optimizer: true,
-            seed: seeds[i]
+            prompt_optimizer: true
           };
-        } else {
+          predictionConfig = { model: modelConfig.model, input };
+        } else if (model === 'kling-i2v') {
+          // Image to video - needs start_image
           input = {
             prompt: prompt.positive,
-            num_frames: Math.min(numFrames, modelConfig.maxFrames),
-            num_inference_steps: numInferenceSteps,
-            fps: fps,
-            guidance_scale: guidanceScale
+            duration: Math.min(duration, modelConfig.maxDuration),
+            aspect_ratio: aspectRatio
           };
-
-          // Add negative prompt if supported
-          if (modelConfig.supportsNegativePrompt) {
-            input.negative_prompt = prompt.negative;
-          }
-
-          // Add seed
-          input.seed = seeds[i];
+          predictionConfig = { model: modelConfig.model, input };
+        } else {
+          // Luma Ray Flash 2 - default
+          const lumaDuration = parseInt(duration) >= 9 ? 9 : 5;
+          input = {
+            prompt: prompt.positive,
+            duration: lumaDuration,
+            aspect_ratio: aspectRatio,
+            loop: false
+          };
+          predictionConfig = { model: modelConfig.model, input };
         }
 
-        const prediction = await replicate.predictions.create({
-          version: modelConfig.version,
-          input
-        });
+        const prediction = await replicate.predictions.create(predictionConfig);
 
         predictions.push({
           id: prediction.id,
-          seed: seeds[i],
           index: i
         });
 
-        console.log(`Started variation ${i + 1} with seed ${seeds[i]}, prediction ID: ${prediction.id}`);
+        console.log(`Started variation ${i + 1}, prediction ID: ${prediction.id}`);
       } catch (error) {
         console.error(`Error starting variation ${i}:`, error);
       }

@@ -419,21 +419,31 @@ router.post('/export-platform', auth, async (req, res) => {
 router.get('/models', auth, async (req, res) => {
   const models = [
     {
-      id: 'damo-text2video',
-      name: 'DAMO Text-to-Video',
-      description: 'Fast text-to-video generation with good quality',
+      id: 'luma-ray-flash',
+      name: 'Luma Ray Flash 2',
+      description: 'Fast, high quality text-to-video (720p)',
       type: 'text-to-video',
-      maxFrames: 16,
-      quality: 'medium',
-      speed: 'fast'
+      durations: [5, 9],
+      quality: 'excellent',
+      speed: 'fast',
+      recommended: true
     },
     {
-      id: 'stable-video-diffusion',
-      name: 'Stable Video Diffusion',
-      description: 'High quality image-to-video generation',
+      id: 'minimax',
+      name: 'Minimax Video-01',
+      description: 'Premium quality, 6 second videos',
+      type: 'text-to-video',
+      durations: [6],
+      quality: 'premium',
+      speed: 'slow'
+    },
+    {
+      id: 'kling-i2v',
+      name: 'Kling v2.1',
+      description: 'High quality image-to-video',
       type: 'image-to-video',
-      maxFrames: 25,
-      quality: 'high',
+      durations: [5, 10],
+      quality: 'excellent',
       speed: 'medium'
     }
   ];

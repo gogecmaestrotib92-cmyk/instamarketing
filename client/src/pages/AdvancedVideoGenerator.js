@@ -50,11 +50,9 @@ const AdvancedVideoGenerator = () => {
     customPrompt: '',
     negatives: '',
     template: '',
-    model: 'damo-text2video',
-    numVariations: 3,
-    numFrames: 16,
-    fps: 8,
-    guidanceScale: 7.5
+    model: 'luma-ray-flash',
+    duration: 5,
+    aspectRatio: '9:16'
   });
 
   // Enhancement form state
@@ -657,59 +655,29 @@ const AdvancedVideoGenerator = () => {
                   <div className="form-group">
                     <label htmlFor="model">AI Model</label>
                     <select id="model" name="model" value={formData.model} onChange={handleInputChange}>
-                      <option value="damo-text2video">DAMO Text-to-Video</option>
-                      <option value="stable-video-diffusion">Stable Video Diffusion</option>
+                      <option value="luma-ray-flash">Luma Ray Flash 2 (Recommended)</option>
+                      <option value="minimax">Minimax Video-01 (Premium)</option>
                     </select>
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="numVariations">Number of Variations</label>
-                    <select id="numVariations" name="numVariations" value={formData.numVariations} onChange={handleInputChange}>
-                      <option value={1}>1</option>
-                      <option value={3}>3 (recommended)</option>
-                      <option value={5}>5</option>
+                    <label htmlFor="duration">Duration</label>
+                    <select id="duration" name="duration" value={formData.duration} onChange={handleInputChange}>
+                      <option value={5}>5 seconds</option>
+                      <option value={9}>9 seconds</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="numFrames">Number of Frames</label>
-                    <input
-                      id="numFrames"
-                      type="number"
-                      name="numFrames"
-                      value={formData.numFrames}
-                      onChange={handleInputChange}
-                      min={8}
-                      max={64}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="fps">FPS</label>
-                    <select id="fps" name="fps" value={formData.fps} onChange={handleInputChange}>
-                      <option value={8}>8 FPS</option>
-                      <option value={12}>12 FPS</option>
-                      <option value={16}>16 FPS</option>
-                      <option value={24}>24 FPS</option>
+                    <label htmlFor="aspectRatio">Aspect Ratio</label>
+                    <select id="aspectRatio" name="aspectRatio" value={formData.aspectRatio} onChange={handleInputChange}>
+                      <option value="9:16">9:16 (Vertical - Reels/TikTok)</option>
+                      <option value="16:9">16:9 (Horizontal)</option>
+                      <option value="1:1">1:1 (Square)</option>
                     </select>
                   </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="guidanceScale">Guidance Scale: {formData.guidanceScale}</label>
-                  <input
-                    id="guidanceScale"
-                    type="range"
-                    name="guidanceScale"
-                    value={formData.guidanceScale}
-                    onChange={handleInputChange}
-                    min={1}
-                    max={20}
-                    step={0.5}
-                  />
-                  <small>Higher value = stricter prompt adherence</small>
                 </div>
               </section>
             </div>
