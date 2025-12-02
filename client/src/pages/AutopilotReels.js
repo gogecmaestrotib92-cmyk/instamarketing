@@ -36,9 +36,10 @@ const AutopilotReels = () => {
   const [history, setHistory] = useState([]);
   const [previewVideo, setPreviewVideo] = useState(null);
   const [editingCaption, setEditingCaption] = useState(null);
+  const [settingsSaved, setSettingsSaved] = useState(false);
 
-  // Settings State
-  const [settings, setSettings] = useState({
+  // Load saved settings from localStorage or use defaults
+  const getDefaultSettings = () => ({
     // Business Identity
     businessName: '',
     businessType: 'personal_brand',
@@ -51,12 +52,12 @@ const AutopilotReels = () => {
     niche: 'motivational',
     style: 'cinematic',
     topics: '',
-    contentGoal: 'engagement', // engagement, sales, awareness, education
-    hookStyle: 'question', // question, statistic, bold_claim, story
+    contentGoal: 'engagement',
+    hookStyle: 'question',
     
     // Hashtags & Caption
     hashtags: '#viral #trending #reels',
-    captionStyle: 'short', // short, medium, long
+    captionStyle: 'short',
     includeEmojis: true,
     includeCTA: true,
     
@@ -79,7 +80,7 @@ const AutopilotReels = () => {
       enabled: true,
       autoGenerate: true,
       position: 'bottom',
-      style: 'chunk', // chunk, blockbuster, minimal, subtitle
+      style: 'chunk',
       color: 'white',
       animation: 'fade'
     },
@@ -105,9 +106,54 @@ const AutopilotReels = () => {
     requireReview: true
   });
 
+  const loadSavedSettings = () => {
+    try {
+      const saved = localStorage.getItem('autopilotReelsSettings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...getDefaultSettings(), ...parsed };
+      }
+    } catch (e) {
+      console.log('Failed to load saved settings:', e);
+    }
+    return getDefaultSettings();
+  };
+
+  // Settings State - initialize from localStorage
+  const [settings, setSettings] = useState(loadSavedSettings);
+
   // ElevenLabs voices
   const [elevenLabsVoices, setElevenLabsVoices] = useState([]);
   const [elevenLabsStatus, setElevenLabsStatus] = useState({ available: false });
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('autopilotReelsSettings', JSON.stringify(settings));
+    } catch (e) {
+      console.log('Failed to save settings:', e);
+    }
+  }, [settings]);
+
+  // Save settings manually with feedback
+  const saveSettings = () => {
+    try {
+      localStorage.setItem('autopilotReelsSettings', JSON.stringify(settings));
+      setSettingsSaved(true);
+      setTimeout(() => setSettingsSaved(false), 2000);
+    } catch (e) {
+      console.error('Failed to save settings:', e);
+    }
+  };
+
+  // Reset settings to defaults
+  const resetSettings = () => {
+    if (window.confirm('Are you sure you want to reset all settings to defaults?')) {
+      const defaults = getDefaultSettings();
+      setSettings(defaults);
+      localStorage.setItem('autopilotReelsSettings', JSON.stringify(defaults));
+    }
+  };
 
   useEffect(() => {
     loadAutopilotStatus();
@@ -1016,6 +1062,34 @@ const AutopilotReels = () => {
                 <label htmlFor="requireReview">Require manual review</label>
               </div>
             </div>
+            
+            {/* Save/Reset Buttons */}
+            <div className="settings-actions wide">
+              <button 
+                className="btn btn-secondary"
+                onClick={resetSettings}
+              >
+                <FiRefreshCw /> Reset to Defaults
+              </button>
+              <button 
+                className={`btn btn-primary ${settingsSaved ? 'saved' : ''}`}
+                onClick={saveSettings}
+              >
+                {settingsSaved ? (
+                  <>
+                    <FiCheck /> Settings Saved!
+                  </>
+                ) : (
+                  <>
+                    <FiCheck /> Save Settings
+                  </>
+                )}
+              </button>
+            </div>
+            
+            <p className="settings-note wide">
+              💾 Settings are automatically saved as you make changes
+            </p>
           </div>
         </section>
       )}
