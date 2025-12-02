@@ -281,32 +281,33 @@ const generateVideoWithTextOverlay = (videoUrl, textOverlays = [], options = {})
     console.log(`   OffsetX: ${overlay.offsetX || 0}, OffsetY: ${overlay.offsetY || 0}`);
     
     // Get font size (default 42)
-    const fontSize = overlay.fontSize || overlay.style?.fontSize || 42;
+    // Get font size - use smaller size for better fit on mobile
+    const fontSize = overlay.fontSize || overlay.style?.fontSize || 38;
     
     // Get user offsets (default 0)
     const userOffsetX = overlay.offsetX || 0;
     const userOffsetY = overlay.offsetY || 0;
     
     // Calculate precise base offsets for each position
-    // These values match the preview CSS for pixel-perfect accuracy
+    // For 9:16 vertical video, ensure text is well within safe zone
     let baseX = 0;
     let baseY = 0;
     
-    // Vertical positioning based on finalGravity
+    // Vertical positioning based on finalGravity - keep in safe zone
     if (finalGravity.includes('north')) {
-      baseY = 40; // 40px from top edge
+      baseY = 80; // 80px from top edge (safe zone)
     } else if (finalGravity.includes('south')) {
-      baseY = 100; // 100px from bottom edge (above controls)
+      baseY = 200; // 200px from bottom edge (above controls/safe zone)
     }
     // Center vertical has no base offset
     
-    // Horizontal positioning based on finalGravity
+    // Horizontal positioning - center text with no offset
+    // (horizontal offset can push text off-screen)
     if (finalGravity.includes('west')) {
-      baseX = 40; // 40px from left edge
+      baseX = 20;
     } else if (finalGravity.includes('east')) {
-      baseX = 40; // 40px from right edge
+      baseX = 20;
     }
-    // Center horizontal has no base offset
     
     // Final offsets = base + user adjustment
     const xOffset = baseX + userOffsetX;

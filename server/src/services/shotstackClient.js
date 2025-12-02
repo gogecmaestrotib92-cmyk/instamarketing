@@ -105,17 +105,18 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         }
 
         // Determine position offset based on position type
-        let offset = { x: 0, y: -0.1 }; // default bottom
+        // For 9:16 vertical video (1080x1920), keep text well within frame
+        let offset = { x: 0, y: -0.25 }; // default bottom - moved up to be visible
         let position = subtitle.position || subtitleStyle.position || 'bottom';
         
-        // Map position names to offsets
+        // Map position names to offsets - keep within safe zone
         if (position === 'top') {
-          offset = { x: 0, y: 0.35 };
+          offset = { x: 0, y: 0.30 }; // Not too close to top edge
         } else if (position === 'center' || position === 'middle') {
           offset = { x: 0, y: 0 };
           position = 'center';
         } else if (position === 'bottom') {
-          offset = { x: 0, y: -0.35 };
+          offset = { x: 0, y: -0.25 }; // Safe distance from bottom
         }
 
         // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
@@ -150,14 +151,15 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
             font: {
               family: 'Montserrat',
               color: '#ffffff',
-              size: 42,
+              size: 48, // Larger for mobile viewing
               weight: 700
             },
             background: {
-              color: '#000000'
+              color: '#000000',
+              padding: 15 // Add padding around text
             },
-            width: 900,
-            height: 150,
+            width: 1000, // Nearly full width (1080px video)
+            height: 200, // Taller for word wrap
             alignment: {
               horizontal: 'center',
               vertical: 'center'
