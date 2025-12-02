@@ -318,6 +318,11 @@
   margin: 0 0 16px 0;
 }
 
+.setting-hint .slots-counter {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
 /* Frequency Options */
 .frequency-options {
   display: grid;

@@ -155,16 +155,44 @@ const AutoPilotNew = () => {
     }
   };
 
-  // Toggle time slot
+  // Get max time slots based on frequency
+  const getMaxTimeSlots = () => {
+    const limits = {
+      alternate: 1,
+      once: 1,
+      twice: 2,
+      thrice: 3
+    };
+    return limits[frequency] || 1;
+  };
+
+  // Toggle time slot (with frequency limit)
   const toggleTimeSlot = (time) => {
+    const maxSlots = getMaxTimeSlots();
+    
     if (timeSlots.includes(time)) {
+      // Allow deselecting if more than 1 selected
       if (timeSlots.length > 1) {
         setTimeSlots(timeSlots.filter(t => t !== time));
       }
     } else {
-      setTimeSlots([...timeSlots, time].sort());
+      // Only add if under the limit
+      if (timeSlots.length < maxSlots) {
+        setTimeSlots([...timeSlots, time].sort());
+      } else {
+        // Replace the oldest slot with the new one
+        const newSlots = [...timeSlots.slice(1), time].sort();
+        setTimeSlots(newSlots);
+      }
     }
   };
+
+  // Reset time slots when frequency changes (to respect new limit)
+  useEffect(() => {
+    const limits = { alternate: 1, once: 1, twice: 2, thrice: 3 };
+    const maxSlots = limits[frequency] || 1;
+    setTimeSlots(prev => prev.length > maxSlots ? prev.slice(0, maxSlots) : prev);
+  }, [frequency]);
 
   // Toggle post type
   const togglePostType = (type) => {
@@ -399,7 +427,10 @@ const AutoPilotNew = () => {
               {/* Time Slots */}
               <div className="setting-section">
                 <h3>Select Time Slots</h3>
-                <p className="setting-hint">Choose preferred posting times</p>
+                <p className="setting-hint">
+                  Choose {getMaxTimeSlots()} posting time{getMaxTimeSlots() > 1 ? 's' : ''} 
+                  <span className="slots-counter"> ({timeSlots.length}/{getMaxTimeSlots()} selected)</span>
+                </p>
                 <div className="time-slots-grid">
                   {availableTimeSlots.map(time => (
                     <button
