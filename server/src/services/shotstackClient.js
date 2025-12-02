@@ -106,17 +106,19 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
 
         // Determine position offset based on position type
         // For 9:16 vertical video (1080x1920), keep text well within frame
-        let offset = { x: 0, y: -0.25 }; // default bottom - moved up to be visible
-        let position = subtitle.position || subtitleStyle.position || 'bottom';
+        // Shotstack offset: positive y moves UP, negative y moves DOWN
+        // Using center position with offset for more control
+        let offset = { x: 0, y: -0.35 }; // Center position, offset down to lower third
+        let position = 'center'; // Always use center for precise control
         
-        // Map position names to offsets - keep within safe zone
-        if (position === 'top') {
-          offset = { x: 0, y: 0.30 }; // Not too close to top edge
-        } else if (position === 'center' || position === 'middle') {
-          offset = { x: 0, y: 0 };
-          position = 'center';
-        } else if (position === 'bottom') {
-          offset = { x: 0, y: -0.25 }; // Safe distance from bottom
+        // Adjust offset based on desired visual position
+        const desiredPosition = subtitle.position || subtitleStyle.position || 'bottom';
+        if (desiredPosition === 'top') {
+          offset = { x: 0, y: 0.35 }; // Upper third of screen
+        } else if (desiredPosition === 'center' || desiredPosition === 'middle') {
+          offset = { x: 0, y: 0 }; // True center
+        } else if (desiredPosition === 'bottom') {
+          offset = { x: 0, y: -0.35 }; // Lower third - safe zone above Instagram UI
         }
 
         // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
@@ -140,7 +142,7 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
           : (STYLE_MAP[requestedStyle] || 'blockbuster');
         
         console.log(`   Style mapping: "${requestedStyle}" -> "${finalStyle}"`);
-        console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position} (${subtitle.start}s - ${subtitle.end}s)`);
+        console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position}, offset: ${JSON.stringify(offset)}`);
 
         // Using 'title' asset type which is more reliable for text overlays
         // Title asset is specifically designed for text captions/subtitles
@@ -148,9 +150,9 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
           asset: {
             type: 'title',
             text: subtitle.text,
-            style: 'blockbuster', // Use Shotstack's built-in blockbuster style
-            size: 'medium', // small, medium, large, x-large
-            background: '#000000CC', // Semi-transparent black background
+            style: 'subtitle', // Use 'subtitle' style - cleaner and more compact
+            size: 'small', // small size to ensure it fits on screen
+            background: '#000000AA', // Semi-transparent black background
             color: '#ffffff'
           },
           start: subtitle.start,
