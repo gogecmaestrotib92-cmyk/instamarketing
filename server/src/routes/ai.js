@@ -2815,7 +2815,7 @@ router.patch('/autopilot/post/queue/:id', (req, res) => {
  * Generate related topics based on main topic
  * POST /api/ai/generate-topics
  * 
- * Uses diverse content angles for maximum engagement variety
+ * Generates natural, benefit-focused topics with diverse angles
  */
 router.post('/generate-topics', async (req, res) => {
   try {
@@ -2829,55 +2829,45 @@ router.post('/generate-topics', async (req, res) => {
     
     let topics = [];
     
-    // Content angle categories for diversity
-    const contentAngles = [
-      'beginner_guide',      // How to get started
-      'common_mistakes',     // What NOT to do
-      'advanced_tips',       // Pro-level strategies
-      'myth_busting',        // Debunk misconceptions
-      'case_study',          // Real examples/stories
-      'comparison',          // X vs Y, pros/cons
-      'trending',            // Current trends, news
-      'controversial',       // Hot takes, unpopular opinions
-      'listicle',            // Top 5, 7 ways, etc.
-      'behind_scenes',       // How it really works
-      'quick_wins',          // Easy actionable tips
-      'deep_dive'            // Comprehensive analysis
-    ];
-    
     // Try to use OpenAI for better topic generation
     if (openaiService) {
       try {
-        const prompt = `You are an expert social media content strategist. Generate ${count} highly diverse and engaging content topics related to "${mainTopic}".
+        const prompt = `You are a content strategist. The user wants to create social media content about: "${mainTopic}"
 
-CRITICAL REQUIREMENTS:
-1. Each topic MUST be from a DIFFERENT content angle (no repeating formats)
-2. Topics should feel fresh and NOT generic
-3. Include specific numbers, questions, or bold claims when appropriate
-4. Make topics scroll-stopping and curiosity-inducing
+Generate ${count} diverse content topics. Each topic should:
+1. Be a natural, readable headline (not a template)
+2. Focus on different angles: benefits, how-to, science, tips, testimonials, comparisons, myths, impact
+3. Be specific to the actual use cases and benefits of the topic
+4. Sound like real article/video titles
 
-Use these diverse angles (pick ${count} different ones):
-- Beginner Guide: "The Complete Beginner's Guide to..."
-- Common Mistakes: "5 ${mainTopic} Mistakes That Are Costing You..."
-- Advanced Tips: "Advanced ${mainTopic} Strategies Most People Don't Know"
-- Myth Busting: "The Biggest ${mainTopic} Myth That's Holding You Back"
-- Case Study: "How I [achieved result] with ${mainTopic} in [timeframe]"
-- Comparison: "${mainTopic} vs [Alternative]: Which One Wins?"
-- Trending: "The ${mainTopic} Trend Everyone's Talking About in 2024"
-- Controversial: "Unpopular Opinion: Why Most ${mainTopic} Advice is Wrong"
-- Listicle: "7 ${mainTopic} Hacks That Actually Work"
-- Behind the Scenes: "What Nobody Tells You About ${mainTopic}"
-- Quick Wins: "3 ${mainTopic} Tips You Can Use Today"
-- Deep Dive: "The Science Behind Successful ${mainTopic}"
-- Transformation: "Before & After: My ${mainTopic} Journey"
-- Tools/Resources: "The Only ${mainTopic} Tools You Actually Need"
-- Q&A: "Answering Your Most Asked ${mainTopic} Questions"
+DIVERSITY ANGLES TO COVER:
+- Benefits for specific use case (sleep, work, health, etc.)
+- How it enhances/improves something specific
+- The science/research behind it
+- Practical tips for using it
+- User testimonials/success stories
+- Comparison of different types/options
+- Impact on specific activities (sports, daily life, etc.)
+- Common myths debunked
+- Step-by-step guides
+- Before and after results
 
-Return ONLY a valid JSON array of ${count} unique topic strings. No explanations.
-Example format: ["Topic 1 text", "Topic 2 text", ...]`;
+EXAMPLE for "nasal strips for nose, breathing, sleeping, training":
+- "Benefits of Using Nasal Strips for Better Breathing During Sleep"
+- "How Nasal Strips Can Enhance Your Workout Performance"
+- "The Science Behind Nasal Strips and Improved Airflow"
+- "Tips for a Better Night's Sleep with Nasal Strips"
+- "User Testimonials: How Nasal Strips Changed My Breathing"
+- "Comparing Different Types of Nasal Strips: Which One is Right for You"
+- "The Impact of Nasal Breathing on Athletic Performance"
+- "Common Myths About Nasal Strips Debunked"
+
+Now generate ${count} similar natural topics for: "${mainTopic}"
+
+Return ONLY a JSON array of strings. No markdown, no explanations.`;
 
         const result = await openaiService.chat([
-          { role: 'system', content: 'You are a viral content strategist who creates scroll-stopping social media topics. Return only valid JSON arrays with no markdown formatting.' },
+          { role: 'system', content: 'You generate natural, benefit-focused content topics. Return only valid JSON arrays.' },
           { role: 'user', content: prompt }
         ]);
         
@@ -2889,7 +2879,6 @@ Example format: ["Topic 1 text", "Topic 2 text", ...]`;
               topics = JSON.parse(match[0]);
             } catch (parseErr) {
               console.log('JSON parse error, cleaning response...');
-              // Try to clean and parse
               const cleaned = match[0].replace(/[\n\r]/g, ' ').replace(/,\s*]/g, ']');
               topics = JSON.parse(cleaned);
             }
@@ -2900,37 +2889,48 @@ Example format: ["Topic 1 text", "Topic 2 text", ...]`;
       }
     }
     
-    // Enhanced fallback with diverse angles
+    // Enhanced fallback with natural, benefit-focused topics
     if (topics.length === 0) {
       const topic = mainTopic.trim();
-      const year = new Date().getFullYear();
       
-      // Generate diverse topics using different content angles
+      // Generate diverse, natural-sounding topics
       const fallbackTopics = [
-        // Beginner Guide
-        `The Complete Beginner's Guide to ${topic} (Start Here)`,
-        // Common Mistakes  
-        `5 ${topic} Mistakes That Are Secretly Sabotaging Your Results`,
-        // Advanced Tips
-        `Advanced ${topic} Strategies the Pros Use (But Never Share)`,
-        // Myth Busting
-        `The #1 ${topic} Myth That's Holding You Back`,
-        // Trending
-        `${topic} Trends That Are Dominating ${year}`,
-        // Controversial/Hot Take
-        `Unpopular Opinion: Why Everything You Know About ${topic} is Wrong`,
-        // Listicle with numbers
-        `7 ${topic} Hacks That Will Change Your Life`,
-        // Behind the Scenes
-        `What Nobody Tells You About ${topic} (The Honest Truth)`,
-        // Quick Wins
-        `3 ${topic} Quick Wins You Can Implement Today`,
-        // Comparison
-        `${topic}: What Actually Works vs What's Overhyped`,
-        // Case Study/Story
-        `How ${topic} Transformed My Results in 30 Days`,
-        // Tools/Resources
-        `The Only ${topic} Tools You Actually Need in ${year}`
+        // Benefits angles
+        `Benefits of ${topic} for Better Results`,
+        `How ${topic} Can Improve Your Daily Life`,
+        `The Positive Impact of ${topic} on Your Health`,
+        
+        // How-to / Enhancement angles
+        `How ${topic} Can Enhance Your Performance`,
+        `Ways to Get the Most Out of ${topic}`,
+        `Tips for Better Results with ${topic}`,
+        
+        // Science / Research angles
+        `The Science Behind ${topic} and Why It Works`,
+        `What Research Says About ${topic}`,
+        `Understanding How ${topic} Actually Works`,
+        
+        // Practical tips
+        `Practical Tips for Using ${topic} Effectively`,
+        `A Beginner's Guide to ${topic}`,
+        `How to Choose the Right ${topic} for You`,
+        
+        // Testimonials / Stories
+        `User Testimonials: How ${topic} Changed Their Lives`,
+        `Real Stories: Success with ${topic}`,
+        `Before and After: Results with ${topic}`,
+        
+        // Comparisons
+        `Comparing Different Types of ${topic}: Which One is Best`,
+        `${topic} Options: Finding What Works for You`,
+        
+        // Myths / Facts
+        `Common Myths About ${topic} Debunked`,
+        `The Truth About ${topic}: Facts vs Fiction`,
+        
+        // Impact on activities
+        `The Impact of ${topic} on Your Routine`,
+        `How ${topic} Fits Into a Healthy Lifestyle`
       ];
       
       // Shuffle and pick the required count
