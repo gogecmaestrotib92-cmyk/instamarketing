@@ -214,8 +214,23 @@ const AdvancedVideoGenerator = () => {
         style: voiceoverStyle
       }, { headers: { Authorization: `Bearer ${token}` }});
       
-      setFinalizeData(prev => ({ ...prev, voiceoverUrl: res.data.audioUrl }));
-      toast.success('Voiceover generated!');
+      // Auto-generate timed subtitles from the script
+      const sentences = voiceoverScript.split(/[.!?]+/).filter(s => s.trim().length > 3);
+      const estimatedDuration = voiceoverScript.split(/\s+/).length * 0.4; // ~0.4 sec per word
+      const segmentDuration = estimatedDuration / Math.max(sentences.length, 1);
+      
+      const autoOverlays = sentences.slice(0, 10).map((sentence, i) => ({
+        text: sentence.trim().substring(0, 60),
+        start: Math.round(i * segmentDuration * 10) / 10,
+        end: Math.round((i + 1) * segmentDuration * 10) / 10
+      }));
+      
+      setFinalizeData(prev => ({ 
+        ...prev, 
+        voiceoverUrl: res.data.audioUrl,
+        overlays: autoOverlays  // Auto-populate subtitles
+      }));
+      toast.success('Voiceover generated with auto-subtitles!');
     } catch (err) {
       toast.error('Error generating voiceover');
     } finally {
