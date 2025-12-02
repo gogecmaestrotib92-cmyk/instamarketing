@@ -1440,7 +1440,7 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     // Extract settings
     const niche = settings?.niche || 'motivational';
     const style = settings?.style || 'cinematic';
-    const voiceoverSettings = settings?.voiceover || { enabled: false };
+    const voiceoverSettings = settings?.voiceover || { enabled: true, voiceId: '21m00Tcm4TlvDq8ikWAM' };
     const musicSettings = settings?.music || { enabled: true };
     const textSettings = settings?.textOverlay || { enabled: true };
     
@@ -1539,11 +1539,18 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     // ==================== STEP 3: Generate Voiceover (ElevenLabs) ====================
     let voiceoverUrl = null;
     
+    console.log('🎤 Step 3: Checking voiceover settings...');
+    console.log('   voiceoverSettings.enabled:', voiceoverSettings.enabled);
+    console.log('   elevenlabsService exists:', !!elevenlabsService);
+    console.log('   elevenlabsService.isAvailable():', elevenlabsService?.isAvailable?.());
+    
     if (voiceoverSettings.enabled && elevenlabsService && elevenlabsService.isAvailable()) {
       console.log('🎤 Step 3: Generating ElevenLabs voiceover...');
       try {
         // Clean script for voiceover (remove timestamps/directions)
         const cleanScript = script.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').trim();
+        console.log('   Clean script:', cleanScript);
+        console.log('   Using voiceId:', voiceoverSettings.voiceId || '21m00Tcm4TlvDq8ikWAM');
         
         const voiceResult = await elevenlabsService.textToSpeech(cleanScript, {
           voiceId: voiceoverSettings.voiceId || '21m00Tcm4TlvDq8ikWAM',
@@ -1551,15 +1558,22 @@ router.post('/autopilot/reels/generate', async (req, res) => {
           similarityBoost: 0.75
         });
         
+        console.log('   Voice result:', JSON.stringify(voiceResult, null, 2));
+        
         if (voiceResult.success) {
           voiceoverUrl = voiceResult.audioUrl;
           console.log('✅ Voiceover generated:', voiceoverUrl);
+        } else {
+          console.error('❌ Voiceover generation failed:', voiceResult.error);
         }
       } catch (e) {
-        console.error('Voiceover error:', e.message);
+        console.error('❌ Voiceover error:', e.message);
       }
     } else {
       console.log('⏭️ Step 3: Voiceover disabled or unavailable');
+      if (!voiceoverSettings.enabled) console.log('   Reason: voiceover disabled in settings');
+      if (!elevenlabsService) console.log('   Reason: elevenlabsService not loaded');
+      if (elevenlabsService && !elevenlabsService.isAvailable()) console.log('   Reason: ElevenLabs API key not configured');
     }
     
     // ==================== STEP 4: Select Background Music ====================
@@ -1669,6 +1683,10 @@ router.post('/autopilot/reels/generate', async (req, res) => {
         
         // Upload audio if provided
         let processedAudioUrl = voiceoverUrl || musicUrl;
+        console.log('   🔊 Audio source - voiceoverUrl:', voiceoverUrl);
+        console.log('   🔊 Audio source - musicUrl:', musicUrl);
+        console.log('   🔊 Using processedAudioUrl:', processedAudioUrl);
+        
         if (processedAudioUrl && cloudinaryService && !processedAudioUrl.includes('cloudinary.com')) {
           console.log('   📤 Uploading audio to Cloudinary for Shotstack...');
           const audioUpload = await cloudinaryService.uploadFromUrl(processedAudioUrl, {
@@ -1678,11 +1696,16 @@ router.post('/autopilot/reels/generate', async (req, res) => {
           if (audioUpload.success) {
             processedAudioUrl = audioUpload.url;
             console.log('   ✅ Audio uploaded:', processedAudioUrl);
+          } else {
+            console.error('   ❌ Audio upload failed:', audioUpload.error);
           }
+        } else if (processedAudioUrl?.includes('cloudinary.com')) {
+          console.log('   ✅ Audio already on Cloudinary:', processedAudioUrl);
         }
         
         // Render with Shotstack
         console.log('   🎬 Starting Shotstack render with', textOverlays.length, 'subtitles...');
+        console.log('   🎬 Audio URL for Shotstack:', processedAudioUrl || 'NONE');
         const result = await shotstackClient.renderVideo(
           processedVideoUrl,
           processedAudioUrl,

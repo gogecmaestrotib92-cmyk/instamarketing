@@ -67,7 +67,7 @@ const AutopilotReels = () => {
       autoSelect: true
     },
     voiceover: {
-      enabled: false,
+      enabled: true,
       provider: 'elevenlabs',
       voiceId: '21m00Tcm4TlvDq8ikWAM', // Rachel - default
       voiceName: 'Rachel',
