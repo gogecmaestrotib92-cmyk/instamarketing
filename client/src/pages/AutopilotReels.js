@@ -20,7 +20,8 @@ import {
   FiEdit2,
   FiHash,
   FiCheckCircle,
-  FiVideo
+  FiVideo,
+  FiDownload
 } from 'react-icons/fi';
 import api from '../services/api';
 import './AutopilotReels.css';
@@ -445,6 +446,17 @@ const AutopilotReels = () => {
                       <button className="btn-action post" onClick={() => postNow(video.id)}>
                         <FiSend /> Post Now
                       </button>
+                      {video.videoUrl && (
+                        <a 
+                          href={video.videoUrl} 
+                          download={`reel-${video.id}.mp4`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-action download"
+                        >
+                          <FiDownload /> Download
+                        </a>
+                      )}
                       <button className="btn-action delete" onClick={() => deleteVideo(video.id)}>
                         <FiTrash2 />
                       </button>
