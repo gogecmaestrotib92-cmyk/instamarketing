@@ -1,15 +1,14 @@
 /* ================================================
-   POSTS PAGE - Premium Minimalistic Design
-   Inspired by ElevenLabs & InVideo
+   POSTS PAGE - Premium Neutral Design
+   White base, dark typography, restrained accents
    ================================================ */
 
 .posts-page {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 24px 48px;
+  padding: 0 0 48px;
 }
 
-/* Page Header */
 .posts-page .page-header {
   margin-bottom: 32px;
 }
@@ -17,13 +16,12 @@
 .posts-page .page-header h1 {
   font-size: 1.75rem;
   font-weight: 600;
-  color: #fafafa;
+  color: #0a0a0a;
   margin: 0 0 8px 0;
-  letter-spacing: -0.025em;
 }
 
 .posts-page .page-header p {
-  color: #71717a;
+  color: #525252;
   font-size: 0.9375rem;
   margin: 0;
 }
@@ -38,10 +36,10 @@
 
 .filter-btn {
   padding: 10px 20px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
   border-radius: 8px;
-  color: #71717a;
+  color: #525252;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
@@ -49,14 +47,13 @@
 }
 
 .filter-btn:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #a1a1aa;
+  background: #f5f5f4;
+  border-color: #d4d4d4;
 }
 
 .filter-btn.active {
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
-  border-color: transparent;
+  background: #0a0a0a;
+  border-color: #0a0a0a;
   color: white;
 }
 
@@ -68,9 +65,9 @@
 }
 
 .post-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 14px;
   overflow: hidden;
   transition: all 0.2s ease;
   display: flex;
@@ -78,14 +75,14 @@
 }
 
 .post-card:hover {
-  border-color: rgba(168, 85, 247, 0.2);
-  transform: translateY(-2px);
+  border-color: #d4d4d4;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .post-media {
   position: relative;
   aspect-ratio: 1;
-  background: #000;
+  background: #f5f5f4;
   overflow: hidden;
 }
 
@@ -107,21 +104,20 @@
   align-items: center;
   justify-content: center;
   font-size: 48px;
-  color: #3f3f46;
-  background: rgba(255, 255, 255, 0.02);
+  color: #d4d4d4;
+  background: #f5f5f4;
 }
 
 .media-count {
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(0, 0, 0, 0.75);
+  background: #0a0a0a;
   color: white;
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 0.6875rem;
   font-weight: 600;
-  backdrop-filter: blur(8px);
 }
 
 .post-content {
@@ -140,24 +136,23 @@
 
 .post-type {
   font-size: 0.625rem;
-  color: #71717a;
+  color: #a3a3a3;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-left: auto;
   padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: #f5f5f4;
   border-radius: 4px;
   font-weight: 600;
 }
 
 .post-caption {
   font-size: 0.8125rem;
-  color: #d4d4d8;
+  color: #525252;
   margin-bottom: 14px;
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 3;
-  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -166,10 +161,10 @@
   display: flex;
   gap: 16px;
   font-size: 0.8125rem;
-  color: #71717a;
+  color: #a3a3a3;
   margin-bottom: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid #e5e5e5;
 }
 
 .post-metrics span {
@@ -179,7 +174,7 @@
 }
 
 .post-metrics span svg {
-  color: #a855f7;
+  color: #6366f1;
 }
 
 .post-scheduled {
@@ -187,12 +182,11 @@
   align-items: center;
   gap: 10px;
   font-size: 0.75rem;
-  color: #a855f7;
+  color: #6366f1;
   margin-bottom: 14px;
-  background: rgba(168, 85, 247, 0.08);
+  background: #e0e7ff;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(168, 85, 247, 0.15);
 }
 
 .post-actions {
@@ -209,9 +203,9 @@
   font-size: 0.75rem;
   font-weight: 500;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #a1a1aa;
+  background: #f5f5f4;
+  border: 1px solid #e5e5e5;
+  color: #525252;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -221,15 +215,14 @@
 
 .post-actions button:hover,
 .post-actions .btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #fafafa;
+  background: #e5e5e5;
+  color: #0a0a0a;
 }
 
 .post-actions .danger {
-  color: #f87171;
+  color: #ef4444;
   background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .post-actions .danger:hover {
@@ -247,32 +240,17 @@
   border-radius: 6px;
 }
 
-.badge svg {
-  font-size: 12px;
-}
-
-.badge-success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #4ade80;
-}
-
-.badge-warning {
-  background: rgba(249, 115, 22, 0.1);
-  color: #fb923c;
-}
-
-.badge-info {
-  background: rgba(168, 85, 247, 0.1);
-  color: #c084fc;
-}
+.badge-success { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+.badge-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.badge-info { background: #e0e7ff; color: #6366f1; }
 
 /* Empty State */
 .empty-state-large {
   text-align: center;
   padding: 80px 24px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -280,21 +258,19 @@
 
 .empty-icon {
   font-size: 56px;
-  color: #3f3f46;
+  color: #d4d4d4;
   margin-bottom: 24px;
-  opacity: 0.5;
 }
 
 .empty-state-large h3 {
   font-size: 1.25rem;
   margin-bottom: 10px;
-  color: #fafafa;
+  color: #0a0a0a;
   font-weight: 600;
-  letter-spacing: -0.025em;
 }
 
 .empty-state-large p {
-  color: #71717a;
+  color: #525252;
   margin-bottom: 28px;
   max-width: 360px;
   font-size: 0.9375rem;
@@ -302,7 +278,7 @@
 }
 
 .empty-state-large .btn-primary {
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  background: #0a0a0a;
   color: white;
   padding: 12px 28px;
   border-radius: 8px;
@@ -310,69 +286,25 @@
   font-size: 0.875rem;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .empty-state-large .btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: center;
-  padding: 32px;
-  color: #71717a;
+  background: #171717;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .posts-page {
-    padding: 0 16px 40px;
-  }
-  
-  .posts-grid {
-    grid-template-columns: 1fr;
-  }
-  
+  .posts-grid { grid-template-columns: 1fr; }
   .filters {
     overflow-x: auto;
-    padding-bottom: 8px;
     flex-wrap: nowrap;
     margin: 0 -16px 24px;
     padding: 0 16px 12px;
   }
-  
-  .filter-btn {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  
-  .post-content {
-    padding: 16px;
-  }
-  
-  .empty-state-large {
-    padding: 60px 20px;
-  }
+  .filter-btn { white-space: nowrap; flex-shrink: 0; }
 }
 
 @media (max-width: 480px) {
-  .posts-page {
-    padding: 0 12px 32px;
-  }
-  
-  .post-actions {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .post-actions button,
-  .post-actions .btn {
-    width: 100%;
-  }
+  .post-actions { flex-direction: column; gap: 8px; }
+  .post-actions button, .post-actions .btn { width: 100%; }
 }

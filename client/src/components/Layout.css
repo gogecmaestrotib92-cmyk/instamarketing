@@ -1,9 +1,8 @@
 /* ================================================
-   LAYOUT - Premium Minimalistic Design
-   Inspired by ElevenLabs & InVideo
+   LAYOUT - Warm Neutral Premium Design
+   Clean sans-serif, minimal decoration
    ================================================ */
 
-/* Screen reader only utility */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -16,16 +15,14 @@
   border: 0;
 }
 
-/* Layout container */
 .layout {
   display: flex;
   min-height: 100vh;
-  min-height: 100dvh;
-  background: #000;
+  background: #faf9f7;
 }
 
 /* ================================================
-   MOBILE HEADER - Visible on mobile only
+   MOBILE HEADER
    ================================================ */
 .mobile-header {
   display: flex;
@@ -34,13 +31,11 @@
   left: 0;
   right: 0;
   height: 60px;
-  background: #000;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 0 1rem;
-  padding-left: max(1rem, env(safe-area-inset-left));
-  padding-right: max(1rem, env(safe-area-inset-right));
+  background: #ffffff;
+  border-bottom: 1px solid #e7e5e4;
+  padding: 0 16px;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
   z-index: 1000;
 }
 
@@ -50,42 +45,34 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  min-width: 44px;
   padding: 0;
   background: transparent;
   border: none;
-  color: #71717a;
+  color: #57534e;
   font-size: 1.5rem;
   cursor: pointer;
-  border-radius: 10px;
+  border-radius: 8px;
   transition: all 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
 }
 
-.menu-toggle:hover,
-.menu-toggle:focus-visible {
-  background: rgba(255, 255, 255, 0.04);
-  color: #fafafa;
-}
-
-.menu-toggle:focus-visible {
-  outline: 2px solid #a855f7;
-  outline-offset: 2px;
+.menu-toggle:hover {
+  background: #f5f5f4;
+  color: #1c1917;
 }
 
 .mobile-logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   font-weight: 600;
   font-size: 1rem;
-  color: #fafafa;
-  letter-spacing: -0.025em;
+  color: #1c1917;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .mobile-logo .logo-icon {
   font-size: 1.35rem;
-  color: #a855f7;
+  color: #44403c;
 }
 
 /* ================================================
@@ -94,15 +81,12 @@
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(28, 25, 23, 0.3);
   z-index: 1001;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  touch-action: none;
-  contain: strict;
+  backdrop-filter: blur(4px);
 }
 
 .sidebar-overlay.active {
@@ -114,11 +98,10 @@ body.sidebar-open {
   overflow: hidden;
   position: fixed;
   width: 100%;
-  height: 100%;
 }
 
 /* ================================================
-   SIDEBAR / DRAWER (Mobile-First)
+   SIDEBAR
    ================================================ */
 .sidebar {
   position: fixed;
@@ -126,52 +109,47 @@ body.sidebar-open {
   left: 0;
   width: min(280px, 85vw);
   height: 100vh;
-  height: 100dvh;
-  background: #000;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  border-right: 1px solid #e7e5e4;
   display: flex;
   flex-direction: column;
   z-index: 1002;
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-  box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 0 16px rgba(28, 25, 23, 0.06);
   overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .sidebar.open {
   transform: translateX(0);
 }
 
-/* Mobile header inside sidebar drawer */
 .sidebar-mobile-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
-  padding-left: max(1rem, env(safe-area-inset-left));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px;
+  border-bottom: 1px solid #e7e5e4;
   min-height: 60px;
 }
 
 .sidebar-header-content {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
 .sidebar-header-content .logo-icon {
   font-size: 1.5rem;
-  color: #a855f7;
+  color: #44403c;
 }
 
 .sidebar-header-content .logo-text {
   font-size: 1rem;
-  font-weight: 700;
-  color: #fafafa;
-  letter-spacing: -0.025em;
+  font-weight: 600;
+  color: #1c1917;
+  letter-spacing: -0.01em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .sidebar-close-btn {
@@ -180,29 +158,20 @@ body.sidebar-open {
   justify-content: center;
   width: 44px;
   height: 44px;
-  min-width: 44px;
-  background: rgba(255, 255, 255, 0.04);
+  background: #f5f5f4;
   border: none;
-  color: #71717a;
+  color: #57534e;
   font-size: 1.5rem;
   cursor: pointer;
-  border-radius: 10px;
+  border-radius: 8px;
   transition: all 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
 }
 
-.sidebar-close-btn:hover,
-.sidebar-close-btn:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fafafa;
+.sidebar-close-btn:hover {
+  background: #e7e5e4;
+  color: #1c1917;
 }
 
-.sidebar-close-btn:focus-visible {
-  outline: 2px solid #a855f7;
-  outline-offset: 2px;
-}
-
-/* Desktop-only sidebar header (hidden on mobile) */
 .sidebar-header.desktop-only {
   display: none;
 }
@@ -212,8 +181,7 @@ body.sidebar-open {
    ================================================ */
 .sidebar-nav {
   flex: 1;
-  padding: 0.75rem 0.5rem;
-  padding-left: max(0.5rem, env(safe-area-inset-left));
+  padding: 12px 8px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -228,104 +196,81 @@ body.sidebar-open {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  min-height: 48px;
-  border-radius: 10px;
-  color: #71717a;
-  transition: all 0.2s ease;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: 44px;
+  border-radius: 8px;
+  color: #57534e;
+  transition: all 0.15s ease;
   font-weight: 500;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   text-decoration: none;
   cursor: pointer;
   border: none;
   background: transparent;
   width: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   text-align: left;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .nav-icon {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   opacity: 0.6;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
+  transition: opacity 0.15s ease;
 }
 
-.nav-item:hover,
-.nav-item:focus-visible {
-  background: rgba(255, 255, 255, 0.04);
-  color: #a1a1aa;
+.nav-item:hover {
+  background: #f5f5f4;
+  color: #1c1917;
 }
 
-.nav-item:hover .nav-icon,
-.nav-item:focus-visible .nav-icon {
-  opacity: 0.8;
-}
-
-.nav-item:focus-visible {
-  outline: 2px solid #a855f7;
-  outline-offset: -2px;
+.nav-item:hover .nav-icon {
+  opacity: 0.9;
 }
 
 .nav-item.active {
-  background: rgba(168, 85, 247, 0.08);
-  color: #fafafa;
+  background: #f5f5f4;
+  color: #1c1917;
 }
 
 .nav-item.active .nav-icon {
   opacity: 1;
-  color: #a855f7;
+  color: #292524;
 }
 
-/* Badge */
+/* Badge - Reserved color for meaningful tags */
 .nav-badge {
   margin-left: auto;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.5625rem;
+  padding: 2px 8px;
+  font-size: 0.625rem;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.06);
-  color: #71717a;
+  background: #f5f5f4;
+  color: #57534e;
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .nav-badge.new {
-  background: rgba(168, 85, 247, 0.15);
-  color: #a855f7;
-  animation: pulse 2s infinite;
+  background: #292524;
+  color: #ffffff;
 }
 
 .nav-badge.pro {
-  background: rgba(168, 85, 247, 0.15);
-  color: #c084fc;
+  background: #292524;
+  color: #ffffff;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-/* Parent nav item with expand */
-.nav-item-parent {
-  user-select: none;
-}
-
+/* Expand icon */
 .nav-expand-icon {
   margin-left: auto;
   font-size: 0.875rem;
   opacity: 0.5;
-  transition: transform 0.25s ease, opacity 0.2s ease;
-  flex-shrink: 0;
+  transition: transform 0.2s ease;
 }
 
 .nav-expand-icon.expanded {
   transform: rotate(180deg);
-}
-
-.nav-item-parent:hover .nav-expand-icon {
-  opacity: 0.8;
 }
 
 /* Children container */
@@ -344,35 +289,30 @@ body.sidebar-open {
   min-height: 0;
 }
 
-.nav-children > a,
-.nav-children > button {
-  overflow: hidden;
-}
-
 /* Child nav items */
 .nav-child-item {
-  padding-left: 2.75rem !important;
+  padding-left: 44px !important;
   font-size: 0.8125rem;
-  color: #71717a;
-  min-height: 44px;
+  color: #57534e;
+  min-height: 40px;
 }
 
 .nav-child-item .nav-icon {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 .nav-child-item:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: #a1a1aa;
+  background: #f5f5f4;
+  color: #1c1917;
 }
 
 .nav-child-item.active {
-  background: rgba(168, 85, 247, 0.08);
-  color: #fafafa;
+  background: #f5f5f4;
+  color: #1c1917;
 }
 
 .nav-child-item.active .nav-icon {
-  color: #a855f7;
+  color: #292524;
   opacity: 1;
 }
 
@@ -380,31 +320,28 @@ body.sidebar-open {
    SIDEBAR FOOTER
    ================================================ */
 .sidebar-footer {
-  padding: 0.75rem;
-  padding-left: max(0.75rem, env(safe-area-inset-left));
-  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px;
+  border-top: 1px solid #e7e5e4;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
   margin-top: auto;
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
 .user-avatar {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
-  background: rgba(168, 85, 247, 0.1);
-  color: #a855f7;
+  background: #f5f5f4;
+  color: #57534e;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -420,16 +357,17 @@ body.sidebar-open {
 
 .user-name {
   font-weight: 500;
-  color: #fafafa;
+  color: #1c1917;
   font-size: 0.8125rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .user-plan {
   font-size: 0.6875rem;
-  color: #71717a;
+  color: #a8a29e;
   text-transform: capitalize;
 }
 
@@ -439,25 +377,17 @@ body.sidebar-open {
   justify-content: center;
   width: 44px;
   height: 44px;
-  min-width: 44px;
   background: transparent;
   border: none;
-  color: #52525b;
+  color: #a8a29e;
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
 }
 
-.logout-btn:hover,
-.logout-btn:focus-visible {
-  background: rgba(239, 68, 68, 0.08);
-  color: #f87171;
-}
-
-.logout-btn:focus-visible {
-  outline: 2px solid #f87171;
-  outline-offset: 2px;
+.logout-btn:hover {
+  background: rgba(185, 28, 28, 0.06);
+  color: #b91c1c;
 }
 
 /* ================================================
@@ -466,21 +396,13 @@ body.sidebar-open {
 .main-content {
   flex: 1;
   min-width: 0;
-  padding: calc(60px + 1rem) 1rem 1rem;
-  padding-left: max(1rem, env(safe-area-inset-left));
-  padding-right: max(1rem, env(safe-area-inset-right));
-  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  padding: calc(60px + 16px) 16px 16px;
   min-height: 100vh;
-  min-height: 100dvh;
-  background: #000;
-}
-
-.main-content:focus {
-  outline: none;
+  background: #faf9f7;
 }
 
 /* ================================================
-   TABLET BREAKPOINT (768px+)
+   TABLET (768px+)
    ================================================ */
 @media (min-width: 768px) {
   .mobile-header {
@@ -505,53 +427,31 @@ body.sidebar-open {
   .sidebar-header.desktop-only {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1.5rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 10px;
+    padding: 20px 16px;
+    border-bottom: 1px solid #e5e5e5;
   }
   
   .sidebar-header.desktop-only .logo-icon {
     font-size: 1.5rem;
-    color: #a855f7;
+    color: #6366f1;
   }
   
   .sidebar-header.desktop-only .logo-text {
     font-size: 1rem;
     font-weight: 700;
-    color: #fafafa;
-    letter-spacing: -0.025em;
-  }
-  
-  .sidebar-nav {
-    padding: 0.75rem 0.5rem;
-  }
-  
-  .sidebar-footer {
-    padding: 0.75rem;
-  }
-  
-  .nav-item {
-    padding: 0.625rem 0.75rem;
-    min-height: 40px;
-    font-size: 0.8125rem;
-  }
-  
-  .nav-icon {
-    font-size: 1.125rem;
-  }
-  
-  .nav-child-item {
-    min-height: 36px;
+    color: #0a0a0a;
+    letter-spacing: -0.02em;
   }
   
   .main-content {
     margin-left: 240px;
-    padding: 1.5rem;
+    padding: 24px;
   }
 }
 
 /* ================================================
-   DESKTOP BREAKPOINT (1024px+)
+   DESKTOP (1024px+)
    ================================================ */
 @media (min-width: 1024px) {
   .sidebar {
@@ -560,17 +460,7 @@ body.sidebar-open {
   
   .main-content {
     margin-left: 260px;
-    padding: 1.5rem 2rem;
-  }
-  
-  @media (hover: hover) and (pointer: fine) {
-    .nav-item:hover {
-      transform: translateX(2px);
-    }
-    
-    .nav-item.active:hover {
-      transform: none;
-    }
+    padding: 32px;
   }
 }
 
@@ -584,39 +474,12 @@ body.sidebar-open {
   
   .main-content {
     margin-left: 280px;
-    padding: 2rem 2.5rem;
-  }
-  
-  .sidebar-header.desktop-only {
-    padding: 1.75rem 1.25rem;
-  }
-  
-  .sidebar-nav {
-    padding: 1rem 0.75rem;
-    gap: 4px;
-  }
-  
-  .nav-item {
-    padding: 0.75rem 1rem;
-    min-height: 44px;
-    font-size: 0.875rem;
+    padding: 40px;
   }
 }
 
-/* ================================================
-   REDUCED MOTION
-   ================================================ */
 @media (prefers-reduced-motion: reduce) {
-  .sidebar,
-  .sidebar-overlay,
-  .nav-item,
-  .nav-children,
-  .nav-expand-icon,
-  .nav-badge.new,
-  .menu-toggle,
-  .sidebar-close-btn,
-  .logout-btn {
+  .sidebar, .sidebar-overlay, .nav-item, .nav-children {
     transition: none;
-    animation: none;
   }
 }
