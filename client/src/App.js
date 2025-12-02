@@ -27,6 +27,18 @@ import AutoPilotNew from './pages/AutoPilotNew';
 import AssetHub from './pages/AssetHub';
 import ContentCalendar from './pages/ContentCalendar';
 
+// SEO Landing Pages
+import {
+  AIInstagramVideoGenerator,
+  InstagramReelsGenerator,
+  AIInstagramPostGenerator,
+  AICaptionGenerator,
+  InstagramContentScheduler,
+  Features,
+  Templates,
+  Pricing
+} from './pages/landing';
+
 // Coming Soon placeholder component
 const ComingSoon = ({ title, description }) => (
   <div style={{
@@ -81,18 +93,6 @@ const ComingSoon = ({ title, description }) => (
     </span>
   </div>
 );
-
-// SEO Landing Pages
-import {
-  AIInstagramVideoGenerator,
-  InstagramReelsGenerator,
-  AIInstagramPostGenerator,
-  AICaptionGenerator,
-  InstagramContentScheduler,
-  Features,
-  Templates,
-  Pricing
-} from './pages/landing';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
