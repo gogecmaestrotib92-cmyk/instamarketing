@@ -191,20 +191,6 @@ const Home = () => {
         dateModified="2025-11-30"
       />
 
-      {/* TL;DR Section for AI/GEO - Key Takeaways */}
-      <section className="tldr-section" aria-label="Key Information">
-        <div className="tldr-container">
-          <h2 className="tldr-title">📋 Best AI Tools for Social Media Marketing - Quick Overview</h2>
-          <ul className="tldr-list">
-            <li><strong>AI Content Generation:</strong> Create Instagram Reels automatically using generative AI and machine learning</li>
-            <li><strong>AI Social Media Scheduling:</strong> Schedule posts across social channels with AI-optimized timing</li>
-            <li><strong>AI Writing Assistant:</strong> AI helps create content that resonates with your audience</li>
-            <li><strong>AI-Powered Social Listening Tools:</strong> Tools analyze engagement across multiple social media platforms</li>
-            <li><strong>Free Trial Available:</strong> Start for free - best AI tool for Instagram marketing 2025</li>
-          </ul>
-        </div>
-      </section>
-
       {/* Hero Section - H1 optimized for "Best AI Tool for Instagram Marketing 2025" */}
       <header className="hero">
         <div className="hero-content">
@@ -213,23 +199,21 @@ const Home = () => {
             Best AI Tool for <span className="gradient-text">Instagram Marketing</span> 2025
           </h1>
           <p className="hero-subtitle">
-            Use AI for social media marketing to generate viral Instagram Reels, automate social media management, 
-            and create content that actually converts. The best AI tools for social powered by AI.
+            Generate viral Instagram Reels with AI. Automate posting. Grow your audience.
           </p>
           
-          {/* Key benefits list for AI extraction */}
+          {/* Key benefits - simplified */}
           <ul className="hero-benefits" aria-label="Key Benefits">
-            <li><FiCheck aria-hidden="true" /> AI Tools for Instagram - Generate Reels with AI Content Generation</li>
-            <li><FiCheck aria-hidden="true" /> AI Social Media Management - Schedule across social channels</li>
-            <li><FiCheck aria-hidden="true" /> AI Writing Assistant - Create marketing content that converts</li>
-            <li><FiCheck aria-hidden="true" /> Free Trial - 14 days free, no credit card required</li>
+            <li><FiCheck aria-hidden="true" /> AI Video Generator for Reels</li>
+            <li><FiCheck aria-hidden="true" /> Smart Scheduling & Analytics</li>
+            <li><FiCheck aria-hidden="true" /> 14-Day Free Trial</li>
           </ul>
 
           <div className="hero-cta">
-            <Link to="/register" className="btn btn-primary btn-lg" aria-label="Start free trial - Best AI tool for Instagram">
-              Start Free Trial <FiArrowRight aria-hidden="true" />
+            <Link to="/register" className="btn btn-primary btn-xl" aria-label="Start free trial - Best AI tool for Instagram">
+              🚀 Start Free Trial <FiArrowRight aria-hidden="true" />
             </Link>
-            <Link to="/login" className="btn btn-outline btn-lg" aria-label="Log in to the platform">
+            <Link to="/login" className="btn btn-secondary-outline btn-xl" aria-label="Log in to the platform">
               Log In
             </Link>
           </div>
@@ -332,8 +316,8 @@ const Home = () => {
           </li>
         </ol>
         <div className="steps-cta">
-          <Link to="/register" className="btn btn-primary btn-lg">
-            Start Free Trial Now <FiArrowRight aria-hidden="true" />
+          <Link to="/register" className="btn btn-primary btn-xl">
+            🚀 Start Free Trial Now <FiArrowRight aria-hidden="true" />
           </Link>
         </div>
       </section>
@@ -388,8 +372,8 @@ const Home = () => {
                   </li>
                 ))}
               </ul>
-              <Link to={plan.link || "/register"} className={`btn ${plan.popular ? 'btn-primary' : 'btn-outline'} btn-full`} aria-label={`Choose ${plan.name} plan`}>
-                {plan.cta}
+              <Link to={plan.link || "/register"} className={`btn ${plan.popular ? 'btn-primary btn-xl' : 'btn-outline'} btn-full`} aria-label={`Choose ${plan.name} plan`}>
+                {plan.popular ? '🚀 ' : ''}{plan.cta}
               </Link>
             </article>
           ))}
@@ -417,8 +401,8 @@ const Home = () => {
         <h2 id="cta-heading">Ready to Use AI for Your Social Media Marketing in 2025?</h2>
         <p>Join 15,000+ marketing teams already using the best AI tools for Instagram success</p>
         <div className="cta-buttons">
-          <Link to="/register" className="btn btn-primary btn-lg">
-            Start Free Trial - Best AI Tool 2025 <FiArrowRight aria-hidden="true" />
+          <Link to="/register" className="btn btn-primary btn-xl">
+            🚀 Start Free Trial Now <FiArrowRight aria-hidden="true" />
           </Link>
         </div>
         <p className="cta-note">Free trial • No credit card required • Cancel anytime • 24/7 support</p>
