@@ -176,7 +176,7 @@ const Posts = () => {
     if (generatedImage) {
       // Store in sessionStorage for the create post page
       sessionStorage.setItem('pendingPostImage', generatedImage);
-      window.location.href = '/posts/create';
+      window.location.href = '/app/posts/create';
     }
   };
 
@@ -245,7 +245,7 @@ const Posts = () => {
   const handleUseUploadedFiles = () => {
     if (uploadedFiles.length > 0) {
       sessionStorage.setItem('pendingPostFiles', JSON.stringify(uploadedFiles));
-      window.location.href = '/posts/create';
+      window.location.href = '/app/posts/create';
     }
   };
 
@@ -470,7 +470,7 @@ const Posts = () => {
           <FiImage className="empty-icon" aria-hidden="true" />
           <h3>No posts</h3>
           <p>Create your first post to get started</p>
-          <Link to="/posts/create" className="btn btn-primary">
+          <Link to="/app/posts/create" className="btn btn-primary">
             <FiPlus aria-hidden="true" /> Create Post
           </Link>
         </div>
@@ -522,7 +522,7 @@ const Posts = () => {
                 <footer className="post-actions">
                   {['draft', 'scheduled'].includes(post.status) && (
                     <>
-                      <Link to={`/posts/edit/${post._id}`} className="btn btn-ghost btn-sm" aria-label={`Edit post ${post.caption?.substring(0, 10)}`}>
+                      <Link to={`/app/posts/edit/${post._id}`} className="btn btn-ghost btn-sm" aria-label={`Edit post ${post.caption?.substring(0, 10)}`}>
                         <FiEdit2 aria-hidden="true" /> Edit
                       </Link>
                       <button 

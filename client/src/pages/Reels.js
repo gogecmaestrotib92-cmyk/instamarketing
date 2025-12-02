@@ -98,7 +98,7 @@ const Reels = () => {
           <h1>Reels</h1>
           <p className="page-subtitle">Create and schedule engaging video content</p>
         </div>
-        <Link to="/reels/create" className="btn btn-primary" aria-label="Create new reel">
+        <Link to="/app/reels/create" className="btn btn-primary" aria-label="Create new reel">
           <FiPlus aria-hidden="true" /> Create Reel
         </Link>
       </header>
@@ -131,7 +131,7 @@ const Reels = () => {
           <FiFilm className="empty-icon" aria-hidden="true" />
           <h3>No reels</h3>
           <p>Create your first reel to get started</p>
-          <Link to="/reels/create" className="btn btn-primary">
+          <Link to="/app/reels/create" className="btn btn-primary">
             <FiPlus aria-hidden="true" /> Create Reel
           </Link>
         </div>
@@ -181,7 +181,7 @@ const Reels = () => {
                 <div className="post-actions">
                   {['draft', 'scheduled'].includes(reel.status) && (
                     <>
-                      <Link to={`/reels/edit/${reel._id}`} className="btn btn-ghost btn-sm" aria-label="Edit reel">
+                      <Link to={`/app/reels/edit/${reel._id}`} className="btn btn-ghost btn-sm" aria-label="Edit reel">
                         <FiEdit2 aria-hidden="true" /> Edit
                       </Link>
                       <button 

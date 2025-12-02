@@ -18,6 +18,7 @@ const CreatePost = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = !!id;
+  const basePath = '/app';
 
   const [formData, setFormData] = useState({
     caption: '',
@@ -50,7 +51,7 @@ const CreatePost = () => {
       setExistingMedia(post.media || []);
     } catch (error) {
       toast.error('Failed to fetch post');
-      navigate('/posts');
+      navigate(`${basePath}/posts`);
     }
   };
 
@@ -117,7 +118,7 @@ const CreatePost = () => {
         toast.success('Post published to Instagram!');
       }
 
-      navigate('/posts');
+      navigate(`${basePath}/posts`);
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to save post');
     } finally {
@@ -129,7 +130,7 @@ const CreatePost = () => {
   return (
     <main className="create-content-page">
       <header className="page-header">
-        <button className="btn btn-ghost" onClick={() => navigate('/posts')} aria-label="Back to posts">
+        <button className="btn btn-ghost" onClick={() => navigate(`${basePath}/posts`)} aria-label="Back to posts">
           <FiArrowLeft aria-hidden="true" /> Back
         </button>
         <h1>{isEditing ? 'Edit Post' : 'Create New Post'}</h1>

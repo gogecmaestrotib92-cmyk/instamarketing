@@ -17,6 +17,7 @@ import './CreateContent.css';
 
 const CreateReel = () => {
   const navigate = useNavigate();
+  const basePath = '/app';
 
   const [formData, setFormData] = useState({
     caption: '',
@@ -91,7 +92,7 @@ const CreateReel = () => {
         toast.success('Reel published to Instagram!');
       }
 
-      navigate('/reels');
+      navigate(`${basePath}/reels`);
     } catch (error) {
       toast.error(error.response?.data?.error || 'Failed to save reel');
     } finally {
@@ -103,7 +104,7 @@ const CreateReel = () => {
   return (
     <main className="create-content-page">
       <header className="page-header">
-        <button className="btn btn-ghost" onClick={() => navigate('/reels')} aria-label="Back to reels">
+        <button className="btn btn-ghost" onClick={() => navigate(`${basePath}/reels`)} aria-label="Back to reels">
           <FiArrowLeft aria-hidden="true" /> Back
         </button>
         <h1>Create New Reel</h1>
