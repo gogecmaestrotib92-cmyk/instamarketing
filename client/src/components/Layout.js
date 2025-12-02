@@ -17,9 +17,7 @@ import {
   FiPlusCircle,
   FiUser,
   FiShoppingBag,
-  FiTrendingUp,
-  FiVideo,
-  FiTarget,
+  FiBriefcase,
   FiBox,
   FiLayers,
   FiFilm,
@@ -162,11 +160,8 @@ const Layout = () => {
         // Virtual Actor
         { path: '/app/create/virtual-actor', icon: FiUser, label: 'Virtual Actor', description: 'UGC for storytelling and ads' },
         { path: '/app/create/virtual-actor-ecomm', icon: FiShoppingBag, label: 'Virtual Actor E-COMM', description: 'E-commerce UGC content' },
-        // Business
-        { type: 'divider', label: 'Business' },
-        { path: '/app/create/trending', icon: FiTrendingUp, label: 'Trending', description: 'Voiceover Video' },
-        { path: '/app/create/video', icon: FiVideo, label: 'Video', description: 'Short, impactful promo videos' },
-        { path: '/app/create/ad-creatives', icon: FiTarget, label: 'Ad Creatives', description: 'Ads for your business' },
+        // Business - single page with cards
+        { path: '/app/create/business', icon: FiBriefcase, label: 'Business', description: 'Trending, Video, Ad Creatives' },
         // E-Commerce
         { type: 'divider', label: 'E-Commerce' },
         { path: '/app/create/product-creatives', icon: FiBox, label: 'Product Creatives', description: 'Convert Products to static Ad' },

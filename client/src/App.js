@@ -26,6 +26,7 @@ import VideoEdit from './pages/VideoEdit';
 import AutoPilotNew from './pages/AutoPilotNew';
 import AssetHub from './pages/AssetHub';
 import ContentCalendar from './pages/ContentCalendar';
+import BusinessCreate from './pages/BusinessCreate';
 
 // SEO Landing Pages
 import {
@@ -189,10 +190,11 @@ function AppRoutes() {
         <Route path="create/virtual-actor" element={<ComingSoon title="Virtual Actor" description="UGC for storytelling and ads" />} />
         <Route path="create/virtual-actor-ecomm" element={<ComingSoon title="Virtual Actor E-COMM" description="E-commerce UGC content" />} />
         
-        {/* Business (under Create) */}
-        <Route path="create/trending" element={<ComingSoon title="Trending" description="Faceless subtitle videos & AI voices" />} />
-        <Route path="create/video" element={<ComingSoon title="Video" description="Short, impactful promo videos" />} />
-        <Route path="create/ad-creatives" element={<ComingSoon title="Ad Creatives" description="Ads for your business" />} />
+        {/* Business - main page with cards */}
+        <Route path="create/business" element={<BusinessCreate />} />
+        <Route path="create/business/trending" element={<ComingSoon title="Trending" description="Faceless subtitle videos & AI voices" />} />
+        <Route path="create/business/video" element={<ComingSoon title="Video" description="Short, impactful promo videos" />} />
+        <Route path="create/business/ad-creatives" element={<ComingSoon title="Ad Creatives" description="Ads for your business" />} />
         
         {/* E-Commerce (under Create) */}
         <Route path="create/product-creatives" element={<ComingSoon title="Product Creatives" description="Convert Products to static Ad" />} />
