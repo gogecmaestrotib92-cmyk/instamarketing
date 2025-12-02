@@ -39,25 +39,28 @@ class ReplicateService {
   }
 
   /**
-   * Generate video from text prompt using Kling v1.6 Standard (supports 9:16)
+   * Generate video from text prompt using Luma Ray Flash 2 (high quality, fast)
    * @param {string} prompt - Text description of the video
    * @param {object} options - Generation options
    */
   async textToVideo(prompt, options = {}) {
     try {
-      const { duration = 10, aspectRatio = '9:16' } = options;
-      console.log('🎬 Starting Replicate text-to-video generation (Kling v1.6 Standard)...');
+      const { duration = 5, aspectRatio = '9:16' } = options;
+      console.log('🎬 Starting Luma Ray Flash 2 video generation...');
       console.log('Prompt:', prompt);
       console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
 
-      // Create prediction using Kling v1.6 Standard model
-      // Supports 5s and 10s videos in 720p at 30fps, with aspect ratios including 9:16
+      // Luma Ray Flash 2 - 720p, fast generation, high quality
+      // Supports: 5 and 9 second durations (integer), various aspect ratios
+      const lumaDuration = parseInt(duration) >= 9 ? 9 : 5;
+      
       const prediction = await this.replicate.predictions.create({
-        model: 'kwaivgi/kling-v1.6-standard',
+        model: 'luma/ray-flash-2-720p',
         input: {
           prompt: prompt,
-          duration: duration,
-          aspect_ratio: aspectRatio
+          duration: lumaDuration,
+          aspect_ratio: aspectRatio,
+          loop: false
         }
       });
 
@@ -85,21 +88,24 @@ class ReplicateService {
 
   /**
    * Start async video generation (returns immediately with prediction ID)
-   * Uses Kling v1.6 Standard which supports 9:16 aspect ratio for text-to-video
+   * Uses Luma Ray Flash 2 - high quality, fast, supports 9:16
    */
   async startTextToVideo(prompt, options = {}) {
     try {
-      const { duration = 10, aspectRatio = '9:16' } = options;
-      console.log('🎬 Starting async text-to-video generation (Kling v1.6 Standard)...');
+      const { duration = 5, aspectRatio = '9:16' } = options;
+      console.log('🎬 Starting Luma Ray Flash 2 async generation...');
       console.log('Prompt:', prompt);
       console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
       
+      const lumaDuration = parseInt(duration) >= 9 ? 9 : 5;
+      
       const prediction = await this.replicate.predictions.create({
-        model: 'kwaivgi/kling-v1.6-standard',
+        model: 'luma/ray-flash-2-720p',
         input: {
           prompt: prompt,
-          duration: duration,
-          aspect_ratio: aspectRatio
+          duration: lumaDuration,
+          aspect_ratio: aspectRatio,
+          loop: false
         }
       });
 
@@ -332,22 +338,13 @@ class ReplicateService {
     return {
       models: [
         {
-          id: 'kling-v1.6-standard',
-          name: 'Kling v1.6 Standard',
-          description: 'Text-to-video, 720p at 30fps, supports 9:16 aspect ratio',
+          id: 'luma-ray-flash-2',
+          name: 'Luma Ray Flash 2',
+          description: 'High quality text-to-video, 720p, fast generation, supports 9:16',
           type: 'text-to-video',
-          speed: 'medium',
+          speed: 'fast',
           quality: 'excellent',
-          aspectRatios: ['9:16', '16:9', '1:1']
-        },
-        {
-          id: 'kling-v1.6-pro',
-          name: 'Kling v1.6 Pro',
-          description: 'Premium text-to-video with 1080p resolution',
-          type: 'text-to-video',
-          speed: 'slow',
-          quality: 'premium',
-          aspectRatios: ['9:16', '16:9', '1:1']
+          aspectRatios: ['9:16', '16:9', '1:1', '4:3', '3:4']
         },
         {
           id: 'kling-v2.1',

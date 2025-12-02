@@ -232,15 +232,22 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'Prompt je obavezan' });
       }
 
-      console.log('🎬 Starting Minimax video generation:', prompt);
+      console.log('🎬 Starting Luma Ray Flash 2 video generation:', prompt);
+      console.log('   Duration:', duration, 'Aspect Ratio:', aspectRatio);
 
       try {
-        // Start prediction without waiting (async)
+        // Use Luma Ray Flash 2 - high quality, fast, supports 9:16
+        // Model: luma/ray-flash-2-720p for 720p quality
+        // Duration must be integer: 5 or 9 seconds
+        const lumaDuration = parseInt(duration) >= 9 ? 9 : 5;
+        
         const prediction = await replicate.predictions.create({
-          model: "minimax/video-01",
+          model: "luma/ray-flash-2-720p",
           input: {
             prompt: prompt,
-            prompt_optimizer: true
+            aspect_ratio: aspectRatio,
+            duration: lumaDuration,
+            loop: false
           }
         });
 
@@ -272,9 +279,10 @@ module.exports = async (req, res) => {
       }
     }
 
-    // Check video generation status
-    if (url === '/api/ai-video/status' && req.method === 'GET') {
-      const predictionId = req.query?.id || url.split('?id=')[1];
+    // Check video generation status (supports both GET and POST)
+    if (url === '/api/ai-video/status' && (req.method === 'GET' || req.method === 'POST')) {
+      const body = req.method === 'POST' ? (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) : {};
+      const predictionId = body.id || req.query?.id || url.split('?id=')[1];
       
       if (!predictionId) {
         return res.status(400).json({ error: 'Prediction ID je obavezan' });
