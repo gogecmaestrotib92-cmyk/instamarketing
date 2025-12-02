@@ -128,6 +128,42 @@ const uploadBufferToCloudinary = async (buffer, options = {}) => {
 };
 
 /**
+ * Upload file from external URL to Cloudinary
+ * @param {string} url - External URL of the file
+ * @param {object} options - Upload options
+ * @returns {Promise<object>}
+ */
+const uploadFromUrl = async (url, options = {}) => {
+  try {
+    const defaultOptions = {
+      folder: 'instamarketing',
+      resource_type: 'auto',
+      ...options
+    };
+
+    const result = await cloudinary.uploader.upload(url, defaultOptions);
+    
+    return {
+      success: true,
+      url: result.secure_url,
+      publicId: result.public_id,
+      width: result.width,
+      height: result.height,
+      format: result.format,
+      resourceType: result.resource_type,
+      duration: result.duration,
+      bytes: result.bytes
+    };
+  } catch (error) {
+    console.error('Cloudinary upload from URL error:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+/**
  * Generate video URL with text overlay and optional audio using Cloudinary transformations
  * @param {string} videoUrl - Original video URL (must be Cloudinary URL)
  * @param {Array} textOverlays - Array of {text, position, start, end}
@@ -601,6 +637,7 @@ module.exports = {
   uploadMultipleToCloudinary,
   deleteFromCloudinary,
   uploadBufferToCloudinary,
+  uploadFromUrl,
   generateVideoWithTextOverlay,
   createVideoWithTextOverlay,
   mergeAudioIntoVideo

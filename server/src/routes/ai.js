@@ -1620,46 +1620,75 @@ router.post('/autopilot/reels/generate', async (req, res) => {
       console.log('✅ Text overlays:', textOverlays.length);
     }
     
-    // ==================== STEP 6: Render Final Video (Shotstack) ====================
+    // ==================== STEP 6: Render Final Video (Cloudinary) ====================
     let finalVideoUrl = rawVideoUrl;
+    let cloudinaryVideoPublicId = null;
+    let audioPublicId = null;
     
     const needsRender = voiceoverUrl || musicUrl || textOverlays.length > 0;
     
-    if (needsRender && shotstackClient) {
-      console.log('🎬 Step 6: Rendering final video with Shotstack...');
+    if (needsRender && cloudinaryService) {
+      console.log('🎬 Step 6: Rendering final video with Cloudinary...');
       
       try {
-        const audioUrl = voiceoverUrl || musicUrl;
-        
-        const renderResult = await shotstackClient.renderVideo(rawVideoUrl, audioUrl, textOverlays, {
-          duration: 10,
-          musicVolume: voiceoverUrl ? 0.2 : 0.8,
-          videoVolume: 0,
-          subtitleStyle: { style: 'blockbuster', color: '#ffffff', size: 'large', position: 'center' }
-        });
-        
-        if (renderResult.success && renderResult.renderId) {
-          console.log('⏳ Waiting for Shotstack render...');
-          let attempts = 0;
-          
-          while (attempts < 40) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            const status = await shotstackClient.getRenderStatus(renderResult.renderId);
-            
-            if (status.status === 'done' && status.url) {
-              finalVideoUrl = status.url;
-              console.log('✅ Final video rendered:', finalVideoUrl);
-              break;
-            } else if (status.status === 'failed') {
-              console.error('Render failed');
-              break;
-            }
-            attempts++;
+        // Step 6a: Upload the raw video to Cloudinary (if not already there)
+        if (!rawVideoUrl.includes('cloudinary.com')) {
+          console.log('   📤 Uploading video to Cloudinary...');
+          const videoUpload = await cloudinaryService.uploadFromUrl(rawVideoUrl, {
+            resource_type: 'video',
+            folder: 'autopilot/videos'
+          });
+          if (videoUpload.success) {
+            cloudinaryVideoPublicId = videoUpload.publicId;
+            rawVideoUrl = videoUpload.url;
+            console.log('   ✅ Video uploaded:', cloudinaryVideoPublicId);
+          }
+        } else {
+          // Extract public ID from existing Cloudinary URL
+          const match = rawVideoUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.\w+$/);
+          if (match) {
+            cloudinaryVideoPublicId = match[1];
           }
         }
+        
+        // Step 6b: Upload audio to Cloudinary (voiceover takes priority over music)
+        const audioToUpload = voiceoverUrl || musicUrl;
+        if (audioToUpload) {
+          console.log('   📤 Uploading audio to Cloudinary...');
+          const audioUpload = await cloudinaryService.uploadFromUrl(audioToUpload, {
+            resource_type: 'video', // Cloudinary stores audio as video type
+            folder: 'autopilot/audio'
+          });
+          if (audioUpload.success) {
+            audioPublicId = audioUpload.publicId;
+            console.log('   ✅ Audio uploaded:', audioPublicId);
+          }
+        }
+        
+        // Step 6c: Generate final video with text + audio using Cloudinary transformations
+        if (cloudinaryVideoPublicId || rawVideoUrl.includes('cloudinary.com')) {
+          const finalUrl = cloudinaryService.generateVideoWithTextOverlay(
+            rawVideoUrl,
+            textOverlays,
+            {
+              audioPublicId: audioPublicId,
+              musicVolume: voiceoverUrl ? 0.3 : 0.7 // Lower if voiceover, louder if just music
+            }
+          );
+          
+          if (finalUrl && finalUrl !== rawVideoUrl) {
+            finalVideoUrl = finalUrl;
+            console.log('✅ Final video URL generated:', finalVideoUrl);
+          }
+        }
+        
       } catch (e) {
-        console.error('Shotstack error:', e.message);
+        console.error('Cloudinary render error:', e.message);
+        // Fall back to raw video
+        finalVideoUrl = rawVideoUrl;
       }
+    } else if (!cloudinaryService) {
+      console.log('⚠️ Cloudinary not available, using raw video');
     }
     
     // ==================== STEP 7: Add to Queue ====================
