@@ -1,604 +1,265 @@
-/* ================================================
-   DASHBOARD - Warm Neutral Premium Design
-   Clean sans-serif, minimal decoration
-   ================================================ */
+/* ============================================
+   DASHBOARD - Warm Neutral Design
+   ============================================ */
 
 .dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
+  min-height: 100vh;
+  background: var(--bg-primary);
 }
 
-.dashboard-content {
-  display: flex;
-  justify-content: center;
-  padding: 48px 0;
-}
-
-/* Instagram Card */
-.instagram-card {
-  max-width: 480px;
-  width: 100%;
-  text-align: center;
-}
-
-.instagram-card .card-header {
-  justify-content: center;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.instagram-card .card-title {
-  justify-content: center;
-}
-
-.instagram-card .card-icon.instagram {
-  font-size: 2rem;
-  color: #E4405F;
-}
-
-/* Connect Prompt */
-.connect-prompt {
-  padding: 48px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.connect-prompt .connect-icon {
-  font-size: 3.5rem;
-  color: #44403c;
-  margin-bottom: 8px;
-}
-
-.connect-prompt h3 {
-  font-size: 1.375rem;
-  font-weight: 600;
-  color: #1c1917;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.connect-prompt p {
-  color: #57534e;
-  font-size: 0.9375rem;
-  margin: 0;
-  max-width: 320px;
-  line-height: 1.6;
-}
-
-.connect-prompt .btn-primary {
-  margin-top: 8px;
-  padding: 14px 36px;
-  background: #292524;
-  color: white;
-  border-radius: 8px;
-  font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.connect-prompt .btn-primary:hover {
-  background: #1c1917;
-}
-
-/* Loading */
 .dashboard-loader {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 50vh;
+  min-height: 100vh;
 }
 
 .loader-spinner {
-  width: 32px;
-  height: 32px;
-  border: 2px solid #e7e5e4;
-  border-top-color: #44403c;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--accent-primary);
   border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* Header */
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e7e5e4;
+/* Dashboard Content */
+.dashboard-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 var(--container-padding) 40px;
 }
 
-.header-text h1 {
-  font-size: 1.625rem;
-  font-weight: 600;
-  color: #1c1917;
-  margin: 0 0 6px 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.header-text p {
-  font-size: 0.875rem;
-  color: #57534e;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
-/* Buttons */
-.dashboard .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.dashboard .btn-primary {
-  background: #292524;
-  color: white;
-}
-
-.dashboard .btn-primary:hover {
-  background: #1c1917;
-}
-
-.dashboard .btn-secondary {
-  background: transparent;
-  color: #44403c;
-  border: 1px solid #d6d3d1;
-}
-
-.dashboard .btn-secondary:hover {
-  background: #f5f5f4;
-  border-color: #a8a29e;
-}
-
-.dashboard .btn-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid #d6d3d1;
-  border-radius: 8px;
-  color: #57534e;
-}
-
-.dashboard .btn-icon:hover {
-  background: #f5f5f4;
-  color: #1c1917;
-}
-
-/* KPI Section */
-.kpi-section {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
-}
-
-.kpi-card {
-  background: #ffffff;
-  border: 1px solid #e7e5e4;
-  border-radius: 10px;
-  padding: 20px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  transition: border-color 0.2s ease;
-}
-
-.kpi-card:hover {
-  border-color: #d6d3d1;
-}
-
-.kpi-icon {
-  width: 40px;
-  height: 40px;
-  background: #f5f5f4;
-  color: #44403c;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-}
-
-.kpi-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.kpi-label {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: #a8a29e;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.kpi-value {
-  font-size: 1.375rem;
-  font-weight: 600;
-  color: #1c1917;
-  line-height: 1.2;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.kpi-change {
-  font-size: 0.6875rem;
-  font-weight: 500;
-}
-
-/* Color reserved for meaningful highlights */
-.kpi-change.up { color: #047857; }
-.kpi-change.down { color: #b91c1c; }
-
-/* Main Grid */
-.main-grid {
-  display: grid;
-  grid-template-columns: 1fr 360px;
-  gap: 24px;
-  align-items: start;
-}
-
-.left-column, .right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* Cards */
+/* Card Base */
 .card {
-  background: #ffffff;
-  border: 1px solid #e7e5e4;
-  border-radius: 10px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+  transition: all 0.2s ease;
+}
+
+/* Instagram Card */
+.instagram-card {
   padding: 24px;
 }
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 20px;
 }
 
 .card-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .card-title h2 {
-  font-size: 0.9375rem;
+  font-size: 1.125rem;
   font-weight: 600;
-  color: #1c1917;
+  color: var(--text-primary);
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .card-icon {
-  font-size: 16px;
-  color: #a8a29e;
+  font-size: 1.5rem;
 }
 
 .card-icon.instagram {
-  color: #E4405F;
+  color: #E1306C;
 }
 
-.card-link {
-  display: flex;
+/* Connection Badge */
+.badge {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 0.75rem;
-  color: #a8a29e;
-  text-decoration: none;
-  transition: color 0.2s ease;
+  font-weight: 500;
 }
 
-.card-link:hover {
-  color: #44403c;
+.badge-success {
+  background: var(--success-bg);
+  color: var(--success);
 }
 
-/* Engagement Grid */
-.engagement-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+.badge-error {
+  background: var(--error-bg);
+  color: var(--error);
 }
 
-.engagement-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: #fafaf9;
-  border-radius: 8px;
-}
-
-.engagement-icon {
-  font-size: 20px;
-}
-
-/* Reserved color for meaningful icons */
-.engagement-icon.red { color: #b91c1c; }
-.engagement-icon.blue { color: #0369a1; }
-.engagement-icon.green { color: #047857; }
-.engagement-icon.purple { color: #44403c; }
-
-.engagement-value {
-  font-size: 1.0625rem;
-  font-weight: 600;
-  color: #1c1917;
-  line-height: 1.2;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.engagement-label {
-  font-size: 0.6875rem;
-  color: #a8a29e;
-}
-
-/* Chart */
-.chart-wrapper {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 140px;
-  gap: 12px;
-  padding-top: 12px;
-}
-
-.chart-col {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
-}
-
-.chart-bar-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-}
-
-.chart-val {
-  font-size: 0.625rem;
-  color: #a8a29e;
-  margin-bottom: 6px;
-}
-
-/* Progress bars use color for meaningful visualization */
-.chart-bar {
-  width: 100%;
-  max-width: 36px;
-  background: #292524;
-  border-radius: 4px 4px 0 0;
-}
-
-.chart-label {
-  font-size: 0.6875rem;
-  color: #a8a29e;
-  margin-top: 10px;
-}
-
-/* Profile */
+/* Profile Row */
 .profile-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
   margin-bottom: 16px;
 }
 
 .profile-avatar {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .profile-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
-.profile-avatar span {
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
+.profile-info {
+  flex: 1;
+  min-width: 0;
 }
-
-.profile-info { flex: 1; }
 
 .profile-username {
-  display: block;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: #0a0a0a;
+  color: var(--text-primary);
+  display: block;
   margin-bottom: 4px;
 }
 
 .profile-stats {
   display: flex;
   gap: 16px;
-  font-size: 0.75rem;
-  color: #a3a3a3;
+}
+
+.profile-stats span {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
 }
 
 .profile-stats strong {
-  color: #525252;
-  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .profile-actions {
   display: flex;
-  gap: 10px;
-  padding-top: 16px;
-  border-top: 1px solid #e5e5e5;
+  gap: 8px;
 }
 
-/* Badge */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 6px;
-}
-
-.badge-success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-}
-
-.badge-error {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-/* Posts List */
-.posts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.post-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  background: #f5f5f4;
-  border-radius: 10px;
-  transition: background 0.2s ease;
-}
-
-.post-row:hover {
-  background: #e5e5e5;
-}
-
-.post-icon {
-  width: 38px;
-  height: 38px;
-  background: #e0e7ff;
-  color: #6366f1;
-  border-radius: 8px;
+.btn-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  width: 40px;
+  height: 40px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
 }
 
-.post-content { flex: 1; min-width: 0; }
-
-.post-text {
-  font-size: 0.8125rem;
-  color: #0a0a0a;
-  margin: 0 0 4px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.btn-icon:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
 }
 
-.post-time {
-  font-size: 0.6875rem;
-  color: #a3a3a3;
-}
-
-.post-badge {
-  font-size: 0.625rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 4px;
-  text-transform: uppercase;
-}
-
-.post-badge.scheduled {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-}
-
-.post-badge.draft {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-}
-
-/* Empty State */
-.empty-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 36px 20px;
-  color: #a3a3a3;
+/* Connect Prompt */
+.connect-prompt {
   text-align: center;
+  padding: 40px 24px;
 }
 
-.empty-box svg {
-  font-size: 32px;
-  margin-bottom: 12px;
-  opacity: 0.4;
+.connect-icon {
+  font-size: 3rem;
+  color: #E1306C;
+  margin-bottom: 16px;
 }
 
-.empty-box p {
-  margin: 0;
-  font-size: 0.8125rem;
+.connect-prompt h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.connect-prompt p {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  margin: 0 0 24px 0;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+
+.btn-primary:hover {
+  background: var(--btn-primary-hover);
+  transform: translateY(-1px);
 }
 
 /* Responsive */
-@media (max-width: 1100px) {
-  .kpi-section { grid-template-columns: repeat(3, 1fr); }
-  .main-grid { grid-template-columns: 1fr; }
-  .right-column { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-}
-
-@media (max-width: 768px) {
-  .dashboard { gap: 24px; }
-  .dashboard-header { flex-direction: column; align-items: flex-start; gap: 16px; }
-  .header-actions { width: 100%; }
-  .header-actions .btn { flex: 1; justify-content: center; }
-  .kpi-section { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .engagement-grid { grid-template-columns: repeat(2, 1fr); }
-  .right-column { grid-template-columns: 1fr; }
-}
-
 @media (max-width: 640px) {
-  .kpi-section {
-    display: flex;
-    overflow-x: auto;
-    gap: 12px;
-    margin: 0 -12px;
-    padding: 0 12px 12px;
-    scrollbar-width: none;
+  .dashboard-content {
+    padding: 0 16px 32px;
   }
-  .kpi-section::-webkit-scrollbar { display: none; }
-  .kpi-card { min-width: 150px; flex-shrink: 0; }
-  .card { padding: 18px; }
+  
+  .instagram-card {
+    padding: 20px;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .profile-row {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .profile-stats {
+    justify-content: center;
+  }
+  
+  .profile-actions {
+    width: 100%;
+    justify-content: center;
+  }
 }

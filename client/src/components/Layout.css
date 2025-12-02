@@ -18,7 +18,7 @@
 .layout {
   display: flex;
   min-height: 100vh;
-  background: #faf9f7;
+  background: var(--bg-primary);
 }
 
 /* ================================================
@@ -31,8 +31,8 @@
   left: 0;
   right: 0;
   height: 60px;
-  background: #ffffff;
-  border-bottom: 1px solid #e7e5e4;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
   padding: 0 16px;
   align-items: center;
   gap: 12px;
@@ -48,7 +48,7 @@
   padding: 0;
   background: transparent;
   border: none;
-  color: #57534e;
+  color: var(--text-secondary);
   font-size: 1.5rem;
   cursor: pointer;
   border-radius: 8px;
@@ -56,8 +56,8 @@
 }
 
 .menu-toggle:hover {
-  background: #f5f5f4;
-  color: #1c1917;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .mobile-logo {
@@ -66,13 +66,13 @@
   gap: 8px;
   font-weight: 600;
   font-size: 1rem;
-  color: #1c1917;
+  color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 .mobile-logo .logo-icon {
   font-size: 1.35rem;
-  color: #44403c;
+  color: var(--accent-secondary);
 }
 
 /* ================================================
@@ -81,7 +81,7 @@
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(28, 25, 23, 0.3);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 1001;
   opacity: 0;
   visibility: hidden;
@@ -109,14 +109,14 @@ body.sidebar-open {
   left: 0;
   width: min(280px, 85vw);
   height: 100vh;
-  background: #ffffff;
-  border-right: 1px solid #e7e5e4;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   z-index: 1002;
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 2px 0 16px rgba(28, 25, 23, 0.06);
+  box-shadow: var(--shadow-lg);
   overflow-y: auto;
 }
 
@@ -129,7 +129,7 @@ body.sidebar-open {
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  border-bottom: 1px solid #e7e5e4;
+  border-bottom: 1px solid var(--border-light);
   min-height: 60px;
 }
 
@@ -141,13 +141,13 @@ body.sidebar-open {
 
 .sidebar-header-content .logo-icon {
   font-size: 1.5rem;
-  color: #44403c;
+  color: var(--accent-secondary);
 }
 
 .sidebar-header-content .logo-text {
   font-size: 1rem;
   font-weight: 600;
-  color: #1c1917;
+  color: var(--text-primary);
   letter-spacing: -0.01em;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -158,9 +158,9 @@ body.sidebar-open {
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: #f5f5f4;
+  background: var(--bg-secondary);
   border: none;
-  color: #57534e;
+  color: var(--text-secondary);
   font-size: 1.5rem;
   cursor: pointer;
   border-radius: 8px;
@@ -168,8 +168,8 @@ body.sidebar-open {
 }
 
 .sidebar-close-btn:hover {
-  background: #e7e5e4;
-  color: #1c1917;
+  background: var(--border-light);
+  color: var(--text-primary);
 }
 
 .sidebar-header.desktop-only {
@@ -200,7 +200,7 @@ body.sidebar-open {
   padding: 12px 14px;
   min-height: 44px;
   border-radius: 8px;
-  color: #57534e;
+  color: var(--text-secondary);
   transition: all 0.15s ease;
   font-weight: 500;
   font-size: 0.875rem;
@@ -220,8 +220,8 @@ body.sidebar-open {
 }
 
 .nav-item:hover {
-  background: #f5f5f4;
-  color: #1c1917;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .nav-item:hover .nav-icon {
@@ -229,13 +229,13 @@ body.sidebar-open {
 }
 
 .nav-item.active {
-  background: #f5f5f4;
-  color: #1c1917;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .nav-item.active .nav-icon {
   opacity: 1;
-  color: #292524;
+  color: var(--accent-primary);
 }
 
 /* Badge - Reserved color for meaningful tags */
@@ -244,21 +244,21 @@ body.sidebar-open {
   padding: 2px 8px;
   font-size: 0.625rem;
   font-weight: 600;
-  background: #f5f5f4;
-  color: #57534e;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .nav-badge.new {
-  background: #292524;
-  color: #ffffff;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
 }
 
 .nav-badge.pro {
-  background: #292524;
-  color: #ffffff;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
 }
 
 /* Expand icon */
@@ -293,7 +293,7 @@ body.sidebar-open {
 .nav-child-item {
   padding-left: 44px !important;
   font-size: 0.8125rem;
-  color: #57534e;
+  color: var(--text-secondary);
   min-height: 40px;
 }
 
@@ -302,17 +302,17 @@ body.sidebar-open {
 }
 
 .nav-child-item:hover {
-  background: #f5f5f4;
-  color: #1c1917;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .nav-child-item.active {
-  background: #f5f5f4;
-  color: #1c1917;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .nav-child-item.active .nav-icon {
-  color: #292524;
+  color: var(--accent-primary);
   opacity: 1;
 }
 
@@ -321,11 +321,12 @@ body.sidebar-open {
    ================================================ */
 .sidebar-footer {
   padding: 12px;
-  border-top: 1px solid #e7e5e4;
+  border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   gap: 12px;
   margin-top: auto;
+  flex-wrap: wrap;
 }
 
 .user-info {
@@ -340,8 +341,8 @@ body.sidebar-open {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: #f5f5f4;
-  color: #57534e;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -357,7 +358,7 @@ body.sidebar-open {
 
 .user-name {
   font-weight: 500;
-  color: #1c1917;
+  color: var(--text-primary);
   font-size: 0.8125rem;
   white-space: nowrap;
   overflow: hidden;
@@ -367,7 +368,7 @@ body.sidebar-open {
 
 .user-plan {
   font-size: 0.6875rem;
-  color: #a8a29e;
+  color: var(--text-muted);
   text-transform: capitalize;
 }
 
@@ -379,15 +380,82 @@ body.sidebar-open {
   height: 44px;
   background: transparent;
   border: none;
-  color: #a8a29e;
+  color: var(--text-muted);
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .logout-btn:hover {
-  background: rgba(185, 28, 28, 0.06);
-  color: #b91c1c;
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+/* ================================================
+   THEME TOGGLE
+   ================================================ */
+.theme-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 56px;
+  height: 28px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 50px;
+  cursor: pointer;
+  padding: 2px;
+  margin-right: 12px;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  border-color: var(--border-medium);
+}
+
+.theme-toggle-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.theme-toggle-icon:first-child {
+  left: 4px;
+  color: var(--text-muted);
+}
+
+.theme-toggle-icon:last-of-type {
+  right: 4px;
+  color: var(--text-muted);
+}
+
+.theme-toggle-icon.active {
+  color: var(--accent-primary);
+}
+
+.theme-toggle-slider {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: var(--bg-card);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  left: 3px;
+}
+
+[data-theme="dark"] .theme-toggle-slider {
+  transform: translateX(26px);
+}
+
+[data-theme="dark"] .theme-toggle {
+  background: var(--bg-tertiary);
 }
 
 /* ================================================
@@ -398,7 +466,7 @@ body.sidebar-open {
   min-width: 0;
   padding: calc(60px + 16px) 16px 16px;
   min-height: 100vh;
-  background: #faf9f7;
+  background: var(--bg-primary);
 }
 
 /* ================================================
@@ -429,18 +497,18 @@ body.sidebar-open {
     align-items: center;
     gap: 10px;
     padding: 20px 16px;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid var(--border-light);
   }
   
   .sidebar-header.desktop-only .logo-icon {
     font-size: 1.5rem;
-    color: #6366f1;
+    color: var(--accent-secondary);
   }
   
   .sidebar-header.desktop-only .logo-text {
     font-size: 1rem;
     font-weight: 700;
-    color: #0a0a0a;
+    color: var(--text-primary);
     letter-spacing: -0.02em;
   }
   

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { 
   FiHome, 
   FiImage, 
@@ -14,13 +15,16 @@ import {
   FiEdit3,
   FiCpu,
   FiPlay,
-  FiGrid
+  FiGrid,
+  FiSun,
+  FiMoon
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import './Layout.css';
 
 const Layout = () => {
   const { user, logout } = useAuth();
+  const { toggleTheme, isDark } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
@@ -297,6 +301,22 @@ const Layout = () => {
         </nav>
 
         <div className="sidebar-footer">
+          {/* Theme Toggle */}
+          <button 
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={isDark ? 'Light mode' : 'Dark mode'}
+          >
+            <span className={`theme-toggle-icon ${isDark ? 'active' : ''}`}>
+              <FiMoon aria-hidden="true" />
+            </span>
+            <span className={`theme-toggle-icon ${!isDark ? 'active' : ''}`}>
+              <FiSun aria-hidden="true" />
+            </span>
+            <span className="theme-toggle-slider" />
+          </button>
+          
           <div className="user-info">
             <div className="user-avatar" aria-hidden="true">
               {user?.name?.charAt(0).toUpperCase() || 'U'}

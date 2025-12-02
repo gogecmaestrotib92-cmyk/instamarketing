@@ -11,9 +11,9 @@
 }
 
 /* ============================================================
-   CSS CUSTOM PROPERTIES - Warm Neutral Palette
+   CSS CUSTOM PROPERTIES - Light Theme (Warm Neutral)
    ============================================================ */
-:root {
+:root, [data-theme="light"] {
   /* Warm Neutral Background Palette */
   --bg-primary: #faf9f7;
   --bg-secondary: #f5f5f4;
@@ -86,6 +86,61 @@
   /* Safe Areas */
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ============================================================
+   CSS CUSTOM PROPERTIES - Dark Theme
+   ============================================================ */
+[data-theme="dark"] {
+  /* Dark Background Palette */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-tertiary: #171717;
+  --bg-card: #141414;
+  --bg-card-hover: #1a1a1a;
+  --bg-subtle: #0f0f0f;
+  
+  /* Light Typography for Dark Mode */
+  --text-primary: #fafafa;
+  --text-secondary: #a3a3a3;
+  --text-muted: #737373;
+  --text-light: #525252;
+  
+  /* Accent Colors for Dark Mode */
+  --accent-primary: #fafafa;
+  --accent-secondary: #e5e5e5;
+  --accent-tertiary: #a3a3a3;
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --gradient-subtle: linear-gradient(135deg, #fafafa 0%, #e5e5e5 100%);
+  
+  /* Functional Colors - Same but adjusted for dark */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.12);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --error: #ef4444;
+  --error-bg: rgba(239, 68, 68, 0.12);
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.12);
+  
+  /* Dark Borders */
+  --border-light: #262626;
+  --border-medium: #333333;
+  --border-dark: #404040;
+  
+  /* Button Colors - White for CTAs in dark mode */
+  --btn-primary-bg: #fafafa;
+  --btn-primary-text: #0a0a0a;
+  --btn-primary-hover: #e5e5e5;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #e5e5e5;
+  --btn-secondary-border: #333333;
+  
+  /* Shadows - Subtle glow for dark mode */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* ============================================================

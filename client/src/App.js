@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './styles/mobile-utils.css';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import Layout from './components/Layout';
 import SEO from './components/SEO';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -173,29 +174,39 @@ function AppRoutes() {
   );
 }
 
+function AppContent() {
+  const { theme } = useTheme();
+  
+  return (
+    <Router>
+      <SEO />
+      <AppRoutes />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={theme}
+      />
+    </Router>
+  );
+}
+
 function App() {
   return (
     <HelmetProvider>
-      <AuthProvider>
-        <ErrorBoundary>
-          <Router>
-            <SEO />
-            <AppRoutes />
-            <ToastContainer
-              position="top-right"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="dark"
-            />
-          </Router>
-        </ErrorBoundary>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
     </HelmetProvider>
   );
 }
