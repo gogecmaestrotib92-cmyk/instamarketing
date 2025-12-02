@@ -37,13 +37,6 @@ const Layout = () => {
   const firstFocusableRef = useRef(null);
   const lastFocusableRef = useRef(null);
 
-  // Auto-expand parent when child is active (only on initial load or route change)
-  useEffect(() => {
-    if (location.pathname.startsWith('/app/create')) {
-      setExpandedItems(prev => ({ ...prev, 'create-new': true }));
-    }
-  }, [location.pathname]);
-
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
@@ -152,6 +145,7 @@ const Layout = () => {
       icon: FiPlusCircle, 
       label: 'Create New',
       key: 'create-new',
+      emphasized: 'primary',
       children: [
         // Virtual Actor
         { path: '/app/create/virtual-actor', icon: FiUser, label: 'Virtual Actor', description: 'UGC for storytelling and ads' },
@@ -162,7 +156,7 @@ const Layout = () => {
         { path: '/app/create/ecommerce', icon: FiShoppingBag, label: 'E-Commerce', description: 'Product creatives, videos & more' }
       ]
     },
-    { path: '/app/autopilot', icon: FiCpu, label: 'AI Auto-Pilot', badge: 'NEW' },
+    { path: '/app/autopilot', icon: FiCpu, label: 'AI Auto-Pilot', badge: 'NEW', emphasized: 'secondary' },
     { path: '/app/asset-hub', icon: FiFolder, label: 'Asset Hub' },
     { path: '/app/calendar', icon: FiCalendar, label: 'Content Calendar' },
     { path: '/app/settings', icon: FiSettings, label: 'Settings' }
@@ -232,11 +226,11 @@ const Layout = () => {
 
         <nav className="sidebar-nav" role="navigation">
           {navItems.map((item, index) => (
-            <div key={item.path} className="nav-item-wrapper">
+            <div key={item.path} className={`nav-item-wrapper ${item.emphasized ? `emphasized-${item.emphasized}` : ''}`}>
               {item.children ? (
                 <>
                   <button 
-                    className={`nav-item nav-item-parent ${location.pathname.startsWith(item.path) ? 'active' : ''}`}
+                    className={`nav-item nav-item-parent ${location.pathname.startsWith(item.path) ? 'active' : ''} ${item.emphasized ? `nav-emphasized-${item.emphasized}` : ''}`}
                     onClick={() => toggleExpand(item.key)}
                     aria-expanded={expandedItems[item.key]}
                     aria-controls={`nav-children-${item.key}`}
@@ -282,7 +276,7 @@ const Layout = () => {
               ) : (
                 <NavLink
                   to={item.path}
-                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''} ${item.emphasized ? `nav-emphasized-${item.emphasized}` : ''}`}
                   onClick={closeSidebar}
                   ref={index === 0 ? firstFocusableRef : null}
                 >

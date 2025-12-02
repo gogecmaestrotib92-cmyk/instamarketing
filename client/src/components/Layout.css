@@ -238,6 +238,67 @@ body.sidebar-open {
   color: var(--accent-primary);
 }
 
+/* Emphasized Nav Items - Primary (Create New) */
+.nav-emphasized-primary {
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary, #8b5cf6) 100%);
+  color: white !important;
+  font-weight: 600;
+  border-radius: 10px;
+  margin: 4px 12px;
+  padding: 14px 16px !important;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  transition: all 0.3s ease;
+}
+
+.nav-emphasized-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+  background: linear-gradient(135deg, var(--accent-secondary, #8b5cf6) 0%, var(--accent-primary) 100%);
+}
+
+.nav-emphasized-primary .nav-icon {
+  color: white !important;
+  opacity: 1;
+}
+
+.nav-emphasized-primary .nav-expand-icon {
+  color: white !important;
+}
+
+/* Emphasized Nav Items - Secondary (AI Auto-Pilot) */
+.nav-emphasized-secondary {
+  background: var(--bg-secondary);
+  border: 2px solid var(--accent-primary);
+  color: var(--accent-primary) !important;
+  font-weight: 600;
+  border-radius: 10px;
+  margin: 4px 12px;
+  padding: 12px 14px !important;
+  transition: all 0.3s ease;
+}
+
+.nav-emphasized-secondary:hover {
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.nav-emphasized-secondary .nav-icon {
+  color: var(--accent-primary) !important;
+  opacity: 1;
+}
+
+.nav-emphasized-secondary .nav-badge {
+  background: var(--accent-primary);
+  color: white;
+}
+
+/* Wrapper spacing for emphasized items */
+.emphasized-primary,
+.emphasized-secondary {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
 /* Badge - Reserved color for meaningful tags */
 .nav-badge {
   margin-left: auto;
