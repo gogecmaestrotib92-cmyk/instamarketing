@@ -140,6 +140,7 @@ function AppRoutes() {
         <Route path="reels/create" element={<CreateReel />} />
         <Route path="reels/edit/:id" element={<CreateReel />} />
         <Route path="ai-video" element={<AIVideo />} />
+        <Route path="ai-video/generate" element={<AdvancedVideoGenerator />} />
         <Route path="ai-video/edit" element={<VideoEdit />} />
         <Route path="ai-tools" element={<AITools />} />
         <Route path="advanced-video" element={<AdvancedVideoGenerator />} />
