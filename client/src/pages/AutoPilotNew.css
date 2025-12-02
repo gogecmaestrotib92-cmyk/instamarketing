@@ -225,7 +225,13 @@
   to { transform: rotate(360deg); }
 }
 
-/* Regenerate Button */
+/* Topics Action Buttons */
+.topics-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
 .btn-regenerate {
   display: inline-flex;
   align-items: center;
@@ -238,7 +244,6 @@
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 24px;
 }
 
 .btn-regenerate:hover {
@@ -250,6 +255,25 @@
 .btn-regenerate:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-add-topic {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--accent-primary);
+  border: none;
+  border-radius: 8px;
+  color: var(--btn-primary-text);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-topic:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 /* Topics Counter */

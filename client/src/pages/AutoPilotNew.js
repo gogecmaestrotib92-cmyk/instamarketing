@@ -15,7 +15,8 @@ import {
   FiRefreshCw,
   FiZap,
   FiTarget,
-  FiSettings
+  FiSettings,
+  FiPlus
 } from 'react-icons/fi';
 import api from '../services/api';
 import './AutoPilotNew.css';
@@ -317,17 +318,26 @@ const AutoPilotNew = () => {
                 ))}
               </div>
 
-              {/* Regenerate Button */}
-              {topics[0].trim() && (
+              {/* Action Buttons */}
+              <div className="topics-actions">
+                {topics[0].trim() && (
+                  <button 
+                    className="btn-regenerate"
+                    onClick={regenerateTopics}
+                    disabled={isGeneratingTopics}
+                  >
+                    <FiRefreshCw className={isGeneratingTopics ? 'spin' : ''} />
+                    More Related Topics
+                  </button>
+                )}
                 <button 
-                  className="btn-regenerate"
-                  onClick={regenerateTopics}
-                  disabled={isGeneratingTopics}
+                  className="btn-add-topic"
+                  onClick={() => setTopics([...topics, ''])}
                 >
-                  <FiRefreshCw className={isGeneratingTopics ? 'spin' : ''} />
-                  Regenerate Related Topics
+                  <FiPlus />
+                  Add Topic
                 </button>
-              )}
+              </div>
 
               <div className="topics-counter">
                 <span className={filledTopicsCount >= 9 ? 'complete' : ''}>
