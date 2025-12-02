@@ -300,11 +300,11 @@
 /* New icon-based step design */
 .home-page .step-icon-wrapper {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   margin: 0 auto 1.5rem;
   background: linear-gradient(135deg, rgba(225, 48, 108, 0.1), rgba(131, 58, 180, 0.1));
-  border-radius: 16px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -316,7 +316,7 @@
   content: '';
   position: absolute;
   inset: -2px;
-  border-radius: 18px;
+  border-radius: 22px;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   opacity: 0;
   z-index: -1;
@@ -324,26 +324,29 @@
 }
 
 .home-page .step-icon {
-  font-size: 1.75rem;
+  font-size: 2rem;
   color: var(--primary);
   transition: all 0.3s ease;
 }
 
+/* Step Number Badge - Large and Prominent */
 .home-page .step-badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 22px;
-  height: 22px;
+  top: -12px;
+  right: -12px;
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   border-radius: 50%;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(225, 48, 108, 0.4);
+  box-shadow: 0 4px 15px rgba(225, 48, 108, 0.5);
+  border: 3px solid var(--bg-dark);
+  z-index: 2;
 }
 
 .home-page .step:hover .step-icon-wrapper {
@@ -362,7 +365,8 @@
 }
 
 .home-page .step:hover .step-badge {
-  transform: scale(1.1);
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(225, 48, 108, 0.6);
 }
 
 .home-page .step h3 {

@@ -626,6 +626,75 @@ router.get('/video/models', (req, res) => {
   res.json(replicateService.getModels());
 });
 
+// ==================== Image Generation Routes ====================
+
+/**
+ * Generate image from text prompt using Flux Schnell
+ * POST /api/ai/image/generate
+ */
+router.post('/image/generate', async (req, res) => {
+  try {
+    const { prompt, aspectRatio = '1:1', numOutputs = 1, outputFormat = 'webp', outputQuality = 90 } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    console.log('🖼️ Generating image with Flux Schnell...');
+    console.log('Prompt:', prompt);
+    console.log('Aspect Ratio:', aspectRatio);
+
+    const result = await replicateService.textToImage(prompt, {
+      aspectRatio,
+      numOutputs,
+      outputFormat,
+      outputQuality
+    });
+
+    if (!result.success) {
+      return res.status(500).json({ error: result.error });
+    }
+
+    res.json({
+      success: true,
+      imageUrl: result.imageUrl,
+      allImages: result.allImages,
+      predictionId: result.predictionId
+    });
+  } catch (error) {
+    console.error('Image generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Start async image generation
+ * POST /api/ai/image/generate/async
+ */
+router.post('/image/generate/async', async (req, res) => {
+  try {
+    const { prompt, aspectRatio = '1:1', numOutputs = 1, outputFormat = 'webp', outputQuality = 90 } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    console.log('🖼️ Starting async image generation with Flux Schnell...');
+
+    const result = await replicateService.startTextToImage(prompt, {
+      aspectRatio,
+      numOutputs,
+      outputFormat,
+      outputQuality
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Async image generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ==================== Video Composer Routes ====================
 
 /**
@@ -2088,9 +2157,57 @@ router.post('/autopilot/post/generate', async (req, res) => {
       caption = `Check out this amazing ${niche} content! ✨`;
     }
     
-    // TODO: Generate image with AI (DALL-E or Stable Diffusion)
-    // For now, use a placeholder
-    const imageUrl = `https://source.unsplash.com/1080x1080/?${niche},${style}`;
+    // Generate image prompt for Flux Schnell
+    let imagePrompt = '';
+    try {
+      // Create a detailed image prompt based on niche and style
+      const promptResult = await openaiService.chat([
+        {
+          role: 'system',
+          content: `You are an expert at creating image prompts for AI image generation. Create a single, detailed prompt for generating a stunning Instagram post image. Focus on visual details, lighting, colors, and composition. Keep it under 200 words. Do NOT include any text or words in the image. The style should be ${style}.`
+        },
+        {
+          role: 'user',
+          content: `Create an image prompt for a ${niche} Instagram post in ${style} style. Topics to consider: ${settings?.topics?.join(', ') || niche}. The image should be eye-catching and scroll-stopping for Instagram.`
+        }
+      ]);
+      
+      if (promptResult.success) {
+        imagePrompt = promptResult.content;
+      }
+    } catch (e) {
+      console.log('Image prompt generation failed, using fallback:', e.message);
+    }
+    
+    // Fallback prompt if AI generation failed
+    if (!imagePrompt) {
+      imagePrompt = `A stunning ${style} ${niche} image for Instagram. Professional photography, vibrant colors, beautiful composition, high quality, 4K, trending on Instagram, visually striking, no text`;
+    }
+    
+    console.log('📝 Image prompt:', imagePrompt);
+    
+    // Generate image with Flux Schnell via Replicate
+    let imageUrl = '';
+    try {
+      const replicateService = require('../services/replicate');
+      const imageResult = await replicateService.textToImage(imagePrompt, {
+        aspectRatio: '1:1', // Square for Instagram posts
+        outputFormat: 'webp',
+        outputQuality: 95
+      });
+      
+      if (imageResult.success && imageResult.imageUrl) {
+        imageUrl = imageResult.imageUrl;
+        console.log('✅ Flux Schnell image generated:', imageUrl);
+      } else {
+        throw new Error(imageResult.error || 'Image generation failed');
+      }
+    } catch (e) {
+      console.error('❌ Flux Schnell generation failed:', e.message);
+      // Fallback to Unsplash if Replicate fails
+      imageUrl = `https://source.unsplash.com/1080x1080/?${niche},${style}`;
+      console.log('⚠️ Using Unsplash fallback:', imageUrl);
+    }
     
     // Get existing scheduled times
     const existingTimes = autopilotState.post.queue.map(p => p.scheduledAt);
@@ -2107,7 +2224,8 @@ router.post('/autopilot/post/generate', async (req, res) => {
       settings: {
         niche,
         style
-      }
+      },
+      imagePrompt // Store the prompt for reference
     };
     
     // Add to queue

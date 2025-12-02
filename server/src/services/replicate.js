@@ -332,11 +332,121 @@ class ReplicateService {
   }
 
   /**
+   * Generate image from text prompt using Flux Schnell (fast, high quality)
+   * @param {string} prompt - Text description of the image
+   * @param {object} options - Generation options
+   */
+  async textToImage(prompt, options = {}) {
+    try {
+      const { 
+        aspectRatio = '1:1', 
+        numOutputs = 1,
+        outputFormat = 'webp',
+        outputQuality = 90 
+      } = options;
+      
+      console.log('🖼️ Starting Flux Schnell image generation...');
+      console.log('Prompt:', prompt);
+      console.log('Aspect Ratio:', aspectRatio);
+
+      // Flux Schnell - Fast, high quality text-to-image
+      const prediction = await this.replicate.predictions.create({
+        model: 'black-forest-labs/flux-schnell',
+        input: {
+          prompt: prompt,
+          aspect_ratio: aspectRatio,
+          num_outputs: numOutputs,
+          output_format: outputFormat,
+          output_quality: outputQuality,
+          go_fast: true,
+          megapixels: '1'
+        }
+      });
+
+      console.log('📝 Image prediction created:', prediction.id);
+      
+      // Wait for completion
+      const result = await this.waitForPrediction(prediction.id);
+      
+      if (result.success) {
+        console.log('✅ Image generation complete!');
+        const imageUrl = Array.isArray(result.output) ? result.output[0] : result.output;
+        return {
+          success: true,
+          imageUrl: imageUrl,
+          predictionId: prediction.id,
+          allImages: result.output
+        };
+      } else {
+        throw new Error(result.error || 'Image generation failed');
+      }
+
+    } catch (error) {
+      console.error('Flux Schnell image generation error:', error.message);
+      return this.handleError(error);
+    }
+  }
+
+  /**
+   * Start async image generation (returns immediately with prediction ID)
+   * Uses Flux Schnell - fast, high quality text-to-image
+   */
+  async startTextToImage(prompt, options = {}) {
+    try {
+      const { 
+        aspectRatio = '1:1', 
+        numOutputs = 1,
+        outputFormat = 'webp',
+        outputQuality = 90 
+      } = options;
+      
+      console.log('🖼️ Starting Flux Schnell async image generation...');
+      console.log('Prompt:', prompt);
+      console.log('Aspect Ratio:', aspectRatio);
+      
+      const prediction = await this.replicate.predictions.create({
+        model: 'black-forest-labs/flux-schnell',
+        input: {
+          prompt: prompt,
+          aspect_ratio: aspectRatio,
+          num_outputs: numOutputs,
+          output_format: outputFormat,
+          output_quality: outputQuality,
+          go_fast: true,
+          megapixels: '1'
+        }
+      });
+
+      console.log('📝 Image prediction created:', prediction.id, 'Status:', prediction.status);
+
+      return {
+        success: true,
+        predictionId: prediction.id,
+        status: prediction.status,
+        message: 'Image generation started. Use /api/ai-video/status?id=<id> to check progress.'
+      };
+
+    } catch (error) {
+      console.error('Start text-to-image error:', error.message);
+      return this.handleError(error);
+    }
+  }
+
+  /**
    * Get available models info
    */
   getModels() {
     return {
       models: [
+        {
+          id: 'flux-schnell',
+          name: 'Flux Schnell',
+          description: 'Fast, high quality text-to-image by Black Forest Labs',
+          type: 'text-to-image',
+          speed: 'very-fast',
+          quality: 'excellent',
+          aspectRatios: ['1:1', '16:9', '21:9', '3:2', '2:3', '4:5', '5:4', '3:4', '4:3', '9:16', '9:21']
+        },
         {
           id: 'luma-ray-flash-2',
           name: 'Luma Ray Flash 2',

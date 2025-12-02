@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { postsAPI } from '../services/api';
+import api, { postsAPI } from '../services/api';
 import { 
   FiPlus, 
   FiImage, 
@@ -11,7 +11,12 @@ import {
   FiCheck,
   FiX,
   FiHeart,
-  FiMessageCircle
+  FiMessageCircle,
+  FiUpload,
+  FiZap,
+  FiLoader,
+  FiDownload,
+  FiCopy
 } from 'react-icons/fi';
 import { toast } from 'react-toastify';
 import SEO from '../components/SEO';
@@ -22,6 +27,20 @@ const Posts = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [pagination, setPagination] = useState({});
+  
+  // AI Image Generator State
+  const [showImageGenerator, setShowImageGenerator] = useState(false);
+  const [imagePrompt, setImagePrompt] = useState('');
+  const [imageStyle, setImageStyle] = useState('photorealistic');
+  const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState(null);
+  
+  // File Upload State
+  const [showUploader, setShowUploader] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchPosts();
@@ -80,6 +99,156 @@ const Posts = () => {
     );
   };
 
+  // AI Image Generation
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) {
+      toast.error('Please enter a prompt');
+      return;
+    }
+    
+    setGeneratingImage(true);
+    setGeneratedImage(null);
+    
+    try {
+      // Build enhanced prompt with style
+      const stylePrompts = {
+        photorealistic: 'photorealistic, professional photography, high quality, 4K, detailed',
+        aesthetic: 'aesthetic, beautiful, artistic, Instagram-worthy, trendy',
+        minimalist: 'minimalist, clean, simple, modern, elegant',
+        vibrant: 'vibrant colors, bold, eye-catching, dynamic, energetic',
+        cinematic: 'cinematic, dramatic lighting, movie-like, atmospheric',
+        vintage: 'vintage, retro, nostalgic, film grain, warm tones'
+      };
+      
+      const fullPrompt = `${imagePrompt}. ${stylePrompts[imageStyle] || stylePrompts.photorealistic}. No text or words in the image.`;
+      
+      const response = await api.post('/ai/image/generate', {
+        prompt: fullPrompt,
+        aspectRatio: aspectRatio,
+        outputQuality: 95
+      });
+      
+      if (response.data.success && response.data.imageUrl) {
+        setGeneratedImage(response.data.imageUrl);
+        toast.success('Image generated successfully!');
+      } else {
+        throw new Error(response.data.error || 'Failed to generate image');
+      }
+    } catch (error) {
+      console.error('Image generation error:', error);
+      toast.error(error.response?.data?.error || error.message || 'Failed to generate image');
+    } finally {
+      setGeneratingImage(false);
+    }
+  };
+
+  // Copy image URL
+  const handleCopyImageUrl = () => {
+    if (generatedImage) {
+      navigator.clipboard.writeText(generatedImage);
+      toast.success('Image URL copied!');
+    }
+  };
+
+  // Download generated image
+  const handleDownloadImage = async () => {
+    if (!generatedImage) return;
+    
+    try {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ai-generated-${Date.now()}.webp`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success('Image downloaded!');
+    } catch (error) {
+      toast.error('Failed to download image');
+    }
+  };
+
+  // Use generated image in new post
+  const handleUseInPost = () => {
+    if (generatedImage) {
+      // Store in sessionStorage for the create post page
+      sessionStorage.setItem('pendingPostImage', generatedImage);
+      window.location.href = '/posts/create';
+    }
+  };
+
+  // File Upload handlers
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    handleFiles(files);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleFiles = async (files) => {
+    const validFiles = files.filter(file => {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      
+      if (!isImage && !isVideo) {
+        toast.error(`${file.name} is not a valid image or video`);
+        return false;
+      }
+      if (file.size > maxSize) {
+        toast.error(`${file.name} is too large (max 50MB)`);
+        return false;
+      }
+      return true;
+    });
+    
+    if (validFiles.length === 0) return;
+    
+    setUploading(true);
+    
+    try {
+      const formData = new FormData();
+      validFiles.forEach(file => {
+        formData.append('files', file);
+      });
+      
+      const response = await api.post('/media/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      if (response.data.files) {
+        setUploadedFiles(prev => [...prev, ...response.data.files]);
+        toast.success(`${validFiles.length} file(s) uploaded!`);
+      }
+    } catch (error) {
+      toast.error('Failed to upload files');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveUploadedFile = (index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUseUploadedFiles = () => {
+    if (uploadedFiles.length > 0) {
+      sessionStorage.setItem('pendingPostFiles', JSON.stringify(uploadedFiles));
+      window.location.href = '/posts/create';
+    }
+  };
+
   return (
     <main className="posts-page">
       <SEO 
@@ -98,10 +267,178 @@ const Posts = () => {
           <h1>Posts</h1>
           <p className="page-subtitle">Manage and schedule your Instagram posts</p>
         </div>
-        <Link to="/posts/create" className="btn btn-primary" aria-label="Create new post">
-          <FiPlus aria-hidden="true" /> Create Post
-        </Link>
+        <div className="header-actions">
+          <button 
+            className="btn btn-secondary"
+            onClick={() => { setShowUploader(true); setShowImageGenerator(false); }}
+          >
+            <FiUpload aria-hidden="true" /> Upload Files
+          </button>
+          <button 
+            className="btn btn-secondary"
+            onClick={() => { setShowImageGenerator(true); setShowUploader(false); }}
+          >
+            <FiZap aria-hidden="true" /> AI Image
+          </button>
+          <Link to="/posts/create" className="btn btn-primary" aria-label="Create new post">
+            <FiPlus aria-hidden="true" /> Create Post
+          </Link>
+        </div>
       </header>
+
+      {/* AI Image Generator Panel */}
+      {showImageGenerator && (
+        <section className="ai-panel">
+          <div className="ai-panel-header">
+            <h2><FiZap /> AI Image Generator</h2>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowImageGenerator(false)}>
+              <FiX />
+            </button>
+          </div>
+          <p className="ai-panel-description">Generate stunning images with AI using Flux Schnell</p>
+          
+          <div className="ai-generator-content">
+            <div className="ai-input-section">
+              <div className="form-group">
+                <label>Describe your image</label>
+                <textarea
+                  value={imagePrompt}
+                  onChange={(e) => setImagePrompt(e.target.value)}
+                  placeholder="A beautiful sunset over mountains with golden light..."
+                  rows={3}
+                />
+              </div>
+              
+              <div className="ai-options">
+                <div className="form-group">
+                  <label>Style</label>
+                  <select value={imageStyle} onChange={(e) => setImageStyle(e.target.value)}>
+                    <option value="photorealistic">📷 Photorealistic</option>
+                    <option value="aesthetic">✨ Aesthetic</option>
+                    <option value="minimalist">🎯 Minimalist</option>
+                    <option value="vibrant">🌈 Vibrant</option>
+                    <option value="cinematic">🎬 Cinematic</option>
+                    <option value="vintage">📼 Vintage</option>
+                  </select>
+                </div>
+                
+                <div className="form-group">
+                  <label>Aspect Ratio</label>
+                  <select value={aspectRatio} onChange={(e) => setAspectRatio(e.target.value)}>
+                    <option value="1:1">1:1 Square (Feed)</option>
+                    <option value="4:5">4:5 Portrait (Feed)</option>
+                    <option value="9:16">9:16 Story/Reel</option>
+                    <option value="16:9">16:9 Landscape</option>
+                  </select>
+                </div>
+              </div>
+              
+              <button 
+                className="btn btn-primary btn-generate"
+                onClick={handleGenerateImage}
+                disabled={generatingImage || !imagePrompt.trim()}
+              >
+                {generatingImage ? (
+                  <>
+                    <FiLoader className="spin" /> Generating...
+                  </>
+                ) : (
+                  <>
+                    <FiZap /> Generate Image
+                  </>
+                )}
+              </button>
+            </div>
+            
+            <div className="ai-preview-section">
+              {generatedImage ? (
+                <div className="generated-image-container">
+                  <img src={generatedImage} alt="AI Generated" />
+                  <div className="generated-image-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={handleDownloadImage}>
+                      <FiDownload /> Download
+                    </button>
+                    <button className="btn btn-ghost btn-sm" onClick={handleCopyImageUrl}>
+                      <FiCopy /> Copy URL
+                    </button>
+                    <button className="btn btn-primary btn-sm" onClick={handleUseInPost}>
+                      <FiPlus /> Use in Post
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="ai-preview-placeholder">
+                  <FiImage />
+                  <span>Your generated image will appear here</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* File Upload Panel */}
+      {showUploader && (
+        <section className="ai-panel">
+          <div className="ai-panel-header">
+            <h2><FiUpload /> Upload Files</h2>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowUploader(false)}>
+              <FiX />
+            </button>
+          </div>
+          <p className="ai-panel-description">Upload images or videos for your posts</p>
+          
+          <div 
+            className={`upload-dropzone ${uploading ? 'uploading' : ''}`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+            {uploading ? (
+              <>
+                <FiLoader className="spin upload-icon" />
+                <span>Uploading...</span>
+              </>
+            ) : (
+              <>
+                <FiUpload className="upload-icon" />
+                <span>Drag & drop files here or click to browse</span>
+                <small>Supports images and videos up to 50MB</small>
+              </>
+            )}
+          </div>
+          
+          {uploadedFiles.length > 0 && (
+            <div className="uploaded-files">
+              <h4>Uploaded Files ({uploadedFiles.length})</h4>
+              <div className="uploaded-files-grid">
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="uploaded-file-item">
+                    <img src={file.url || file.thumbnail} alt={`Upload ${index + 1}`} />
+                    <button 
+                      className="remove-file-btn"
+                      onClick={(e) => { e.stopPropagation(); handleRemoveUploadedFile(index); }}
+                    >
+                      <FiX />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-primary" onClick={handleUseUploadedFiles}>
+                <FiPlus /> Create Post with Files
+              </button>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Filters */}
       <nav className="filters" aria-label="Post filters">
