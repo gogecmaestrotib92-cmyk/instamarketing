@@ -28,7 +28,7 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-  const [expandedItems, setExpandedItems] = React.useState({});
+  const [expandedItems, setExpandedItems] = React.useState({}); // Start collapsed
   
   // Refs for focus management
   const sidebarRef = useRef(null);
