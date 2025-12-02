@@ -214,23 +214,43 @@ const AdvancedVideoGenerator = () => {
         style: voiceoverStyle
       }, { headers: { Authorization: `Bearer ${token}` }});
       
-      // Auto-generate timed subtitles from the script
-      const sentences = voiceoverScript.split(/[.!?]+/).filter(s => s.trim().length > 3);
-      const estimatedDuration = voiceoverScript.split(/\s+/).length * 0.4; // ~0.4 sec per word
-      const segmentDuration = estimatedDuration / Math.max(sentences.length, 1);
+      // Get video duration (default 9 seconds for Luma)
+      const videoDuration = formData.duration || 9;
       
-      const autoOverlays = sentences.slice(0, 10).map((sentence, i) => ({
-        text: sentence.trim().substring(0, 60),
-        start: Math.round(i * segmentDuration * 10) / 10,
-        end: Math.round((i + 1) * segmentDuration * 10) / 10
-      }));
+      // Calculate words per second (~2.5 words/sec for natural speech)
+      const wordsPerSecond = 2.5;
+      const maxWords = Math.floor(videoDuration * wordsPerSecond); // ~22 words for 9 sec
+      
+      // Split into short phrases (not sentences - for punchy captions)
+      const words = voiceoverScript.split(/\s+/).filter(w => w.trim());
+      const wordsToUse = words.slice(0, maxWords);
+      
+      // Group into 3-5 word chunks for readable captions
+      const wordsPerCaption = 4;
+      const captions = [];
+      const captionDuration = videoDuration / Math.ceil(wordsToUse.length / wordsPerCaption);
+      
+      for (let i = 0; i < wordsToUse.length; i += wordsPerCaption) {
+        const chunk = wordsToUse.slice(i, i + wordsPerCaption).join(' ');
+        const captionIndex = Math.floor(i / wordsPerCaption);
+        captions.push({
+          text: chunk,
+          start: Math.round(captionIndex * captionDuration * 10) / 10,
+          end: Math.round((captionIndex + 1) * captionDuration * 10) / 10
+        });
+      }
+      
+      // Warn if script is too long
+      if (words.length > maxWords) {
+        toast.warning(`Script trimmed to ${maxWords} words to fit ${videoDuration}s video`);
+      }
       
       setFinalizeData(prev => ({ 
         ...prev, 
         voiceoverUrl: res.data.audioUrl,
-        overlays: autoOverlays  // Auto-populate subtitles
+        overlays: captions
       }));
-      toast.success('Voiceover generated with auto-subtitles!');
+      toast.success(`Voiceover + ${captions.length} subtitles generated!`);
     } catch (err) {
       toast.error('Error generating voiceover');
     } finally {
