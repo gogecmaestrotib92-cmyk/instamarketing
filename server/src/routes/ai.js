@@ -2809,4 +2809,181 @@ router.patch('/autopilot/post/queue/:id', (req, res) => {
   res.json({ success: true, post });
 });
 
+// ==================== New AI Auto-Pilot V2 Routes ====================
+
+/**
+ * Generate related topics based on main topic
+ * POST /api/ai/generate-topics
+ */
+router.post('/generate-topics', async (req, res) => {
+  try {
+    const { mainTopic, count = 8 } = req.body;
+    
+    if (!mainTopic) {
+      return res.status(400).json({ error: 'Main topic is required' });
+    }
+    
+    console.log('🎯 Generating related topics for:', mainTopic);
+    
+    let topics = [];
+    
+    // Try to use OpenAI for better topic generation
+    if (openaiService) {
+      try {
+        const prompt = `Generate ${count} diverse and engaging content topics related to "${mainTopic}" for social media posts. 
+        
+        Make each topic specific, actionable, and interesting for the audience. 
+        Topics should cover different angles like tips, mistakes to avoid, trends, success stories, how-tos, myths, comparisons, and expert advice.
+        
+        Return ONLY a JSON array of strings, no other text. Example: ["Topic 1", "Topic 2", ...]`;
+        
+        const result = await openaiService.chat([
+          { role: 'system', content: 'You are a social media content strategist. Return only valid JSON arrays.' },
+          { role: 'user', content: prompt }
+        ]);
+        
+        if (result.success && result.content) {
+          // Parse the JSON array from the response
+          const match = result.content.match(/\[[\s\S]*\]/);
+          if (match) {
+            topics = JSON.parse(match[0]);
+          }
+        }
+      } catch (e) {
+        console.log('OpenAI topic generation failed, using fallback:', e.message);
+      }
+    }
+    
+    // Fallback: generate simple variations
+    if (topics.length === 0) {
+      topics = [
+        `${mainTopic} tips for beginners`,
+        `Common ${mainTopic} mistakes to avoid`,
+        `Advanced ${mainTopic} strategies`,
+        `${mainTopic} trends in 2024`,
+        `How to improve your ${mainTopic}`,
+        `${mainTopic} success stories`,
+        `The truth about ${mainTopic}`,
+        `${mainTopic} myths debunked`
+      ];
+    }
+    
+    console.log('✅ Generated topics:', topics);
+    
+    res.json({
+      success: true,
+      topics: topics.slice(0, count)
+    });
+  } catch (error) {
+    console.error('Topic generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Start Auto-Pilot V2
+ * POST /api/ai/autopilot/v2/start
+ */
+router.post('/autopilot/v2/start', async (req, res) => {
+  try {
+    const { topics, frequency, timeSlots, postTypes, brandDetails } = req.body;
+    
+    console.log('🚀 Starting Auto-Pilot V2...');
+    console.log('Topics:', topics);
+    console.log('Frequency:', frequency);
+    console.log('Time Slots:', timeSlots);
+    console.log('Post Types:', postTypes);
+    console.log('Brand Details:', brandDetails);
+    
+    // Store the configuration (in production, save to database)
+    const config = {
+      id: generateId(),
+      topics,
+      frequency,
+      timeSlots,
+      postTypes,
+      brandDetails,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      nextPostAt: null,
+      postsGenerated: 0
+    };
+    
+    // Calculate next post time
+    const now = new Date();
+    const sortedSlots = [...timeSlots].sort();
+    let nextSlot = sortedSlots.find(slot => {
+      const [hours, minutes] = slot.split(':').map(Number);
+      const slotTime = new Date(now);
+      slotTime.setHours(hours, minutes, 0, 0);
+      return slotTime > now;
+    });
+    
+    if (!nextSlot) {
+      // All slots passed today, use first slot tomorrow
+      nextSlot = sortedSlots[0];
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const [hours, minutes] = nextSlot.split(':').map(Number);
+      tomorrow.setHours(hours, minutes, 0, 0);
+      config.nextPostAt = tomorrow.toISOString();
+    } else {
+      const [hours, minutes] = nextSlot.split(':').map(Number);
+      const nextTime = new Date(now);
+      nextTime.setHours(hours, minutes, 0, 0);
+      config.nextPostAt = nextTime.toISOString();
+    }
+    
+    // Store in autopilot state (would be database in production)
+    if (!autopilotState.v2) {
+      autopilotState.v2 = { configs: [], queue: [] };
+    }
+    autopilotState.v2.configs.push(config);
+    
+    console.log('✅ Auto-Pilot V2 started. Next post at:', config.nextPostAt);
+    
+    res.json({
+      success: true,
+      message: 'Auto-Pilot started successfully',
+      config
+    });
+  } catch (error) {
+    console.error('Auto-Pilot V2 start error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get Auto-Pilot V2 Status
+ * GET /api/ai/autopilot/v2/status
+ */
+router.get('/autopilot/v2/status', (req, res) => {
+  const configs = autopilotState.v2?.configs || [];
+  const activeConfig = configs.find(c => c.status === 'active');
+  
+  res.json({
+    success: true,
+    active: !!activeConfig,
+    config: activeConfig || null
+  });
+});
+
+/**
+ * Stop Auto-Pilot V2
+ * POST /api/ai/autopilot/v2/stop
+ */
+router.post('/autopilot/v2/stop', (req, res) => {
+  if (autopilotState.v2?.configs) {
+    autopilotState.v2.configs.forEach(c => {
+      c.status = 'stopped';
+      c.stoppedAt = new Date().toISOString();
+    });
+  }
+  
+  res.json({
+    success: true,
+    message: 'Auto-Pilot stopped'
+  });
+});
+
 module.exports = router;

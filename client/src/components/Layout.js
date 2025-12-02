@@ -171,7 +171,8 @@ const Layout = () => {
       key: 'autopilot',
       children: [
         { path: '/app/autopilot/reels', icon: FiPlay, label: 'Reels' },
-        { path: '/app/autopilot/post', icon: FiGrid, label: 'Post' }
+        { path: '/app/autopilot/post', icon: FiGrid, label: 'Post' },
+        { path: '/app/autopilot/new', icon: FiZap, label: 'New Setup', badge: 'BETA' }
       ]
     },
     { path: '/app/settings', icon: FiSettings, label: 'Settings' }

@@ -32,6 +32,7 @@ import AITools from './pages/AITools';
 import AdvancedVideoGenerator from './pages/AdvancedVideoGenerator';
 import AutopilotReels from './pages/AutopilotReels';
 import AutopilotPost from './pages/AutopilotPost';
+import AutoPilotNew from './pages/AutoPilotNew';
 
 // SEO Landing Pages
 import {
@@ -147,6 +148,7 @@ function AppRoutes() {
         <Route path="advanced-video" element={<AdvancedVideoGenerator />} />
         <Route path="autopilot/reels" element={<AutopilotReels />} />
         <Route path="autopilot/post" element={<AutopilotPost />} />
+        <Route path="autopilot/new" element={<AutoPilotNew />} />
         <Route path="campaigns" element={<Campaigns />} />
         <Route path="campaigns/create" element={<CreateCampaign />} />
         <Route path="campaigns/edit/:id" element={<CreateCampaign />} />
