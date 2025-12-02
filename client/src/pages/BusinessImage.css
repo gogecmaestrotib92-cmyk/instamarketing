@@ -276,6 +276,194 @@
   color: var(--text-primary);
 }
 
+/* ================================================
+   STEP 2: Settings Section
+   ================================================ */
+.settings-section {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setting-group {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.setting-group h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+/* Brand Details */
+.brand-details .setting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.brand-details .setting-header h3 {
+  margin: 0;
+}
+
+.setting-description {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border-medium);
+  border-radius: 24px;
+  transition: all 0.3s ease;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #10b981;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* Option Grid */
+.option-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.option-grid.post-types {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.option-grid.aspect-ratios {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Option Card */
+.option-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  background: var(--bg-card);
+  border: 2px solid var(--border-light);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.option-card:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-tertiary);
+}
+
+.option-card.selected {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.option-card.selected .option-icon {
+  color: #10b981;
+}
+
+.option-card.selected .option-label {
+  color: #10b981;
+}
+
+.option-icon {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+.option-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.option-desc {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+/* Aspect Ratio Previews */
+.ratio-card {
+  padding: 12px 10px 10px;
+}
+
+.ratio-preview {
+  background: var(--border-light);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  transition: background 0.2s;
+}
+
+.option-card.selected .ratio-preview {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+.ratio-1-1 {
+  width: 32px;
+  height: 32px;
+}
+
+.ratio-4-5 {
+  width: 28px;
+  height: 35px;
+}
+
+.ratio-9-16 {
+  width: 22px;
+  height: 40px;
+}
+
+.ratio-16-9 {
+  width: 40px;
+  height: 22px;
+}
+
 /* Generate Button */
 .generate-btn {
   display: flex;
@@ -422,6 +610,11 @@
   .preview-container {
     min-height: 300px;
   }
+
+  .option-grid.post-types,
+  .option-grid.aspect-ratios {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 600px) {
@@ -457,5 +650,18 @@
 
   .example-btn.use {
     flex: 1;
+  }
+
+  .option-grid.post-types,
+  .option-grid.aspect-ratios {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .option-card {
+    padding: 12px 8px;
+  }
+
+  .option-desc {
+    display: none;
   }
 }

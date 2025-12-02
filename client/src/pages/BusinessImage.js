@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiImage, FiZap, FiArrowLeft, FiRefreshCw, FiDownload, FiCopy } from 'react-icons/fi';
+import { FiImage, FiZap, FiArrowLeft, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import './BusinessImage.css';
 
@@ -7,9 +7,29 @@ const BusinessImage = () => {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
   const [showAdvice, setShowAdvice] = useState(false);
+  
+  // Step 2 states
+  const [postType, setPostType] = useState('ad');
+  const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [brandLinked, setBrandLinked] = useState(true);
+
+  // Post type options
+  const postTypes = [
+    { id: 'ad', label: 'Ad', icon: FiTarget, description: 'Promotional advertisement' },
+    { id: 'highlights', label: 'Highlights', icon: FiStar, description: 'Key features showcase' },
+    { id: 'before-after', label: 'Before-After', icon: FiRepeat, description: 'Transformation comparison' },
+    { id: 'review', label: 'Review', icon: FiCheckCircle, description: 'Customer testimonial' }
+  ];
+
+  // Aspect ratio options
+  const aspectRatios = [
+    { id: '1:1', label: '1:1', icon: FiSquare, description: 'Square (Feed)' },
+    { id: '4:5', label: '4:5', icon: FiSmartphone, description: 'Portrait (Feed)' },
+    { id: '9:16', label: '9:16', icon: FiSmartphone, description: 'Story/Reel' },
+    { id: '16:9', label: '16:9', icon: FiMonitor, description: 'Landscape' }
+  ];
 
   // AI advice examples for inspiration
   const aiAdviceExamples = [
@@ -152,6 +172,65 @@ const BusinessImage = () => {
                 </div>
               </div>
             )}
+
+            {/* Step 2: Brand Details & Settings */}
+            <div className="settings-section">
+              {/* Brand Details */}
+              <div className="setting-group brand-details">
+                <div className="setting-header">
+                  <h3>Brand Details</h3>
+                  <label className="toggle-switch">
+                    <input 
+                      type="checkbox" 
+                      checked={brandLinked} 
+                      onChange={(e) => setBrandLinked(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
+                </div>
+                <p className="setting-description">
+                  {brandLinked 
+                    ? '✓ Brand details linked — your brand identity will be applied to the Image.'
+                    : 'Brand details not linked — generic styling will be used.'}
+                </p>
+              </div>
+
+              {/* Post Type */}
+              <div className="setting-group">
+                <h3>Post Type</h3>
+                <div className="option-grid post-types">
+                  {postTypes.map((type) => (
+                    <button
+                      key={type.id}
+                      className={`option-card ${postType === type.id ? 'selected' : ''}`}
+                      onClick={() => setPostType(type.id)}
+                    >
+                      <type.icon className="option-icon" />
+                      <span className="option-label">{type.label}</span>
+                      <span className="option-desc">{type.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Aspect Ratio */}
+              <div className="setting-group">
+                <h3>Aspect Ratio</h3>
+                <div className="option-grid aspect-ratios">
+                  {aspectRatios.map((ratio) => (
+                    <button
+                      key={ratio.id}
+                      className={`option-card ratio-card ${aspectRatio === ratio.id ? 'selected' : ''}`}
+                      onClick={() => setAspectRatio(ratio.id)}
+                    >
+                      <div className={`ratio-preview ratio-${ratio.id.replace(':', '-')}`}></div>
+                      <span className="option-label">{ratio.label}</span>
+                      <span className="option-desc">{ratio.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Generate Button */}
             <button 
