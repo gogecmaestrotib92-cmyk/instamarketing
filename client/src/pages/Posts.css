@@ -1,63 +1,85 @@
 /* ================================================
-   POSTS PAGE - Modern SaaS Style
+   POSTS PAGE - Premium Minimalistic Design
+   Inspired by ElevenLabs & InVideo
    ================================================ */
 
 .posts-page {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 24px 40px;
+  padding: 0 24px 48px;
+}
+
+/* Page Header */
+.posts-page .page-header {
+  margin-bottom: 32px;
+}
+
+.posts-page .page-header h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #fafafa;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.025em;
+}
+
+.posts-page .page-header p {
+  color: #71717a;
+  font-size: 0.9375rem;
+  margin: 0;
 }
 
 /* Filters */
 .filters {
   display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
 }
 
 .filter-btn {
-  padding: 8px 16px;
-  background: #0f172a;
-  border: 1px solid #1e293b;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
-  color: #94a3b8;
+  color: #71717a;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .filter-btn:hover {
-  background: #1e293b;
-  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #a1a1aa;
 }
 
 .filter-btn.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  border-color: transparent;
   color: white;
 }
 
 /* Posts Grid */
 .posts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
 }
 
 .post-card {
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
   overflow: hidden;
-  transition: border-color 0.15s ease;
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
 }
 
 .post-card:hover {
-  border-color: #334155;
+  border-color: rgba(168, 85, 247, 0.2);
+  transform: translateY(-2px);
 }
 
 .post-media {
@@ -84,25 +106,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
-  color: #475569;
-  background: #1e293b;
+  font-size: 48px;
+  color: #3f3f46;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .media-count {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.7);
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.75);
   color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.6875rem;
   font-weight: 600;
+  backdrop-filter: blur(8px);
 }
 
 .post-content {
-  padding: 16px;
+  padding: 20px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -111,27 +134,27 @@
 .post-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .post-type {
-  font-size: 10px;
-  color: #64748b;
+  font-size: 0.625rem;
+  color: #71717a;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-left: auto;
-  padding: 3px 8px;
-  background: #1e293b;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 4px;
   font-weight: 600;
 }
 
 .post-caption {
-  font-size: 13px;
-  color: #e2e8f0;
-  margin-bottom: 12px;
-  line-height: 1.5;
+  font-size: 0.8125rem;
+  color: #d4d4d8;
+  margin-bottom: 14px;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;
@@ -141,31 +164,35 @@
 
 .post-metrics {
   display: flex;
-  gap: 14px;
-  font-size: 13px;
-  color: #64748b;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #1e293b;
+  gap: 16px;
+  font-size: 0.8125rem;
+  color: #71717a;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .post-metrics span {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+}
+
+.post-metrics span svg {
+  color: #a855f7;
 }
 
 .post-scheduled {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #f97316;
-  margin-bottom: 12px;
-  background: rgba(249, 115, 22, 0.1);
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(249, 115, 22, 0.2);
+  gap: 10px;
+  font-size: 0.75rem;
+  color: #a855f7;
+  margin-bottom: 14px;
+  background: rgba(168, 85, 247, 0.08);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(168, 85, 247, 0.15);
 }
 
 .post-actions {
@@ -178,15 +205,15 @@
 .post-actions .btn {
   flex: 1;
   justify-content: center;
-  padding: 8px 12px;
-  font-size: 12px;
+  padding: 10px 14px;
+  font-size: 0.75rem;
   font-weight: 500;
-  border-radius: 6px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  color: #94a3b8;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a1a1aa;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -194,27 +221,28 @@
 
 .post-actions button:hover,
 .post-actions .btn:hover {
-  background: #334155;
-  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fafafa;
 }
 
 .post-actions .danger {
   color: #f87171;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
 .post-actions .danger:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
 }
 
 /* Badge */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  font-size: 11px;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.6875rem;
   font-weight: 600;
   border-radius: 6px;
 }
@@ -224,59 +252,81 @@
 }
 
 .badge-success {
-  background: rgba(34, 197, 94, 0.15);
+  background: rgba(34, 197, 94, 0.1);
   color: #4ade80;
 }
 
 .badge-warning {
-  background: rgba(249, 115, 22, 0.15);
+  background: rgba(249, 115, 22, 0.1);
   color: #fb923c;
 }
 
 .badge-info {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
+  background: rgba(168, 85, 247, 0.1);
+  color: #c084fc;
 }
 
 /* Empty State */
 .empty-state-large {
   text-align: center;
-  padding: 60px 24px;
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 12px;
+  padding: 80px 24px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .empty-icon {
-  font-size: 48px;
-  color: #475569;
-  margin-bottom: 20px;
+  font-size: 56px;
+  color: #3f3f46;
+  margin-bottom: 24px;
   opacity: 0.5;
 }
 
 .empty-state-large h3 {
-  font-size: 18px;
-  margin-bottom: 8px;
-  color: #f1f5f9;
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+  color: #fafafa;
+  font-weight: 600;
+  letter-spacing: -0.025em;
 }
 
 .empty-state-large p {
-  color: #64748b;
-  margin-bottom: 24px;
-  max-width: 340px;
-  font-size: 14px;
-  line-height: 1.5;
+  color: #71717a;
+  margin-bottom: 28px;
+  max-width: 360px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.empty-state-large .btn-primary {
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  color: white;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.empty-state-large .btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 /* Pagination */
 .pagination {
   display: flex;
   justify-content: center;
-  padding: 24px;
-  color: #64748b;
+  padding: 32px;
+  color: #71717a;
 }
 
 /* Responsive */
@@ -293,10 +343,36 @@
     overflow-x: auto;
     padding-bottom: 8px;
     flex-wrap: nowrap;
+    margin: 0 -16px 24px;
+    padding: 0 16px 12px;
   }
   
   .filter-btn {
     white-space: nowrap;
     flex-shrink: 0;
+  }
+  
+  .post-content {
+    padding: 16px;
+  }
+  
+  .empty-state-large {
+    padding: 60px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .posts-page {
+    padding: 0 12px 32px;
+  }
+  
+  .post-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .post-actions button,
+  .post-actions .btn {
+    width: 100%;
   }
 }

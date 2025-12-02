@@ -14,29 +14,29 @@
    CSS CUSTOM PROPERTIES (Design Tokens)
    ============================================================ */
 :root {
-  /* Brand Colors */
-  --primary: #E1306C;
-  --primary-dark: #C13584;
-  --secondary: #833AB4;
-  --accent: #F77737;
-  --gradient: linear-gradient(135deg, #F77737 0%, #E1306C 50%, #833AB4 100%);
-  --gradient-hover: linear-gradient(135deg, #F77737 20%, #E1306C 70%, #833AB4 120%);
+  /* Brand Colors - Premium Purple Theme */
+  --primary: #a855f7;
+  --primary-dark: #7c3aed;
+  --secondary: #c084fc;
+  --accent: #e879f9;
+  --gradient: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  --gradient-hover: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
   
-  /* Dark Theme Palette */
-  --bg-dark: #050505;
-  --bg-card: rgba(30, 30, 30, 0.6);
-  --bg-card-hover: rgba(40, 40, 40, 0.8);
-  --glass: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-hover: rgba(255, 255, 255, 0.08);
+  /* Dark Theme Palette - Premium Black */
+  --bg-dark: #000000;
+  --bg-card: rgba(255, 255, 255, 0.02);
+  --bg-card-hover: rgba(255, 255, 255, 0.04);
+  --glass: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-hover: rgba(255, 255, 255, 0.06);
   
   /* Text Colors */
-  --text-primary: #ffffff;
-  --text-secondary: #a3a3a3;
-  --text-muted: #737373;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
   
   /* Border */
-  --border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.06);
   
   /* Status Colors */
   --success: #10b981;
@@ -45,10 +45,10 @@
   --info: #3b82f6;
   
   /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-glow: 0 0 20px rgba(225, 48, 108, 0.15);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 24px rgba(168, 85, 247, 0.2);
   
   /* ============================================================
      MOBILE-FIRST SPACING & SIZING TOKENS
@@ -212,11 +212,7 @@ html {
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: var(--font-size-base);
-  background-color: var(--bg-dark);
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(131, 58, 180, 0.08), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(225, 48, 108, 0.08), transparent 25%);
-  background-attachment: fixed;
+  background-color: #000;
   color: var(--text-primary);
   line-height: var(--line-height-normal);
   -webkit-font-smoothing: antialiased;
@@ -435,8 +431,8 @@ input, textarea, select {
 .btn-primary {
   background: var(--gradient);
   color: white;
-  box-shadow: 0 4px 15px rgba(225, 48, 108, 0.3);
-  letter-spacing: 0.02em;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.25);
+  letter-spacing: -0.01em;
 }
 
 .btn-secondary {
@@ -495,12 +491,12 @@ input, textarea, select {
 @media (hover: hover) and (pointer: fine) {
   .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(225, 48, 108, 0.4);
+    box-shadow: 0 8px 32px rgba(168, 85, 247, 0.35);
   }
   
   .btn-secondary:hover {
     background: var(--bg-card-hover);
-    border-color: var(--text-muted);
+    border-color: rgba(255, 255, 255, 0.1);
   }
   
   .btn-ghost:hover {
