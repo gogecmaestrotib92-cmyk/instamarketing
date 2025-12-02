@@ -1492,7 +1492,7 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     try {
       const videoResult = await replicateService.startTextToVideo(videoPrompt, {
         aspectRatio: '9:16',
-        duration: 5
+        duration: 10
       });
       
       if (videoResult.success) {
@@ -1604,7 +1604,7 @@ router.post('/autopilot/reels/generate', async (req, res) => {
       
       // Create simple text segments from script
       const sentences = script.split(/[.!?]+/).filter(s => s.trim().length > 5);
-      const videoDuration = 5;
+      const videoDuration = 10;
       const segmentDuration = videoDuration / Math.min(sentences.length, 3);
       
       sentences.slice(0, 3).forEach((sentence, i) => {
@@ -1632,7 +1632,7 @@ router.post('/autopilot/reels/generate', async (req, res) => {
         const audioUrl = voiceoverUrl || musicUrl;
         
         const renderResult = await shotstackClient.renderVideo(rawVideoUrl, audioUrl, textOverlays, {
-          duration: 5,
+          duration: 10,
           musicVolume: voiceoverUrl ? 0.2 : 0.8,
           videoVolume: 0,
           subtitleStyle: { style: 'blockbuster', color: '#ffffff', size: 'large', position: 'center' }

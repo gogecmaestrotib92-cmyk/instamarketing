@@ -45,7 +45,7 @@ class ReplicateService {
    */
   async textToVideo(prompt, options = {}) {
     try {
-      const { duration = 5, aspectRatio = '9:16' } = options;
+      const { duration = 10, aspectRatio = '9:16' } = options;
       console.log('🎬 Starting Replicate text-to-video generation (Kling v1.6 Standard)...');
       console.log('Prompt:', prompt);
       console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
@@ -89,7 +89,7 @@ class ReplicateService {
    */
   async startTextToVideo(prompt, options = {}) {
     try {
-      const { duration = 5, aspectRatio = '9:16' } = options;
+      const { duration = 10, aspectRatio = '9:16' } = options;
       console.log('🎬 Starting async text-to-video generation (Kling v1.6 Standard)...');
       console.log('Prompt:', prompt);
       console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
@@ -123,7 +123,7 @@ class ReplicateService {
    */
   async startImageToVideo(imageUrl, motionPrompt = '', options = {}) {
     try {
-      const { duration = 5, aspectRatio = '9:16' } = options;
+      const { duration = 10, aspectRatio = '9:16' } = options;
       console.log('🎬 Starting async image-to-video generation (Kling v2.1)...');
       console.log('Image URL:', imageUrl);
       console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
@@ -243,7 +243,7 @@ class ReplicateService {
    */
   async imageToVideo(imageUrl, motionPrompt = '', options = {}) {
     try {
-      const { duration = 5, aspectRatio = '9:16' } = options;
+      const { duration = 10, aspectRatio = '9:16' } = options;
 
       console.log('🎬 Starting Replicate image-to-video generation (Kling v2.1)...');
       console.log('Image URL:', imageUrl);
@@ -289,7 +289,7 @@ class ReplicateService {
    */
   async textToVideoPremium(prompt, options = {}) {
     try {
-      const { duration = 5, aspectRatio = '9:16' } = options;
+      const { duration = 10, aspectRatio = '9:16' } = options;
       console.log('🎬 Starting premium video generation (Kling v1.6 Pro)...');
       console.log('Prompt:', prompt);
       console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
