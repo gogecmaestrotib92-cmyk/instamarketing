@@ -51,3 +51,5 @@ coverage/
 .npm/
 .vercel
 .env*.local
+
+server/.env.vercel

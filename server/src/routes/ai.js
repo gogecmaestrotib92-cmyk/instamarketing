@@ -1649,9 +1649,14 @@ router.post('/autopilot/reels/generate', async (req, res) => {
       }
       
       console.log('✅ Text overlays:', textOverlays.length, 'captions,', wordsToUse.length, 'words');
+      console.log('📝 Text overlays detail:', JSON.stringify(textOverlays, null, 2));
       if (words.length > maxWords) {
         console.log('⚠️ Script trimmed from', words.length, 'to', maxWords, 'words');
       }
+    } else {
+      console.log('⚠️ Step 5: Text overlays SKIPPED');
+      console.log('   textSettings.enabled:', textSettings?.enabled);
+      console.log('   script exists:', !!script);
     }
     
     // ==================== STEP 6: Render Final Video ====================
@@ -1706,6 +1711,8 @@ router.post('/autopilot/reels/generate', async (req, res) => {
         // Render with Shotstack
         console.log('   🎬 Starting Shotstack render with', textOverlays.length, 'subtitles...');
         console.log('   🎬 Audio URL for Shotstack:', processedAudioUrl || 'NONE');
+        console.log('   🎬 Text overlays being sent to Shotstack:', JSON.stringify(textOverlays.slice(0, 2), null, 2), '...');
+        
         const result = await shotstackClient.renderVideo(
           processedVideoUrl,
           processedAudioUrl,
@@ -1719,6 +1726,8 @@ router.post('/autopilot/reels/generate', async (req, res) => {
           }
         );
         
+        console.log('   🎬 Shotstack result:', JSON.stringify(result, null, 2));
+        
         if (result.success && result.url) {
           finalVideoUrl = result.url;
           console.log('✅ Shotstack render complete:', finalVideoUrl);
@@ -1727,9 +1736,14 @@ router.post('/autopilot/reels/generate', async (req, res) => {
           // Fall through to Cloudinary
         }
       } catch (e) {
-        console.error('Shotstack error:', e.message);
+        console.error('❌ Shotstack error:', e.message);
+        console.error('   Stack:', e.stack);
         // Fall through to Cloudinary
       }
+    } else if (needsRender && !shotstackClient) {
+      console.log('⚠️ Shotstack client not available, will use Cloudinary fallback');
+    } else if (needsRender && textOverlays.length === 0) {
+      console.log('⚠️ No text overlays to render with Shotstack');
     }
     
     // PRIORITY 2: Fallback to Cloudinary (limited subtitle timing support)

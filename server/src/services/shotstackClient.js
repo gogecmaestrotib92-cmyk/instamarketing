@@ -142,28 +142,16 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         console.log(`   Style mapping: "${requestedStyle}" -> "${finalStyle}"`);
         console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position} (${subtitle.start}s - ${subtitle.end}s)`);
 
-        // Using 'text' asset type (the modern recommended approach)
-        // TextAsset replaces the deprecated TitleAsset and HtmlAsset
+        // Using 'title' asset type which is more reliable for text overlays
+        // Title asset is specifically designed for text captions/subtitles
         const clip = {
           asset: {
-            type: 'text',
+            type: 'title',
             text: subtitle.text,
-            font: {
-              family: 'Montserrat',
-              color: '#ffffff',
-              size: 48, // Larger for mobile viewing
-              weight: 700
-            },
-            background: {
-              color: '#000000',
-              padding: 15 // Add padding around text
-            },
-            width: 1000, // Nearly full width (1080px video)
-            height: 200, // Taller for word wrap
-            alignment: {
-              horizontal: 'center',
-              vertical: 'center'
-            }
+            style: 'blockbuster', // Use Shotstack's built-in blockbuster style
+            size: 'medium', // small, medium, large, x-large
+            background: '#000000CC', // Semi-transparent black background
+            color: '#ffffff'
           },
           start: subtitle.start,
           length: clipDuration,
