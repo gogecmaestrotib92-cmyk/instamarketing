@@ -254,23 +254,25 @@ const Layout = () => {
                     role="group"
                     aria-label={`${item.label} submenu`}
                   >
-                    {item.children.map((child, childIndex) => (
-                      child.type === 'divider' ? (
-                        <div key={`divider-${childIndex}`} className="nav-divider">
-                          <span>{child.label}</span>
-                        </div>
-                      ) : (
-                        <NavLink
-                          key={child.path}
-                          to={child.path}
-                          className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
-                          onClick={closeSidebar}
-                        >
-                          <child.icon className="nav-icon" aria-hidden="true" />
-                          <span>{child.label}</span>
-                        </NavLink>
-                      )
-                    ))}
+                    <div className="nav-children-inner">
+                      {item.children.map((child, childIndex) => (
+                        child.type === 'divider' ? (
+                          <div key={`divider-${childIndex}`} className="nav-divider">
+                            <span>{child.label}</span>
+                          </div>
+                        ) : (
+                          <NavLink
+                            key={child.path}
+                            to={child.path}
+                            className={({ isActive }) => `nav-item nav-child-item ${isActive ? 'active' : ''}`}
+                            onClick={closeSidebar}
+                          >
+                            <child.icon className="nav-icon" aria-hidden="true" />
+                            <span>{child.label}</span>
+                          </NavLink>
+                        )
+                      ))}
+                    </div>
                   </div>
                 </>
               ) : (

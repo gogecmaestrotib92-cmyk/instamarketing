@@ -239,30 +239,54 @@ body.sidebar-open {
 }
 
 /* Emphasized Nav Items - Primary (Create New) */
+.nav-item.nav-emphasized-primary,
 .nav-emphasized-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  color: white !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
   font-weight: 600;
   border-radius: 10px;
   margin: 4px 12px;
   padding: 14px 16px !important;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
   transition: all 0.3s ease;
+  border: none;
 }
 
+.nav-item.nav-emphasized-primary:hover,
 .nav-emphasized-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
 }
 
-.nav-emphasized-primary .nav-icon {
-  color: white !important;
-  opacity: 1;
+.nav-emphasized-primary .nav-icon,
+.nav-item.nav-emphasized-primary .nav-icon {
+  color: #ffffff !important;
+  opacity: 1 !important;
 }
 
-.nav-emphasized-primary .nav-expand-icon {
-  color: white !important;
+.nav-emphasized-primary .nav-expand-icon,
+.nav-item.nav-emphasized-primary .nav-expand-icon {
+  color: #ffffff !important;
+}
+
+.nav-emphasized-primary span,
+.nav-item.nav-emphasized-primary span {
+  color: #ffffff !important;
+}
+
+/* Dark mode - ensure Create New stays blue with white text */
+[data-theme="dark"] .nav-item.nav-emphasized-primary,
+[data-theme="dark"] .nav-emphasized-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .nav-emphasized-primary .nav-icon,
+[data-theme="dark"] .nav-emphasized-primary span,
+[data-theme="dark"] .nav-emphasized-primary .nav-expand-icon {
+  color: #ffffff !important;
 }
 
 /* Emphasized Nav Items - Secondary (AI Auto-Pilot) */
@@ -339,14 +363,14 @@ body.sidebar-open {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.25s ease;
-  overflow: hidden;
 }
 
 .nav-children.expanded {
   grid-template-rows: 1fr;
 }
 
-.nav-children > * {
+.nav-children-inner {
+  overflow: hidden;
   min-height: 0;
 }
 
