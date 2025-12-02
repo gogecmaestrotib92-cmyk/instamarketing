@@ -1,11 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { FiPlus, FiZap, FiImage, FiFilm } from 'react-icons/fi';
 import './DashboardHeader.css';
 
 /**
  * Dashboard Header Component
- * Compact, modern design with greeting and quick actions
+ * Compact, modern design with greeting
  * 
  * @param {string} userName - User's display name
  */
@@ -24,25 +22,6 @@ const DashboardHeader = ({ userName = 'User' }) => {
       <div className="dash-header-left">
         <h1>{getGreeting()}, {firstName}</h1>
         <p>Your Instagram account overview</p>
-      </div>
-      
-      <div className="dash-header-actions">
-        <Link to="/posts/create" className="header-btn header-btn-ghost">
-          <FiImage />
-          <span>Post</span>
-        </Link>
-        <Link to="/reels/create" className="header-btn header-btn-ghost">
-          <FiFilm />
-          <span>Reel</span>
-        </Link>
-        <Link to="/app/ai-video" className="header-btn header-btn-secondary">
-          <FiZap />
-          <span>AI Video</span>
-        </Link>
-        <Link to="/posts/create" className="header-btn header-btn-primary">
-          <FiPlus />
-          <span>New Post</span>
-        </Link>
       </div>
     </header>
   );
