@@ -17,11 +17,7 @@ import {
   FiPlusCircle,
   FiUser,
   FiShoppingBag,
-  FiBriefcase,
-  FiBox,
-  FiLayers,
-  FiFilm,
-  FiCamera
+  FiBriefcase
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import './Layout.css';
@@ -162,12 +158,8 @@ const Layout = () => {
         { path: '/app/create/virtual-actor-ecomm', icon: FiShoppingBag, label: 'Virtual Actor E-COMM', description: 'E-commerce UGC content' },
         // Business - single page with cards
         { path: '/app/create/business', icon: FiBriefcase, label: 'Business', description: 'Trending, Video, Ad Creatives' },
-        // E-Commerce
-        { type: 'divider', label: 'E-Commerce' },
-        { path: '/app/create/product-creatives', icon: FiBox, label: 'Product Creatives', description: 'Convert Products to static Ad' },
-        { path: '/app/create/product-carousels', icon: FiLayers, label: 'Product Carousels', description: 'Convert Products to carousel slides' },
-        { path: '/app/create/product-videos', icon: FiFilm, label: 'Product Videos', description: 'Short animated product videos' },
-        { path: '/app/create/product-photoshoot', icon: FiCamera, label: 'Product Photo Shoot', description: 'Product with AI backgrounds' }
+        // E-Commerce - single page with cards
+        { path: '/app/create/ecommerce', icon: FiShoppingBag, label: 'E-Commerce', description: 'Product creatives, videos & more' }
       ]
     },
     { path: '/app/autopilot', icon: FiCpu, label: 'AI Auto-Pilot', badge: 'NEW' },

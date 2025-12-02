@@ -27,6 +27,7 @@ import AutoPilotNew from './pages/AutoPilotNew';
 import AssetHub from './pages/AssetHub';
 import ContentCalendar from './pages/ContentCalendar';
 import BusinessCreate from './pages/BusinessCreate';
+import EcommerceCreate from './pages/EcommerceCreate';
 
 // SEO Landing Pages
 import {
@@ -196,11 +197,12 @@ function AppRoutes() {
         <Route path="create/business/video" element={<ComingSoon title="Video" description="Short, impactful promo videos" />} />
         <Route path="create/business/ad-creatives" element={<ComingSoon title="Ad Creatives" description="Ads for your business" />} />
         
-        {/* E-Commerce (under Create) */}
-        <Route path="create/product-creatives" element={<ComingSoon title="Product Creatives" description="Convert Products to static Ad" />} />
-        <Route path="create/product-carousels" element={<ComingSoon title="Product Carousels" description="Convert Products to carousel slides" />} />
-        <Route path="create/product-videos" element={<ComingSoon title="Product Videos" description="Short animated product videos" />} />
-        <Route path="create/product-photoshoot" element={<ComingSoon title="Product Photo Shoot" description="Product with AI backgrounds" />} />
+        {/* E-Commerce - main page with cards */}
+        <Route path="create/ecommerce" element={<EcommerceCreate />} />
+        <Route path="create/ecommerce/product-creatives" element={<ComingSoon title="Product Creatives" description="Convert Products to static Ad" />} />
+        <Route path="create/ecommerce/product-carousels" element={<ComingSoon title="Product Carousels" description="Convert Products to carousel slides" />} />
+        <Route path="create/ecommerce/product-videos" element={<ComingSoon title="Product Videos" description="Short animated product videos" />} />
+        <Route path="create/ecommerce/product-photoshoot" element={<ComingSoon title="Product Photo Shoot" description="Product with AI backgrounds" />} />
 
         <Route path="autopilot" element={<AutoPilotNew />} />
         <Route path="asset-hub" element={<AssetHub />} />
