@@ -177,10 +177,26 @@ const AutopilotReels = () => {
       clearInterval(statusInterval);
       
       if (response.data.video) {
-        setGenerationStatus('✅ Video created successfully!');
+        console.log('Video generated:', response.data.video);
+        console.log('Pipeline info:', response.data.pipeline);
+        
+        const pipeline = response.data.pipeline;
+        let statusMsg = '✅ Video created! ';
+        if (pipeline) {
+          const steps = [];
+          if (pipeline.script) steps.push('Script');
+          if (pipeline.video) steps.push('Video');
+          if (pipeline.voiceover) steps.push('Voiceover');
+          if (pipeline.music) steps.push('Music');
+          if (pipeline.textOverlays) steps.push(`${pipeline.textOverlays} Text Overlays`);
+          if (pipeline.rendered) steps.push('Rendered');
+          statusMsg += `(${steps.join(' + ')})`;
+        }
+        
+        setGenerationStatus(statusMsg);
         setQueue(prev => [response.data.video, ...prev]);
         setActiveTab('queue');
-        setTimeout(() => setGenerationStatus(''), 3000);
+        setTimeout(() => setGenerationStatus(''), 5000);
       }
     } catch (error) {
       console.error('Failed to generate:', error);
@@ -367,14 +383,22 @@ const AutopilotReels = () => {
               {queue.map(video => (
                 <article key={video.id} className={`queue-card ${video.status}`}>
                   <div className="queue-preview">
-                    {video.videoUrl && !video.videoUrl.includes('demo/video') ? (
-                      <video src={video.videoUrl} muted playsInline />
-                    ) : (
-                      <div className="video-placeholder">
-                        <FiVideo />
-                        <span>Video generating...</span>
-                      </div>
-                    )}
+                    {video.videoUrl && video.videoUrl.startsWith('http') ? (
+                      <video 
+                        src={video.videoUrl} 
+                        muted 
+                        playsInline 
+                        onError={(e) => {
+                          console.error('Video load error:', video.videoUrl);
+                          e.target.style.display = 'none';
+                          e.target.parentNode.querySelector('.video-placeholder')?.style.removeProperty('display');
+                        }}
+                      />
+                    ) : null}
+                    <div className="video-placeholder" style={video.videoUrl && video.videoUrl.startsWith('http') ? {display: 'none'} : {}}>
+                      <FiVideo />
+                      <span>{video.videoUrl ? 'Loading video...' : 'Video generating...'}</span>
+                    </div>
                     <button className="btn-preview" onClick={() => setPreviewVideo(video)}>
                       <FiEye />
                     </button>
