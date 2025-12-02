@@ -1,0 +1,351 @@
+/* ================================================================
+   INSTAMARKETING DESIGN SYSTEM - LOCKED STYLES
+   ================================================================
+   
+   ⚠️ DO NOT MODIFY THIS FILE ⚠️
+   
+   This file contains the core design system that must be preserved
+   across all feature changes. Any new components or pages should
+   use these CSS variables and follow these design patterns.
+   
+   Last Updated: December 2, 2025
+   Design: Warm Neutral Premium with Dark Mode Support
+   ================================================================ */
+
+/* ================================================================
+   CORE COLOR PALETTE - LIGHT THEME (Warm Neutral)
+   ================================================================ */
+:root, [data-theme="light"] {
+  /* -------- Background Colors -------- */
+  --bg-primary: #faf9f7;           /* Main page background - warm off-white */
+  --bg-secondary: #f5f5f4;         /* Secondary sections - slightly darker */
+  --bg-tertiary: #ffffff;          /* Inputs, elevated elements - pure white */
+  --bg-card: #ffffff;              /* Card backgrounds */
+  --bg-card-hover: #fafaf9;        /* Card hover state */
+  --bg-subtle: #f7f7f5;            /* Subtle backgrounds */
+  
+  /* -------- Typography Colors -------- */
+  --text-primary: #1c1917;         /* Main text - dark brown/charcoal */
+  --text-secondary: #57534e;       /* Secondary text - medium brown */
+  --text-muted: #a8a29e;           /* Muted/placeholder text */
+  --text-light: #d6d3d1;           /* Very light text */
+  
+  /* -------- Accent Colors (Dark Brown CTAs) -------- */
+  --accent-primary: #292524;       /* Primary accent - dark brown */
+  --accent-secondary: #44403c;     /* Secondary accent */
+  --accent-tertiary: #78716c;      /* Tertiary accent */
+  --accent-soft: #f5f5f4;          /* Soft accent background */
+  --gradient-subtle: linear-gradient(135deg, #292524 0%, #44403c 100%);
+  
+  /* -------- Functional/Status Colors -------- */
+  --success: #047857;              /* Success green */
+  --success-bg: #ecfdf5;
+  --warning: #b45309;              /* Warning orange */
+  --warning-bg: #fffbeb;
+  --error: #b91c1c;                /* Error red */
+  --error-bg: #fef2f2;
+  --info: #0369a1;                 /* Info blue */
+  --info-bg: #f0f9ff;
+  
+  /* -------- Border Colors -------- */
+  --border-light: #e7e5e4;         /* Light borders */
+  --border-medium: #d6d3d1;        /* Medium borders */
+  --border-dark: #a8a29e;          /* Dark borders */
+  --border-color: #e7e5e4;         /* Alias for compatibility */
+  
+  /* -------- Button Colors -------- */
+  --btn-primary-bg: #292524;       /* Primary button - dark brown */
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #1c1917;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #44403c;
+  --btn-secondary-border: #d6d3d1;
+  
+  /* -------- Shadow System (Minimal) -------- */
+  --shadow-xs: 0 1px 2px rgba(28, 25, 23, 0.04);
+  --shadow-sm: 0 1px 3px rgba(28, 25, 23, 0.05);
+  --shadow-md: 0 4px 8px rgba(28, 25, 23, 0.04);
+  --shadow-lg: 0 8px 16px rgba(28, 25, 23, 0.04);
+  
+  /* -------- Additional UI Colors -------- */
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --accent-primary-light: rgba(59, 130, 246, 0.1);
+  --accent-secondary-light: rgba(139, 92, 246, 0.1);
+}
+
+/* ================================================================
+   CORE COLOR PALETTE - DARK THEME
+   ================================================================ */
+[data-theme="dark"] {
+  /* -------- Background Colors -------- */
+  --bg-primary: #0a0a0a;           /* Main page background - near black */
+  --bg-secondary: #111111;         /* Secondary sections */
+  --bg-tertiary: #171717;          /* Elevated elements */
+  --bg-card: #141414;              /* Card backgrounds */
+  --bg-card-hover: #1a1a1a;        /* Card hover state */
+  --bg-subtle: #0f0f0f;            /* Subtle backgrounds */
+  
+  /* -------- Typography Colors -------- */
+  --text-primary: #fafafa;         /* Main text - near white */
+  --text-secondary: #a3a3a3;       /* Secondary text */
+  --text-muted: #737373;           /* Muted text */
+  --text-light: #525252;           /* Very muted text */
+  --text-tertiary: #737373;        /* Alias */
+  
+  /* -------- Accent Colors (White CTAs for Dark Mode) -------- */
+  --accent-primary: #fafafa;       /* Primary accent - white */
+  --accent-secondary: #e5e5e5;     /* Secondary accent */
+  --accent-tertiary: #a3a3a3;      /* Tertiary accent */
+  --accent-soft: rgba(255, 255, 255, 0.08);
+  --gradient-subtle: linear-gradient(135deg, #fafafa 0%, #e5e5e5 100%);
+  
+  /* -------- Functional/Status Colors (Dark Adjusted) -------- */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.12);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.12);
+  --error: #ef4444;
+  --error-bg: rgba(239, 68, 68, 0.12);
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.12);
+  
+  /* -------- Border Colors -------- */
+  --border-light: #262626;
+  --border-medium: #333333;
+  --border-dark: #404040;
+  --border-color: #262626;
+  
+  /* -------- Button Colors -------- */
+  --btn-primary-bg: #fafafa;       /* Primary button - white in dark mode */
+  --btn-primary-text: #0a0a0a;
+  --btn-primary-hover: #e5e5e5;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #e5e5e5;
+  --btn-secondary-border: #333333;
+  
+  /* -------- Shadow System (Dark Mode Glow) -------- */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.4);
+  
+  /* -------- Additional UI Colors -------- */
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --accent-primary-light: rgba(59, 130, 246, 0.15);
+  --accent-secondary-light: rgba(139, 92, 246, 0.15);
+}
+
+/* ================================================================
+   SPACING & SIZING SYSTEM
+   ================================================================ */
+:root {
+  /* -------- Container & Card Spacing -------- */
+  --container-padding: 16px;
+  --card-padding: 22px;
+  --card-radius: 10px;
+  --btn-radius: 8px;
+  
+  /* -------- Touch Targets (Accessibility) -------- */
+  --touch-target: 44px;
+  
+  /* -------- Safe Areas (Mobile) -------- */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) {
+  :root {
+    --container-padding: 24px;
+    --card-padding: 28px;
+    --card-radius: 14px;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1024px) {
+  :root {
+    --container-padding: 32px;
+    --card-padding: 32px;
+    --card-radius: 16px;
+  }
+}
+
+/* ================================================================
+   TYPOGRAPHY SYSTEM
+   ================================================================ */
+:root {
+  /* -------- Font Family -------- */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* -------- Font Sizes -------- */
+  --font-size-xs: 0.75rem;         /* 12px */
+  --font-size-sm: 0.8125rem;       /* 13px */
+  --font-size-base: 0.875rem;      /* 14px */
+  --font-size-lg: 1rem;            /* 16px */
+  --font-size-xl: 1.125rem;        /* 18px */
+  --font-size-2xl: 1.375rem;       /* 22px */
+  --font-size-3xl: 1.875rem;       /* 30px */
+  --font-size-4xl: 2.25rem;        /* 36px */
+  --font-size-5xl: 3rem;           /* 48px */
+}
+
+/* ================================================================
+   DESIGN PRINCIPLES - REFERENCE ONLY
+   ================================================================
+   
+   1. WARM NEUTRAL PALETTE
+      - Light mode uses warm off-whites (#faf9f7) not pure white
+      - Dark mode uses near-black (#0a0a0a) not pure black
+      - Brown tones for text instead of pure gray
+   
+   2. MINIMAL DECORATION
+      - Very subtle shadows (nearly invisible)
+      - 1px borders preferred over shadows
+      - No gradients except for special CTAs
+   
+   3. COLOR RESERVED FOR MEANING
+      - Green = Success
+      - Orange = Warning  
+      - Red = Error/Danger
+      - Blue = Info/Links
+      - Primary accent for CTAs only
+   
+   4. CLEAN TYPOGRAPHY
+      - System font stack for performance
+      - -0.02em letter-spacing on headings
+      - 1.6 line-height for body text
+   
+   5. ACCESSIBLE TOUCH TARGETS
+      - Minimum 44px touch targets
+      - Clear focus states
+      - Sufficient color contrast
+   
+   6. RESPONSIVE SPACING
+      - Spacing scales with viewport
+      - Card padding: 22px → 28px → 32px
+      - Container padding: 16px → 24px → 32px
+   
+   ================================================================ */
+
+/* ================================================================
+   COMPONENT PATTERNS - LOCKED STYLES
+   ================================================================ */
+
+/* Primary Button Pattern */
+.ds-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  min-height: var(--touch-target);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: none;
+  border-radius: var(--btn-radius);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ds-btn-primary:hover {
+  background: var(--btn-primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Secondary Button Pattern */
+.ds-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  min-height: var(--touch-target);
+  background: transparent;
+  color: var(--btn-secondary-text);
+  border: 1px solid var(--border-light);
+  border-radius: var(--btn-radius);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ds-btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-medium);
+}
+
+/* Card Pattern */
+.ds-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  transition: border-color 0.2s ease;
+}
+
+.ds-card:hover {
+  border-color: var(--border-medium);
+}
+
+/* Input Pattern */
+.ds-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--btn-radius);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ds-input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.ds-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Badge Patterns */
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
+
+.ds-badge-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.ds-badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.ds-badge-error {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.ds-badge-info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+/* ================================================================
+   END OF DESIGN SYSTEM
+   ================================================================ */

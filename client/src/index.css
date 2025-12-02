@@ -1,4 +1,19 @@
 /* ============================================================
+   INSTAMARKETING MAIN STYLES
+   ============================================================
+   
+   ⚠️ DESIGN SYSTEM REFERENCE: See /styles/design-system.css
+   
+   The core design tokens (colors, spacing, typography) are 
+   defined in design-system.css and should NOT be changed.
+   
+   This file extends those base styles with component styles.
+   ============================================================ */
+
+/* Import the locked design system */
+@import './styles/design-system.css';
+
+/* ============================================================
    WARM NEUTRAL PREMIUM DESIGN
    Clean sans-serif, minimal decoration
    Color reserved for meaningful highlights (CTAs, progress, tags)
