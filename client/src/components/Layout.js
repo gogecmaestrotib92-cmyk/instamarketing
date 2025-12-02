@@ -44,10 +44,14 @@ const Layout = () => {
   const firstFocusableRef = useRef(null);
   const lastFocusableRef = useRef(null);
 
-  // Auto-expand parent when child is active
+  // Auto-expand parent when child is active (only on initial load or route change)
   useEffect(() => {
-    if (location.pathname.startsWith('/app/ai-video')) {
-      setExpandedItems(prev => ({ ...prev, 'ai-video': true }));
+    if (location.pathname.startsWith('/app/create')) {
+      setExpandedItems(prev => ({ ...prev, 'create-new': true }));
+    } else if (location.pathname.startsWith('/app/business')) {
+      setExpandedItems(prev => ({ ...prev, 'business': true }));
+    } else if (location.pathname.startsWith('/app/ecommerce')) {
+      setExpandedItems(prev => ({ ...prev, 'ecommerce': true }));
     }
   }, [location.pathname]);
 
