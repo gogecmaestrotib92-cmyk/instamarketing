@@ -980,6 +980,12 @@ const AutopilotReels = () => {
               )}
             </div>
 
+            {/* ===== APPROVAL SECTION ===== */}
+            <div className="settings-section-header wide">
+              <h2>✅ Approval & Automation</h2>
+              <p>Control how videos are reviewed before posting</p>
+            </div>
+
             {/* Approval Mode */}
             <div className="section">
               <h3><FiCheck aria-hidden="true" /> Approval Mode</h3>
