@@ -16,21 +16,71 @@ import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Posts from './pages/Posts';
-import CreatePost from './pages/CreatePost';
-import Reels from './pages/Reels';
-import CreateReel from './pages/CreateReel';
 import Campaigns from './pages/Campaigns';
 import CreateCampaign from './pages/CreateCampaign';
 import Schedule from './pages/Schedule';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import InstagramCallback from './pages/InstagramCallback';
-import AIVideo from './pages/AIVideo';
 import VideoEdit from './pages/VideoEdit';
-import AITools from './pages/AITools';
-import AdvancedVideoGenerator from './pages/AdvancedVideoGenerator';
 import AutoPilotNew from './pages/AutoPilotNew';
+import AssetHub from './pages/AssetHub';
+import ContentCalendar from './pages/ContentCalendar';
+
+// Coming Soon placeholder component
+const ComingSoon = ({ title, description }) => (
+  <div style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '60vh',
+    padding: '40px',
+    textAlign: 'center'
+  }}>
+    <div style={{
+      width: '80px',
+      height: '80px',
+      borderRadius: '20px',
+      background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: '24px',
+      fontSize: '2rem'
+    }}>
+      🚀
+    </div>
+    <h1 style={{
+      fontSize: '2rem',
+      fontWeight: '700',
+      color: 'var(--text-primary)',
+      margin: '0 0 12px 0'
+    }}>
+      {title}
+    </h1>
+    <p style={{
+      fontSize: '1.125rem',
+      color: 'var(--text-secondary)',
+      margin: '0 0 8px 0',
+      maxWidth: '400px'
+    }}>
+      {description}
+    </p>
+    <span style={{
+      display: 'inline-block',
+      padding: '8px 16px',
+      background: 'var(--accent-soft)',
+      color: 'var(--accent-primary)',
+      borderRadius: '20px',
+      fontSize: '0.875rem',
+      fontWeight: '600',
+      marginTop: '16px'
+    }}>
+      Coming Soon
+    </span>
+  </div>
+);
 
 // SEO Landing Pages
 import {
@@ -133,18 +183,25 @@ function AppRoutes() {
       }>
         <Route index element={<Navigate to="/app/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="posts" element={<Posts />} />
-        <Route path="posts/create" element={<CreatePost />} />
-        <Route path="posts/edit/:id" element={<CreatePost />} />
-        <Route path="reels" element={<Reels />} />
-        <Route path="reels/create" element={<CreateReel />} />
-        <Route path="reels/edit/:id" element={<CreateReel />} />
-        <Route path="ai-video" element={<AIVideo />} />
-        <Route path="ai-video/generate" element={<AdvancedVideoGenerator />} />
-        <Route path="ai-video/edit" element={<VideoEdit />} />
-        <Route path="ai-tools" element={<AITools />} />
-        <Route path="advanced-video" element={<AdvancedVideoGenerator />} />
+        <Route path="video-edit" element={<VideoEdit />} />
+        
+        {/* Create New */}
+        <Route path="create/virtual-actor" element={<ComingSoon title="Virtual Actor" description="UGC for storytelling and ads" />} />
+        <Route path="create/virtual-actor-ecomm" element={<ComingSoon title="Virtual Actor E-COMM" description="E-commerce UGC content" />} />
+        
+        {/* Business */}
+        <Route path="business/trending" element={<ComingSoon title="Trending" description="Faceless subtitle videos & AI voices" />} />
+        <Route path="business/video" element={<ComingSoon title="Video" description="Short, impactful promo videos" />} />
+        <Route path="business/ad-creatives" element={<ComingSoon title="Ad Creatives" description="Ads for your business" />} />
+        
+        {/* E-Commerce */}
+        <Route path="ecommerce/product-creatives" element={<ComingSoon title="Product Creatives" description="Convert Products to static Ad" />} />
+        <Route path="ecommerce/product-carousels" element={<ComingSoon title="Product Carousels" description="Convert Products to carousel slides" />} />
+        <Route path="ecommerce/product-videos" element={<ComingSoon title="Product Videos" description="Short animated product videos" />} />
+        <Route path="ecommerce/product-photoshoot" element={<ComingSoon title="Product Photo Shoot" description="Product with AI backgrounds" />} />
         <Route path="autopilot" element={<AutoPilotNew />} />
+        <Route path="asset-hub" element={<AssetHub />} />
+        <Route path="calendar" element={<ContentCalendar />} />
         <Route path="campaigns" element={<Campaigns />} />
         <Route path="campaigns/create" element={<CreateCampaign />} />
         <Route path="campaigns/edit/:id" element={<CreateCampaign />} />
@@ -156,15 +213,11 @@ function AppRoutes() {
       
       {/* Legacy routes - redirect to /app */}
       <Route path="/dashboard" element={<Navigate to="/app/dashboard" />} />
-      <Route path="/posts/*" element={<Navigate to="/app/posts" />} />
-      <Route path="/reels/*" element={<Navigate to="/app/reels" />} />
       <Route path="/campaigns/*" element={<Navigate to="/app/campaigns" />} />
       <Route path="/schedule" element={<Navigate to="/app/schedule" />} />
       <Route path="/scheduler" element={<Navigate to="/app/scheduler" />} />
       <Route path="/analytics" element={<Navigate to="/app/analytics" />} />
       <Route path="/settings" element={<Navigate to="/app/settings" />} />
-      <Route path="/ai-tools" element={<Navigate to="/app/ai-tools" />} />
-      <Route path="/ai-video" element={<Navigate to="/app/ai-video" />} />
 
       {/* 404 */}
       <Route path="*" element={<Navigate to="/" />} />

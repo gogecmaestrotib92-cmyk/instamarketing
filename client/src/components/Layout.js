@@ -4,19 +4,28 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { 
   FiHome, 
-  FiImage, 
-  FiFilm, 
   FiSettings,
   FiLogOut,
   FiMenu,
   FiX,
-  FiZap,
   FiChevronDown,
-  FiEdit3,
   FiCpu,
-  FiPlay,
   FiSun,
-  FiMoon
+  FiMoon,
+  FiFolder,
+  FiCalendar,
+  FiPlusCircle,
+  FiUser,
+  FiShoppingBag,
+  FiBriefcase,
+  FiTrendingUp,
+  FiMic,
+  FiVideo,
+  FiTarget,
+  FiBox,
+  FiLayers,
+  FiFilm,
+  FiCamera
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import './Layout.css';
@@ -146,22 +155,46 @@ const Layout = () => {
 
   const navItems = [
     { path: '/app/dashboard', icon: FiHome, label: 'Dashboard' },
-    { path: '/app/posts', icon: FiImage, label: 'Posts' },
-    { path: '/app/reels', icon: FiFilm, label: 'Reels' },
     { 
-      path: '/app/ai-video', 
-      icon: FiZap, 
-      label: 'AI Video', 
-      badge: 'NEW',
-      key: 'ai-video',
+      path: '/app/create', 
+      icon: FiPlusCircle, 
+      label: 'Create New',
+      key: 'create-new',
       children: [
-        { path: '/app/ai-video/generate', icon: FiPlay, label: 'Generate' },
-        { path: '/app/ai-video/edit', icon: FiEdit3, label: 'Edit' }
+        { path: '/app/create/virtual-actor', icon: FiUser, label: 'Virtual Actor', description: 'UGC for storytelling and ads' },
+        { path: '/app/create/virtual-actor-ecomm', icon: FiShoppingBag, label: 'Virtual Actor E-COMM', description: 'E-commerce UGC content' }
+      ]
+    },
+    { 
+      path: '/app/business', 
+      icon: FiBriefcase, 
+      label: 'Business',
+      key: 'business',
+      children: [
+        { path: '/app/business/trending', icon: FiTrendingUp, label: 'Trending', description: 'Voiceover Video' },
+        { path: '/app/business/video', icon: FiVideo, label: 'Video', description: 'Short, impactful promo videos' },
+        { path: '/app/business/ad-creatives', icon: FiTarget, label: 'Ad Creatives', description: 'Ads for your business' }
+      ]
+    },
+    { 
+      path: '/app/ecommerce', 
+      icon: FiShoppingBag, 
+      label: 'E-Commerce',
+      key: 'ecommerce',
+      children: [
+        { path: '/app/ecommerce/product-creatives', icon: FiBox, label: 'Product Creatives', description: 'Convert Products to static Ad' },
+        { path: '/app/ecommerce/product-carousels', icon: FiLayers, label: 'Product Carousels', description: 'Convert Products to carousel slides' },
+        { path: '/app/ecommerce/product-videos', icon: FiFilm, label: 'Product Videos', description: 'Short animated product videos' },
+        { path: '/app/ecommerce/product-photoshoot', icon: FiCamera, label: 'Product Photo Shoot', description: 'Product with AI backgrounds' }
       ]
     },
     { path: '/app/autopilot', icon: FiCpu, label: 'AI Auto-Pilot', badge: 'NEW' },
+    { path: '/app/asset-hub', icon: FiFolder, label: 'Asset Hub' },
+    { path: '/app/calendar', icon: FiCalendar, label: 'Content Calendar' },
     { path: '/app/settings', icon: FiSettings, label: 'Settings' }
   ];
+  
+  // Video Edit page is still accessible at /app/video-edit (hidden from menu)
 
   return (
     <div className="layout">
