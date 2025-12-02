@@ -15,7 +15,6 @@ import {
   FiEdit3,
   FiCpu,
   FiPlay,
-  FiGrid,
   FiSun,
   FiMoon
 } from 'react-icons/fi';
