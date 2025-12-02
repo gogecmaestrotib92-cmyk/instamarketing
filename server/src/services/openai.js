@@ -121,8 +121,11 @@ class OpenAIService {
    * Generate VIRAL video script for Reels
    * Uses proven viral formulas: Hook → Value → CTA
    */
-  async generateReelScript(topic, duration = 15) {
+  async generateReelScript(topic, duration = 9) {
     try {
+      // Calculate max words based on duration (2.5 words/second)
+      const maxWords = Math.floor(duration * 2.5);
+      
       const response = await this.client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -130,32 +133,39 @@ class OpenAIService {
             role: 'system', 
             content: `You are an expert viral content creator who has studied MrBeast, Alex Hormozi, and top TikTok creators.
 
-Write a ${duration}-second script that WILL go viral using these proven formulas:
+Write a ${duration}-second script (MAXIMUM ${maxWords} words) that WILL go viral.
 
-VIRAL HOOKS (pick one style):
+${duration <= 9 ? `
+SHORT FORMAT STRUCTURE (${duration} seconds):
+1. HOOK (0-2 sec): Pattern interrupt - 4-5 words max
+2. VALUE (2-7 sec): One powerful insight - 12-15 words
+3. CTA (7-9 sec): Quick call to action - 3-4 words
+
+EXAMPLE for 9 seconds (22 words):
+"Stop scrolling if you want success. The one thing millionaires do every morning. Save this and try it tomorrow."
+` : `
+LONGER FORMAT STRUCTURE:
+1. HOOK (0-3 sec): Pattern interrupt
+2. VALUE (3-12 sec): Deliver the promise
+3. CTA (12-${duration} sec): Follow/Save call
+`}
+
+VIRAL HOOKS (pick one):
 - "Stop scrolling if you..." 
 - "Nobody talks about this but..."
-- "The secret that [industry] doesn't want you to know..."
-- "I can't believe [shocking statement]..."
-- "This changed everything for me..."
-- "POV: You just discovered..."
-
-STRUCTURE:
-1. HOOK (0-3 sec): Pattern interrupt - make them stop scrolling
-2. VALUE (3-12 sec): Deliver the promise - one powerful insight
-3. CTA (12-15 sec): "Follow for more" or "Save this"
+- "This changed everything..."
+- "Here's the truth about..."
 
 RULES:
+- EXACTLY ${maxWords} words or fewer
 - Write for SPEAKING, not reading
 - Short punchy sentences
-- Create curiosity gaps
-- Use emotional triggers
-- NO timestamps or brackets - just the spoken words
-- Keep it under 50 words total` 
+- NO timestamps, brackets, or stage directions
+- Just the spoken words` 
           },
-          { role: 'user', content: `Write a viral Reel script about: ${topic}` }
+          { role: 'user', content: `Write a viral ${duration}-second Reel script about: ${topic}` }
         ],
-        max_tokens: 300,
+        max_tokens: 150,
         temperature: 0.9
       });
 

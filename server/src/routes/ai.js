@@ -1451,8 +1451,8 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     let hashtags = settings?.hashtags || '#viral #trending #reels';
     
     try {
-      // Generate a script for voiceover
-      const scriptResult = await openaiService.generateReelScript(niche, 15);
+      // Generate a short script optimized for 9-second video (~22 words max)
+      const scriptResult = await openaiService.generateReelScript(niche, 9);
       if (scriptResult.success) {
         script = scriptResult.script;
       }
@@ -1460,9 +1460,9 @@ router.post('/autopilot/reels/generate', async (req, res) => {
       console.log('Script generation fallback:', e.message);
     }
     
-    // Fallback script
+    // Fallback script (optimized for 9 seconds)
     if (!script) {
-      script = `Here's something incredible about ${niche} that will change how you think. Most people don't know this, but it's a game changer. Save this for later!`;
+      script = `Stop scrolling. Here's something incredible about ${niche}. Most people don't know this. Save it now!`;
     }
     
     // Generate caption
@@ -1496,7 +1496,7 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     try {
       const videoResult = await replicateService.startTextToVideo(videoPrompt, {
         aspectRatio: '9:16',
-        duration: 10
+        duration: 9 // Luma Ray Flash 2 max duration
       });
       
       if (videoResult.success) {
@@ -1602,37 +1602,116 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     
     // ==================== STEP 5: Build Text Overlays ====================
     let textOverlays = [];
+    const videoDuration = 9; // Luma Ray Flash 2 max duration
     
     if (textSettings.enabled && script) {
-      console.log('📝 Step 5: Building text overlays...');
+      console.log('📝 Step 5: Building optimized text overlays for', videoDuration, 'seconds...');
       
-      // Create simple text segments from script - one at a time with proper timing
-      const sentences = script.split(/[.!?]+/).filter(s => s.trim().length > 5);
-      const videoDuration = 10;
-      const segmentDuration = videoDuration / Math.min(sentences.length, 3);
+      // Word-based chunking for punchy, readable captions
+      const wordsPerSecond = 2.5; // Natural speaking pace
+      const maxWords = Math.floor(videoDuration * wordsPerSecond); // ~22 words for 9 sec
+      const wordsPerCaption = 4; // Short, punchy chunks
       
-      sentences.slice(0, 3).forEach((sentence, i) => {
+      // Get words from script, limit to what fits in video
+      const words = script.replace(/[.!?,]/g, '').split(/\s+/).filter(w => w.trim());
+      const wordsToUse = words.slice(0, maxWords);
+      
+      // Calculate timing
+      const numCaptions = Math.ceil(wordsToUse.length / wordsPerCaption);
+      const captionDuration = videoDuration / numCaptions;
+      
+      // Build caption chunks
+      for (let i = 0; i < wordsToUse.length; i += wordsPerCaption) {
+        const chunk = wordsToUse.slice(i, i + wordsPerCaption).join(' ');
+        const captionIndex = Math.floor(i / wordsPerCaption);
+        
         textOverlays.push({
-          text: sentence.trim().substring(0, 50),
-          start: i * segmentDuration,
-          end: (i + 1) * segmentDuration,
-          position: 'bottom-center', // Show at bottom so they don't overlap
-          style: textSettings.style || 'tiktok'
+          text: chunk,
+          start: Math.round(captionIndex * captionDuration * 10) / 10,
+          end: Math.round((captionIndex + 1) * captionDuration * 10) / 10,
+          position: 'bottom',
+          style: textSettings.style || 'blockbuster'
         });
-      });
+      }
       
-      console.log('✅ Text overlays:', textOverlays.length, 'with timing');
+      console.log('✅ Text overlays:', textOverlays.length, 'captions,', wordsToUse.length, 'words');
+      if (words.length > maxWords) {
+        console.log('⚠️ Script trimmed from', words.length, 'to', maxWords, 'words');
+      }
     }
     
-    // ==================== STEP 6: Render Final Video (Cloudinary) ====================
+    // ==================== STEP 6: Render Final Video ====================
     let finalVideoUrl = rawVideoUrl;
     let cloudinaryVideoPublicId = null;
     let audioPublicId = null;
+    const videoDurationForRender = 9;
     
     const needsRender = voiceoverUrl || musicUrl || textOverlays.length > 0;
     
-    if (needsRender && cloudinaryService) {
-      console.log('🎬 Step 6: Rendering final video with Cloudinary...');
+    // PRIORITY 1: Use Shotstack for proper timed subtitles
+    if (needsRender && shotstackClient && textOverlays.length > 0) {
+      console.log('🎬 Step 6: Rendering with Shotstack (for timed subtitles)...');
+      
+      try {
+        // First upload video to Cloudinary (Shotstack needs public URLs)
+        let processedVideoUrl = rawVideoUrl;
+        if (cloudinaryService && !rawVideoUrl.includes('cloudinary.com')) {
+          console.log('   📤 Uploading video to Cloudinary for Shotstack...');
+          const videoUpload = await cloudinaryService.uploadFromUrl(rawVideoUrl, {
+            resource_type: 'video',
+            folder: 'autopilot/videos'
+          });
+          if (videoUpload.success) {
+            processedVideoUrl = videoUpload.url;
+            console.log('   ✅ Video uploaded:', processedVideoUrl);
+          }
+        }
+        
+        // Upload audio if provided
+        let processedAudioUrl = voiceoverUrl || musicUrl;
+        if (processedAudioUrl && cloudinaryService && !processedAudioUrl.includes('cloudinary.com')) {
+          console.log('   📤 Uploading audio to Cloudinary for Shotstack...');
+          const audioUpload = await cloudinaryService.uploadFromUrl(processedAudioUrl, {
+            resource_type: 'video',
+            folder: 'autopilot/audio'
+          });
+          if (audioUpload.success) {
+            processedAudioUrl = audioUpload.url;
+            console.log('   ✅ Audio uploaded:', processedAudioUrl);
+          }
+        }
+        
+        // Render with Shotstack
+        console.log('   🎬 Starting Shotstack render with', textOverlays.length, 'subtitles...');
+        const result = await shotstackClient.renderVideo(
+          processedVideoUrl,
+          processedAudioUrl,
+          textOverlays,
+          {
+            duration: videoDurationForRender,
+            videoVolume: 0,
+            musicVolume: voiceoverUrl ? 1 : 0.7,
+            maxAttempts: 60,
+            pollInterval: 3000
+          }
+        );
+        
+        if (result.success && result.url) {
+          finalVideoUrl = result.url;
+          console.log('✅ Shotstack render complete:', finalVideoUrl);
+        } else {
+          console.error('❌ Shotstack render failed:', result.error);
+          // Fall through to Cloudinary
+        }
+      } catch (e) {
+        console.error('Shotstack error:', e.message);
+        // Fall through to Cloudinary
+      }
+    }
+    
+    // PRIORITY 2: Fallback to Cloudinary (limited subtitle timing support)
+    if (finalVideoUrl === rawVideoUrl && needsRender && cloudinaryService) {
+      console.log('🎬 Step 6: Rendering final video with Cloudinary (fallback)...');
       
       try {
         // Step 6a: Upload the raw video to Cloudinary (if not already there)
@@ -1691,8 +1770,8 @@ router.post('/autopilot/reels/generate', async (req, res) => {
         // Fall back to raw video
         finalVideoUrl = rawVideoUrl;
       }
-    } else if (!cloudinaryService) {
-      console.log('⚠️ Cloudinary not available, using raw video');
+    } else if (!cloudinaryService && !shotstackClient) {
+      console.log('⚠️ No render service available, using raw video');
     }
     
     // ==================== STEP 7: Add to Queue ====================
