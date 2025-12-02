@@ -121,11 +121,55 @@ class OpenAIService {
    * Generate VIRAL video script for Reels
    * Uses proven viral formulas: Hook → Value → CTA
    */
-  async generateReelScript(topic, duration = 9) {
+  async generateReelScript(topic, duration = 9, context = {}) {
     try {
       // Calculate max words based on duration (2.5 words/second)
       const maxWords = Math.floor(duration * 2.5);
       
+      // Build context-aware prompt
+      const {
+        businessName = '',
+        businessType = '',
+        targetAudience = '',
+        brandTone = 'professional',
+        hookStyle = 'question',
+        contentGoal = 'engagement',
+        topics = []
+      } = context;
+      
+      const hookInstructions = {
+        question: 'Start with a compelling question that makes viewers curious',
+        statistic: 'Start with a shocking or surprising statistic',
+        bold_claim: 'Start with a bold, controversial claim that grabs attention',
+        story: 'Start with "I discovered..." or a mini story hook',
+        problem: 'Start by calling out a common problem your audience has',
+        curiosity: 'Start with "What if I told you..." or similar curiosity gap',
+        stop_scroll: 'Start with "Stop scrolling" or "Wait" pattern interrupt',
+        secret: 'Start with "The secret..." or "Nobody tells you this..."'
+      };
+      
+      const goalInstructions = {
+        engagement: 'Focus on getting comments and shares - ask questions, be relatable',
+        followers: 'Focus on giving value so viewers want to follow for more',
+        sales: 'Focus on pain points and hint at a solution (soft sell)',
+        awareness: 'Focus on memorable brand messaging',
+        education: 'Focus on teaching one valuable concept clearly',
+        traffic: 'Tease valuable content and hint at more in bio',
+        trust: 'Focus on credibility, expertise, and genuine value'
+      };
+      
+      const toneInstructions = {
+        professional: 'authoritative and credible',
+        friendly: 'warm and approachable like a friend',
+        inspirational: 'motivating and uplifting',
+        humorous: 'witty and entertaining',
+        educational: 'clear and informative',
+        luxury: 'sophisticated and premium',
+        casual: 'relatable and down-to-earth',
+        bold: 'direct and provocative',
+        empathetic: 'understanding and supportive'
+      };
+
       const response = await this.client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -135,35 +179,33 @@ class OpenAIService {
 
 Write a ${duration}-second script (MAXIMUM ${maxWords} words) that WILL go viral.
 
+${businessName ? `BRAND: ${businessName}` : ''}
+${targetAudience ? `TARGET AUDIENCE: ${targetAudience}` : ''}
+TONE: ${toneInstructions[brandTone] || 'professional'}
+HOOK STYLE: ${hookInstructions[hookStyle] || hookInstructions.question}
+GOAL: ${goalInstructions[contentGoal] || goalInstructions.engagement}
+
 ${duration <= 9 ? `
 SHORT FORMAT STRUCTURE (${duration} seconds):
-1. HOOK (0-2 sec): Pattern interrupt - 4-5 words max
+1. HOOK (0-2 sec): ${hookInstructions[hookStyle]} - 4-5 words max
 2. VALUE (2-7 sec): One powerful insight - 12-15 words
 3. CTA (7-9 sec): Quick call to action - 3-4 words
-
-EXAMPLE for 9 seconds (22 words):
-"Stop scrolling if you want success. The one thing millionaires do every morning. Save this and try it tomorrow."
 ` : `
 LONGER FORMAT STRUCTURE:
-1. HOOK (0-3 sec): Pattern interrupt
+1. HOOK (0-3 sec): ${hookInstructions[hookStyle]}
 2. VALUE (3-12 sec): Deliver the promise
 3. CTA (12-${duration} sec): Follow/Save call
 `}
-
-VIRAL HOOKS (pick one):
-- "Stop scrolling if you..." 
-- "Nobody talks about this but..."
-- "This changed everything..."
-- "Here's the truth about..."
 
 RULES:
 - EXACTLY ${maxWords} words or fewer
 - Write for SPEAKING, not reading
 - Short punchy sentences
+- Tone should be ${toneInstructions[brandTone] || 'professional'}
 - NO timestamps, brackets, or stage directions
 - Just the spoken words` 
           },
-          { role: 'user', content: `Write a viral ${duration}-second Reel script about: ${topic}` }
+          { role: 'user', content: `Write a viral ${duration}-second Reel script about: ${topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)] : topic}` }
         ],
         max_tokens: 150,
         temperature: 0.9

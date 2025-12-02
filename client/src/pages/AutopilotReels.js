@@ -39,10 +39,28 @@ const AutopilotReels = () => {
 
   // Settings State
   const [settings, setSettings] = useState({
+    // Business Identity
+    businessName: '',
+    businessType: 'personal_brand',
+    targetAudience: '',
+    brandTone: 'professional',
+    callToAction: '',
+    websiteUrl: '',
+    
+    // Content Settings
     niche: 'motivational',
     style: 'cinematic',
     topics: '',
+    contentGoal: 'engagement', // engagement, sales, awareness, education
+    hookStyle: 'question', // question, statistic, bold_claim, story
+    
+    // Hashtags & Caption
     hashtags: '#viral #trending #reels',
+    captionStyle: 'short', // short, medium, long
+    includeEmojis: true,
+    includeCTA: true,
+    
+    // Scheduling
     postsPerDay: 3,
     preferredTimes: ['09:00', '14:00', '19:00'],
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -55,24 +73,34 @@ const AutopilotReels = () => {
       saturday: true,
       sunday: true
     },
+    
+    // Visual Style
     textOverlay: {
       enabled: true,
       autoGenerate: true,
-      position: 'center',
-      style: 'bold'
+      position: 'bottom',
+      style: 'chunk', // chunk, blockbuster, minimal, subtitle
+      color: 'white',
+      animation: 'fade'
     },
+    
+    // Audio
     music: {
       enabled: true,
       genre: 'trending',
+      mood: 'upbeat',
       autoSelect: true
     },
     voiceover: {
       enabled: true,
       provider: 'elevenlabs',
-      voiceId: '21m00Tcm4TlvDq8ikWAM', // Rachel - default
+      voiceId: '21m00Tcm4TlvDq8ikWAM',
       voiceName: 'Rachel',
-      style: 'conversational'
+      style: 'conversational',
+      speed: 'normal'
     },
+    
+    // Approval
     autoApprove: false,
     requireReview: true
   });
@@ -473,57 +501,281 @@ const AutopilotReels = () => {
       {activeTab === 'settings' && (
         <section role="tabpanel">
           <div className="settings-grid">
+            
+            {/* ===== BUSINESS IDENTITY SECTION ===== */}
+            <div className="settings-section-header wide">
+              <h2>🏢 Business Identity</h2>
+              <p>Tell us about your business so AI creates content that matches your brand</p>
+            </div>
+            
+            {/* Business Name */}
+            <div className="section">
+              <h3>📛 Business/Brand Name</h3>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={settings.businessName}
+                  onChange={(e) => setSettings(prev => ({ ...prev, businessName: e.target.value }))}
+                  placeholder="Your Business Name"
+                />
+              </div>
+            </div>
+            
+            {/* Business Type */}
+            <div className="section">
+              <h3>🏷️ Business Type</h3>
+              <div className="form-group">
+                <select
+                  value={settings.businessType}
+                  onChange={(e) => setSettings(prev => ({ ...prev, businessType: e.target.value }))}
+                >
+                  <option value="personal_brand">Personal Brand / Influencer</option>
+                  <option value="ecommerce">E-commerce / Online Store</option>
+                  <option value="saas">SaaS / Software</option>
+                  <option value="agency">Marketing Agency</option>
+                  <option value="coaching">Coaching / Consulting</option>
+                  <option value="restaurant">Restaurant / Food Business</option>
+                  <option value="fitness">Gym / Fitness Studio</option>
+                  <option value="real_estate">Real Estate</option>
+                  <option value="healthcare">Healthcare / Wellness</option>
+                  <option value="education">Education / Courses</option>
+                  <option value="local_service">Local Service Business</option>
+                  <option value="nonprofit">Non-Profit</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Target Audience */}
+            <div className="section wide">
+              <h3>🎯 Target Audience</h3>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={settings.targetAudience}
+                  onChange={(e) => setSettings(prev => ({ ...prev, targetAudience: e.target.value }))}
+                  placeholder="e.g., Entrepreneurs aged 25-40 interested in productivity"
+                />
+                <small>Describe who you want to reach with your content</small>
+              </div>
+            </div>
+            
+            {/* Brand Tone */}
+            <div className="section">
+              <h3>🎭 Brand Voice/Tone</h3>
+              <div className="form-group">
+                <select
+                  value={settings.brandTone}
+                  onChange={(e) => setSettings(prev => ({ ...prev, brandTone: e.target.value }))}
+                >
+                  <option value="professional">Professional & Authoritative</option>
+                  <option value="friendly">Friendly & Approachable</option>
+                  <option value="inspirational">Inspirational & Motivational</option>
+                  <option value="humorous">Humorous & Fun</option>
+                  <option value="educational">Educational & Informative</option>
+                  <option value="luxury">Luxury & Premium</option>
+                  <option value="casual">Casual & Relatable</option>
+                  <option value="bold">Bold & Provocative</option>
+                  <option value="empathetic">Empathetic & Supportive</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Call to Action */}
+            <div className="section">
+              <h3>📢 Default Call-to-Action</h3>
+              <div className="form-group">
+                <input
+                  type="text"
+                  value={settings.callToAction}
+                  onChange={(e) => setSettings(prev => ({ ...prev, callToAction: e.target.value }))}
+                  placeholder="e.g., Follow for more tips!"
+                />
+              </div>
+            </div>
+            
+            {/* Website URL */}
+            <div className="section">
+              <h3>🔗 Website/Link</h3>
+              <div className="form-group">
+                <input
+                  type="url"
+                  value={settings.websiteUrl}
+                  onChange={(e) => setSettings(prev => ({ ...prev, websiteUrl: e.target.value }))}
+                  placeholder="https://yourbusiness.com"
+                />
+              </div>
+            </div>
+            
+            {/* ===== CONTENT STRATEGY SECTION ===== */}
+            <div className="settings-section-header wide">
+              <h2>📝 Content Strategy</h2>
+              <p>Define what kind of content you want to create</p>
+            </div>
+            
             {/* Niche */}
             <div className="section">
-              <h3><FiGrid aria-hidden="true" /> Niche</h3>
+              <h3><FiGrid aria-hidden="true" /> Content Niche</h3>
               <div className="form-group">
                 <select
                   value={settings.niche}
                   onChange={(e) => setSettings(prev => ({ ...prev, niche: e.target.value }))}
                 >
                   <option value="motivational">Motivational</option>
-                  <option value="fitness">Fitness</option>
-                  <option value="business">Business/Finance</option>
+                  <option value="fitness">Fitness & Health</option>
+                  <option value="business">Business & Finance</option>
                   <option value="lifestyle">Lifestyle</option>
                   <option value="travel">Travel</option>
-                  <option value="food">Food</option>
+                  <option value="food">Food & Cooking</option>
                   <option value="tech">Technology</option>
-                  <option value="fashion">Fashion</option>
-                  <option value="comedy">Comedy</option>
+                  <option value="fashion">Fashion & Beauty</option>
+                  <option value="comedy">Comedy & Entertainment</option>
                   <option value="educational">Educational</option>
+                  <option value="real_estate">Real Estate</option>
+                  <option value="marketing">Marketing Tips</option>
+                  <option value="entrepreneurship">Entrepreneurship</option>
+                  <option value="productivity">Productivity</option>
+                  <option value="mindset">Mindset & Self-Improvement</option>
                 </select>
+              </div>
+            </div>
+            
+            {/* Content Goal */}
+            <div className="section">
+              <h3>🎯 Content Goal</h3>
+              <div className="form-group">
+                <select
+                  value={settings.contentGoal}
+                  onChange={(e) => setSettings(prev => ({ ...prev, contentGoal: e.target.value }))}
+                >
+                  <option value="engagement">Maximize Engagement (Likes, Comments)</option>
+                  <option value="followers">Grow Followers</option>
+                  <option value="sales">Drive Sales/Conversions</option>
+                  <option value="awareness">Build Brand Awareness</option>
+                  <option value="education">Educate Audience</option>
+                  <option value="traffic">Drive Website Traffic</option>
+                  <option value="trust">Build Trust & Authority</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Hook Style */}
+            <div className="section">
+              <h3>🪝 Hook Style</h3>
+              <div className="form-group">
+                <select
+                  value={settings.hookStyle}
+                  onChange={(e) => setSettings(prev => ({ ...prev, hookStyle: e.target.value }))}
+                >
+                  <option value="question">Start with a Question</option>
+                  <option value="statistic">Start with a Statistic</option>
+                  <option value="bold_claim">Bold Claim / Controversy</option>
+                  <option value="story">Storytelling Hook</option>
+                  <option value="problem">Problem-Solution</option>
+                  <option value="curiosity">Curiosity Gap</option>
+                  <option value="stop_scroll">"Stop Scrolling" Pattern Interrupt</option>
+                  <option value="secret">Secret/Insider Knowledge</option>
+                </select>
+                <small>How should the video grab attention in the first 2 seconds?</small>
               </div>
             </div>
 
             {/* Video Style */}
             <div className="section">
-              <h3><FiPlay aria-hidden="true" /> Video Style</h3>
+              <h3><FiPlay aria-hidden="true" /> Visual Style</h3>
               <div className="form-group">
                 <select
                   value={settings.style}
                   onChange={(e) => setSettings(prev => ({ ...prev, style: e.target.value }))}
                 >
-                  <option value="cinematic">Cinematic</option>
-                  <option value="energetic">Energetic</option>
-                  <option value="minimal">Minimal</option>
-                  <option value="aesthetic">Aesthetic</option>
-                  <option value="bold">Bold</option>
-                  <option value="vintage">Vintage</option>
+                  <option value="cinematic">Cinematic & Dramatic</option>
+                  <option value="energetic">Energetic & Fast-Paced</option>
+                  <option value="minimal">Minimal & Clean</option>
+                  <option value="aesthetic">Aesthetic & Moody</option>
+                  <option value="bold">Bold & Colorful</option>
+                  <option value="vintage">Vintage & Retro</option>
+                  <option value="professional">Professional & Corporate</option>
+                  <option value="playful">Playful & Fun</option>
                 </select>
               </div>
             </div>
+            
+            {/* Topics */}
+            <div className="section wide">
+              <h3>💡 Specific Topics (Optional)</h3>
+              <div className="form-group">
+                <textarea
+                  value={settings.topics}
+                  onChange={(e) => setSettings(prev => ({ ...prev, topics: e.target.value }))}
+                  placeholder="Enter specific topics you want to cover, one per line. e.g.:&#10;How to grow on Instagram&#10;Best productivity hacks&#10;Morning routine tips"
+                  rows={4}
+                />
+                <small>Leave empty to let AI generate trending topics for your niche</small>
+              </div>
+            </div>
+
+            {/* ===== CAPTION & HASHTAGS SECTION ===== */}
+            <div className="settings-section-header wide">
+              <h2>#️⃣ Caption & Hashtags</h2>
+              <p>Customize how your captions and hashtags are generated</p>
+            </div>
 
             {/* Hashtags */}
-            <div className="section setting-card wide">
+            <div className="section wide">
               <h3><FiHash aria-hidden="true" /> Default Hashtags</h3>
               <div className="form-group">
                 <input
                   type="text"
                   value={settings.hashtags}
                   onChange={(e) => setSettings(prev => ({ ...prev, hashtags: e.target.value }))}
-                  placeholder="#hashtag1 #hashtag2 ..."
+                  placeholder="#yourbrand #yourniche #viral #trending"
                 />
+                <small>These will be added to every post (AI will also suggest trending ones)</small>
               </div>
+            </div>
+            
+            {/* Caption Style */}
+            <div className="section">
+              <h3>📝 Caption Length</h3>
+              <div className="form-group">
+                <select
+                  value={settings.captionStyle}
+                  onChange={(e) => setSettings(prev => ({ ...prev, captionStyle: e.target.value }))}
+                >
+                  <option value="short">Short & Punchy (1-2 lines)</option>
+                  <option value="medium">Medium (3-5 lines)</option>
+                  <option value="long">Long-form Story (6+ lines)</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Caption Options */}
+            <div className="section">
+              <h3>✨ Caption Options</h3>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="includeEmojis"
+                  checked={settings.includeEmojis}
+                  onChange={(e) => setSettings(prev => ({ ...prev, includeEmojis: e.target.checked }))}
+                />
+                <label htmlFor="includeEmojis">Include emojis in captions</label>
+              </div>
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="includeCTA"
+                  checked={settings.includeCTA}
+                  onChange={(e) => setSettings(prev => ({ ...prev, includeCTA: e.target.checked }))}
+                />
+                <label htmlFor="includeCTA">Include call-to-action</label>
+              </div>
+            </div>
+
+            {/* ===== SCHEDULING SECTION ===== */}
+            <div className="settings-section-header wide">
+              <h2>📅 Scheduling</h2>
+              <p>Set your posting schedule</p>
             </div>
 
             {/* Posts Per Day */}
@@ -564,10 +816,16 @@ const AutopilotReels = () => {
                 </button>
               </div>
             </div>
+            
+            {/* ===== VISUAL & AUDIO SECTION ===== */}
+            <div className="settings-section-header wide">
+              <h2>🎬 Visual & Audio</h2>
+              <p>Customize the look and sound of your reels</p>
+            </div>
 
             {/* Text Overlay */}
             <div className="section">
-              <h3><FiType aria-hidden="true" /> Text Overlay</h3>
+              <h3><FiType aria-hidden="true" /> Text/Subtitles</h3>
               <div className="checkbox-group">
                 <input
                   type="checkbox"
@@ -580,18 +838,40 @@ const AutopilotReels = () => {
                 />
                 <label htmlFor="textOverlayEnabled">Enable text overlays</label>
               </div>
-              <div className="checkbox-group">
-                <input
-                  type="checkbox"
-                  id="textOverlayAuto"
-                  checked={settings.textOverlay.autoGenerate}
-                  onChange={(e) => setSettings(prev => ({
-                    ...prev,
-                    textOverlay: { ...prev.textOverlay, autoGenerate: e.target.checked }
-                  }))}
-                />
-                <label htmlFor="textOverlayAuto">AI-generate captions</label>
-              </div>
+              {settings.textOverlay.enabled && (
+                <>
+                  <div className="form-group" style={{ marginTop: '10px' }}>
+                    <label>Text Style</label>
+                    <select
+                      value={settings.textOverlay.style}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        textOverlay: { ...prev.textOverlay, style: e.target.value }
+                      }))}
+                    >
+                      <option value="chunk">Bold Viral (TikTok/Reels)</option>
+                      <option value="blockbuster">Blockbuster</option>
+                      <option value="minimal">Minimal Clean</option>
+                      <option value="subtitle">Classic Subtitle</option>
+                      <option value="marker">Handwritten</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Position</label>
+                    <select
+                      value={settings.textOverlay.position}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        textOverlay: { ...prev.textOverlay, position: e.target.value }
+                      }))}
+                    >
+                      <option value="bottom">Bottom (Recommended)</option>
+                      <option value="center">Center</option>
+                      <option value="top">Top</option>
+                    </select>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Music */}
@@ -609,23 +889,29 @@ const AutopilotReels = () => {
                 />
                 <label htmlFor="musicEnabled">Add background music</label>
               </div>
-              <div className="checkbox-group">
-                <input
-                  type="checkbox"
-                  id="musicAutoSelect"
-                  checked={settings.music.autoSelect}
-                  onChange={(e) => setSettings(prev => ({
-                    ...prev,
-                    music: { ...prev.music, autoSelect: e.target.checked }
-                  }))}
-                />
-                <label htmlFor="musicAutoSelect">Auto-select trending music</label>
-              </div>
+              {settings.music.enabled && (
+                <div className="form-group" style={{ marginTop: '10px' }}>
+                  <label>Music Mood</label>
+                  <select
+                    value={settings.music.mood}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      music: { ...prev.music, mood: e.target.value }
+                    }))}
+                  >
+                    <option value="upbeat">Upbeat & Energetic</option>
+                    <option value="chill">Chill & Relaxed</option>
+                    <option value="cinematic">Cinematic & Epic</option>
+                    <option value="electronic">Electronic & Modern</option>
+                    <option value="inspiring">Inspiring & Motivational</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {/* Voiceover - ElevenLabs */}
             <div className="section">
-              <h3>🎙️ AI Voiceover (ElevenLabs)</h3>
+              <h3>🎙️ AI Voiceover</h3>
               <div className="checkbox-group">
                 <input
                   type="checkbox"
@@ -636,7 +922,7 @@ const AutopilotReels = () => {
                     voiceover: { ...prev.voiceover, enabled: e.target.checked }
                   }))}
                 />
-                <label htmlFor="voiceoverEnabled">Add AI voiceover to videos</label>
+                <label htmlFor="voiceoverEnabled">Add AI voiceover</label>
               </div>
               
               {settings.voiceover.enabled && (

@@ -1437,12 +1437,29 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     console.log('🎬 [AUTOPILOT] Starting full viral video pipeline...');
     console.log('📋 Settings:', JSON.stringify(settings, null, 2));
     
-    // Extract settings
+    // Extract business identity settings
+    const businessName = settings?.businessName || '';
+    const businessType = settings?.businessType || 'personal_brand';
+    const targetAudience = settings?.targetAudience || '';
+    const brandTone = settings?.brandTone || 'professional';
+    const callToAction = settings?.callToAction || 'Follow for more!';
+    
+    // Extract content settings
     const niche = settings?.niche || 'motivational';
     const style = settings?.style || 'cinematic';
+    const contentGoal = settings?.contentGoal || 'engagement';
+    const hookStyle = settings?.hookStyle || 'question';
+    const topics = settings?.topics || '';
+    
+    // Extract caption settings  
+    const captionStyle = settings?.captionStyle || 'short';
+    const includeEmojis = settings?.includeEmojis !== false;
+    const includeCTA = settings?.includeCTA !== false;
+    
+    // Extract audio/visual settings
     const voiceoverSettings = settings?.voiceover || { enabled: true, voiceId: '21m00Tcm4TlvDq8ikWAM' };
-    const musicSettings = settings?.music || { enabled: true };
-    const textSettings = settings?.textOverlay || { enabled: true };
+    const musicSettings = settings?.music || { enabled: true, mood: 'upbeat' };
+    const textSettings = settings?.textOverlay || { enabled: true, style: 'chunk', position: 'bottom' };
     
     // ==================== STEP 1: Generate Viral Script ====================
     console.log('📝 Step 1: Generating viral script...');
@@ -1451,8 +1468,20 @@ router.post('/autopilot/reels/generate', async (req, res) => {
     let hashtags = settings?.hashtags || '#viral #trending #reels';
     
     try {
+      // Build context for better script generation
+      const scriptContext = {
+        niche,
+        businessName,
+        businessType,
+        targetAudience,
+        brandTone,
+        hookStyle,
+        contentGoal,
+        topics: topics ? topics.split('\n').filter(t => t.trim()) : []
+      };
+      
       // Generate a short script optimized for 9-second video (~22 words max)
-      const scriptResult = await openaiService.generateReelScript(niche, 9);
+      const scriptResult = await openaiService.generateReelScript(niche, 9, scriptContext);
       if (scriptResult.success) {
         script = scriptResult.script;
       }
@@ -1460,23 +1489,43 @@ router.post('/autopilot/reels/generate', async (req, res) => {
       console.log('Script generation fallback:', e.message);
     }
     
-    // Fallback script (optimized for 9 seconds)
+    // Fallback script based on hook style (optimized for 9 seconds)
     if (!script) {
-      script = `Stop scrolling. Here's something incredible about ${niche}. Most people don't know this. Save it now!`;
+      const hookTemplates = {
+        question: `Did you know this about ${niche}? Most people get this wrong. Here's the truth.`,
+        statistic: `90% of people fail at ${niche}. Here's how to be in the top 10%.`,
+        bold_claim: `This ${niche} secret changed everything. You need to hear this.`,
+        story: `I discovered something about ${niche} that blew my mind. Let me share it.`,
+        problem: `Struggling with ${niche}? Here's the solution no one talks about.`,
+        curiosity: `What if I told you ${niche} is not what you think? Watch this.`,
+        stop_scroll: `Stop scrolling. This ${niche} tip will change your life.`,
+        secret: `The hidden truth about ${niche} that experts won't tell you.`
+      };
+      script = hookTemplates[hookStyle] || hookTemplates.question;
     }
     
-    // Generate caption
+    // Generate caption with business context
     try {
-      const captionResult = await openaiService.generateCaption(niche, {
-        tone: 'viral',
-        includeEmojis: true,
-        includeHashtags: false
-      });
+      const captionOptions = {
+        tone: brandTone,
+        includeEmojis,
+        includeHashtags: false,
+        captionStyle,
+        businessName,
+        callToAction: includeCTA ? callToAction : ''
+      };
+      
+      const captionResult = await openaiService.generateCaption(niche, captionOptions);
       if (captionResult.success) {
         caption = captionResult.caption;
+        if (includeCTA && callToAction && !caption.includes(callToAction)) {
+          caption += `\n\n${callToAction}`;
+        }
       }
     } catch (e) {
-      caption = `🔥 Amazing ${niche} content! You need to see this ✨`;
+      caption = includeEmojis 
+        ? `🔥 ${businessName ? businessName + ' - ' : ''}Amazing ${niche} content! ${includeCTA ? callToAction : ''} ✨`
+        : `${businessName ? businessName + ' - ' : ''}Amazing ${niche} content! ${includeCTA ? callToAction : ''}`;
     }
     
     console.log('✅ Script:', script.substring(0, 80) + '...');
