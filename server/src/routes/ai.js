@@ -2814,6 +2814,8 @@ router.patch('/autopilot/post/queue/:id', (req, res) => {
 /**
  * Generate related topics based on main topic
  * POST /api/ai/generate-topics
+ * 
+ * Uses diverse content angles for maximum engagement variety
  */
 router.post('/generate-topics', async (req, res) => {
   try {
@@ -2827,52 +2829,123 @@ router.post('/generate-topics', async (req, res) => {
     
     let topics = [];
     
+    // Content angle categories for diversity
+    const contentAngles = [
+      'beginner_guide',      // How to get started
+      'common_mistakes',     // What NOT to do
+      'advanced_tips',       // Pro-level strategies
+      'myth_busting',        // Debunk misconceptions
+      'case_study',          // Real examples/stories
+      'comparison',          // X vs Y, pros/cons
+      'trending',            // Current trends, news
+      'controversial',       // Hot takes, unpopular opinions
+      'listicle',            // Top 5, 7 ways, etc.
+      'behind_scenes',       // How it really works
+      'quick_wins',          // Easy actionable tips
+      'deep_dive'            // Comprehensive analysis
+    ];
+    
     // Try to use OpenAI for better topic generation
     if (openaiService) {
       try {
-        const prompt = `Generate ${count} diverse and engaging content topics related to "${mainTopic}" for social media posts. 
-        
-        Make each topic specific, actionable, and interesting for the audience. 
-        Topics should cover different angles like tips, mistakes to avoid, trends, success stories, how-tos, myths, comparisons, and expert advice.
-        
-        Return ONLY a JSON array of strings, no other text. Example: ["Topic 1", "Topic 2", ...]`;
-        
+        const prompt = `You are an expert social media content strategist. Generate ${count} highly diverse and engaging content topics related to "${mainTopic}".
+
+CRITICAL REQUIREMENTS:
+1. Each topic MUST be from a DIFFERENT content angle (no repeating formats)
+2. Topics should feel fresh and NOT generic
+3. Include specific numbers, questions, or bold claims when appropriate
+4. Make topics scroll-stopping and curiosity-inducing
+
+Use these diverse angles (pick ${count} different ones):
+- Beginner Guide: "The Complete Beginner's Guide to..."
+- Common Mistakes: "5 ${mainTopic} Mistakes That Are Costing You..."
+- Advanced Tips: "Advanced ${mainTopic} Strategies Most People Don't Know"
+- Myth Busting: "The Biggest ${mainTopic} Myth That's Holding You Back"
+- Case Study: "How I [achieved result] with ${mainTopic} in [timeframe]"
+- Comparison: "${mainTopic} vs [Alternative]: Which One Wins?"
+- Trending: "The ${mainTopic} Trend Everyone's Talking About in 2024"
+- Controversial: "Unpopular Opinion: Why Most ${mainTopic} Advice is Wrong"
+- Listicle: "7 ${mainTopic} Hacks That Actually Work"
+- Behind the Scenes: "What Nobody Tells You About ${mainTopic}"
+- Quick Wins: "3 ${mainTopic} Tips You Can Use Today"
+- Deep Dive: "The Science Behind Successful ${mainTopic}"
+- Transformation: "Before & After: My ${mainTopic} Journey"
+- Tools/Resources: "The Only ${mainTopic} Tools You Actually Need"
+- Q&A: "Answering Your Most Asked ${mainTopic} Questions"
+
+Return ONLY a valid JSON array of ${count} unique topic strings. No explanations.
+Example format: ["Topic 1 text", "Topic 2 text", ...]`;
+
         const result = await openaiService.chat([
-          { role: 'system', content: 'You are a social media content strategist. Return only valid JSON arrays.' },
+          { role: 'system', content: 'You are a viral content strategist who creates scroll-stopping social media topics. Return only valid JSON arrays with no markdown formatting.' },
           { role: 'user', content: prompt }
         ]);
         
         if (result.success && result.content) {
           // Parse the JSON array from the response
-          const match = result.content.match(/\[[\s\S]*\]/);
+          const match = result.content.match(/\[[\s\S]*?\]/);
           if (match) {
-            topics = JSON.parse(match[0]);
+            try {
+              topics = JSON.parse(match[0]);
+            } catch (parseErr) {
+              console.log('JSON parse error, cleaning response...');
+              // Try to clean and parse
+              const cleaned = match[0].replace(/[\n\r]/g, ' ').replace(/,\s*]/g, ']');
+              topics = JSON.parse(cleaned);
+            }
           }
         }
       } catch (e) {
-        console.log('OpenAI topic generation failed, using fallback:', e.message);
+        console.log('OpenAI topic generation failed, using enhanced fallback:', e.message);
       }
     }
     
-    // Fallback: generate simple variations
+    // Enhanced fallback with diverse angles
     if (topics.length === 0) {
-      topics = [
-        `${mainTopic} tips for beginners`,
-        `Common ${mainTopic} mistakes to avoid`,
-        `Advanced ${mainTopic} strategies`,
-        `${mainTopic} trends in 2024`,
-        `How to improve your ${mainTopic}`,
-        `${mainTopic} success stories`,
-        `The truth about ${mainTopic}`,
-        `${mainTopic} myths debunked`
+      const topic = mainTopic.trim();
+      const year = new Date().getFullYear();
+      
+      // Generate diverse topics using different content angles
+      const fallbackTopics = [
+        // Beginner Guide
+        `The Complete Beginner's Guide to ${topic} (Start Here)`,
+        // Common Mistakes  
+        `5 ${topic} Mistakes That Are Secretly Sabotaging Your Results`,
+        // Advanced Tips
+        `Advanced ${topic} Strategies the Pros Use (But Never Share)`,
+        // Myth Busting
+        `The #1 ${topic} Myth That's Holding You Back`,
+        // Trending
+        `${topic} Trends That Are Dominating ${year}`,
+        // Controversial/Hot Take
+        `Unpopular Opinion: Why Everything You Know About ${topic} is Wrong`,
+        // Listicle with numbers
+        `7 ${topic} Hacks That Will Change Your Life`,
+        // Behind the Scenes
+        `What Nobody Tells You About ${topic} (The Honest Truth)`,
+        // Quick Wins
+        `3 ${topic} Quick Wins You Can Implement Today`,
+        // Comparison
+        `${topic}: What Actually Works vs What's Overhyped`,
+        // Case Study/Story
+        `How ${topic} Transformed My Results in 30 Days`,
+        // Tools/Resources
+        `The Only ${topic} Tools You Actually Need in ${year}`
       ];
+      
+      // Shuffle and pick the required count
+      const shuffled = fallbackTopics.sort(() => Math.random() - 0.5);
+      topics = shuffled.slice(0, count);
     }
+    
+    // Ensure we have unique, non-empty topics
+    topics = [...new Set(topics.filter(t => t && t.trim()))].slice(0, count);
     
     console.log('✅ Generated topics:', topics);
     
     res.json({
       success: true,
-      topics: topics.slice(0, count)
+      topics
     });
   } catch (error) {
     console.error('Topic generation error:', error);
