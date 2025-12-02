@@ -250,6 +250,9 @@ body.sidebar-open {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
   transition: all 0.3s ease;
   border: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
 }
 
 .nav-item.nav-emphasized-primary:hover,
@@ -358,20 +361,23 @@ body.sidebar-open {
   transform: rotate(180deg);
 }
 
-/* Children container */
+/* Children container - uses CSS grid for smooth height animation */
 .nav-children {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.25s ease;
+  transition: grid-template-rows 0.3s ease-out;
 }
 
 .nav-children.expanded {
   grid-template-rows: 1fr;
 }
 
+/* Inner wrapper must have overflow:hidden and min-height:0 for grid animation */
 .nav-children-inner {
   overflow: hidden;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Nav divider for sub-sections */

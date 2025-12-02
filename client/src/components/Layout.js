@@ -230,6 +230,7 @@ const Layout = () => {
               {item.children ? (
                 <>
                   <button 
+                    type="button"
                     className={`nav-item nav-item-parent ${location.pathname.startsWith(item.path) ? 'active' : ''} ${item.emphasized ? `nav-emphasized-${item.emphasized}` : ''}`}
                     onClick={() => toggleExpand(item.key)}
                     aria-expanded={expandedItems[item.key]}
