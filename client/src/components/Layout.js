@@ -155,6 +155,7 @@ const Layout = () => {
       badge: 'NEW',
       key: 'ai-video',
       children: [
+        { path: '/app/ai-video/generate', icon: FiPlay, label: 'Generate' },
         { path: '/app/ai-video/edit', icon: FiEdit3, label: 'Edit' }
       ]
     },
