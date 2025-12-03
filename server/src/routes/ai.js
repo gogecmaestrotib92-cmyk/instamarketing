@@ -3289,21 +3289,16 @@ router.post('/voiceover-video/generate', async (req, res) => {
         
         console.log(`   📊 Scene planning: ${sentences.length} sentences, targeting ${targetScenes} scenes`);
         
-        // Use AI to generate video search keywords for each scene
-        console.log(`   🤖 Generating AI video keywords for topic: "${topic}"...`);
-        const aiVideoKeywords = await generateAIVideoKeywords(topic, scriptResult.script, targetScenes, openaiService);
-        console.log(`   🎯 AI generated ${aiVideoKeywords.length} scene keywords`);
-        
         let currentTime = 0;
-        let sceneIdx = 0;
         for (let i = 0; i < sentences.length; i += sentencesPerScene) {
           const sceneSentences = sentences.slice(i, i + sentencesPerScene);
           const sceneText = sceneSentences.join(' ');
           const sceneWords = sceneText.split(' ').filter(w => w.length > 0).length;
           const sceneDuration = sceneWords * secondsPerWord;
           
-          // Use AI-generated keyword for this scene, fallback to topic
-          const searchTerm = aiVideoKeywords[sceneIdx] || `${topic} cinematic`;
+          // Use the TOPIC directly as search term - this is what works!
+          // The topic is what the user wants to see
+          const searchTerm = topic;
           
           scenes.push({
             index: scenes.length,
@@ -3316,7 +3311,6 @@ router.post('/voiceover-video/generate', async (req, res) => {
           
           console.log(`      Scene ${scenes.length}: "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
           currentTime += sceneDuration;
-          sceneIdx++;
         }
         console.log(`   ✅ Identified ${scenes.length} scenes for video matching`);
       }
