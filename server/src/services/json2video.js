@@ -7,14 +7,17 @@
  * API Docs: https://json2video.com/docs/api/
  */
 
-const JSON2VIDEO_API_KEY = process.env.JSON2VIDEO_API_KEY;
+// Read API key at runtime for Vercel compatibility
+const getApiKey = () => process.env.JSON2VIDEO_API_KEY;
 const JSON2VIDEO_API_URL = 'https://api.json2video.com/v2';
 
 /**
  * Check if JSON2Video is configured
  */
 function isAvailable() {
-  return !!JSON2VIDEO_API_KEY;
+  const key = getApiKey();
+  console.log(`🔍 JSON2Video: Checking API key... exists: ${!!key}, length: ${key ? key.length : 0}`);
+  return !!key;
 }
 
 /**
@@ -35,7 +38,8 @@ async function createMultiClipRender(options) {
     totalDuration = 15
   } = options;
 
-  if (!JSON2VIDEO_API_KEY) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
     throw new Error('JSON2Video API key not configured');
   }
 
@@ -122,7 +126,7 @@ async function createMultiClipRender(options) {
     const response = await fetch(`${JSON2VIDEO_API_URL}/movies`, {
       method: 'POST',
       headers: {
-        'x-api-key': JSON2VIDEO_API_KEY,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ movie: movieData })
@@ -161,7 +165,8 @@ async function createSimpleRender(options) {
     loopVideo = true
   } = options;
 
-  if (!JSON2VIDEO_API_KEY) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
     throw new Error('JSON2Video API key not configured');
   }
 
@@ -226,7 +231,7 @@ async function createSimpleRender(options) {
     const response = await fetch(`${JSON2VIDEO_API_URL}/movies`, {
       method: 'POST',
       headers: {
-        'x-api-key': JSON2VIDEO_API_KEY,
+        'x-api-key': apiKey,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ movie: movieData })
@@ -258,7 +263,8 @@ async function createSimpleRender(options) {
  * @returns {Promise<Object>} - Render status
  */
 async function getRenderStatus(projectId) {
-  if (!JSON2VIDEO_API_KEY) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
     throw new Error('JSON2Video API key not configured');
   }
 
@@ -266,7 +272,7 @@ async function getRenderStatus(projectId) {
     const response = await fetch(`${JSON2VIDEO_API_URL}/movies?project=${projectId}`, {
       method: 'GET',
       headers: {
-        'x-api-key': JSON2VIDEO_API_KEY
+        'x-api-key': apiKey
       }
     });
 
