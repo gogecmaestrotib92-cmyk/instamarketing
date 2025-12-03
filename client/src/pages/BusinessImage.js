@@ -216,6 +216,33 @@ Return ONLY the JSON array, no other text.`
       if (data.success && data.imageUrl) {
         setGeneratedImage(data.imageUrl);
         console.log('Image generated successfully:', data.imageUrl);
+        
+        // Save to Asset Hub
+        try {
+          const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
+          const newAsset = {
+            id: Date.now().toString(),
+            type: 'image',
+            name: `AI Generated - ${prompt.substring(0, 30)}${prompt.length > 30 ? '...' : ''}`,
+            url: data.imageUrl,
+            caption: prompt,
+            tags: [postType, aspectRatio].filter(Boolean),
+            createdAt: new Date().toISOString(),
+            source: 'BusinessImage',
+            metadata: {
+              aspectRatio,
+              postType,
+              heading,
+              subheading,
+              cta
+            }
+          };
+          existingAssets.unshift(newAsset);
+          localStorage.setItem('assetHub', JSON.stringify(existingAssets));
+          console.log('Asset saved to Asset Hub');
+        } catch (saveError) {
+          console.error('Failed to save to Asset Hub:', saveError);
+        }
       } else {
         throw new Error(data.error || 'Failed to generate image');
       }

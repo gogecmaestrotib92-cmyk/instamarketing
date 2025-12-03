@@ -12,7 +12,8 @@ import {
   FiEye,
   FiX,
   FiCheck,
-  FiCopy
+  FiLink,
+  FiSend
 } from 'react-icons/fi';
 import './AssetHub.css';
 
@@ -116,10 +117,51 @@ const AssetHub = () => {
     localStorage.setItem('assetHub', JSON.stringify(newAssets));
   };
 
-  // Copy URL to clipboard
-  const copyUrl = (url) => {
-    navigator.clipboard.writeText(url);
-    // Could add toast notification here
+  // Handle Download
+  const handleDownload = async (asset) => {
+    try {
+      const response = await fetch(asset.url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = asset.name || `asset-${asset.id}.${asset.type === 'video' ? 'mp4' : 'png'}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      // Fallback to direct link
+      window.open(asset.url, '_blank');
+    }
+  };
+
+  // Handle Publish to Instagram
+  const handlePublish = (asset) => {
+    // Store asset for publishing and navigate to publish modal/page
+    localStorage.setItem('publishAsset', JSON.stringify(asset));
+    // For now, show alert - can integrate with Instagram API later
+    alert(`Ready to publish "${asset.name || 'Asset'}" to Instagram!\n\nThis feature will connect to Instagram API.`);
+  };
+
+  // Handle Share Link
+  const handleShareLink = async (asset) => {
+    // Generate shareable link
+    const shareUrl = asset.url;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Share link copied to clipboard!');
+    } catch (error) {
+      // Fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('Share link copied to clipboard!');
+    }
   };
 
   // Format date
@@ -279,33 +321,42 @@ const AssetHub = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="asset-actions">
-                  <a 
-                    href={asset.url} 
-                    download 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="btn-asset-action"
+                {/* Actions - 3 Buttons */}
+                <div className="asset-actions-row">
+                  <button 
+                    className="asset-action-btn download"
+                    onClick={() => handleDownload(asset)}
                     title="Download"
                   >
                     <FiDownload />
-                  </a>
-                  <button 
-                    className="btn-asset-action"
-                    onClick={() => copyUrl(asset.url)}
-                    title="Copy URL"
-                  >
-                    <FiCopy />
+                    <span>Download</span>
                   </button>
                   <button 
-                    className="btn-asset-action delete"
-                    onClick={() => deleteAsset(asset.id)}
-                    title="Delete"
+                    className="asset-action-btn publish"
+                    onClick={() => handlePublish(asset)}
+                    title="Publish to Instagram"
                   >
-                    <FiTrash2 />
+                    <FiSend />
+                    <span>Publish</span>
+                  </button>
+                  <button 
+                    className="asset-action-btn share"
+                    onClick={() => handleShareLink(asset)}
+                    title="Copy Share Link"
+                  >
+                    <FiLink />
+                    <span>Share Link</span>
                   </button>
                 </div>
+                
+                {/* Delete button */}
+                <button 
+                  className="asset-delete-btn"
+                  onClick={() => deleteAsset(asset.id)}
+                  title="Delete"
+                >
+                  <FiTrash2 />
+                </button>
               </div>
             ))}
           </div>
