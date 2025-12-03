@@ -108,22 +108,12 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
 
         // Determine position offset based on position type
         // For 9:16 vertical video (1080x1920), keep text SAFELY within frame
-        // Shotstack offset: positive y moves UP, negative y moves DOWN
-        // Values are relative (-1 to 1), where 0.5 = 50% from center
-        // IMPORTANT: Keep offset values small to prevent text going off-screen
-        let offset = { x: 0, y: -0.15 }; // Lower portion but very safe - close to center
-        let position = 'center'; // Always use center for precise control
+        // Using 'bottom' position to place subtitles at center-bottom
+        let offset = { x: 0, y: 0.1 }; // Slight upward offset from bottom to stay in safe zone
+        let position = 'bottom'; // Bottom center position for subtitles
         
-        // Adjust offset based on desired visual position
-        // Using very conservative values to keep text within safe zone
-        const desiredPosition = subtitle.position || subtitleStyle.position || 'bottom';
-        if (desiredPosition === 'top') {
-          offset = { x: 0, y: 0.15 }; // Upper portion - safe zone
-        } else if (desiredPosition === 'center' || desiredPosition === 'middle') {
-          offset = { x: 0, y: 0 }; // True center
-        } else if (desiredPosition === 'bottom') {
-          offset = { x: 0, y: -0.15 }; // Lower portion - very safe zone above Instagram UI
-        }
+        // Always use bottom position for subtitles - this is industry standard
+        // The offset moves text UP from the bottom edge to stay in Instagram safe zone
 
         // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
         const VALID_STYLES = ['minimal', 'blockbuster', 'vogue', 'sketchy', 'skinny', 'chunk', 'chunkLight', 'marker', 'future', 'subtitle'];
@@ -685,8 +675,8 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
           },
           start: subtitle.start,
           length: Math.max(0.1, subtitle.end - subtitle.start),
-          position: 'center',
-          offset: { x: 0, y: -0.15 }, // Closer to center for maximum safety
+          position: 'bottom', // Bottom center position for subtitles
+          offset: { x: 0, y: 0.1 }, // Slight upward offset to stay in safe zone
           transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
         };
       });

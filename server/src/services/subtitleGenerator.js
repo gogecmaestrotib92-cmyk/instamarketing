@@ -18,15 +18,17 @@ try {
 
 class SubtitleGenerator {
   constructor() {
-    // Average speaking rates (words per minute)
+    // Speaking rates (words per minute) - SLOWED DOWN to match TTS output
+    // TTS services like ElevenLabs/Google speak slower than natural human speech
+    // These rates are tuned to match typical TTS audio timing
     this.speakingRates = {
-      slow: 120,
-      normal: 150,
-      fast: 180,
-      energetic: 170,
-      calm: 130,
-      professional: 145,
-      friendly: 155
+      slow: 90,        // Was 120 - very slow narration
+      normal: 110,     // Was 150 - standard TTS pace
+      fast: 140,       // Was 180 - faster but still clear
+      energetic: 125,  // Was 170 - upbeat but not rushing
+      calm: 95,        // Was 130 - relaxed pace
+      professional: 105, // Was 145 - clear business tone
+      friendly: 115    // Was 155 - conversational
     };
 
     // Output directory for subtitle files - use /tmp on Vercel
@@ -133,16 +135,21 @@ class SubtitleGenerator {
         const chunk = words.slice(i, i + maxWordsPerCaption);
         const chunkText = chunk.join(' ');
         
-        // Calculate duration for this chunk
+        // Calculate duration for this chunk - add buffer for TTS pacing
         let chunkDuration = 0;
         for (const word of chunk) {
           chunkDuration += this.calculateWordDuration(word, wpm);
         }
         
-        // Add pause at end of sentence
+        // Add extra time buffer per word to account for TTS articulation
+        chunkDuration += chunk.length * 0.05; // 50ms per word buffer
+        
+        // Add pause at end of sentence - TTS pauses longer at sentence breaks
         const isEndOfSentence = i + maxWordsPerCaption >= words.length;
         if (isEndOfSentence) {
-          chunkDuration += 0.3;
+          chunkDuration += 0.5; // 500ms pause after sentences (was 300ms)
+        } else {
+          chunkDuration += 0.15; // 150ms pause between chunks within sentence
         }
 
         captions.push({

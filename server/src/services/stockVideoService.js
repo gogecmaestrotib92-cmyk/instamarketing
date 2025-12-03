@@ -32,6 +32,51 @@ const VIDEO_CATEGORIES = {
   'default': ['abstract', 'light', 'particles', 'gradient', 'motion']
 };
 
+// Map concepts to cinematic stock video search terms
+const CONCEPT_TO_VIDEO_MAP = {
+  // Emotions/States
+  'success': 'celebration victory',
+  'happy': 'happy people smiling',
+  'sad': 'rain melancholy',
+  'excited': 'celebration party',
+  'calm': 'peaceful nature water',
+  'stressed': 'busy city chaos',
+  'confident': 'confident person walking',
+  
+  // Topics
+  'money': 'money finance wealth',
+  'business': 'business office corporate',
+  'health': 'healthy lifestyle fitness',
+  'fitness': 'workout gym exercise',
+  'food': 'cooking food kitchen',
+  'travel': 'travel adventure destination',
+  'technology': 'technology digital modern',
+  'nature': 'nature landscape scenic',
+  'love': 'couple romance love',
+  'family': 'family together home',
+  
+  // Actions
+  'growth': 'growth progress success',
+  'change': 'transformation change',
+  'think': 'thinking contemplating',
+  'learn': 'learning education study',
+  'work': 'working professional office',
+  'create': 'creative art design',
+  'build': 'construction building',
+  
+  // Time
+  'morning': 'sunrise morning',
+  'night': 'night city lights',
+  'future': 'futuristic technology',
+  'past': 'vintage nostalgic',
+  
+  // Abstract
+  'idea': 'lightbulb inspiration idea',
+  'dream': 'dreamy clouds fantasy',
+  'power': 'power energy strong',
+  'freedom': 'freedom flying birds'
+};
+
 /**
  * Search videos from Pexels API
  * 
@@ -352,6 +397,41 @@ function getCuratedBackground(category = 'abstract') {
   return backgrounds[Math.floor(Math.random() * backgrounds.length)];
 }
 
+/**
+ * Improve search term using concept mapping for better stock video results
+ * Maps abstract concepts to more visual, searchable terms
+ */
+function improveSearchTerm(term) {
+  if (!term || term.length < 3) return 'abstract background';
+  
+  const words = term.toLowerCase().split(/\s+/);
+  const improvedWords = [];
+  
+  // Check each word against concept map
+  for (const word of words) {
+    if (CONCEPT_TO_VIDEO_MAP[word]) {
+      // Found a mapping - use the video-friendly term
+      return CONCEPT_TO_VIDEO_MAP[word];
+    }
+    improvedWords.push(word);
+  }
+  
+  // Check for partial matches in the full term
+  for (const [concept, videoTerm] of Object.entries(CONCEPT_TO_VIDEO_MAP)) {
+    if (term.toLowerCase().includes(concept)) {
+      return videoTerm;
+    }
+  }
+  
+  // Add "cinematic" to make results more video-appropriate
+  const improvedTerm = improvedWords.slice(0, 2).join(' ');
+  if (improvedTerm.length > 3) {
+    return improvedTerm + ' cinematic';
+  }
+  
+  return 'abstract motion background';
+}
+
 module.exports = {
   searchPexelsVideos,
   searchPixabayVideos,
@@ -361,6 +441,7 @@ module.exports = {
   getVideosForScenes,
   getOptimizedQuery,
   getCuratedBackground,
+  improveSearchTerm,
   VIDEO_CATEGORIES,
   CURATED_BACKGROUNDS
 };
@@ -384,18 +465,31 @@ async function getVideosForScenes(scenes, options = {}) {
   const usedVideoIds = new Set(); // Track used videos to avoid duplicates
   
   for (const scene of scenes) {
-    const searchTerm = scene.searchTerm || scene.keywords || 'abstract background';
+    let searchTerm = scene.searchTerm || scene.keywords || 'abstract background';
     const sceneDuration = scene.duration || (scene.endTime - scene.startTime) || 10;
     
-    console.log(`   Scene ${scene.index + 1}: "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
+    // Improve search term using concept mapping
+    const improvedTerm = improveSearchTerm(searchTerm);
+    console.log(`   Scene ${scene.index + 1}: "${searchTerm}" -> "${improvedTerm}" (${sceneDuration.toFixed(1)}s)`);
     
-    // Search for videos matching this scene
-    const videos = await searchStockVideos(searchTerm, {
+    // Search for videos matching this scene - try improved term first
+    let videos = await searchStockVideos(improvedTerm, {
       ...options,
-      perPage: 10,
-      minDuration: Math.max(3, sceneDuration * 0.5), // At least half scene duration
+      perPage: 15,
+      minDuration: Math.max(3, sceneDuration * 0.5),
       maxDuration: 60
     });
+    
+    // If no results, try original term
+    if (videos.length === 0 && improvedTerm !== searchTerm) {
+      console.log(`      Trying original term: "${searchTerm}"`);
+      videos = await searchStockVideos(searchTerm, {
+        ...options,
+        perPage: 15,
+        minDuration: 3,
+        maxDuration: 60
+      });
+    }
     
     // Filter out already used videos
     const availableVideos = videos.filter(v => !usedVideoIds.has(`${v.source}-${v.id}`));
