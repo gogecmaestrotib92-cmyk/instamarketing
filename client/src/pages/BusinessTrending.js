@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX, FiFilm } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX, FiFilm, FiAlertCircle } from 'react-icons/fi';
+import { useNavigate, Link } from 'react-router-dom';
 import './BusinessTrending.css';
 
 const BusinessTrending = () => {
@@ -14,6 +14,26 @@ const BusinessTrending = () => {
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [backgroundType, setBackgroundType] = useState('stock-video');
   const [selectedMedia, setSelectedMedia] = useState(null);
+  
+  // Business Info from Business Hub
+  const [businessInfo, setBusinessInfo] = useState(null);
+  const [brandLinked, setBrandLinked] = useState(true);
+  
+  // Load business info on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('businessInfo');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setBusinessInfo(parsed);
+      const hasData = parsed.businessName || parsed.description || parsed.industry;
+      setBrandLinked(hasData);
+    } else {
+      setBrandLinked(false);
+    }
+  }, []);
+  
+  // Check if business info has meaningful data
+  const hasBusinessInfo = businessInfo && (businessInfo.businessName || businessInfo.description || businessInfo.industry);
   
   // AI Advice state
   const [showAdvice, setShowAdvice] = useState(false);
@@ -76,7 +96,7 @@ const BusinessTrending = () => {
     return styleMap[contentType] || 'energetic';
   };
 
-  // Generate AI Advice based on user's topic
+  // Generate AI Advice based on user's topic and business info
   const generateAIAdvice = async () => {
     setIsLoadingAdvice(true);
     setShowAdvice(true);
@@ -85,11 +105,27 @@ const BusinessTrending = () => {
       const baseTopic = postTopic.trim() || 'viral content ideas';
       const contentLabel = contentTypes.find(c => c.id === contentType)?.label || 'Tips';
       
+      // Build context from business info if available and linked
+      let businessContext = '';
+      if (brandLinked && hasBusinessInfo) {
+        const parts = [];
+        if (businessInfo.businessName) parts.push(`Business: ${businessInfo.businessName}`);
+        if (businessInfo.industry) parts.push(`Industry: ${businessInfo.industry}`);
+        if (businessInfo.brandVoice) parts.push(`Brand voice: ${businessInfo.brandVoice}`);
+        if (businessInfo.targetAudience) parts.push(`Target audience: ${businessInfo.targetAudience.substring(0, 100)}`);
+        if (businessInfo.products && businessInfo.products.length > 0) {
+          parts.push(`Products/Services: ${businessInfo.products.map(p => p.name).join(', ')}`);
+        }
+        if (parts.length > 0) {
+          businessContext = `\n\nBusiness Context:\n${parts.join('\n')}`;
+        }
+      }
+      
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Based on this video topic: "${baseTopic}" for ${contentLabel} content type.
+          message: `Based on this video topic: "${baseTopic}" for ${contentLabel} content type.${businessContext}
 
 Generate 6 viral voiceover video script ideas. Each should be catchy, engaging, and perfect for Instagram/TikTok.
 
@@ -175,6 +211,118 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
     setGeneratedResult(null);
     
     try {
+      // Use enhanced voiceover-video endpoint for full pipeline
+      if (backgroundType === 'stock-video') {
+        setGenerationStep('Generating script, voiceover & finding videos...');
+        console.log('🎬 Using enhanced voiceover-video endpoint');
+        
+        const response = await fetch('/api/ai/voiceover-video/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: postTopic,
+            contentType: contentType,
+            duration: 30,
+            voiceStyle: getVoiceStyle(),
+            subtitleStyle: 'sentence',
+            useSceneVideos: true, // Get different videos for each scene
+            maxWordsPerSubtitle: 6
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || data.error) {
+          throw new Error(data.error || 'Failed to generate voiceover video');
+        }
+        
+        console.log('✅ Enhanced generation complete:', data);
+        
+        // If composition was started, poll for it
+        let composedVideoUrl = null;
+        if (data.compositionJobId) {
+          setGenerationStep('Rendering video with subtitles (this may take 1-2 minutes)...');
+          
+          let attempts = 0;
+          const maxAttempts = 60;
+          
+          while (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            const statusResponse = await fetch(`/api/ai/compose-video/status/${data.compositionJobId}`);
+            const statusData = await statusResponse.json();
+            
+            if (statusData.status === 'done' && statusData.url) {
+              composedVideoUrl = statusData.url;
+              console.log('✅ Video composed:', composedVideoUrl);
+              break;
+            } else if (statusData.status === 'failed') {
+              console.error('❌ Video composition failed:', statusData.error);
+              break;
+            }
+            
+            attempts++;
+            setGenerationStep(`Rendering video with subtitles... ${Math.round((statusData.progress || 0))}%`);
+          }
+        } else {
+          console.log('⚠️ No composition job started:', data.message);
+        }
+        
+        // Get background video URL from response
+        const bgVideoUrl = data.backgroundVideo?.url || 
+                          (data.videos && data.videos.length > 0 ? data.videos[0].url : null);
+        
+        // Build result
+        const result = {
+          id: Date.now().toString(),
+          type: 'voiceover-video',
+          name: `Voiceover - ${postTopic.substring(0, 30)}${postTopic.length > 30 ? '...' : ''}`,
+          script: data.script,
+          audioUrl: data.audioUrl,
+          backgroundUrl: bgVideoUrl,
+          composedVideoUrl: composedVideoUrl,
+          backgroundType: 'stock-video',
+          template: selectedTemplate,
+          aspectRatio: aspectRatio,
+          contentType: contentType,
+          ttsProvider: data.ttsProvider === 'elevenlabs' ? 'ElevenLabs' : 'Google TTS',
+          createdAt: new Date().toISOString(),
+          metadata: {
+            postTopic,
+            contentType,
+            template: selectedTemplate,
+            aspectRatio,
+            backgroundType: 'stock-video',
+            subtitleCount: data.subtitleCount,
+            sceneCount: data.sceneCount,
+            estimatedDuration: data.estimatedDuration
+          },
+          instructions: composedVideoUrl 
+            ? '✅ Your video is ready! Subtitles are synced to voiceover and videos switch with the story.'
+            : (data.compositionJobId 
+              ? '⏳ Video is still rendering. Check back in a moment.'
+              : '⚠️ Voiceover generated but video composition failed. You can download the audio and combine it with video manually.')
+        };
+        
+        setGeneratedResult(result);
+        
+        // Save to Asset Hub
+        try {
+          const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
+          existingAssets.unshift({
+            ...result,
+            url: composedVideoUrl || data.audioUrl
+          });
+          localStorage.setItem('assetHub', JSON.stringify(existingAssets));
+        } catch (saveError) {
+          console.error('Failed to save to Asset Hub:', saveError);
+        }
+        
+        setGenerationStep('');
+        return;
+      }
+      
+      // Fallback for non-stock-video backgrounds (AI images, uploads, etc.)
       // Step 1: Generate script with voiceover (Try ElevenLabs first, fallback to Google TTS)
       setGenerationStep('Generating script and AI voiceover...');
       console.log('Step 1: Generating script and voiceover for:', postTopic);
@@ -234,81 +382,8 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
       let backgroundUrl = null;
       let backgroundType_used = backgroundType;
       let composedVideoUrl = null;
-      let compositionJobId = null;
-      let stockVideoData = null;
       
-      if (backgroundType === 'stock-video') {
-        // Search for stock video that matches the topic
-        setGenerationStep('Finding matching stock video...');
-        
-        const stockResponse = await fetch('/api/ai/stock-video/random', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            topic: postTopic,
-            contentType: contentType
-          })
-        });
-        
-        const stockData = await stockResponse.json();
-        
-        if (stockData.success && stockData.video) {
-          stockVideoData = stockData.video;
-          backgroundUrl = stockData.video.url;
-          console.log('✅ Stock video found:', stockData.video);
-          
-          // Start Shotstack composition with video looping to match audio
-          setGenerationStep('Composing video with voiceover...');
-          
-          const composeResponse = await fetch('/api/ai/compose-video', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              videoUrl: backgroundUrl,
-              audioUrl: voiceoverData.audioUrl,
-              audioDuration: voiceoverData.duration || 30,
-              subtitles: [] // Could add auto-generated subtitles here
-            })
-          });
-          
-          const composeData = await composeResponse.json();
-          
-          if (composeData.success && composeData.jobId) {
-            compositionJobId = composeData.jobId;
-            console.log('✅ Video composition started:', compositionJobId);
-            
-            // Poll for composition status
-            setGenerationStep('Rendering video (this may take a minute)...');
-            
-            let attempts = 0;
-            const maxAttempts = 60; // 5 minutes max
-            
-            while (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-              
-              const statusResponse = await fetch(`/api/ai/compose-video/status/${compositionJobId}`);
-              const statusData = await statusResponse.json();
-              
-              if (statusData.status === 'done' && statusData.url) {
-                composedVideoUrl = statusData.url;
-                console.log('✅ Video composed:', composedVideoUrl);
-                break;
-              } else if (statusData.status === 'failed') {
-                console.error('❌ Video composition failed:', statusData.error);
-                break;
-              }
-              
-              attempts++;
-              setGenerationStep(`Rendering video... ${Math.round((statusData.progress || 0))}%`);
-            }
-          }
-        } else {
-          console.warn('No stock video found, falling back to AI image');
-          backgroundType_used = 'ai-images';
-        }
-      }
-      
-      if (backgroundType === 'ai-images' || (backgroundType === 'stock-video' && !backgroundUrl)) {
+      if (backgroundType === 'ai-images') {
         // Generate AI image - this works well as a static background
         const imagePrompt = `${contentType} aesthetic background, ${postTopic}, minimalist, high quality, gradient, social media style, 9:16 vertical`;
         
@@ -362,7 +437,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         script: voiceoverData.script,
         audioUrl: voiceoverData.audioUrl,
         backgroundUrl: backgroundUrl,
-        composedVideoUrl: composedVideoUrl, // Full composed video if available
+        composedVideoUrl: composedVideoUrl,
         backgroundType: backgroundType_used,
         template: selectedTemplate,
         aspectRatio: aspectRatio,
@@ -374,15 +449,11 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           contentType,
           template: selectedTemplate,
           aspectRatio,
-          backgroundType: backgroundType_used,
-          stockVideo: stockVideoData
+          backgroundType: backgroundType_used
         },
-        // Instructions for user
-        instructions: composedVideoUrl 
-          ? '✅ Your video is ready! Audio and video have been combined.'
-          : (backgroundType === 'ai-videos' 
-            ? '💡 Tip: AI-generated videos are only ~5 seconds. For longer videos, use a video editor to loop the background or add stock footage, then overlay your voiceover.'
-            : null)
+        instructions: backgroundType === 'ai-videos' 
+          ? '💡 Tip: AI-generated videos are only ~5 seconds. For longer videos, use a video editor to loop the background or add stock footage, then overlay your voiceover.'
+          : null
       };
       
       setGeneratedResult(result);
@@ -538,6 +609,34 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Brand Details Toggle */}
+        <div className="brand-toggle-row">
+          <div className="brand-toggle-info">
+            <h4>Brand Details</h4>
+            <p>
+              {!hasBusinessInfo ? (
+                <>
+                  <FiAlertCircle className="warning-icon" /> 
+                  <Link to="/app/business-hub" className="setup-link">Set up in Business Hub</Link>
+                </>
+              ) : brandLinked ? (
+                '✓ Brand identity will be applied'
+              ) : (
+                'Generic styling will be used'
+              )}
+            </p>
+          </div>
+          <label className="toggle-switch">
+            <input 
+              type="checkbox" 
+              checked={brandLinked && hasBusinessInfo} 
+              onChange={(e) => setBrandLinked(e.target.checked)}
+              disabled={!hasBusinessInfo}
+            />
+            <span className={`toggle-slider ${!hasBusinessInfo ? 'disabled' : ''}`}></span>
+          </label>
         </div>
 
         {/* Compact Settings Row */}

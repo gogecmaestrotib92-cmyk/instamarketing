@@ -3070,6 +3070,15 @@ try {
   console.log('Stock video service not available:', e.message);
 }
 
+// Import subtitle generator
+let subtitleGenerator = null;
+try {
+  subtitleGenerator = require('../services/subtitleGenerator');
+  console.log('✅ Subtitle generator loaded');
+} catch (e) {
+  console.log('Subtitle generator not available:', e.message);
+}
+
 /**
  * Search stock videos from Pexels and Pixabay
  * POST /api/ai/stock-video/search
@@ -3172,6 +3181,377 @@ router.post('/stock-video/clips', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+/**
+ * ENHANCED Voiceover Video Generation
+ * Full pipeline: Script → Voiceover → Subtitles → Scene Videos → Composition
+ * 
+ * This endpoint creates a complete voiceover video with:
+ * - AI-generated script
+ * - Text-to-speech voiceover (ElevenLabs or Google TTS)
+ * - Synchronized subtitles matching the voiceover
+ * - Different stock videos for each scene/segment
+ * 
+ * POST /api/ai/voiceover-video/generate
+ */
+router.post('/voiceover-video/generate', async (req, res) => {
+  try {
+    const { 
+      topic, 
+      contentType = 'tips',
+      duration = 30,
+      voiceStyle = 'energetic',
+      subtitleStyle = 'sentence', // 'word', 'phrase', 'sentence'
+      useSceneVideos = true, // Get different videos for each scene
+      maxWordsPerSubtitle = 6
+    } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+
+    console.log('🎬 Starting enhanced voiceover video generation...');
+    console.log(`   Topic: "${topic}"`);
+    console.log(`   Content Type: ${contentType}`);
+    console.log(`   Voice Style: ${voiceStyle}`);
+    console.log(`   Scene Videos: ${useSceneVideos}`);
+
+    // STEP 1: Generate script
+    console.log('\n📝 Step 1: Generating script...');
+    const scriptResult = await openaiService.generateReelScript(`${contentType}: ${topic}`, duration);
+    if (!scriptResult.success) {
+      return res.status(500).json({ error: 'Failed to generate script: ' + scriptResult.error });
+    }
+    console.log('   ✅ Script generated:', scriptResult.script.substring(0, 100) + '...');
+
+    // STEP 2: Generate voiceover (try ElevenLabs first, fallback to Google TTS)
+    console.log('\n🎤 Step 2: Generating voiceover...');
+    let voiceResult = null;
+    let ttsProvider = 'google';
+
+    if (elevenlabsService && elevenlabsService.isAvailable()) {
+      try {
+        voiceResult = await elevenlabsService.generateVoiceover(scriptResult.script, voiceStyle);
+        if (voiceResult.success) {
+          ttsProvider = 'elevenlabs';
+          console.log('   ✅ ElevenLabs voiceover generated');
+        }
+      } catch (e) {
+        console.log('   ⚠️ ElevenLabs failed, falling back to Google TTS');
+      }
+    }
+
+    if (!voiceResult || !voiceResult.success) {
+      voiceResult = await googleTTSService.generateVoiceover(scriptResult.script, voiceStyle);
+      if (!voiceResult.success) {
+        return res.status(500).json({ error: 'Failed to generate voiceover: ' + voiceResult.error });
+      }
+      console.log('   ✅ Google TTS voiceover generated');
+    }
+
+    // STEP 3: Generate subtitles with timing
+    console.log('\n📝 Step 3: Generating subtitles...');
+    let subtitles = [];
+    let scenes = [];
+    let estimatedDuration = duration;
+
+    console.log('\n📝 Step 3: Generating subtitles...');
+    console.log(`   Subtitle generator available: ${!!subtitleGenerator}`);
+    
+    if (subtitleGenerator) {
+      try {
+        // Generate sentence-level captions for readability
+        const captionResult = subtitleGenerator.generateSentenceCaptions(
+          scriptResult.script, 
+          voiceStyle, 
+          maxWordsPerSubtitle
+        );
+        
+        subtitles = captionResult.captions || [];
+        estimatedDuration = captionResult.totalDuration || duration;
+        console.log(`   ✅ Generated ${subtitles.length} subtitle segments (${estimatedDuration.toFixed(1)}s)`);
+      } catch (subError) {
+        console.log(`   ⚠️ Subtitle generation failed: ${subError.message}`);
+        // Create basic subtitles manually
+        subtitles = createBasicSubtitles(scriptResult.script, duration);
+        console.log(`   ✅ Created ${subtitles.length} basic subtitles as fallback`);
+      }
+
+      // Generate scene breakpoints from script
+      if (useSceneVideos) {
+        // Split script into sentences for scene detection
+        const sentences = scriptResult.script.match(/[^.!?]+[.!?]+/g) || [scriptResult.script];
+        const sentencesPerScene = Math.max(1, Math.ceil(sentences.length / 5)); // 4-6 scenes
+        const secondsPerWord = estimatedDuration / scriptResult.script.split(' ').length;
+        
+        let currentTime = 0;
+        for (let i = 0; i < sentences.length; i += sentencesPerScene) {
+          const sceneSentences = sentences.slice(i, i + sentencesPerScene);
+          const sceneText = sceneSentences.join(' ');
+          const sceneWords = sceneText.split(' ').filter(w => w.length > 0).length;
+          const sceneDuration = sceneWords * secondsPerWord;
+          
+          // Extract keywords for video search
+          const keywords = extractSearchKeywords(sceneText);
+          
+          scenes.push({
+            index: scenes.length,
+            text: sceneText.substring(0, 100),
+            searchTerm: keywords,
+            startTime: currentTime,
+            endTime: currentTime + sceneDuration,
+            duration: sceneDuration
+          });
+          
+          currentTime += sceneDuration;
+        }
+        console.log(`   ✅ Identified ${scenes.length} scenes`);
+      }
+    } else {
+      console.log('   ⚠️ Subtitle generator not available, creating basic subtitles');
+      subtitles = createBasicSubtitles(scriptResult.script, duration);
+      console.log(`   ✅ Created ${subtitles.length} basic subtitles`);
+    }
+
+    // STEP 4: Get stock videos for scenes
+    console.log('\n🎥 Step 4: Finding stock videos...');
+    let sceneVideos = [];
+    let backgroundVideo = null;
+
+    if (stockVideoService) {
+      if (useSceneVideos && scenes.length > 0) {
+        // Get different videos for each scene
+        sceneVideos = await stockVideoService.getVideosForScenes(scenes);
+        console.log(`   ✅ Found ${sceneVideos.length} scene videos`);
+      }
+      
+      // Fallback: if no scene videos found, get a single random video
+      if (sceneVideos.length === 0) {
+        console.log('   ⚠️ No scene videos found, trying fallback...');
+        backgroundVideo = await stockVideoService.getRandomStockVideo(topic, contentType);
+        if (backgroundVideo) {
+          console.log(`   ✅ Found fallback video: ${backgroundVideo.source} #${backgroundVideo.id}`);
+        } else {
+          // Try generic abstract background
+          backgroundVideo = await stockVideoService.getRandomStockVideo('abstract motion background', 'default');
+          if (backgroundVideo) {
+            console.log(`   ✅ Found generic fallback video: ${backgroundVideo.source} #${backgroundVideo.id}`);
+          }
+        }
+      }
+    } else {
+      console.log('   ⚠️ Stock video service not available');
+    }
+
+    // STEP 5: Start Shotstack composition
+    console.log('\n🎬 Step 5: Starting video composition...');
+    let compositionJobId = null;
+    
+    if (shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
+      // Upload audio to Cloudinary for Shotstack
+      let audioUrl = voiceResult.audioUrl;
+      if (cloudinaryUpload && audioUrl && !audioUrl.includes('cloudinary.com')) {
+        try {
+          const audioResponse = await fetch(audioUrl);
+          const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+          const uploadResult = await cloudinaryUpload(audioBuffer, {
+            folder: 'instamarketing/voiceovers',
+            resource_type: 'video'
+          });
+          if (uploadResult.success) {
+            audioUrl = uploadResult.url;
+          }
+        } catch (e) {
+          console.log('   ⚠️ Audio upload failed, using original URL');
+        }
+      }
+
+      if (sceneVideos.length > 1) {
+        // Multi-clip composition with scene switching
+        const clips = [];
+        for (const sceneVideo of sceneVideos) {
+          // Upload video to Cloudinary
+          let videoUrl = sceneVideo.url;
+          if (cloudinaryUpload && (videoUrl.includes('pexels.com') || videoUrl.includes('pixabay.com'))) {
+            try {
+              const videoResponse = await fetch(videoUrl);
+              const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+              const uploadResult = await cloudinaryUpload(videoBuffer, {
+                folder: 'instamarketing/scenes',
+                resource_type: 'video'
+              });
+              if (uploadResult.success) {
+                videoUrl = uploadResult.url;
+              }
+            } catch (e) {
+              console.log(`   ⚠️ Scene video upload failed: ${e.message}`);
+            }
+          }
+          
+          clips.push({
+            url: videoUrl,
+            duration: sceneVideo.duration || 10,
+            useDuration: sceneVideo.useDuration || sceneVideo.playbackDuration,
+            startAt: 0 // Start from beginning of each clip
+          });
+        }
+
+        // Create multi-clip render
+        const jobResult = await shotstackClient.createMultiClipRender(
+          clips,
+          audioUrl,
+          subtitles,
+          {
+            musicVolume: 1,
+            videoVolume: 0
+          }
+        );
+
+        if (jobResult.success) {
+          compositionJobId = jobResult.jobId;
+          console.log(`   ✅ Multi-clip composition started: ${compositionJobId}`);
+        }
+      } else if (backgroundVideo || sceneVideos.length === 1) {
+        // Single video composition with looping
+        const video = sceneVideos[0] || backgroundVideo;
+        let videoUrl = video.url;
+        
+        // Upload video to Cloudinary
+        if (cloudinaryUpload && (videoUrl.includes('pexels.com') || videoUrl.includes('pixabay.com'))) {
+          try {
+            const videoResponse = await fetch(videoUrl);
+            const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+            const uploadResult = await cloudinaryUpload(videoBuffer, {
+              folder: 'instamarketing/composed',
+              resource_type: 'video'
+            });
+            if (uploadResult.success) {
+              videoUrl = uploadResult.url;
+            }
+          } catch (e) {
+            console.log(`   ⚠️ Video upload failed: ${e.message}`);
+          }
+        }
+
+        const jobResult = await shotstackClient.createShotstackRender(
+          videoUrl,
+          audioUrl,
+          subtitles,
+          {
+            duration: estimatedDuration,
+            musicVolume: 1,
+            videoVolume: 0,
+            loopVideo: true,
+            videoDurationOriginal: video.duration
+          }
+        );
+
+        if (jobResult.success) {
+          compositionJobId = jobResult.jobId;
+          console.log(`   ✅ Single video composition started: ${compositionJobId}`);
+        }
+      }
+    } else if (!shotstackClient) {
+      console.log('   ⚠️ Shotstack not available, skipping video composition');
+    } else {
+      console.log('   ⚠️ No videos found, skipping video composition');
+    }
+
+    // Return result
+    const result = {
+      success: true,
+      script: scriptResult.script,
+      audioUrl: voiceResult.audioUrl,
+      ttsProvider,
+      subtitles,
+      subtitleCount: subtitles.length,
+      estimatedDuration,
+      scenes: scenes.map(s => ({ index: s.index, searchTerm: s.searchTerm, duration: s.duration })),
+      sceneCount: scenes.length,
+      videos: sceneVideos.map(v => ({ source: v.source, id: v.id, sceneIndex: v.sceneIndex, url: v.url })),
+      backgroundVideo: backgroundVideo ? { source: backgroundVideo.source, id: backgroundVideo.id, url: backgroundVideo.url } : null,
+      compositionJobId,
+      compositionStatus: compositionJobId ? 'processing' : 'not_started',
+      message: compositionJobId 
+        ? 'Video composition started successfully' 
+        : 'Voiceover generated but video composition could not start. You can manually combine the audio with a video.'
+    };
+
+    console.log('\n✅ Enhanced voiceover video generation complete');
+    console.log(`   Composition Job: ${compositionJobId || 'none'}`);
+    
+    res.json(result);
+
+  } catch (error) {
+    console.error('Enhanced voiceover video error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Helper: Extract search keywords from text
+ */
+function extractSearchKeywords(text) {
+  const stopWords = new Set([
+    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
+    'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought', 'used',
+    'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into',
+    'and', 'but', 'or', 'nor', 'so', 'yet', 'both', 'either', 'neither',
+    'not', 'only', 'own', 'same', 'than', 'too', 'very', 'just', 'also',
+    'it', 'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she',
+    'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'our',
+    'their', 'what', 'which', 'who', 'about', 'get', 'make', 'let', 'dont', 'here'
+  ]);
+
+  const words = text.toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .split(/\s+/)
+    .filter(word => word.length > 2 && !stopWords.has(word));
+
+  return words.slice(0, 4).join(' ') || 'abstract background';
+}
+
+/**
+ * Helper: Create basic subtitles from script when subtitleGenerator fails
+ * @param {string} script - The script text
+ * @param {number} duration - Target duration in seconds
+ * @returns {Array} - Array of subtitle objects with text, start, end
+ */
+function createBasicSubtitles(script, duration = 30) {
+  const sentences = script.match(/[^.!?]+[.!?]+/g) || [script];
+  const totalWords = script.split(' ').filter(w => w.length > 0).length;
+  const secondsPerWord = duration / totalWords;
+  
+  const subtitles = [];
+  let currentTime = 0;
+  
+  for (const sentence of sentences) {
+    const sentenceText = sentence.trim();
+    const words = sentenceText.split(' ').filter(w => w.length > 0);
+    
+    // Split long sentences into chunks of max 6 words
+    const maxWords = 6;
+    for (let i = 0; i < words.length; i += maxWords) {
+      const chunk = words.slice(i, i + maxWords);
+      const chunkText = chunk.join(' ');
+      const chunkDuration = chunk.length * secondsPerWord;
+      
+      subtitles.push({
+        text: chunkText,
+        start: parseFloat(currentTime.toFixed(2)),
+        end: parseFloat((currentTime + chunkDuration).toFixed(2))
+      });
+      
+      currentTime += chunkDuration;
+    }
+    
+    // Small pause after each sentence
+    currentTime += 0.2;
+  }
+  
+  return subtitles;
+}
 
 /**
  * Compose video with audio using Shotstack

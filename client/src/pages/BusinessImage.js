@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3, FiLoader } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3, FiLoader, FiAlertCircle } from 'react-icons/fi';
+import { useNavigate, Link } from 'react-router-dom';
 import './BusinessImage.css';
 
 const BusinessImage = () => {
@@ -15,8 +15,28 @@ const BusinessImage = () => {
   const [aiAdvice, setAiAdvice] = useState([]);
   const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
   
-  // Step 2: Settings
+  // Business Info from Business Hub
+  const [businessInfo, setBusinessInfo] = useState(null);
   const [brandLinked, setBrandLinked] = useState(true);
+  
+  // Load business info on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('businessInfo');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setBusinessInfo(parsed);
+      // Only enable brand linked if there's meaningful data
+      const hasData = parsed.businessName || parsed.description || parsed.industry;
+      setBrandLinked(hasData);
+    } else {
+      setBrandLinked(false);
+    }
+  }, []);
+  
+  // Check if business info has meaningful data
+  const hasBusinessInfo = businessInfo && (businessInfo.businessName || businessInfo.description || businessInfo.industry);
+  
+  // Step 2: Settings
   const [postType, setPostType] = useState('ad');
   const [aspectRatio, setAspectRatio] = useState('1:1');
   
@@ -46,7 +66,7 @@ const BusinessImage = () => {
     { id: '16:9', label: '16:9', icon: FiMonitor, description: 'Landscape' }
   ];
 
-  // Generate AI advice based on user's prompt
+  // Generate AI advice based on user's prompt and business info
   const generateAIAdvice = async () => {
     setIsLoadingAdvice(true);
     setShowAdvice(true);
@@ -54,11 +74,27 @@ const BusinessImage = () => {
     try {
       const basePrompt = prompt.trim() || 'business marketing';
       
+      // Build context from business info if available and linked
+      let businessContext = '';
+      if (brandLinked && hasBusinessInfo) {
+        const parts = [];
+        if (businessInfo.businessName) parts.push(`Business: ${businessInfo.businessName}`);
+        if (businessInfo.industry) parts.push(`Industry: ${businessInfo.industry}`);
+        if (businessInfo.brandVoice) parts.push(`Brand voice: ${businessInfo.brandVoice}`);
+        if (businessInfo.targetAudience) parts.push(`Target audience: ${businessInfo.targetAudience.substring(0, 100)}`);
+        if (businessInfo.products && businessInfo.products.length > 0) {
+          parts.push(`Products: ${businessInfo.products.map(p => p.name).join(', ')}`);
+        }
+        if (parts.length > 0) {
+          businessContext = `\n\nBusiness Context:\n${parts.join('\n')}`;
+        }
+      }
+      
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Based on this image idea: "${basePrompt}"
+          message: `Based on this image idea: "${basePrompt}"${businessContext}
           
 Generate 6 creative and specific AI image prompts that would work great for Instagram business posts. 
 
@@ -171,6 +207,35 @@ Return ONLY the JSON array, no other text.`
     };
 
     let enhancedPrompt = prompt;
+    
+    // Add brand context if linked and available
+    if (brandLinked && hasBusinessInfo) {
+      if (businessInfo.businessName) {
+        enhancedPrompt = `For ${businessInfo.businessName}: ${enhancedPrompt}`;
+      }
+      if (businessInfo.industry) {
+        enhancedPrompt += `. Industry: ${businessInfo.industry}`;
+      }
+      if (businessInfo.brandVoice) {
+        const voiceStyles = {
+          'professional': 'clean, corporate, trustworthy aesthetic',
+          'friendly': 'warm, approachable, welcoming style',
+          'bold': 'striking, edgy, high-contrast design',
+          'luxurious': 'elegant, premium, sophisticated look',
+          'playful': 'fun, colorful, energetic vibe',
+          'inspiring': 'motivational, uplifting, empowering feel',
+          'educational': 'clear, informative, structured layout',
+          'minimalist': 'simple, clean, understated design'
+        };
+        enhancedPrompt += `. ${voiceStyles[businessInfo.brandVoice] || ''}`;
+      }
+      if (businessInfo.brandColors && businessInfo.brandColors.length > 0) {
+        enhancedPrompt += `. Use brand colors: ${businessInfo.brandColors.join(', ')}`;
+      }
+      if (businessInfo.targetAudience) {
+        enhancedPrompt += `. Target audience: ${businessInfo.targetAudience.substring(0, 100)}`;
+      }
+    }
     
     // Add post type context
     enhancedPrompt += `. Style: ${postTypeDescriptions[postType] || 'professional marketing design'}`;
@@ -446,18 +511,26 @@ Example: A premium skincare product bottle on white marble, soft natural lightin
                     <div>
                       <h3>Brand Details</h3>
                       <p className="setting-desc">
-                        {brandLinked 
-                          ? '✓ Brand identity will be applied to the image'
-                          : 'Generic styling will be used'}
+                        {!hasBusinessInfo ? (
+                          <>
+                            <FiAlertCircle className="warning-icon" /> 
+                            <Link to="/app/business-hub" className="setup-link">Set up in Business Hub</Link>
+                          </>
+                        ) : brandLinked ? (
+                          <>✓ Brand identity will be applied to the image</>
+                        ) : (
+                          'Generic styling will be used'
+                        )}
                       </p>
                     </div>
                     <label className="toggle-switch">
                       <input 
                         type="checkbox" 
-                        checked={brandLinked} 
+                        checked={brandLinked && hasBusinessInfo} 
                         onChange={(e) => setBrandLinked(e.target.checked)}
+                        disabled={!hasBusinessInfo}
                       />
-                      <span className="toggle-slider"></span>
+                      <span className={`toggle-slider ${!hasBusinessInfo ? 'disabled' : ''}`}></span>
                     </label>
                   </div>
                 </div>

@@ -305,24 +305,35 @@ Keep it under 80 words. No line breaks. Be specific and visual.`
 
   /**
    * Chat with AI assistant
+   * @param {string|Array} message - Either a string message or array of message objects
+   * @param {Array} conversationHistory - Previous conversation (only used if message is string)
    */
   async chat(message, conversationHistory = []) {
     try {
-      const messages = [
-        { 
-          role: 'system', 
-          content: `You are an Instagram marketing expert assistant. Help users with:
-          - Content strategy
-          - Caption writing
-          - Hashtag research
-          - Engagement tips
-          - Growth strategies
-          - Reel ideas
-          Be helpful, concise, and actionable.` 
-        },
-        ...conversationHistory,
-        { role: 'user', content: message }
-      ];
+      let messages;
+      
+      // Handle both string and array inputs
+      if (Array.isArray(message)) {
+        // Direct array of messages passed
+        messages = message;
+      } else {
+        // String message with optional history
+        messages = [
+          { 
+            role: 'system', 
+            content: `You are an Instagram marketing expert assistant. Help users with:
+            - Content strategy
+            - Caption writing
+            - Hashtag research
+            - Engagement tips
+            - Growth strategies
+            - Reel ideas
+            Be helpful, concise, and actionable.` 
+          },
+          ...conversationHistory,
+          { role: 'user', content: message }
+        ];
+      }
 
       const response = await this.client.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -333,7 +344,8 @@ Keep it under 80 words. No line breaks. Be specific and visual.`
 
       return {
         success: true,
-        response: response.choices[0].message.content.trim()
+        response: response.choices[0].message.content.trim(),
+        content: response.choices[0].message.content.trim() // Alias for compatibility
       };
     } catch (error) {
       console.error('OpenAI chat error:', error.message);

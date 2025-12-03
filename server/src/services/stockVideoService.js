@@ -352,8 +352,89 @@ module.exports = {
   searchStockVideos,
   getRandomStockVideo,
   getVideoClipsForDuration,
+  getVideosForScenes,
   getOptimizedQuery,
   getCuratedBackground,
   VIDEO_CATEGORIES,
   CURATED_BACKGROUNDS
 };
+
+/**
+ * Get different stock videos for each scene/segment
+ * Perfect for voiceover videos where visuals change with the story
+ * 
+ * @param {Array} scenes - Array of { searchTerm, duration, startTime, endTime }
+ * @param {Object} options - Search options
+ * @returns {Promise<Array>} - Array of video clips matched to scenes
+ */
+async function getVideosForScenes(scenes, options = {}) {
+  if (!scenes || scenes.length === 0) {
+    return [];
+  }
+
+  console.log(`🎬 Finding videos for ${scenes.length} scenes...`);
+  
+  const sceneClips = [];
+  const usedVideoIds = new Set(); // Track used videos to avoid duplicates
+  
+  for (const scene of scenes) {
+    const searchTerm = scene.searchTerm || scene.keywords || 'abstract background';
+    const sceneDuration = scene.duration || (scene.endTime - scene.startTime) || 10;
+    
+    console.log(`   Scene ${scene.index + 1}: "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
+    
+    // Search for videos matching this scene
+    const videos = await searchStockVideos(searchTerm, {
+      ...options,
+      perPage: 10,
+      minDuration: Math.max(3, sceneDuration * 0.5), // At least half scene duration
+      maxDuration: 60
+    });
+    
+    // Filter out already used videos
+    const availableVideos = videos.filter(v => !usedVideoIds.has(`${v.source}-${v.id}`));
+    
+    if (availableVideos.length > 0) {
+      // Pick a random video from results
+      const video = availableVideos[Math.floor(Math.random() * Math.min(5, availableVideos.length))];
+      usedVideoIds.add(`${video.source}-${video.id}`);
+      
+      sceneClips.push({
+        ...video,
+        sceneIndex: scene.index,
+        sceneSearchTerm: searchTerm,
+        useDuration: sceneDuration,
+        startAt: scene.startTime || 0,
+        endAt: scene.endTime || (scene.startTime + sceneDuration),
+        // For Shotstack multi-clip
+        playbackStart: scene.startTime || 0,
+        playbackDuration: sceneDuration
+      });
+      
+      console.log(`      ✅ Found: ${video.source} #${video.id} (${video.duration}s)`);
+    } else {
+      // Fallback: try generic search
+      console.log(`      ⚠️ No results, trying fallback...`);
+      const fallbackVideos = await searchStockVideos('abstract motion background', { perPage: 5 });
+      const fallback = fallbackVideos.find(v => !usedVideoIds.has(`${v.source}-${v.id}`)) || fallbackVideos[0];
+      
+      if (fallback) {
+        usedVideoIds.add(`${fallback.source}-${fallback.id}`);
+        sceneClips.push({
+          ...fallback,
+          sceneIndex: scene.index,
+          sceneSearchTerm: 'fallback',
+          useDuration: sceneDuration,
+          startAt: scene.startTime || 0,
+          endAt: scene.endTime || (scene.startTime + sceneDuration),
+          playbackStart: scene.startTime || 0,
+          playbackDuration: sceneDuration
+        });
+        console.log(`      ✅ Fallback: ${fallback.source} #${fallback.id}`);
+      }
+    }
+  }
+  
+  console.log(`   📹 Total: ${sceneClips.length} scene clips ready`);
+  return sceneClips;
+}

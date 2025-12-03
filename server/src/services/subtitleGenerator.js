@@ -6,7 +6,15 @@
 
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+
+// UUID fallback for serverless environments
+let uuidv4;
+try {
+  uuidv4 = require('uuid').v4;
+} catch (e) {
+  // Fallback UUID generator
+  uuidv4 = () => 'xxxx-xxxx-xxxx-xxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16));
+}
 
 class SubtitleGenerator {
   constructor() {
@@ -21,10 +29,17 @@ class SubtitleGenerator {
       friendly: 155
     };
 
-    // Output directory for subtitle files
-    this.outputDir = path.join(__dirname, '../../uploads/subtitles');
-    if (!fs.existsSync(this.outputDir)) {
-      fs.mkdirSync(this.outputDir, { recursive: true });
+    // Output directory for subtitle files - use /tmp on Vercel
+    const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+    const baseDir = isVercel ? '/tmp' : path.join(__dirname, '../../uploads');
+    this.outputDir = path.join(baseDir, 'subtitles');
+    
+    try {
+      if (!fs.existsSync(this.outputDir)) {
+        fs.mkdirSync(this.outputDir, { recursive: true });
+      }
+    } catch (e) {
+      console.log('Subtitle dir creation skipped:', e.message);
     }
   }
 

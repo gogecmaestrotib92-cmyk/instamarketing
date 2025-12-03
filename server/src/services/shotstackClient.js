@@ -107,20 +107,22 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         }
 
         // Determine position offset based on position type
-        // For 9:16 vertical video (1080x1920), keep text well within frame
+        // For 9:16 vertical video (1080x1920), keep text SAFELY within frame
         // Shotstack offset: positive y moves UP, negative y moves DOWN
-        // Using center position with offset for more control
-        let offset = { x: 0, y: -0.35 }; // Center position, offset down to lower third
+        // Values are relative (-1 to 1), where 0.5 = 50% from center
+        // IMPORTANT: Keep offset values small to prevent text going off-screen
+        let offset = { x: 0, y: -0.25 }; // Lower portion but still safe
         let position = 'center'; // Always use center for precise control
         
         // Adjust offset based on desired visual position
+        // Using conservative values to keep text within safe zone
         const desiredPosition = subtitle.position || subtitleStyle.position || 'bottom';
         if (desiredPosition === 'top') {
-          offset = { x: 0, y: 0.35 }; // Upper third of screen
+          offset = { x: 0, y: 0.25 }; // Upper portion - safe zone
         } else if (desiredPosition === 'center' || desiredPosition === 'middle') {
           offset = { x: 0, y: 0 }; // True center
         } else if (desiredPosition === 'bottom') {
-          offset = { x: 0, y: -0.35 }; // Lower third - safe zone above Instagram UI
+          offset = { x: 0, y: -0.25 }; // Lower portion - safe zone above Instagram UI
         }
 
         // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
@@ -148,12 +150,13 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
 
         // Instagram/YouTube Reels style - bold, punchy text
         // Using 'chunk' style for that viral TikTok/Reels look
+        // Size 'small' to ensure text fits within frame even with long sentences
         const clip = {
           asset: {
             type: 'title',
             text: subtitle.text.toUpperCase(), // ALL CAPS for viral style
             style: 'chunk', // Bold chunky style like viral reels
-            size: 'medium', // Medium size - visible but fits on screen
+            size: 'small', // Small size to ensure it fits in frame
             color: '#ffffff' // Pure white text
           },
           start: subtitle.start,
@@ -659,20 +662,31 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
     );
 
     if (validSubtitles.length > 0) {
-      subtitleClips = validSubtitles.map((subtitle, index) => ({
-        asset: {
-          type: 'title',
-          text: subtitle.text.toUpperCase(),
-          style: 'chunk',
-          size: 'medium',
-          color: '#ffffff'
-        },
-        start: subtitle.start,
-        length: Math.max(0.1, subtitle.end - subtitle.start),
-        position: 'center',
-        offset: { x: 0, y: -0.35 },
-        transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
-      }));
+      subtitleClips = validSubtitles.map((subtitle, index) => {
+        // Break long subtitles into multiple lines (max 6 words per line for vertical video)
+        const words = subtitle.text.trim().split(/\s+/);
+        let formattedText = subtitle.text.toUpperCase();
+        if (words.length > 6) {
+          const midpoint = Math.ceil(words.length / 2);
+          formattedText = words.slice(0, midpoint).join(' ').toUpperCase() + '\n' + 
+                         words.slice(midpoint).join(' ').toUpperCase();
+        }
+        
+        return {
+          asset: {
+            type: 'title',
+            text: formattedText,
+            style: 'chunk',
+            size: 'small', // Smaller size for vertical video to fit in frame
+            color: '#ffffff'
+          },
+          start: subtitle.start,
+          length: Math.max(0.1, subtitle.end - subtitle.start),
+          position: 'center',
+          offset: { x: 0, y: -0.25 }, // Safe zone offset - not too far down
+          transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
+        };
+      });
 
       tracks.push({ clips: subtitleClips });
     }

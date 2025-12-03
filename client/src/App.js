@@ -29,6 +29,7 @@ import ContentCalendar from './pages/ContentCalendar';
 import BusinessCreate from './pages/BusinessCreate';
 import BusinessImage from './pages/BusinessImage';
 import BusinessTrending from './pages/BusinessTrending';
+import BusinessHub from './pages/BusinessHub';
 import EcommerceCreate from './pages/EcommerceCreate';
 
 // SEO Landing Pages
@@ -208,6 +209,7 @@ function AppRoutes() {
         <Route path="create/ecommerce/product-photoshoot" element={<ComingSoon title="Product Photo Shoot" description="Product with AI backgrounds" />} />
 
         <Route path="autopilot" element={<AutoPilotNew />} />
+        <Route path="business-hub" element={<BusinessHub />} />
         <Route path="asset-hub" element={<AssetHub />} />
         <Route path="calendar" element={<ContentCalendar />} />
         <Route path="campaigns" element={<Campaigns />} />

@@ -17,7 +17,8 @@ import {
   FiPlusCircle,
   FiUser,
   FiShoppingBag,
-  FiBriefcase
+  FiBriefcase,
+  FiDatabase
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import './Layout.css';
@@ -158,6 +159,7 @@ const Layout = () => {
     },
     { path: '/app/autopilot', icon: FiCpu, label: 'AI Auto-Pilot', badge: 'NEW', emphasized: 'secondary' },
     { path: '/app/asset-hub', icon: FiFolder, label: 'Asset Hub' },
+    { path: '/app/business-hub', icon: FiDatabase, label: 'Business Hub', badge: 'NEW' },
     { path: '/app/calendar', icon: FiCalendar, label: 'Content Calendar' },
     { path: '/app/settings', icon: FiSettings, label: 'Settings' }
   ];
