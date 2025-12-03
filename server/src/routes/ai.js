@@ -3677,38 +3677,68 @@ Example: ["business meeting office", "money cash counting", "success celebration
 function getFallbackVideoKeywords(topic, numScenes) {
   const cleanTopic = topic.toLowerCase().trim();
   
-  // Visual keyword mappings for common topics
+  // Visual keyword mappings for common topics - USE SPECIFIC PEXELS-FRIENDLY TERMS
   const VISUAL_KEYWORDS = {
+    // Fitness related
+    'abs': ['abs workout gym', 'fitness training core', 'gym exercise athletic', 'person doing crunches', 'fitness motivation gym', 'athletic body workout'],
+    'fitness': ['gym workout weights', 'running jogging outdoor', 'yoga stretching exercise', 'athlete training sports', 'person exercising gym', 'fitness motivation'],
+    'gym': ['gym workout weights', 'fitness training exercise', 'person lifting weights', 'athletic gym training', 'muscle workout fitness', 'gym equipment exercise'],
+    'workout': ['workout gym fitness', 'exercise training athletic', 'person exercising gym', 'fitness motivation training', 'home workout exercise', 'athletic training sports'],
+    'exercise': ['exercise fitness gym', 'person working out', 'athletic training sports', 'yoga fitness stretching', 'running jogging outdoor', 'gym exercise equipment'],
+    
+    // Money related
     'money': ['person counting money', 'luxury car driving', 'business office meeting', 'wealthy lifestyle mansion', 'cash dollars bills', 'shopping luxury store'],
     'finance': ['stock market trading', 'business meeting office', 'laptop computer working', 'city skyline business', 'professional handshake', 'money counting cash'],
+    'wealth': ['luxury lifestyle mansion', 'expensive car driving', 'business success celebration', 'wealthy person lifestyle', 'money cash counting', 'luxury shopping store'],
+    
+    // Business related
     'business': ['office meeting team', 'laptop working coffee', 'handshake business deal', 'city skyline buildings', 'presentation boardroom', 'entrepreneur working'],
-    'fitness': ['gym workout weights', 'running jogging outdoor', 'yoga stretching exercise', 'athlete training sports', 'healthy food preparation', 'person exercising gym'],
+    'entrepreneur': ['startup office working', 'laptop coffee working', 'business meeting team', 'presentation success', 'office professional work', 'hustle motivation'],
+    
+    // Health related
     'health': ['healthy food vegetables', 'person exercising outdoors', 'yoga meditation peaceful', 'doctor medical healthcare', 'nature walking hiking', 'wellness spa relaxation'],
+    'diet': ['healthy food preparation', 'vegetables cooking kitchen', 'healthy eating lifestyle', 'salad preparation fresh', 'nutrition food healthy', 'cooking healthy meal'],
+    
+    // Motivation related
     'motivation': ['sunrise mountain peak', 'person running athlete', 'victory celebration winner', 'ocean waves peaceful', 'city lights night', 'nature landscape beautiful'],
     'success': ['celebration confetti party', 'trophy award winning', 'business handshake deal', 'luxury lifestyle car', 'graduation achievement', 'mountain peak summit'],
+    'tips': ['professional explaining teaching', 'laptop working office', 'person speaking camera', 'writing notes planning', 'education learning study', 'office work professional'],
+    
+    // Lifestyle related  
     'travel': ['airplane flying clouds', 'beach vacation tropical', 'city tourism sightseeing', 'backpacker hiking nature', 'road trip driving scenic', 'passport luggage airport'],
     'food': ['cooking kitchen chef', 'restaurant dining meal', 'food preparation ingredients', 'eating delicious plate', 'kitchen cooking healthy', 'cafe coffee breakfast'],
     'technology': ['computer coding programming', 'smartphone mobile apps', 'futuristic digital technology', 'robot automation modern', 'data center servers', 'tech startup office'],
     'love': ['couple romantic together', 'wedding ceremony love', 'holding hands walking', 'sunset romantic beach', 'family happy together', 'proposal engagement ring'],
   };
 
-  // Find matching keywords
+  // Find matching keywords - check each word in the topic
+  const topicWords = cleanTopic.split(/\s+/);
+  for (const word of topicWords) {
+    if (VISUAL_KEYWORDS[word]) {
+      const shuffled = VISUAL_KEYWORDS[word].sort(() => Math.random() - 0.5);
+      console.log(`   📹 Fallback matched "${word}" -> ${shuffled.slice(0, numScenes).join(', ')}`);
+      return shuffled.slice(0, numScenes);
+    }
+  }
+  
+  // Also check if topic contains any keyword
   for (const [key, visuals] of Object.entries(VISUAL_KEYWORDS)) {
     if (cleanTopic.includes(key)) {
-      // Shuffle and return requested number
       const shuffled = visuals.sort(() => Math.random() - 0.5);
+      console.log(`   📹 Fallback matched (contains) "${key}" -> ${shuffled.slice(0, numScenes).join(', ')}`);
       return shuffled.slice(0, numScenes);
     }
   }
 
-  // Generic fallback
+  // Generic fallback - use topic directly with visual modifiers
+  console.log(`   📹 No match found, using topic directly: ${topic}`);
   return [
-    `${topic} lifestyle`,
-    `${topic} professional`,
-    `${topic} cinematic`,
-    'office work professional',
-    'nature landscape peaceful',
-    'city urban lifestyle'
+    `${cleanTopic}`,
+    `${cleanTopic} lifestyle`,
+    `${cleanTopic} professional`,
+    `person ${cleanTopic}`,
+    'lifestyle motivation',
+    'professional working'
   ].slice(0, numScenes);
 }
 

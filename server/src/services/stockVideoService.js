@@ -465,25 +465,27 @@ async function getVideosForScenes(scenes, options = {}) {
   const usedVideoIds = new Set(); // Track used videos to avoid duplicates
   
   for (const scene of scenes) {
-    let searchTerm = scene.searchTerm || scene.keywords || 'abstract background';
+    // Use the search term directly - it's already been AI-generated or properly formatted
+    let searchTerm = scene.searchTerm || scene.keywords || 'fitness workout';
     const sceneDuration = scene.duration || (scene.endTime - scene.startTime) || 10;
     
-    // Improve search term using concept mapping
-    const improvedTerm = improveSearchTerm(searchTerm);
-    console.log(`   Scene ${scene.index + 1}: "${searchTerm}" -> "${improvedTerm}" (${sceneDuration.toFixed(1)}s)`);
+    console.log(`   Scene ${scene.index + 1}: Searching "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
     
-    // Search for videos matching this scene - try improved term first
-    let videos = await searchStockVideos(improvedTerm, {
+    // Search for videos matching this scene - use the term DIRECTLY
+    let videos = await searchStockVideos(searchTerm, {
       ...options,
       perPage: 15,
       minDuration: Math.max(3, sceneDuration * 0.5),
       maxDuration: 60
     });
     
-    // If no results, try original term
-    if (videos.length === 0 && improvedTerm !== searchTerm) {
-      console.log(`      Trying original term: "${searchTerm}"`);
-      videos = await searchStockVideos(searchTerm, {
+    console.log(`      Found ${videos.length} videos for "${searchTerm}"`);
+    
+    // If no results, try simpler search with first 2 words
+    if (videos.length === 0) {
+      const simpleTerms = searchTerm.split(' ').slice(0, 2).join(' ');
+      console.log(`      No results, trying simpler: "${simpleTerms}"`);
+      videos = await searchStockVideos(simpleTerms, {
         ...options,
         perPage: 15,
         minDuration: 3,
