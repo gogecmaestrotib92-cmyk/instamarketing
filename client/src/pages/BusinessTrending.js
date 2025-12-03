@@ -310,12 +310,13 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         try {
           const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
           // Asset Hub expects type: 'video' and a valid video URL
+          // Don't set thumbnail - let AssetHub generate it from the video
           const assetToSave = {
             id: result.id,
             type: 'video', // Asset Hub recognizes: 'video', 'image', 'carousel'
             name: result.name,
             url: composedVideoUrl || bgVideoUrl || data.audioUrl, // Use composed video or background video
-            thumbnail: bgVideoUrl, // Use background video as thumbnail
+            thumbnail: null, // Let Asset Hub generate thumbnail from video element
             caption: result.script?.substring(0, 100) + '...',
             createdAt: result.createdAt,
             tags: [contentType, 'voiceover', 'trending'],
@@ -478,7 +479,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           type: isVideoAsset ? 'video' : 'image', // Asset Hub recognizes: 'video', 'image', 'carousel'
           name: result.name,
           url: composedVideoUrl || backgroundUrl || voiceoverData.audioUrl,
-          thumbnail: backgroundUrl, // Use background as thumbnail
+          thumbnail: null, // Let Asset Hub generate thumbnail from video element
           caption: result.script?.substring(0, 100) + '...',
           createdAt: result.createdAt,
           tags: [contentType, 'voiceover', backgroundType_used],

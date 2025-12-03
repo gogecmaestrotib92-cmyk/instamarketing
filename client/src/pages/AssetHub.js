@@ -35,7 +35,31 @@ const AssetHub = () => {
     try {
       const savedAssets = localStorage.getItem('assetHub');
       if (savedAssets) {
-        setAssets(JSON.parse(savedAssets));
+        let parsedAssets = JSON.parse(savedAssets);
+        
+        // Migration: Fix old assets that have video URLs as thumbnails
+        let needsSave = false;
+        parsedAssets = parsedAssets.map(asset => {
+          if (asset.type === 'video' && asset.thumbnail) {
+            // If thumbnail looks like a video URL, clear it
+            if (asset.thumbnail.includes('.mp4') || 
+                asset.thumbnail.includes('video') ||
+                asset.thumbnail.includes('pexels.com') ||
+                asset.thumbnail.includes('shotstack')) {
+              needsSave = true;
+              return { ...asset, thumbnail: null };
+            }
+          }
+          return asset;
+        });
+        
+        // Save migrated assets
+        if (needsSave) {
+          localStorage.setItem('assetHub', JSON.stringify(parsedAssets));
+          console.log('✅ Migrated old video assets to use video element thumbnails');
+        }
+        
+        setAssets(parsedAssets);
       } else {
         // Initialize with empty array
         setAssets([]);
@@ -296,19 +320,26 @@ const AssetHub = () => {
                 <div className="asset-preview" onClick={() => setPreviewAsset(asset)}>
                   {asset.type === 'video' ? (
                     <>
-                      {asset.thumbnail ? (
-                        <img src={asset.thumbnail} alt={asset.name} className="video-thumbnail" />
-                      ) : (
-                        <video 
-                          src={asset.url} 
-                          muted 
-                          preload="metadata"
-                          onLoadedMetadata={(e) => {
-                            // Seek to 1 second to get a better thumbnail frame
-                            e.target.currentTime = 1;
-                          }}
-                        />
-                      )}
+                      <video 
+                        src={asset.url} 
+                        muted 
+                        preload="auto"
+                        playsInline
+                        poster=""
+                        onLoadedData={(e) => {
+                          // Seek to 1 second to get a better thumbnail frame
+                          e.target.currentTime = 1;
+                          e.target.dataset.loaded = 'true';
+                        }}
+                        onSeeked={(e) => {
+                          // Pause after seeking to show the frame
+                          e.target.pause();
+                        }}
+                        onError={(e) => {
+                          console.error('Video thumbnail failed to load:', asset.url);
+                          e.target.dataset.error = 'true';
+                        }}
+                      />
                       <div className="video-play-icon">▶</div>
                     </>
                   ) : asset.type === 'carousel' ? (

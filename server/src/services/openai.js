@@ -238,6 +238,90 @@ RULES:
   }
 
   /**
+   * Generate video script WITH visual scene descriptions
+   * Each sentence gets a matching video search term for stock footage
+   */
+  async generateScriptWithScenes(topic, duration = 15, contentType = 'tips') {
+    try {
+      const maxWords = Math.floor(duration * 2.5);
+      const numScenes = Math.min(5, Math.max(3, Math.ceil(duration / 5)));
+      
+      const response = await this.client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: `You are a viral video script writer who creates scripts with matching visual scenes.
+
+Create a ${duration}-second script with ${numScenes} scenes. For each scene, provide:
+1. The spoken text (short, punchy)
+2. A video search term for stock footage (2-3 words)
+
+RESPOND IN THIS EXACT JSON FORMAT:
+{
+  "script": "Full spoken script here",
+  "scenes": [
+    {"text": "Hook sentence", "video": "exact video search term"},
+    {"text": "Value point 1", "video": "exact video search term"},
+    {"text": "Value point 2", "video": "exact video search term"},
+    {"text": "CTA sentence", "video": "exact video search term"}
+  ]
+}
+
+VIDEO SEARCH TERMS should be concrete, visual concepts that exist on stock video sites:
+- For fitness: "gym workout", "running outdoor", "abs exercise", "healthy meal prep"
+- For motivation: "sunrise mountain", "success celebration", "person working hard"
+- For tips: "person thinking", "writing notes", "achievement success"
+- For food: "cooking kitchen", "healthy vegetables", "meal preparation"
+- AVOID abstract concepts like "consistency" - use "calendar planning" instead
+- AVOID emotions - use visual actions that represent them
+
+Script rules:
+- Maximum ${maxWords} words total
+- Short punchy sentences
+- Write for speaking, not reading
+- No timestamps or stage directions` 
+          },
+          { role: 'user', content: `Create a ${contentType} video about: ${topic}` }
+        ],
+        max_tokens: 400,
+        temperature: 0.8
+      });
+
+      const content = response.choices[0].message.content.trim();
+      
+      // Try to parse as JSON
+      try {
+        // Extract JSON from response (handle markdown code blocks)
+        let jsonStr = content;
+        if (content.includes('```')) {
+          jsonStr = content.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+        }
+        
+        const parsed = JSON.parse(jsonStr);
+        console.log('   ✅ Parsed script with scenes:', parsed.scenes?.length || 0, 'scenes');
+        
+        return {
+          success: true,
+          script: parsed.script,
+          scenes: parsed.scenes || []
+        };
+      } catch (parseErr) {
+        // Fallback: return just the script text
+        console.log('   ⚠️ Could not parse JSON, using text as script');
+        return {
+          success: true,
+          script: content.replace(/```json?\n?/g, '').replace(/```/g, '').replace(/[{}]/g, '').trim(),
+          scenes: []
+        };
+      }
+    } catch (error) {
+      console.error('OpenAI script with scenes error:', error.message);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Analyze and improve existing caption
    */
   async improveCaption(caption) {

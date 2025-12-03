@@ -256,7 +256,35 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: #000;
+  background: linear-gradient(135deg, #1a1d28 0%, #2a3142 50%, #1a1d28 100%);
+}
+
+/* Loading state for video thumbnails */
+.asset-preview video:not([data-loaded="true"]) {
+  background: linear-gradient(135deg, #1a1d28 0%, #2a3142 100%);
+}
+
+/* Error state - show placeholder */
+.asset-preview video[data-error="true"] {
+  background: linear-gradient(135deg, #2d1f3d 0%, #1a2742 100%);
+}
+
+/* Video placeholder with icon */
+.asset-preview::before {
+  content: '🎬';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  opacity: 0.3;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.asset-preview video[data-loaded="true"] + .video-play-icon ~ .asset-preview::before,
+.asset-preview img ~ .asset-preview::before {
+  display: none;
 }
 
 .asset-preview .video-thumbnail {

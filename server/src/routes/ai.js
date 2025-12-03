@@ -27,6 +27,32 @@ try {
   console.log('Shotstack not available for AI routes:', e.message);
 }
 
+// Try to load Creatomate as alternative to Shotstack
+let creatomateService = null;
+try {
+  creatomateService = require('../services/creatomate');
+  if (creatomateService.isAvailable()) {
+    console.log('✅ Creatomate service loaded for AI routes');
+  } else {
+    console.log('⚠️ Creatomate API key not configured');
+  }
+} catch (e) {
+  console.log('Creatomate not available:', e.message);
+}
+
+// Try to load JSON2Video as another alternative
+let json2videoService = null;
+try {
+  json2videoService = require('../services/json2video');
+  if (json2videoService.isAvailable()) {
+    console.log('✅ JSON2Video service loaded for AI routes');
+  } else {
+    console.log('⚠️ JSON2Video API key not configured');
+  }
+} catch (e) {
+  console.log('JSON2Video not available:', e.message);
+}
+
 /**
  * AI Content Generation Routes
  * OpenAI + Google Text-to-Speech + Replicate Video + Video Composer
@@ -979,6 +1005,54 @@ router.get('/shotstack/status/:jobId', async (req, res) => {
     res.json(status);
   } catch (error) {
     console.error('Shotstack status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get Creatomate render job status
+ * GET /api/ai/creatomate/status/:renderId
+ */
+router.get('/creatomate/status/:renderId', async (req, res) => {
+  try {
+    const { renderId } = req.params;
+    
+    if (!renderId) {
+      return res.status(400).json({ error: 'renderId is required' });
+    }
+    
+    if (!creatomateService || !creatomateService.isAvailable()) {
+      return res.status(503).json({ error: 'Creatomate service not available' });
+    }
+    
+    const status = await creatomateService.getRenderStatus(renderId);
+    res.json(status);
+  } catch (error) {
+    console.error('Creatomate status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get JSON2Video render job status
+ * GET /api/ai/json2video/status/:projectId
+ */
+router.get('/json2video/status/:projectId', async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    
+    if (!projectId) {
+      return res.status(400).json({ error: 'projectId is required' });
+    }
+    
+    if (!json2videoService || !json2videoService.isAvailable()) {
+      return res.status(503).json({ error: 'JSON2Video service not available' });
+    }
+    
+    const status = await json2videoService.getRenderStatus(projectId);
+    res.json(status);
+  } catch (error) {
+    console.error('JSON2Video status error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -3216,9 +3290,29 @@ router.post('/voiceover-video/generate', async (req, res) => {
     console.log(`   Voice Style: ${voiceStyle}`);
     console.log(`   Scene Videos: ${useSceneVideos}`);
 
-    // STEP 1: Generate script
-    console.log('\n📝 Step 1: Generating script...');
-    const scriptResult = await openaiService.generateReelScript(`${contentType}: ${topic}`, duration);
+    // STEP 1: Generate script WITH visual scene descriptions
+    console.log('\n📝 Step 1: Generating script with visual scenes...');
+    
+    let scriptResult;
+    let aiGeneratedScenes = [];
+    
+    // Try the new scene-aware script generation first
+    if (useSceneVideos) {
+      const sceneScriptResult = await openaiService.generateScriptWithScenes(topic, duration, contentType);
+      if (sceneScriptResult.success && sceneScriptResult.scenes?.length > 0) {
+        scriptResult = { success: true, script: sceneScriptResult.script };
+        aiGeneratedScenes = sceneScriptResult.scenes;
+        console.log('   ✅ AI generated script with', aiGeneratedScenes.length, 'scene descriptions:');
+        aiGeneratedScenes.forEach((s, i) => console.log(`      ${i+1}. "${s.video}" for: "${s.text?.substring(0, 40)}..."`));
+      } else {
+        // Fallback to regular script generation
+        scriptResult = await openaiService.generateReelScript(`${contentType}: ${topic}`, duration);
+        console.log('   ⚠️ Falling back to regular script generation');
+      }
+    } else {
+      scriptResult = await openaiService.generateReelScript(`${contentType}: ${topic}`, duration);
+    }
+    
     if (!scriptResult.success) {
       return res.status(500).json({ error: 'Failed to generate script: ' + scriptResult.error });
     }
@@ -3279,6 +3373,31 @@ router.post('/voiceover-video/generate', async (req, res) => {
 
       // Generate scene breakpoints from script
       if (useSceneVideos) {
+        // PRIORITY 1: Use AI-generated scene descriptions if available
+        if (aiGeneratedScenes && aiGeneratedScenes.length > 0) {
+          console.log(`   🎯 Using AI-generated scene descriptions (${aiGeneratedScenes.length} scenes)`);
+          
+          const sceneDuration = estimatedDuration / aiGeneratedScenes.length;
+          let currentTime = 0;
+          
+          for (let i = 0; i < aiGeneratedScenes.length; i++) {
+            const aiScene = aiGeneratedScenes[i];
+            scenes.push({
+              index: i,
+              text: aiScene.text?.substring(0, 100) || '',
+              searchTerm: aiScene.video || 'motivation lifestyle', // Direct from AI
+              startTime: currentTime,
+              endTime: currentTime + sceneDuration,
+              duration: sceneDuration
+            });
+            console.log(`      Scene ${i+1}: "${aiScene.video}" (${sceneDuration.toFixed(1)}s) - from: "${aiScene.text?.substring(0, 40)}..."`);
+            currentTime += sceneDuration;
+          }
+          console.log(`   ✅ Created ${scenes.length} scenes from AI descriptions`);
+        } else {
+          // FALLBACK: Extract keywords from script text
+          console.log(`   📝 Falling back to keyword extraction from script...`);
+        
         // Split script into sentences for scene detection
         const sentences = scriptResult.script.match(/[^.!?]+[.!?]+/g) || [scriptResult.script];
         
@@ -3517,6 +3636,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
           currentTime += sceneDuration;
         }
         console.log(`   ✅ Identified ${scenes.length} scenes for video matching`);
+        } // Close the else block for AI scene fallback
       }
     } else {
       console.log('   ⚠️ Subtitle generator not available, creating basic subtitles');
@@ -3579,16 +3699,105 @@ router.post('/voiceover-video/generate', async (req, res) => {
       console.log('   ⚠️ Stock video service not available');
     }
 
-    // STEP 5: Start Shotstack composition
+    // STEP 5: Start video composition (try JSON2Video, then Creatomate, then Shotstack)
     console.log('\n🎬 Step 5: Starting video composition...');
     let compositionJobId = null;
     let compositionError = null;
+    let compositionService = null;
     
+    const json2videoAvailable = json2videoService && json2videoService.isAvailable();
+    const creatomateAvailable = creatomateService && creatomateService.isAvailable();
+    console.log(`   JSON2Video available: ${json2videoAvailable}`);
+    console.log(`   Creatomate available: ${creatomateAvailable}`);
     console.log(`   Shotstack available: ${!!shotstackClient}`);
     console.log(`   Scene videos found: ${sceneVideos.length}`);
     console.log(`   Background video: ${backgroundVideo ? 'yes' : 'no'}`);
     
-    if (shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
+    // Prepare audio URL
+    let audioUrl = voiceResult.audioUrl;
+    
+    // TRY JSON2VIDEO FIRST (free tier, no watermarks, simple API)
+    if (json2videoAvailable && (sceneVideos.length > 0 || backgroundVideo)) {
+      try {
+        console.log('   🎬 Using JSON2Video for video composition...');
+        
+        // Prepare clips for JSON2Video
+        const clips = sceneVideos.length > 0 
+          ? sceneVideos.map((sv, idx) => ({
+              url: sv.url,
+              duration: sv.useDuration || sv.duration || 5,
+              useDuration: sv.useDuration || sv.duration || 5,
+              startTime: sv.startAt || 0
+            }))
+          : [{
+              url: backgroundVideo.url,
+              duration: estimatedDuration,
+              useDuration: estimatedDuration,
+              startTime: 0
+            }];
+        
+        const json2videoResult = await json2videoService.createMultiClipRender({
+          clips: clips,
+          audioUrl: audioUrl,
+          subtitles: subtitles,
+          totalDuration: estimatedDuration
+        });
+        
+        if (json2videoResult.success) {
+          compositionJobId = json2videoResult.renderId;
+          compositionService = 'json2video';
+          console.log(`   ✅ JSON2Video composition started: ${compositionJobId}`);
+        } else {
+          console.log('   ⚠️ JSON2Video failed, trying next service...');
+        }
+      } catch (json2videoError) {
+        console.log(`   ⚠️ JSON2Video error: ${json2videoError.message}`);
+        console.log('   Falling back to next service...');
+      }
+    }
+    
+    // TRY CREATOMATE if JSON2Video failed or not available
+    if (!compositionJobId && creatomateAvailable && (sceneVideos.length > 0 || backgroundVideo)) {
+      try {
+        console.log('   🎬 Using Creatomate for video composition...');
+        
+        // Prepare clips for Creatomate
+        const clips = sceneVideos.length > 0 
+          ? sceneVideos.map(sv => ({
+              url: sv.url,
+              duration: sv.useDuration || sv.duration || 5,
+              startTime: sv.startAt || 0,
+              sourceDuration: sv.duration || 30
+            }))
+          : [{
+              url: backgroundVideo.url,
+              duration: estimatedDuration,
+              startTime: 0,
+              sourceDuration: backgroundVideo.duration || 30
+            }];
+        
+        const creatomateResult = await creatomateService.createMultiClipRender({
+          clips: clips,
+          audioUrl: audioUrl,
+          subtitles: subtitles,
+          totalDuration: estimatedDuration
+        });
+        
+        if (creatomateResult.success) {
+          compositionJobId = creatomateResult.renderId;
+          compositionService = 'creatomate';
+          console.log(`   ✅ Creatomate composition started: ${compositionJobId}`);
+        } else {
+          console.log('   ⚠️ Creatomate failed, trying Shotstack...');
+        }
+      } catch (creatomateError) {
+        console.log(`   ⚠️ Creatomate error: ${creatomateError.message}`);
+        console.log('   Falling back to Shotstack...');
+      }
+    }
+    
+    // FALLBACK TO SHOTSTACK if Creatomate failed or not available
+    if (!compositionJobId && shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
       // Upload audio to Cloudinary for Shotstack
       let audioUrl = voiceResult.audioUrl;
       if (cloudinaryUpload && audioUrl && !audioUrl.includes('cloudinary.com')) {
@@ -3655,6 +3864,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
 
           if (jobResult.success) {
             compositionJobId = jobResult.jobId;
+            compositionService = 'shotstack';
             console.log(`   ✅ Multi-clip composition started: ${compositionJobId}`);
           } else {
             compositionError = jobResult.error || 'Multi-clip render failed';
@@ -3704,6 +3914,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
 
           if (jobResult.success) {
             compositionJobId = jobResult.jobId;
+            compositionService = 'shotstack';
             console.log(`   ✅ Single video composition started: ${compositionJobId}`);
           } else {
             compositionError = jobResult.error || 'Single video render failed';
@@ -3714,12 +3925,16 @@ router.post('/voiceover-video/generate', async (req, res) => {
         compositionError = renderError.message;
         console.log(`   ❌ Shotstack render error: ${compositionError}`);
       }
-    } else if (!shotstackClient) {
-      compositionError = 'Shotstack client not available';
-      console.log('   ⚠️ Shotstack not available, skipping video composition');
-    } else {
-      compositionError = 'No stock videos found for composition';
-      console.log('   ⚠️ No videos found, skipping video composition');
+    }
+    
+    // Final status
+    if (!compositionJobId && !compositionService) {
+      if (!creatomateAvailable && !shotstackClient) {
+        compositionError = 'No video composition service available (configure CREATOMATE_API_KEY or SHOTSTACK_API_KEY)';
+      } else if (sceneVideos.length === 0 && !backgroundVideo) {
+        compositionError = 'No stock videos found for composition';
+      }
+      console.log(`   ⚠️ ${compositionError}`);
     }
 
     // Return result
@@ -3736,15 +3951,17 @@ router.post('/voiceover-video/generate', async (req, res) => {
       videos: sceneVideos.map(v => ({ source: v.source, id: v.id, sceneIndex: v.sceneIndex, url: v.url })),
       backgroundVideo: backgroundVideo ? { source: backgroundVideo.source, id: backgroundVideo.id, url: backgroundVideo.url } : null,
       compositionJobId,
+      compositionService: compositionService || null,
       compositionError,
       compositionStatus: compositionJobId ? 'processing' : 'failed',
       message: compositionJobId 
-        ? 'Video composition started successfully' 
+        ? `Video composition started with ${compositionService}` 
         : `Voiceover generated but video composition failed: ${compositionError || 'Unknown error'}. You can download the audio and combine it with video manually.`
     };
 
     console.log('\n✅ Enhanced voiceover video generation complete');
     console.log(`   Composition Job: ${compositionJobId || 'none'}`);
+    console.log(`   Service: ${compositionService || 'none'}`);
     
     res.json(result);
 
