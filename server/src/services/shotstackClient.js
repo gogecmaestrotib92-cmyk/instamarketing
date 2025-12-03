@@ -138,17 +138,16 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         console.log(`   Style mapping: "${requestedStyle}" -> "${finalStyle}"`);
         console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position}, offset: ${JSON.stringify(offset)}`);
 
-        // OPTIMIZED FOR 9:16 VERTICAL VIDEO - Keep text INSIDE frame
-        // Using 'subtitle' style which is designed for readability
-        // MAX 2 words per line to prevent overflow on narrow vertical frame
+        // VIRAL STYLE SUBTITLES - Bottom center, readable on 9:16
+        // MAX 3 words per line for viral look
         const words = subtitle.text.trim().split(/\s+/);
         let formattedText = subtitle.text.toUpperCase();
         
-        // For 9:16, use max 2 words per line to stay within frame
-        if (words.length > 2) {
+        // Split into max 3 words per line for viral style
+        if (words.length > 3) {
           const lines = [];
-          for (let w = 0; w < words.length; w += 2) {
-            lines.push(words.slice(w, w + 2).join(' ').toUpperCase());
+          for (let w = 0; w < words.length; w += 3) {
+            lines.push(words.slice(w, w + 3).join(' ').toUpperCase());
           }
           formattedText = lines.join('\n');
         }
@@ -157,15 +156,15 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
           asset: {
             type: 'title',
             text: formattedText,
-            style: 'subtitle', // Subtitle style - designed to stay in frame
-            size: 'small', // SMALL size to guarantee fit in 9:16 frame
+            style: 'chunk', // Bold viral chunk style
+            size: 'medium', // Medium size - visible but fits
             color: '#ffffff',
             background: '#000000aa' // Semi-transparent background
           },
           start: subtitle.start,
           length: clipDuration,
-          position: 'bottom', // Bottom position - standard for subtitles
-          offset: { x: 0, y: -0.05 }, // Slight upward offset from bottom edge
+          position: 'bottom', // Bottom center
+          offset: { x: 0, y: 0.1 }, // 10% up from bottom edge
           transition: Object.keys(transition).length > 0 ? transition : undefined
         };
         
@@ -688,13 +687,13 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
 
     if (validSubtitles.length > 0) {
       subtitleClips = validSubtitles.map((subtitle, index) => {
-        // OPTIMIZED FOR 9:16: Max 2 words per line to stay in frame
+        // VIRAL STYLE: Max 3 words per line
         const words = subtitle.text.trim().split(/\s+/);
         let formattedText = subtitle.text.toUpperCase();
-        if (words.length > 2) {
+        if (words.length > 3) {
           const lines = [];
-          for (let i = 0; i < words.length; i += 2) {
-            lines.push(words.slice(i, i + 2).join(' ').toUpperCase());
+          for (let i = 0; i < words.length; i += 3) {
+            lines.push(words.slice(i, i + 3).join(' ').toUpperCase());
           }
           formattedText = lines.join('\n');
         }
@@ -703,15 +702,15 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
           asset: {
             type: 'title',
             text: formattedText,
-            style: 'subtitle', // Subtitle style - stays in frame
-            size: 'small', // SMALL to fit 9:16
+            style: 'chunk', // Bold viral style
+            size: 'medium', // Medium - visible but fits
             color: '#ffffff',
             background: '#000000aa'
           },
           start: subtitle.start,
           length: Math.max(0.1, subtitle.end - subtitle.start),
-          position: 'bottom', // Bottom position
-          offset: { x: 0, y: -0.05 }, // Slight offset from edge
+          position: 'bottom', // Bottom center
+          offset: { x: 0, y: 0.1 }, // 10% up from bottom
           transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
         };
       });

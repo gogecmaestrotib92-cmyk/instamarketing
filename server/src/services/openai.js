@@ -268,13 +268,15 @@ RESPOND IN THIS EXACT JSON FORMAT:
   ]
 }
 
-VIDEO SEARCH TERMS should be concrete, visual concepts that exist on stock video sites:
-- For fitness: "gym workout", "running outdoor", "abs exercise", "healthy meal prep"
-- For motivation: "sunrise mountain", "success celebration", "person working hard"
-- For tips: "person thinking", "writing notes", "achievement success"
-- For food: "cooking kitchen", "healthy vegetables", "meal preparation"
-- AVOID abstract concepts like "consistency" - use "calendar planning" instead
-- AVOID emotions - use visual actions that represent them
+CRITICAL - VIDEO SEARCH TERMS must be REAL things you can film:
+✅ USE: "person gym workout", "abs crunch exercise", "running outdoor morning", "cooking kitchen", "woman stretching yoga", "man lifting weights", "healthy food plate", "sunset beach", "office working laptop"
+❌ NEVER USE: "consistency", "motivation", "success", "discipline", "results", "mindset", "focus", "key", "secret", "tip"
+
+For a fitness topic like "3 tips for abs":
+- Scene 1: "woman doing crunches gym"
+- Scene 2: "healthy meal prep kitchen"  
+- Scene 3: "person plank exercise"
+- Scene 4: "fit person abs results"
 
 Script rules:
 - Maximum ${maxWords} words total

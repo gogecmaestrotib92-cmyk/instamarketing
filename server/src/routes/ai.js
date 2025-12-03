@@ -3310,20 +3310,47 @@ router.post('/voiceover-video/generate', async (req, res) => {
         if (aiGeneratedScenes && aiGeneratedScenes.length > 0) {
           console.log(`   🎯 Using AI-generated scene descriptions (${aiGeneratedScenes.length} scenes)`);
           
+          // Safety mapping for abstract terms that AI might still return
+          const abstractToConcreteMap = {
+            'consistency': 'person gym workout daily',
+            'discipline': 'athlete training hard',
+            'motivation': 'person working out sunrise',
+            'success': 'person celebrating achievement',
+            'results': 'fit person showing muscles',
+            'mindset': 'person meditating focus',
+            'focus': 'person concentrated working',
+            'key': 'person unlocking success',
+            'secret': 'person revealing tip',
+            'tip': 'person giving advice',
+            'tips': 'person explaining teaching'
+          };
+          
           const sceneDuration = estimatedDuration / aiGeneratedScenes.length;
           let currentTime = 0;
           
           for (let i = 0; i < aiGeneratedScenes.length; i++) {
             const aiScene = aiGeneratedScenes[i];
+            let searchTerm = aiScene.video || 'fitness workout gym';
+            
+            // Check if the AI returned an abstract term and map it
+            const lowerTerm = searchTerm.toLowerCase();
+            for (const [abstract, concrete] of Object.entries(abstractToConcreteMap)) {
+              if (lowerTerm.includes(abstract)) {
+                console.log(`      ⚠️ Mapping abstract "${searchTerm}" to "${concrete}"`);
+                searchTerm = concrete;
+                break;
+              }
+            }
+            
             scenes.push({
               index: i,
               text: aiScene.text?.substring(0, 100) || '',
-              searchTerm: aiScene.video || 'motivation lifestyle', // Direct from AI
+              searchTerm: searchTerm,
               startTime: currentTime,
               endTime: currentTime + sceneDuration,
               duration: sceneDuration
             });
-            console.log(`      Scene ${i+1}: "${aiScene.video}" (${sceneDuration.toFixed(1)}s) - from: "${aiScene.text?.substring(0, 40)}..."`);
+            console.log(`      Scene ${i+1}: "${searchTerm}" (${sceneDuration.toFixed(1)}s) - from: "${aiScene.text?.substring(0, 40)}..."`);
             currentTime += sceneDuration;
           }
           console.log(`   ✅ Created ${scenes.length} scenes from AI descriptions`);
