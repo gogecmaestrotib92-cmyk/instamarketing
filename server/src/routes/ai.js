@@ -3699,7 +3699,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
       console.log('   ⚠️ Stock video service not available');
     }
 
-    // STEP 5: Start video composition (try JSON2Video, then Creatomate, then Shotstack)
+    // STEP 5: Start video composition (try Shotstack FIRST - most reliable)
     console.log('\n🎬 Step 5: Starting video composition...');
     let compositionJobId = null;
     let compositionError = null;
@@ -3707,99 +3707,18 @@ router.post('/voiceover-video/generate', async (req, res) => {
     
     const json2videoAvailable = json2videoService && json2videoService.isAvailable();
     const creatomateAvailable = creatomateService && creatomateService.isAvailable();
-    console.log(`   JSON2Video available: ${json2videoAvailable}`);
-    console.log(`   Creatomate available: ${creatomateAvailable}`);
     console.log(`   Shotstack available: ${!!shotstackClient}`);
+    console.log(`   Creatomate available: ${creatomateAvailable}`);
+    console.log(`   JSON2Video available: ${json2videoAvailable}`);
     console.log(`   Scene videos found: ${sceneVideos.length}`);
     console.log(`   Background video: ${backgroundVideo ? 'yes' : 'no'}`);
     
     // Prepare audio URL
     let audioUrl = voiceResult.audioUrl;
     
-    // TRY JSON2VIDEO FIRST (free tier, no watermarks, simple API)
-    if (json2videoAvailable && (sceneVideos.length > 0 || backgroundVideo)) {
-      try {
-        console.log('   🎬 Using JSON2Video for video composition...');
-        
-        // Prepare clips for JSON2Video
-        const clips = sceneVideos.length > 0 
-          ? sceneVideos.map((sv, idx) => ({
-              url: sv.url,
-              duration: sv.useDuration || sv.duration || 5,
-              useDuration: sv.useDuration || sv.duration || 5,
-              startTime: sv.startAt || 0
-            }))
-          : [{
-              url: backgroundVideo.url,
-              duration: estimatedDuration,
-              useDuration: estimatedDuration,
-              startTime: 0
-            }];
-        
-        const json2videoResult = await json2videoService.createMultiClipRender({
-          clips: clips,
-          audioUrl: audioUrl,
-          subtitles: subtitles,
-          totalDuration: estimatedDuration
-        });
-        
-        if (json2videoResult.success) {
-          compositionJobId = json2videoResult.renderId;
-          compositionService = 'json2video';
-          console.log(`   ✅ JSON2Video composition started: ${compositionJobId}`);
-        } else {
-          console.log('   ⚠️ JSON2Video failed, trying next service...');
-        }
-      } catch (json2videoError) {
-        console.log(`   ⚠️ JSON2Video error: ${json2videoError.message}`);
-        console.log('   Falling back to next service...');
-      }
-    }
-    
-    // TRY CREATOMATE if JSON2Video failed or not available
-    if (!compositionJobId && creatomateAvailable && (sceneVideos.length > 0 || backgroundVideo)) {
-      try {
-        console.log('   🎬 Using Creatomate for video composition...');
-        
-        // Prepare clips for Creatomate
-        const clips = sceneVideos.length > 0 
-          ? sceneVideos.map(sv => ({
-              url: sv.url,
-              duration: sv.useDuration || sv.duration || 5,
-              startTime: sv.startAt || 0,
-              sourceDuration: sv.duration || 30
-            }))
-          : [{
-              url: backgroundVideo.url,
-              duration: estimatedDuration,
-              startTime: 0,
-              sourceDuration: backgroundVideo.duration || 30
-            }];
-        
-        const creatomateResult = await creatomateService.createMultiClipRender({
-          clips: clips,
-          audioUrl: audioUrl,
-          subtitles: subtitles,
-          totalDuration: estimatedDuration
-        });
-        
-        if (creatomateResult.success) {
-          compositionJobId = creatomateResult.renderId;
-          compositionService = 'creatomate';
-          console.log(`   ✅ Creatomate composition started: ${compositionJobId}`);
-        } else {
-          console.log('   ⚠️ Creatomate failed, trying Shotstack...');
-        }
-      } catch (creatomateError) {
-        console.log(`   ⚠️ Creatomate error: ${creatomateError.message}`);
-        console.log('   Falling back to Shotstack...');
-      }
-    }
-    
-    // FALLBACK TO SHOTSTACK if Creatomate failed or not available
-    if (!compositionJobId && shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
+    // TRY SHOTSTACK FIRST (most reliable, has watermark on free tier but works well)
+    if (shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
       // Upload audio to Cloudinary for Shotstack
-      let audioUrl = voiceResult.audioUrl;
       if (cloudinaryUpload && audioUrl && !audioUrl.includes('cloudinary.com')) {
         try {
           console.log('   📤 Uploading audio to Cloudinary...');
@@ -3924,6 +3843,45 @@ router.post('/voiceover-video/generate', async (req, res) => {
       } catch (renderError) {
         compositionError = renderError.message;
         console.log(`   ❌ Shotstack render error: ${compositionError}`);
+      }
+    }
+    
+    // TRY CREATOMATE as fallback if Shotstack failed
+    if (!compositionJobId && creatomateAvailable && (sceneVideos.length > 0 || backgroundVideo)) {
+      try {
+        console.log('   🎬 Using Creatomate for video composition...');
+        
+        // Prepare clips for Creatomate
+        const clips = sceneVideos.length > 0 
+          ? sceneVideos.map(sv => ({
+              url: sv.url,
+              duration: sv.useDuration || sv.duration || 5,
+              startTime: sv.startAt || 0,
+              sourceDuration: sv.duration || 30
+            }))
+          : [{
+              url: backgroundVideo.url,
+              duration: estimatedDuration,
+              startTime: 0,
+              sourceDuration: backgroundVideo.duration || 30
+            }];
+        
+        const creatomateResult = await creatomateService.createMultiClipRender({
+          clips: clips,
+          audioUrl: audioUrl,
+          subtitles: subtitles,
+          totalDuration: estimatedDuration
+        });
+        
+        if (creatomateResult.success) {
+          compositionJobId = creatomateResult.renderId;
+          compositionService = 'creatomate';
+          console.log(`   ✅ Creatomate composition started: ${compositionJobId}`);
+        } else {
+          console.log('   ⚠️ Creatomate failed');
+        }
+      } catch (creatomateError) {
+        console.log(`   ⚠️ Creatomate error: ${creatomateError.message}`);
       }
     }
     
