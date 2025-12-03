@@ -71,6 +71,7 @@ export const addVideoAsset = (videoUrl, metadata = {}) => {
   return addAsset({
     type: 'video',
     url: videoUrl,
+    thumbnail: metadata.thumbnail || null, // Cover photo/thumbnail for video
     name: metadata.name || `Video ${new Date().toLocaleDateString()}`,
     caption: metadata.caption || '',
     prompt: metadata.prompt || '',

@@ -299,7 +299,15 @@ const AssetHub = () => {
                       {asset.thumbnail ? (
                         <img src={asset.thumbnail} alt={asset.name} className="video-thumbnail" />
                       ) : (
-                        <video src={asset.url} muted preload="metadata" />
+                        <video 
+                          src={asset.url} 
+                          muted 
+                          preload="metadata"
+                          onLoadedMetadata={(e) => {
+                            // Seek to 1 second to get a better thumbnail frame
+                            e.target.currentTime = 1;
+                          }}
+                        />
                       )}
                       <div className="video-play-icon">▶</div>
                     </>
