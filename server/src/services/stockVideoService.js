@@ -87,6 +87,11 @@ const CONCEPT_TO_VIDEO_MAP = {
 async function searchPexelsVideos(query, options = {}) {
   const PEXELS_API_KEY = getPexelsKey();
   
+  console.log(`🔍 PEXELS DEBUG: Checking API key...`);
+  console.log(`   Key exists: ${!!PEXELS_API_KEY}`);
+  console.log(`   Key length: ${PEXELS_API_KEY ? PEXELS_API_KEY.length : 0}`);
+  console.log(`   Query: "${query}"`);
+  
   if (!PEXELS_API_KEY) {
     console.log('⚠️ Pexels API key not configured (env: PEXELS_API_KEY)');
     return [];
@@ -119,6 +124,8 @@ async function searchPexelsVideos(query, options = {}) {
     }
 
     const data = await response.json();
+    
+    console.log(`   Pexels returned ${data.videos?.length || 0} videos total`);
 
     // Filter and transform videos
     const videos = (data.videos || [])
