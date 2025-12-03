@@ -15,7 +15,12 @@ import {
   FiTag,
   FiHash,
   FiImage,
-  FiZap
+  FiZap,
+  FiDownload,
+  FiLoader,
+  FiCheck,
+  FiX,
+  FiExternalLink
 } from 'react-icons/fi';
 import './BusinessHub.css';
 
@@ -37,7 +42,8 @@ const BusinessHub = () => {
       uniqueSellingPoints: '',
       instagramHandle: '',
       website: '',
-      products: []
+      products: [],
+      brandImages: [] // New: images collected from website
     };
   });
   
@@ -46,6 +52,13 @@ const BusinessHub = () => {
   const [newKeyword, setNewKeyword] = useState('');
   const [newColor, setNewColor] = useState('#8b5cf6');
   const [newProduct, setNewProduct] = useState({ name: '', description: '' });
+  
+  // Fetch Website states
+  const [fetchUrl, setFetchUrl] = useState('');
+  const [fetching, setFetching] = useState(false);
+  const [fetchedData, setFetchedData] = useState(null);
+  const [fetchError, setFetchError] = useState('');
+  const [selectedImages, setSelectedImages] = useState(new Set());
 
   // Brand voice options
   const brandVoices = [
@@ -147,6 +160,126 @@ const BusinessHub = () => {
     }));
   };
 
+  // ===== Fetch Website Functions =====
+  
+  // Fetch website data
+  const handleFetchWebsite = async () => {
+    if (!fetchUrl.trim()) {
+      setFetchError('Please enter a website URL');
+      return;
+    }
+
+    setFetching(true);
+    setFetchError('');
+    setFetchedData(null);
+    setSelectedImages(new Set());
+
+    try {
+      const response = await fetch('/api/ai/fetch-website', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: fetchUrl.trim() })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch website');
+      }
+
+      setFetchedData(result.data);
+      
+      // Auto-select featured images
+      const featured = new Set();
+      result.data.images?.forEach((img, idx) => {
+        if (img.featured || idx < 3) {
+          featured.add(img.url);
+        }
+      });
+      setSelectedImages(featured);
+
+    } catch (error) {
+      setFetchError(error.message);
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  // Apply fetched data to business info
+  const applyFetchedData = (field, value) => {
+    if (value) {
+      updateField(field, value);
+    }
+  };
+
+  // Apply all fetched data
+  const applyAllFetchedData = () => {
+    if (!fetchedData) return;
+
+    const updates = {};
+    
+    if (fetchedData.businessName && !businessInfo.businessName) {
+      updates.businessName = fetchedData.businessName;
+    }
+    if (fetchedData.description && !businessInfo.description) {
+      updates.description = fetchedData.description;
+    }
+    if (fetchedData.instagramHandle && !businessInfo.instagramHandle) {
+      updates.instagramHandle = fetchedData.instagramHandle;
+    }
+    if (fetchedData.url && !businessInfo.website) {
+      updates.website = fetchedData.url;
+    }
+    if (fetchedData.keywords?.length > 0 && businessInfo.keywords.length === 0) {
+      updates.keywords = fetchedData.keywords.slice(0, 10);
+    }
+
+    setBusinessInfo(prev => ({ ...prev, ...updates }));
+  };
+
+  // Toggle image selection
+  const toggleImageSelection = (imageUrl) => {
+    setSelectedImages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(imageUrl)) {
+        newSet.delete(imageUrl);
+      } else {
+        newSet.add(imageUrl);
+      }
+      return newSet;
+    });
+  };
+
+  // Save selected images to brand images
+  const saveSelectedImages = () => {
+    const newImages = Array.from(selectedImages).map(url => ({
+      url,
+      addedAt: new Date().toISOString(),
+      source: fetchedData?.domain || 'website'
+    }));
+
+    setBusinessInfo(prev => ({
+      ...prev,
+      brandImages: [...(prev.brandImages || []), ...newImages]
+    }));
+
+    // Clear selection
+    setSelectedImages(new Set());
+    setFetchedData(null);
+    setFetchUrl('');
+    
+    // Switch to brand tab to show saved images
+    setActiveTab('brand');
+  };
+
+  // Remove brand image
+  const removeBrandImage = (url) => {
+    setBusinessInfo(prev => ({
+      ...prev,
+      brandImages: (prev.brandImages || []).filter(img => img.url !== url)
+    }));
+  };
+
   // Calculate profile completeness
   const getCompleteness = () => {
     const fields = [
@@ -206,6 +339,12 @@ const BusinessHub = () => {
         {/* Tabs */}
         <div className="hub-tabs">
           <button 
+            className={`hub-tab ${activeTab === 'fetch' ? 'active' : ''}`}
+            onClick={() => setActiveTab('fetch')}
+          >
+            <FiDownload /> Fetch Website
+          </button>
+          <button 
             className={`hub-tab ${activeTab === 'basics' ? 'active' : ''}`}
             onClick={() => setActiveTab('basics')}
           >
@@ -233,6 +372,186 @@ const BusinessHub = () => {
 
         {/* Tab Content */}
         <div className="hub-content">
+          {/* Fetch Website Tab */}
+          {activeTab === 'fetch' && (
+            <div className="tab-content">
+              <div className="fetch-intro">
+                <h3>🌐 Auto-Fill from Website</h3>
+                <p>Enter your business website and we'll extract public information to help fill your profile.</p>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  <FiGlobe /> Website URL
+                </label>
+                <div className="fetch-input-row">
+                  <input
+                    type="text"
+                    placeholder="https://yourbusiness.com"
+                    value={fetchUrl}
+                    onChange={(e) => setFetchUrl(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleFetchWebsite()}
+                  />
+                  <button 
+                    className="fetch-btn" 
+                    onClick={handleFetchWebsite}
+                    disabled={fetching}
+                  >
+                    {fetching ? (
+                      <><FiLoader className="spin" /> Fetching...</>
+                    ) : (
+                      <><FiDownload /> Fetch</>
+                    )}
+                  </button>
+                </div>
+                {fetchError && (
+                  <div className="fetch-error">
+                    <FiX /> {fetchError}
+                  </div>
+                )}
+              </div>
+
+              {/* Fetched Data Results */}
+              {fetchedData && (
+                <div className="fetched-results">
+                  <div className="fetched-header">
+                    <h4>✅ Data Found from {fetchedData.domain}</h4>
+                    <button className="apply-all-btn" onClick={applyAllFetchedData}>
+                      <FiZap /> Apply All Empty Fields
+                    </button>
+                  </div>
+
+                  {/* Business Info Found */}
+                  <div className="fetched-section">
+                    <h5>Business Information</h5>
+                    
+                    {fetchedData.businessName && (
+                      <div className="fetched-item">
+                        <div className="fetched-label">Business Name</div>
+                        <div className="fetched-value">{fetchedData.businessName}</div>
+                        <button 
+                          className="apply-btn"
+                          onClick={() => applyFetchedData('businessName', fetchedData.businessName)}
+                        >
+                          <FiCheck /> Use
+                        </button>
+                      </div>
+                    )}
+
+                    {fetchedData.description && (
+                      <div className="fetched-item">
+                        <div className="fetched-label">Description</div>
+                        <div className="fetched-value">{fetchedData.description.slice(0, 150)}...</div>
+                        <button 
+                          className="apply-btn"
+                          onClick={() => applyFetchedData('description', fetchedData.description)}
+                        >
+                          <FiCheck /> Use
+                        </button>
+                      </div>
+                    )}
+
+                    {fetchedData.instagramHandle && (
+                      <div className="fetched-item">
+                        <div className="fetched-label">Instagram</div>
+                        <div className="fetched-value">{fetchedData.instagramHandle}</div>
+                        <button 
+                          className="apply-btn"
+                          onClick={() => applyFetchedData('instagramHandle', fetchedData.instagramHandle)}
+                        >
+                          <FiCheck /> Use
+                        </button>
+                      </div>
+                    )}
+
+                    {fetchedData.email && (
+                      <div className="fetched-item">
+                        <div className="fetched-label">Email</div>
+                        <div className="fetched-value">{fetchedData.email}</div>
+                      </div>
+                    )}
+
+                    {fetchedData.keywords?.length > 0 && (
+                      <div className="fetched-item">
+                        <div className="fetched-label">Keywords</div>
+                        <div className="fetched-value fetched-keywords">
+                          {fetchedData.keywords.slice(0, 5).map(k => (
+                            <span key={k} className="keyword-badge">{k}</span>
+                          ))}
+                        </div>
+                        <button 
+                          className="apply-btn"
+                          onClick={() => {
+                            setBusinessInfo(prev => ({
+                              ...prev,
+                              keywords: [...new Set([...prev.keywords, ...fetchedData.keywords.slice(0, 10)])]
+                            }));
+                          }}
+                        >
+                          <FiCheck /> Add
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Images Found */}
+                  {fetchedData.images?.length > 0 && (
+                    <div className="fetched-section">
+                      <h5>
+                        <FiImage /> Images Found ({fetchedData.images.length})
+                        <span className="selected-count">
+                          {selectedImages.size} selected
+                        </span>
+                      </h5>
+                      <p className="section-hint">Select images to save to your brand library for creating ads</p>
+                      
+                      <div className="fetched-images-grid">
+                        {fetchedData.images.map((img, idx) => (
+                          <div 
+                            key={idx}
+                            className={`fetched-image-card ${selectedImages.has(img.url) ? 'selected' : ''}`}
+                            onClick={() => toggleImageSelection(img.url)}
+                          >
+                            <img 
+                              src={img.url} 
+                              alt={img.alt || 'Website image'} 
+                              onError={(e) => e.target.style.display = 'none'}
+                            />
+                            <div className="image-overlay">
+                              {selectedImages.has(img.url) ? (
+                                <FiCheckCircle className="check-icon" />
+                              ) : (
+                                <FiPlus className="plus-icon" />
+                              )}
+                            </div>
+                            {img.featured && <span className="featured-badge">Featured</span>}
+                          </div>
+                        ))}
+                      </div>
+
+                      {selectedImages.size > 0 && (
+                        <button className="save-images-btn" onClick={saveSelectedImages}>
+                          <FiSave /> Save {selectedImages.size} Image{selectedImages.size > 1 ? 's' : ''} to Brand Library
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tips */}
+              <div className="fetch-tips">
+                <h4>💡 Tips</h4>
+                <ul>
+                  <li>Enter your main website URL (home page works best)</li>
+                  <li>We extract public information like business name, description, and images</li>
+                  <li>Select images to add to your brand library for creating personalized ads</li>
+                  <li>All data is saved locally - only you can see it</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
           {/* Basics Tab */}
           {activeTab === 'basics' && (
             <div className="tab-content">
@@ -398,6 +717,51 @@ const BusinessHub = () => {
                     <span className="empty-hint">No keywords added yet</span>
                   )}
                 </div>
+              </div>
+
+              {/* Brand Images Section */}
+              <div className="form-group">
+                <label>
+                  <FiImage /> Brand Images
+                </label>
+                <p className="field-hint">
+                  Images from your website for creating ads. 
+                  <button 
+                    className="fetch-link" 
+                    onClick={() => setActiveTab('fetch')}
+                  >
+                    Fetch from website →
+                  </button>
+                </p>
+                
+                {businessInfo.brandImages?.length > 0 ? (
+                  <div className="brand-images-grid">
+                    {businessInfo.brandImages.map((img, idx) => (
+                      <div key={idx} className="brand-image-card">
+                        <img 
+                          src={img.url} 
+                          alt="Brand" 
+                          onError={(e) => e.target.style.display = 'none'}
+                        />
+                        <button 
+                          className="remove-image-btn"
+                          onClick={() => removeBrandImage(img.url)}
+                        >
+                          <FiTrash2 />
+                        </button>
+                        <span className="image-source">{img.source}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-images">
+                    <FiImage />
+                    <p>No brand images saved</p>
+                    <button onClick={() => setActiveTab('fetch')}>
+                      <FiDownload /> Fetch from Website
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -4386,4 +4386,76 @@ router.get('/compose-video/status/:jobId', async (req, res) => {
   }
 });
 
+// ==================== Website Scraper Routes ====================
+
+// Load website scraper service
+let websiteScraperService = null;
+try {
+  websiteScraperService = require('../services/websiteScraper');
+  console.log('✅ Website scraper service loaded');
+} catch (e) {
+  console.log('Website scraper not available:', e.message);
+}
+
+/**
+ * Fetch and extract data from a website
+ * POST /api/ai/fetch-website
+ */
+router.post('/fetch-website', async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ error: 'Website URL is required' });
+    }
+
+    if (!websiteScraperService) {
+      return res.status(503).json({ error: 'Website scraper service not available' });
+    }
+
+    console.log(`🌐 Fetching website data: ${url}`);
+
+    const result = await websiteScraperService.scrapeWebsite(url);
+
+    if (!result.success) {
+      return res.status(500).json({ error: result.error || 'Failed to fetch website' });
+    }
+
+    res.json({
+      success: true,
+      data: result.data
+    });
+  } catch (error) {
+    console.error('Website fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Validate if an image URL is accessible
+ * POST /api/ai/validate-image
+ */
+router.post('/validate-image', async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'Image URL is required' });
+    }
+
+    if (!websiteScraperService) {
+      return res.status(503).json({ error: 'Website scraper service not available' });
+    }
+
+    const isValid = await websiteScraperService.validateImage(imageUrl);
+
+    res.json({
+      success: true,
+      valid: isValid
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
