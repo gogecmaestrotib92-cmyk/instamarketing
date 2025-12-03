@@ -9,8 +9,9 @@
  * - Pixabay: https://pixabay.com/api/docs/#api_search_videos
  */
 
-const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
-const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
+// Read API keys at runtime (not module load time) for Vercel compatibility
+const getPexelsKey = () => process.env.PEXELS_API_KEY;
+const getPixabayKey = () => process.env.PIXABAY_API_KEY;
 
 // Popular categories for vertical videos
 const VIDEO_CATEGORIES = {
@@ -39,8 +40,10 @@ const VIDEO_CATEGORIES = {
  * @returns {Promise<Array>} - Array of video objects
  */
 async function searchPexelsVideos(query, options = {}) {
+  const PEXELS_API_KEY = getPexelsKey();
+  
   if (!PEXELS_API_KEY) {
-    console.log('⚠️ Pexels API key not configured');
+    console.log('⚠️ Pexels API key not configured (env: PEXELS_API_KEY)');
     return [];
   }
 
@@ -58,7 +61,7 @@ async function searchPexelsVideos(query, options = {}) {
     url.searchParams.append('per_page', perPage);
     url.searchParams.append('size', 'medium'); // medium quality for faster loading
 
-    console.log(`🎬 Searching Pexels for: "${query}"`);
+    console.log(`🎬 Searching Pexels for: "${query}" (key: ${PEXELS_API_KEY ? 'present' : 'missing'})`);
 
     const response = await fetch(url.toString(), {
       headers: {
@@ -114,6 +117,8 @@ async function searchPexelsVideos(query, options = {}) {
  * @returns {Promise<Array>} - Array of video objects
  */
 async function searchPixabayVideos(query, options = {}) {
+  const PIXABAY_API_KEY = getPixabayKey();
+  
   if (!PIXABAY_API_KEY) {
     console.log('⚠️ Pixabay API key not configured');
     return [];
