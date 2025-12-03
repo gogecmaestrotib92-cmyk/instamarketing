@@ -79,7 +79,7 @@ const BusinessTrending = () => {
     
     try {
       // Step 1: Generate script with voiceover (Try ElevenLabs first, fallback to Google TTS)
-      setGenerationStep('Generating script and AI voiceover (ElevenLabs)...');
+      setGenerationStep('Generating script and AI voiceover...');
       console.log('Step 1: Generating script and voiceover for:', postTopic);
       
       let voiceoverData = null;
@@ -112,7 +112,7 @@ const BusinessTrending = () => {
       
       // Fallback to Google TTS if ElevenLabs fails
       if (!voiceoverData) {
-        setGenerationStep('Generating script and voiceover (Google TTS)...');
+        setGenerationStep('Generating script and voiceover...');
         
         const googleResponse = await fetch('/api/ai/full-voiceover', {
           method: 'POST',
@@ -132,35 +132,14 @@ const BusinessTrending = () => {
         console.log('✅ Google TTS voiceover generated:', voiceoverData);
       }
 
-      // Step 2: Generate background media
-      setGenerationStep('Generating background media...');
+      // Step 2: Generate background based on selection
+      setGenerationStep('Creating background visual...');
       let backgroundUrl = null;
+      let backgroundType_used = backgroundType;
       
-      if (backgroundType === 'ai-videos') {
-        // Generate AI video background
-        const videoPrompt = `Cinematic ${contentType} background, ${postTopic}, smooth motion, high quality, trending style`;
-        
-        const videoResponse = await fetch('/api/ai/video/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: videoPrompt,
-            numFrames: 24,
-            fps: 8
-          })
-        });
-        
-        const videoData = await videoResponse.json();
-        
-        if (videoData.success && videoData.videoUrl) {
-          backgroundUrl = videoData.videoUrl;
-          console.log('Video background generated:', backgroundUrl);
-        } else {
-          console.warn('Video generation failed, continuing without background');
-        }
-      } else if (backgroundType === 'ai-images') {
-        // Generate AI image background
-        const imagePrompt = `${contentType} themed background image for: ${postTopic}, high quality, social media style`;
+      if (backgroundType === 'ai-images') {
+        // Generate AI image - this works well as a static background
+        const imagePrompt = `${contentType} aesthetic background, ${postTopic}, minimalist, high quality, gradient, social media style, 9:16 vertical`;
         
         const imageResponse = await fetch('/api/ai/image/generate', {
           method: 'POST',
@@ -175,12 +154,35 @@ const BusinessTrending = () => {
         
         if (imageData.success && imageData.imageUrl) {
           backgroundUrl = imageData.imageUrl;
-          console.log('Image background generated:', backgroundUrl);
+          console.log('✅ Image background generated:', backgroundUrl);
+        }
+      } else if (backgroundType === 'ai-videos') {
+        // For now, generate an AI image instead since AI video is too short
+        // In production, you'd use stock video APIs like Pexels or pre-made loops
+        setGenerationStep('Creating visual background...');
+        
+        const imagePrompt = `Cinematic ${contentType} scene, ${postTopic}, dramatic lighting, trending aesthetic, vertical composition`;
+        
+        const imageResponse = await fetch('/api/ai/image/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: imagePrompt,
+            aspectRatio: '9:16'
+          })
+        });
+        
+        const imageData = await imageResponse.json();
+        
+        if (imageData.success && imageData.imageUrl) {
+          backgroundUrl = imageData.imageUrl;
+          backgroundType_used = 'ai-images'; // Switch to image since video is too short
+          console.log('✅ Using AI image as background (video clips are too short):', backgroundUrl);
         }
       }
 
       // Step 3: Prepare final result
-      setGenerationStep('Preparing your video...');
+      setGenerationStep('Preparing your content...');
       
       const result = {
         id: Date.now().toString(),
@@ -189,6 +191,7 @@ const BusinessTrending = () => {
         script: voiceoverData.script,
         audioUrl: voiceoverData.audioUrl,
         backgroundUrl: backgroundUrl,
+        backgroundType: backgroundType_used,
         template: selectedTemplate,
         aspectRatio: aspectRatio,
         contentType: contentType,
@@ -199,8 +202,12 @@ const BusinessTrending = () => {
           contentType,
           template: selectedTemplate,
           aspectRatio,
-          backgroundType
-        }
+          backgroundType: backgroundType_used
+        },
+        // Instructions for user
+        instructions: backgroundType === 'ai-videos' 
+          ? '💡 Tip: AI-generated videos are only ~5 seconds. For longer videos, use a video editor to loop the background or add stock footage, then overlay your voiceover.'
+          : null
       };
       
       setGeneratedResult(result);
@@ -443,14 +450,17 @@ const BusinessTrending = () => {
               </span>
             </div>
             
+            {/* Tip for users */}
+            {generatedResult.instructions && (
+              <div className="result-tip">
+                {generatedResult.instructions}
+              </div>
+            )}
+            
             <div className="result-content">
               {generatedResult.backgroundUrl && (
                 <div className="result-media">
-                  {backgroundType === 'ai-videos' ? (
-                    <video src={generatedResult.backgroundUrl} controls autoPlay loop muted />
-                  ) : (
-                    <img src={generatedResult.backgroundUrl} alt="Generated background" />
-                  )}
+                  <img src={generatedResult.backgroundUrl} alt="Generated background" />
                 </div>
               )}
               
@@ -476,8 +486,8 @@ const BusinessTrending = () => {
                 </button>
               )}
               {generatedResult.backgroundUrl && (
-                <button className="btn-action download" onClick={() => handleDownload(generatedResult.backgroundUrl, `background-${Date.now()}.${backgroundType === 'ai-videos' ? 'mp4' : 'png'}`)}>
-                  <FiDownload /> Media
+                <button className="btn-action download" onClick={() => handleDownload(generatedResult.backgroundUrl, `background-${Date.now()}.png`)}>
+                  <FiDownload /> Image
                 </button>
               )}
               <button className="btn-action secondary" onClick={handleRegenerate}>
