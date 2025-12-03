@@ -138,16 +138,17 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         console.log(`   Style mapping: "${requestedStyle}" -> "${finalStyle}"`);
         console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position}, offset: ${JSON.stringify(offset)}`);
 
-        // VIRAL REELS STYLE - Big, bold, attention-grabbing subtitles
-        // Using 'chunk' style for that TikTok/Instagram Reels viral look
-        // Break text into max 3-4 words per line for vertical video
+        // OPTIMIZED FOR 9:16 VERTICAL VIDEO - Keep text INSIDE frame
+        // Using 'subtitle' style which is designed for readability
+        // MAX 2 words per line to prevent overflow on narrow vertical frame
         const words = subtitle.text.trim().split(/\s+/);
         let formattedText = subtitle.text.toUpperCase();
-        if (words.length > 3) {
-          // Split into lines of max 3 words for better readability
+        
+        // For 9:16, use max 2 words per line to stay within frame
+        if (words.length > 2) {
           const lines = [];
-          for (let w = 0; w < words.length; w += 3) {
-            lines.push(words.slice(w, w + 3).join(' ').toUpperCase());
+          for (let w = 0; w < words.length; w += 2) {
+            lines.push(words.slice(w, w + 2).join(' ').toUpperCase());
           }
           formattedText = lines.join('\n');
         }
@@ -155,16 +156,16 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         const clip = {
           asset: {
             type: 'title',
-            text: formattedText, // ALL CAPS, multi-line for viral style
-            style: 'chunk', // Bold chunky style like viral reels
-            size: 'large', // LARGE size for viral impact - readable on mobile
-            color: '#ffffff', // Pure white text
-            background: '#000000cc' // Semi-transparent black background for readability
+            text: formattedText,
+            style: 'subtitle', // Subtitle style - designed to stay in frame
+            size: 'small', // SMALL size to guarantee fit in 9:16 frame
+            color: '#ffffff',
+            background: '#000000aa' // Semi-transparent background
           },
           start: subtitle.start,
           length: clipDuration,
-          position: 'center', // Center position for maximum visibility
-          offset: { x: 0, y: 0.15 }, // Slightly below center for viral look
+          position: 'bottom', // Bottom position - standard for subtitles
+          offset: { x: 0, y: -0.05 }, // Slight upward offset from bottom edge
           transition: Object.keys(transition).length > 0 ? transition : undefined
         };
         
@@ -687,13 +688,13 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
 
     if (validSubtitles.length > 0) {
       subtitleClips = validSubtitles.map((subtitle, index) => {
-        // VIRAL STYLE: Break into max 3 words per line for vertical video
+        // OPTIMIZED FOR 9:16: Max 2 words per line to stay in frame
         const words = subtitle.text.trim().split(/\s+/);
         let formattedText = subtitle.text.toUpperCase();
-        if (words.length > 3) {
+        if (words.length > 2) {
           const lines = [];
-          for (let i = 0; i < words.length; i += 3) {
-            lines.push(words.slice(i, i + 3).join(' ').toUpperCase());
+          for (let i = 0; i < words.length; i += 2) {
+            lines.push(words.slice(i, i + 2).join(' ').toUpperCase());
           }
           formattedText = lines.join('\n');
         }
@@ -702,15 +703,15 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
           asset: {
             type: 'title',
             text: formattedText,
-            style: 'chunk', // Bold viral style
-            size: 'large', // LARGE for viral impact
+            style: 'subtitle', // Subtitle style - stays in frame
+            size: 'small', // SMALL to fit 9:16
             color: '#ffffff',
-            background: '#000000cc' // Semi-transparent background
+            background: '#000000aa'
           },
           start: subtitle.start,
           length: Math.max(0.1, subtitle.end - subtitle.start),
-          position: 'center', // Center for maximum visibility
-          offset: { x: 0, y: 0.15 }, // Below center for viral look
+          position: 'bottom', // Bottom position
+          offset: { x: 0, y: -0.05 }, // Slight offset from edge
           transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
         };
       });

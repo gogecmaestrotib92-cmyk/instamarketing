@@ -18,17 +18,25 @@ try {
 
 class SubtitleGenerator {
   constructor() {
-    // Speaking rates (words per minute) - FURTHER SLOWED to match TTS output
-    // TTS services speak slower than natural speech - need accurate sync
-    // These rates are tuned for ElevenLabs/Google TTS timing
+    // Speaking rates (words per minute) - SIGNIFICANTLY SLOWED for ElevenLabs
+    // ElevenLabs speaks much slower than these rates suggest
+    // These are calibrated through testing with actual TTS output
     this.speakingRates = {
-      slow: 75,        // Very slow narration
-      normal: 95,      // Standard TTS pace - SLOWED from 110
-      fast: 120,       // Faster but still clear
-      energetic: 105,  // Upbeat but not rushing
-      calm: 80,        // Relaxed pace
-      professional: 90, // Clear business tone - SLOWED
-      friendly: 100    // Conversational
+      slow: 65,        // Very slow narration
+      normal: 80,      // Standard TTS pace - MUCH SLOWER
+      fast: 100,       // Faster but still clear
+      energetic: 85,   // Upbeat but not rushing
+      calm: 70,        // Relaxed pace
+      professional: 75, // Clear business tone
+      friendly: 85,    // Conversational
+      conversational: 80,
+      narrator: 75,
+      dramatic: 70,
+      youthful: 90,
+      dynamic: 90,
+      luxury: 70,
+      british: 75,
+      trustworthy: 75
     };
 
     // Output directory for subtitle files - use /tmp on Vercel
