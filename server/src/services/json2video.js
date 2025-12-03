@@ -70,7 +70,7 @@ async function createMultiClipRender(options) {
           type: 'video',
           src: clip.url,
           duration: clipDuration,
-          fit: 'cover'
+          resize: 'cover'  // Use resize instead of fit
         }
       ];
 
@@ -84,17 +84,11 @@ async function createMultiClipRender(options) {
           text: sub.text,
           start: relativeStart,
           duration: Math.min(relativeDuration, clipDuration - relativeStart),
+          style: '001',  // Use default style
+          position: 'bottom-center',
           settings: {
-            'font-family': 'Montserrat',
-            'font-weight': '700',
             'font-size': '42px',
-            'color': '#ffffff',
-            'text-shadow': '2px 2px 4px rgba(0,0,0,0.8)',
-            'background-color': 'rgba(0,0,0,0.6)',
-            'padding': '10px 20px',
-            'border-radius': '8px',
-            'position': 'bottom',
-            'margin-bottom': '100px'
+            'color': '#ffffff'
           }
         });
       });
@@ -182,8 +176,8 @@ async function createSimpleRender(options) {
       type: 'video',
       src: videoUrl,
       duration: duration,
-      fit: 'cover',
-      loop: loopVideo
+      resize: 'cover',  // Use resize instead of fit
+      loop: loopVideo ? -1 : 1  // -1 for infinite loop, 1 for single play
     }
   ];
 
@@ -194,18 +188,11 @@ async function createSimpleRender(options) {
       text: sub.text,
       start: sub.start,
       duration: sub.duration || (sub.end - sub.start),
+      style: '001',  // Use default style
+      position: 'bottom-center',
       settings: {
-        'font-family': 'Montserrat',
-        'font-weight': '800',
         'font-size': '44px',
-        'color': '#ffffff',
-        'text-shadow': '2px 2px 6px rgba(0,0,0,0.9)',
-        'background-color': 'rgba(0,0,0,0.65)',
-        'padding': '12px 24px',
-        'border-radius': '10px',
-        'position': 'bottom',
-        'margin-bottom': '120px',
-        'text-align': 'center'
+        'color': '#ffffff'
       }
     });
   });

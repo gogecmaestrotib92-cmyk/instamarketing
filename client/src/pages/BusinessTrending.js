@@ -270,7 +270,6 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
             attempts++;
             setGenerationStep(`Rendering video with subtitles... ${Math.round((statusData.progress || 0))}%`);
           }
-          }
         } else {
           console.log('⚠️ No composition job started:', data.message);
         }

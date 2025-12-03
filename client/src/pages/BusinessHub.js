@@ -19,8 +19,7 @@ import {
   FiDownload,
   FiLoader,
   FiCheck,
-  FiX,
-  FiExternalLink
+  FiX
 } from 'react-icons/fi';
 import './BusinessHub.css';
 
