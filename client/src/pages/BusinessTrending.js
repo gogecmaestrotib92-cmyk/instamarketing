@@ -78,27 +78,59 @@ const BusinessTrending = () => {
     setGeneratedResult(null);
     
     try {
-      // Step 1: Generate script with voiceover
-      setGenerationStep('Generating script and voiceover...');
+      // Step 1: Generate script with voiceover (Try ElevenLabs first, fallback to Google TTS)
+      setGenerationStep('Generating script and AI voiceover (ElevenLabs)...');
       console.log('Step 1: Generating script and voiceover for:', postTopic);
       
-      const voiceoverResponse = await fetch('/api/ai/full-voiceover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: `${contentType}: ${postTopic}`,
-          duration: 30,
-          voiceStyle: getVoiceStyle()
-        })
-      });
+      let voiceoverData = null;
+      let usedElevenLabs = false;
       
-      const voiceoverData = await voiceoverResponse.json();
-      
-      if (!voiceoverResponse.ok || voiceoverData.error) {
-        throw new Error(voiceoverData.error || 'Failed to generate voiceover');
+      // Try ElevenLabs first (premium quality)
+      try {
+        const elevenLabsResponse = await fetch('/api/ai/elevenlabs/full-voiceover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: `${contentType}: ${postTopic}`,
+            duration: 30,
+            voiceStyle: getVoiceStyle()
+          })
+        });
+        
+        const elevenLabsData = await elevenLabsResponse.json();
+        
+        if (elevenLabsResponse.ok && !elevenLabsData.error && elevenLabsData.audioUrl) {
+          voiceoverData = elevenLabsData;
+          usedElevenLabs = true;
+          console.log('✅ ElevenLabs voiceover generated:', elevenLabsData);
+        } else {
+          console.warn('ElevenLabs not available:', elevenLabsData.error);
+        }
+      } catch (elevenLabsError) {
+        console.warn('ElevenLabs failed, trying Google TTS:', elevenLabsError);
       }
       
-      console.log('Voiceover generated:', voiceoverData);
+      // Fallback to Google TTS if ElevenLabs fails
+      if (!voiceoverData) {
+        setGenerationStep('Generating script and voiceover (Google TTS)...');
+        
+        const googleResponse = await fetch('/api/ai/full-voiceover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: `${contentType}: ${postTopic}`,
+            duration: 30,
+            voiceStyle: getVoiceStyle()
+          })
+        });
+        
+        voiceoverData = await googleResponse.json();
+        
+        if (!googleResponse.ok || voiceoverData.error) {
+          throw new Error(voiceoverData.error || 'Failed to generate voiceover');
+        }
+        console.log('✅ Google TTS voiceover generated:', voiceoverData);
+      }
 
       // Step 2: Generate background media
       setGenerationStep('Generating background media...');
@@ -160,6 +192,7 @@ const BusinessTrending = () => {
         template: selectedTemplate,
         aspectRatio: aspectRatio,
         contentType: contentType,
+        ttsProvider: usedElevenLabs ? 'ElevenLabs' : 'Google TTS',
         createdAt: new Date().toISOString(),
         metadata: {
           postTopic,
@@ -427,6 +460,10 @@ const BusinessTrending = () => {
           {generatedResult && !isGenerating && (
             <div className="generation-result">
               <h3>🎉 Generation Complete!</h3>
+              <p className="tts-badge">
+                Voice by: <strong>{generatedResult.ttsProvider || 'AI'}</strong>
+                {generatedResult.ttsProvider === 'ElevenLabs' && <span className="premium-badge">Premium</span>}
+              </p>
               
               <div className="result-preview">
                 {generatedResult.backgroundUrl && (
