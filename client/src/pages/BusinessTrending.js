@@ -271,283 +271,240 @@ const BusinessTrending = () => {
   return (
     <div className="business-trending-page">
       <div className="business-trending-container">
-        {/* Header */}
-        <div className="page-header-row">
+        {/* Minimal Header */}
+        <div className="trending-header">
           <button className="back-btn" onClick={() => navigate('/app/create/business')}>
             <FiArrowLeft />
-            <span>Back</span>
           </button>
-          <div className="page-title">
-            <FiMic className="title-icon" />
-            <div>
-              <h1>Trending Voiceover</h1>
-              <p>Create viral faceless videos with AI voiceover</p>
-            </div>
-          </div>
+          <h1>Trending Voiceover</h1>
         </div>
 
-        {/* Main Form */}
-        <div className="trending-form">
-          {/* Content Type */}
-          <div className="form-section">
-            <label className="section-label">Select Content Type</label>
-            <div className="content-type-grid">
-              {contentTypes.map((type) => (
-                <button
-                  key={type.id}
-                  className={`content-type-btn ${contentType === type.id ? 'selected' : ''}`}
-                  onClick={() => setContentType(type.id)}
-                >
-                  <span className="type-emoji">{type.icon}</span>
-                  <span className="type-label">{type.label}</span>
-                </button>
-              ))}
+        {/* Hero Topic Input Card */}
+        <div className="hero-card">
+          <div className="hero-content">
+            <div className="hero-icon">
+              <FiMic />
             </div>
+            <h2>What's your video about?</h2>
+            <p>Describe your content and we'll create a viral voiceover video</p>
           </div>
-
-          {/* Post Topic */}
-          <div className="form-section">
-            <label className="section-label">
-              What is your post about? <span className="required">*</span>
-            </label>
-            <div className="topic-input-wrapper">
-              <textarea
-                className="topic-textarea"
-                placeholder="e.g., 3 tips to improve your abs"
-                value={postTopic}
-                onChange={(e) => setPostTopic(e.target.value)}
-                rows={3}
-              />
+          
+          <div className="hero-input">
+            <textarea
+              className="hero-textarea"
+              placeholder="e.g., 3 tips to improve your abs, or a motivational quote about success..."
+              value={postTopic}
+              onChange={(e) => setPostTopic(e.target.value)}
+              rows={5}
+            />
+            <div className="textarea-footer">
               <span className="char-count">{postTopic.length}/500</span>
             </div>
           </div>
-
-          {/* Template Selection */}
-          <div className="form-section">
-            <label className="section-label">Choose Template</label>
-            <div className="template-grid">
-              {templates.map((template) => (
-                <button
-                  key={template.id}
-                  className={`template-card ${selectedTemplate === template.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedTemplate(template.id)}
-                >
-                  <div 
-                    className="template-preview"
-                    style={{ '--preview-color': template.color }}
-                  >
-                    <span>Aa</span>
-                  </div>
-                  <div className="template-info">
-                    <span className="template-name">{template.name}</span>
-                    <span className="template-desc">{template.preview}</span>
-                  </div>
-                  {selectedTemplate === template.id && (
-                    <div className="selected-check">
-                      <FiCheck />
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
+          
+          {/* Content Type Pills */}
+          <div className="content-pills">
+            {contentTypes.map((type) => (
+              <button
+                key={type.id}
+                className={`content-pill ${contentType === type.id ? 'active' : ''}`}
+                onClick={() => setContentType(type.id)}
+              >
+                <span>{type.icon}</span>
+                <span>{type.label}</span>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Number of Generations */}
-          <div className="form-section">
-            <label className="section-label">Number of Generations</label>
-            <div className="generations-control">
-              <button 
-                className="gen-btn minus"
-                onClick={decrementGenerations}
-                disabled={numGenerations <= 1}
+        {/* Compact Settings Row */}
+        <div className="settings-row">
+          {/* Template Dropdown */}
+          <div className="setting-group">
+            <label>Template</label>
+            <div className="template-selector">
+              <div 
+                className="template-preview-mini"
+                style={{ '--preview-color': templates.find(t => t.id === selectedTemplate)?.color }}
               >
-                <FiMinus />
-              </button>
-              <div className="gen-display">
-                <span className="gen-number">{numGenerations}</span>
+                Aa
               </div>
-              <button 
-                className="gen-btn plus"
-                onClick={incrementGenerations}
-                disabled={numGenerations >= 5}
+              <select 
+                value={selectedTemplate} 
+                onChange={(e) => setSelectedTemplate(e.target.value)}
               >
-                <FiPlus />
-              </button>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           {/* Aspect Ratio */}
-          <div className="form-section">
-            <label className="section-label">Aspect Ratio</label>
-            <div className="ratio-grid">
+          <div className="setting-group">
+            <label>Aspect</label>
+            <div className="aspect-pills">
               {aspectRatios.map((ratio) => (
                 <button
                   key={ratio.id}
-                  className={`ratio-btn ${aspectRatio === ratio.id ? 'selected' : ''}`}
+                  className={`aspect-pill ${aspectRatio === ratio.id ? 'active' : ''}`}
                   onClick={() => setAspectRatio(ratio.id)}
                 >
-                  <div className={`ratio-icon ratio-${ratio.id.replace(':', '-')}`}>
-                    <ratio.icon />
-                  </div>
-                  <span className="ratio-label">{ratio.label}</span>
-                  <span className="ratio-desc">{ratio.description}</span>
+                  {ratio.label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Background Media */}
-          <div className="form-section">
-            <label className="section-label">Background Media</label>
-            <div className="background-options">
+          {/* Background Type */}
+          <div className="setting-group">
+            <label>Background</label>
+            <div className="bg-pills">
               {backgroundTypes.map((bg) => (
                 <button
                   key={bg.id}
-                  className={`background-btn ${backgroundType === bg.id ? 'selected' : ''}`}
+                  className={`bg-pill ${backgroundType === bg.id ? 'active' : ''}`}
                   onClick={() => setBackgroundType(bg.id)}
+                  title={bg.description}
                 >
-                  <bg.icon className="bg-icon" />
-                  <span className="bg-label">{bg.label}</span>
+                  <bg.icon />
                 </button>
               ))}
             </div>
-
-            {/* Upload Area (when Choose Media is selected) */}
-            {backgroundType === 'upload' && (
-              <div className="upload-area">
-                <input
-                  type="file"
-                  id="media-upload"
-                  accept="video/*,image/*"
-                  onChange={handleMediaUpload}
-                  hidden
-                />
-                <label htmlFor="media-upload" className="upload-label">
-                  {selectedMedia ? (
-                    <div className="selected-file">
-                      <FiCheck className="file-check" />
-                      <span>{selectedMedia.name}</span>
-                    </div>
-                  ) : (
-                    <>
-                      <FiUpload className="upload-icon" />
-                      <span>Click to upload video or image</span>
-                      <span className="upload-hint">MP4, MOV, JPG, PNG (max 100MB)</span>
-                    </>
-                  )}
-                </label>
-              </div>
-            )}
           </div>
 
-          {/* Error Message */}
-          {generationError && (
-            <div className="generation-error">
-              <span>⚠️ {generationError}</span>
-              <button onClick={() => setGenerationError(null)}>×</button>
+          {/* Generations */}
+          <div className="setting-group">
+            <label>Count</label>
+            <div className="count-control">
+              <button onClick={decrementGenerations} disabled={numGenerations <= 1}>
+                <FiMinus />
+              </button>
+              <span>{numGenerations}</span>
+              <button onClick={incrementGenerations} disabled={numGenerations >= 5}>
+                <FiPlus />
+              </button>
             </div>
-          )}
+          </div>
+        </div>
 
-          {/* Generation Progress */}
-          {isGenerating && generationStep && (
-            <div className="generation-progress">
-              <div className="progress-spinner"></div>
-              <span>{generationStep}</span>
-            </div>
-          )}
-
-          {/* Generated Result */}
-          {generatedResult && !isGenerating && (
-            <div className="generation-result">
-              <h3>🎉 Generation Complete!</h3>
-              <p className="tts-badge">
-                Voice by: <strong>{generatedResult.ttsProvider || 'AI'}</strong>
-                {generatedResult.ttsProvider === 'ElevenLabs' && <span className="premium-badge">Premium</span>}
-              </p>
-              
-              <div className="result-preview">
-                {generatedResult.backgroundUrl && (
-                  <div className="result-media">
-                    {backgroundType === 'ai-videos' ? (
-                      <video 
-                        src={generatedResult.backgroundUrl} 
-                        controls 
-                        autoPlay 
-                        loop 
-                        muted
-                      />
-                    ) : (
-                      <img src={generatedResult.backgroundUrl} alt="Generated background" />
-                    )}
-                  </div>
-                )}
-                
-                {generatedResult.audioUrl && (
-                  <div className="result-audio">
-                    <label>🎙️ Voiceover Audio:</label>
-                    <audio src={generatedResult.audioUrl} controls />
-                  </div>
-                )}
-                
-                {generatedResult.script && (
-                  <div className="result-script">
-                    <label>📝 Generated Script:</label>
-                    <p>{generatedResult.script}</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="result-actions">
-                {generatedResult.audioUrl && (
-                  <button 
-                    className="btn-download"
-                    onClick={() => handleDownload(generatedResult.audioUrl, `voiceover-${Date.now()}.mp3`)}
-                  >
-                    <FiDownload />
-                    <span>Download Audio</span>
-                  </button>
-                )}
-                {generatedResult.backgroundUrl && (
-                  <button 
-                    className="btn-download"
-                    onClick={() => handleDownload(generatedResult.backgroundUrl, `background-${Date.now()}.${backgroundType === 'ai-videos' ? 'mp4' : 'png'}`)}
-                  >
-                    <FiDownload />
-                    <span>Download Background</span>
-                  </button>
-                )}
-                <button 
-                  className="btn-regenerate"
-                  onClick={handleRegenerate}
-                >
-                  <FiRefreshCw />
-                  <span>Regenerate</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Generate Button */}
-          <div className="form-actions">
-            <button 
-              className="btn-generate"
-              onClick={handleGenerate}
-              disabled={!postTopic.trim() || isGenerating}
-            >
-              {isGenerating ? (
+        {/* Upload Area (when Choose Media is selected) */}
+        {backgroundType === 'upload' && (
+          <div className="upload-compact">
+            <input
+              type="file"
+              id="media-upload"
+              accept="video/*,image/*"
+              onChange={handleMediaUpload}
+              hidden
+            />
+            <label htmlFor="media-upload" className="upload-label-compact">
+              {selectedMedia ? (
                 <>
-                  <div className="spinner"></div>
-                  <span>{generationStep || 'Generating...'}</span>
+                  <FiCheck className="check-icon" />
+                  <span>{selectedMedia.name}</span>
                 </>
               ) : (
                 <>
-                  <FiPlay />
-                  <span>{generatedResult ? 'Generate Another' : 'Generate Voiceover Video'}</span>
+                  <FiUpload />
+                  <span>Upload media</span>
                 </>
               )}
-            </button>
+            </label>
           </div>
-        </div>
+        )}
+
+        {/* Error Message */}
+        {generationError && (
+          <div className="generation-error">
+            <span>⚠️ {generationError}</span>
+            <button onClick={() => setGenerationError(null)}>×</button>
+          </div>
+        )}
+
+        {/* Generation Progress */}
+        {isGenerating && generationStep && (
+          <div className="generation-progress">
+            <div className="progress-spinner"></div>
+            <span>{generationStep}</span>
+          </div>
+        )}
+
+        {/* Generated Result */}
+        {generatedResult && !isGenerating && (
+          <div className="generation-result">
+            <div className="result-header">
+              <h3>🎉 Generated!</h3>
+              <span className="tts-provider">
+                {generatedResult.ttsProvider || 'AI'}
+                {generatedResult.ttsProvider === 'ElevenLabs' && <span className="premium-tag">PRO</span>}
+              </span>
+            </div>
+            
+            <div className="result-content">
+              {generatedResult.backgroundUrl && (
+                <div className="result-media">
+                  {backgroundType === 'ai-videos' ? (
+                    <video src={generatedResult.backgroundUrl} controls autoPlay loop muted />
+                  ) : (
+                    <img src={generatedResult.backgroundUrl} alt="Generated background" />
+                  )}
+                </div>
+              )}
+              
+              {generatedResult.audioUrl && (
+                <div className="result-audio">
+                  <label>🎙️ Voiceover</label>
+                  <audio src={generatedResult.audioUrl} controls />
+                </div>
+              )}
+              
+              {generatedResult.script && (
+                <div className="result-script">
+                  <label>📝 Script</label>
+                  <p>{generatedResult.script}</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="result-actions">
+              {generatedResult.audioUrl && (
+                <button className="btn-action download" onClick={() => handleDownload(generatedResult.audioUrl, `voiceover-${Date.now()}.mp3`)}>
+                  <FiDownload /> Audio
+                </button>
+              )}
+              {generatedResult.backgroundUrl && (
+                <button className="btn-action download" onClick={() => handleDownload(generatedResult.backgroundUrl, `background-${Date.now()}.${backgroundType === 'ai-videos' ? 'mp4' : 'png'}`)}>
+                  <FiDownload /> Media
+                </button>
+              )}
+              <button className="btn-action secondary" onClick={handleRegenerate}>
+                <FiRefreshCw /> Retry
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Generate Button */}
+        <button 
+          className="btn-generate-hero"
+          onClick={handleGenerate}
+          disabled={!postTopic.trim() || isGenerating}
+        >
+          {isGenerating ? (
+            <>
+              <div className="spinner"></div>
+              <span>{generationStep || 'Generating...'}</span>
+            </>
+          ) : (
+            <>
+              <FiPlay />
+              <span>Generate Video</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
