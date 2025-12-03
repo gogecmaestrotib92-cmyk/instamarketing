@@ -3159,7 +3159,7 @@ router.post('/stock-video/clips', async (req, res) => {
       return res.status(500).json({ error: 'Stock video service not available' });
     }
 
-    const { topic, targetDuration = 30, contentType = 'default' } = req.body;
+    const { topic, targetDuration = 15, contentType = 'default' } = req.body;
 
     if (!topic) {
       return res.status(400).json({ error: 'Topic is required' });
@@ -3199,7 +3199,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
     const { 
       topic, 
       contentType = 'tips',
-      duration = 30,
+      duration = 15,
       voiceStyle = 'energetic',
       subtitleStyle = 'sentence', // 'word', 'phrase', 'sentence'
       useSceneVideos = true, // Get different videos for each scene
@@ -3850,7 +3850,7 @@ function getFallbackVideoKeywords(topic, numScenes) {
  * @param {number} duration - Target duration in seconds
  * @returns {Array} - Array of subtitle objects with text, start, end
  */
-function createBasicSubtitles(script, duration = 30) {
+function createBasicSubtitles(script, duration = 15) {
   const sentences = script.match(/[^.!?]+[.!?]+/g) || [script];
   const totalWords = script.split(' ').filter(w => w.length > 0).length;
   const secondsPerWord = duration / totalWords;

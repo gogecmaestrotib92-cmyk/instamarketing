@@ -222,7 +222,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           body: JSON.stringify({
             topic: postTopic,
             contentType: contentType,
-            duration: 30,
+            duration: 15,
             voiceStyle: getVoiceStyle(),
             subtitleStyle: 'sentence',
             useSceneVideos: true, // Get different videos for each scene
@@ -347,7 +347,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic: `${contentType}: ${postTopic}`,
-            duration: 30,
+            duration: 15,
             voiceStyle: getVoiceStyle()
           })
         });
@@ -374,7 +374,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic: `${contentType}: ${postTopic}`,
-            duration: 30,
+            duration: 15,
             voiceStyle: getVoiceStyle()
           })
         });
