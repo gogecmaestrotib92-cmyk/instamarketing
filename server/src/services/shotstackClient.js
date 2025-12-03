@@ -8,7 +8,7 @@
  */
 
 const SHOTSTACK_API_KEY = process.env.SHOTSTACK_API_KEY || 'dJmabLRWzY6RK4RnAAXQoIec84p8Uv9i1Cyo0qDE';
-const SHOTSTACK_HOST = process.env.SHOTSTACK_HOST || 'https://api.shotstack.io/stage'; // Use 'https://api.shotstack.io/v1' for production
+const SHOTSTACK_HOST = process.env.SHOTSTACK_HOST || 'https://api.shotstack.io/v1'; // Production API (no watermark)
 
 /**
  * Default subtitle style configuration
