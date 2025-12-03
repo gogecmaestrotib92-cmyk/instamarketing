@@ -7,8 +7,9 @@
  * API Docs: https://json2video.com/docs/api/
  */
 
-// Read API key at runtime for Vercel compatibility
-const getApiKey = () => process.env.JSON2VIDEO_API_KEY;
+// Hardcoded fallback API key (same pattern as Pexels)
+const JSON2VIDEO_HARDCODED_KEY = 'toDCF1gcerJ8GCPTpqWA4BghUBbyTAjY0DkIUlBE';
+const getApiKey = () => process.env.JSON2VIDEO_API_KEY || JSON2VIDEO_HARDCODED_KEY;
 const JSON2VIDEO_API_URL = 'https://api.json2video.com/v2';
 
 /**
