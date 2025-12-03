@@ -3339,6 +3339,23 @@ router.post('/voiceover-video/generate', async (req, res) => {
           }
         }
       }
+      
+      // FINAL FALLBACK: Use curated background if API fails completely
+      if (sceneVideos.length === 0 && !backgroundVideo) {
+        console.log('   ⚠️ API returned no videos, using curated fallback...');
+        const curatedBg = stockVideoService.getCuratedBackground('abstract');
+        if (curatedBg) {
+          backgroundVideo = {
+            id: 'curated-' + Date.now(),
+            source: 'curated',
+            url: curatedBg.url,
+            name: curatedBg.name,
+            duration: 15, // Assume 15s for looping
+            thumbnail: null
+          };
+          console.log(`   ✅ Using curated background: ${curatedBg.name}`);
+        }
+      }
     } else {
       console.log('   ⚠️ Stock video service not available');
     }

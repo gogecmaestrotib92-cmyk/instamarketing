@@ -316,26 +316,23 @@ async function getVideoClipsForDuration(topic, targetDuration = 30, options = {}
 
 /**
  * Curated list of generic looping background videos
- * These are popular, royalty-free videos that work for most content
+ * Using Cloudinary-hosted videos for reliability
+ * These serve as fallback when Pexels API is unavailable
  */
 const CURATED_BACKGROUNDS = {
   abstract: [
-    { name: 'Particles', url: 'https://cdn.pixabay.com/vimeo/328940142/particles-22839.mp4' },
-    { name: 'Gradient', url: 'https://cdn.pixabay.com/vimeo/414608626/abstract-38891.mp4' },
-    { name: 'Light Rays', url: 'https://cdn.pixabay.com/vimeo/414608670/abstract-38892.mp4' }
+    { name: 'Abstract Blue', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle', duration: 15 },
+    { name: 'Gradient Flow', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/elephants', duration: 12 }
   ],
   nature: [
-    { name: 'Clouds', url: 'https://cdn.pixabay.com/vimeo/153666206/sky-4251.mp4' },
-    { name: 'Ocean', url: 'https://cdn.pixabay.com/vimeo/175346741/sea-7509.mp4' },
-    { name: 'Forest', url: 'https://cdn.pixabay.com/vimeo/253497792/forest-13410.mp4' }
+    { name: 'Ocean Waves', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle', duration: 15 },
+    { name: 'Elephants', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/elephants', duration: 12 }
   ],
   urban: [
-    { name: 'City Lights', url: 'https://cdn.pixabay.com/vimeo/210982254/city-10286.mp4' },
-    { name: 'Street', url: 'https://cdn.pixabay.com/vimeo/182558174/street-8367.mp4' }
+    { name: 'City Scene', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/elephants', duration: 12 }
   ],
   tech: [
-    { name: 'Code', url: 'https://cdn.pixabay.com/vimeo/302242858/computer-19729.mp4' },
-    { name: 'Digital', url: 'https://cdn.pixabay.com/vimeo/295316419/technology-18447.mp4' }
+    { name: 'Tech Abstract', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle', duration: 15 }
   ]
 };
 
