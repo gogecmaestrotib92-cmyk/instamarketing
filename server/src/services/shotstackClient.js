@@ -111,18 +111,18 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         // Shotstack offset: positive y moves UP, negative y moves DOWN
         // Values are relative (-1 to 1), where 0.5 = 50% from center
         // IMPORTANT: Keep offset values small to prevent text going off-screen
-        let offset = { x: 0, y: -0.2 }; // Lower portion but safer - closer to center
+        let offset = { x: 0, y: -0.15 }; // Lower portion but very safe - close to center
         let position = 'center'; // Always use center for precise control
         
         // Adjust offset based on desired visual position
         // Using very conservative values to keep text within safe zone
         const desiredPosition = subtitle.position || subtitleStyle.position || 'bottom';
         if (desiredPosition === 'top') {
-          offset = { x: 0, y: 0.2 }; // Upper portion - safe zone
+          offset = { x: 0, y: 0.15 }; // Upper portion - safe zone
         } else if (desiredPosition === 'center' || desiredPosition === 'middle') {
           offset = { x: 0, y: 0 }; // True center
         } else if (desiredPosition === 'bottom') {
-          offset = { x: 0, y: -0.2 }; // Lower portion - safe zone above Instagram UI
+          offset = { x: 0, y: -0.15 }; // Lower portion - very safe zone above Instagram UI
         }
 
         // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
@@ -150,13 +150,13 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
 
         // Instagram/YouTube Reels style - bold, punchy text
         // Using 'chunk' style for that viral TikTok/Reels look
-        // Size 'x-small' for vertical 9:16 video to ensure text never goes out of frame
+        // Size 'xx-small' for vertical 9:16 video to ensure text NEVER goes out of frame
         const clip = {
           asset: {
             type: 'title',
             text: subtitle.text.toUpperCase(), // ALL CAPS for viral style
             style: 'chunk', // Bold chunky style like viral reels
-            size: 'x-small', // Extra small size to ensure it fits in vertical video frame
+            size: 'xx-small', // Smallest size to guarantee it fits in vertical video frame
             color: '#ffffff' // Pure white text
           },
           start: subtitle.start,
@@ -663,13 +663,16 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
 
     if (validSubtitles.length > 0) {
       subtitleClips = validSubtitles.map((subtitle, index) => {
-        // Break long subtitles into multiple lines (max 6 words per line for vertical video)
+        // Break long subtitles into multiple lines (max 4 words per line for vertical video)
         const words = subtitle.text.trim().split(/\s+/);
         let formattedText = subtitle.text.toUpperCase();
-        if (words.length > 6) {
-          const midpoint = Math.ceil(words.length / 2);
-          formattedText = words.slice(0, midpoint).join(' ').toUpperCase() + '\n' + 
-                         words.slice(midpoint).join(' ').toUpperCase();
+        if (words.length > 4) {
+          // Split into lines of max 4 words each
+          const lines = [];
+          for (let i = 0; i < words.length; i += 4) {
+            lines.push(words.slice(i, i + 4).join(' ').toUpperCase());
+          }
+          formattedText = lines.join('\n');
         }
         
         return {
@@ -677,13 +680,13 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
             type: 'title',
             text: formattedText,
             style: 'chunk',
-            size: 'x-small', // Extra small size for vertical 9:16 video to stay in frame
+            size: 'xx-small', // Smallest size to guarantee text stays in frame
             color: '#ffffff'
           },
           start: subtitle.start,
           length: Math.max(0.1, subtitle.end - subtitle.start),
           position: 'center',
-          offset: { x: 0, y: -0.2 }, // Safe zone offset - closer to center for safety
+          offset: { x: 0, y: -0.15 }, // Closer to center for maximum safety
           transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
         };
       });

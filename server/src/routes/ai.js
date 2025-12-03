@@ -3281,8 +3281,13 @@ router.post('/voiceover-video/generate', async (req, res) => {
       if (useSceneVideos) {
         // Split script into sentences for scene detection
         const sentences = scriptResult.script.match(/[^.!?]+[.!?]+/g) || [scriptResult.script];
-        const sentencesPerScene = Math.max(1, Math.ceil(sentences.length / 5)); // 4-6 scenes
+        
+        // Aim for 4-6 scenes regardless of sentence count
+        const targetScenes = Math.min(6, Math.max(3, Math.ceil(estimatedDuration / 6))); // ~6 seconds per scene
+        const sentencesPerScene = Math.max(1, Math.ceil(sentences.length / targetScenes));
         const secondsPerWord = estimatedDuration / scriptResult.script.split(' ').length;
+        
+        console.log(`   📊 Scene planning: ${sentences.length} sentences, targeting ${targetScenes} scenes`);
         
         let currentTime = 0;
         for (let i = 0; i < sentences.length; i += sentencesPerScene) {
@@ -3291,8 +3296,8 @@ router.post('/voiceover-video/generate', async (req, res) => {
           const sceneWords = sceneText.split(' ').filter(w => w.length > 0).length;
           const sceneDuration = sceneWords * secondsPerWord;
           
-          // Extract keywords for video search
-          const keywords = extractSearchKeywords(sceneText);
+          // Extract keywords for video search - use topic as context
+          const keywords = extractSearchKeywords(sceneText, topic);
           
           scenes.push({
             index: scenes.length,
@@ -3303,9 +3308,10 @@ router.post('/voiceover-video/generate', async (req, res) => {
             duration: sceneDuration
           });
           
+          console.log(`      Scene ${scenes.length}: "${keywords}" (${sceneDuration.toFixed(1)}s)`);
           currentTime += sceneDuration;
         }
-        console.log(`   ✅ Identified ${scenes.length} scenes`);
+        console.log(`   ✅ Identified ${scenes.length} scenes for video matching`);
       }
     } else {
       console.log('   ⚠️ Subtitle generator not available, creating basic subtitles');
@@ -3315,6 +3321,9 @@ router.post('/voiceover-video/generate', async (req, res) => {
 
     // STEP 4: Get stock videos for scenes
     console.log('\n🎥 Step 4: Finding stock videos...');
+    console.log(`   Scenes to match: ${scenes.length}`);
+    scenes.forEach((s, i) => console.log(`      ${i+1}. "${s.searchTerm}" (${s.duration?.toFixed(1)}s)`));
+    
     let sceneVideos = [];
     let backgroundVideo = null;
 
@@ -3322,7 +3331,12 @@ router.post('/voiceover-video/generate', async (req, res) => {
       if (useSceneVideos && scenes.length > 0) {
         // Get different videos for each scene
         sceneVideos = await stockVideoService.getVideosForScenes(scenes);
-        console.log(`   ✅ Found ${sceneVideos.length} scene videos`);
+        console.log(`   ✅ Found ${sceneVideos.length} scene videos for ${scenes.length} scenes`);
+        
+        // Log each matched video
+        sceneVideos.forEach((v, i) => {
+          console.log(`      Video ${i+1}: ${v.source} #${v.id} for "${v.sceneSearchTerm}" (${v.useDuration?.toFixed(1)}s)`);
+        });
       }
       
       // Fallback: if no scene videos found, get a single random video
@@ -3536,9 +3550,10 @@ router.post('/voiceover-video/generate', async (req, res) => {
 });
 
 /**
- * Helper: Extract search keywords from text
+ * Helper: Extract search keywords from text with optional topic context
+ * Improved to generate better video search queries
  */
-function extractSearchKeywords(text) {
+function extractSearchKeywords(text, topicContext = '') {
   const stopWords = new Set([
     'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
     'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
@@ -3548,15 +3563,40 @@ function extractSearchKeywords(text) {
     'not', 'only', 'own', 'same', 'than', 'too', 'very', 'just', 'also',
     'it', 'its', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she',
     'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'our',
-    'their', 'what', 'which', 'who', 'about', 'get', 'make', 'let', 'dont', 'here'
+    'their', 'what', 'which', 'who', 'about', 'get', 'make', 'let', 'dont', 'here',
+    'know', 'think', 'like', 'want', 'see', 'come', 'go', 'thing', 'things',
+    'really', 'even', 'new', 'way', 'one', 'two', 'first', 'now', 'heres'
   ]);
 
+  // Extract words from the scene text
   const words = text.toLowerCase()
     .replace(/[^\w\s]/g, '')
     .split(/\s+/)
-    .filter(word => word.length > 2 && !stopWords.has(word));
+    .filter(word => word.length > 3 && !stopWords.has(word));
 
-  return words.slice(0, 4).join(' ') || 'abstract background';
+  // Get unique meaningful words
+  const uniqueWords = [...new Set(words)];
+  
+  // If we found good keywords, use them
+  if (uniqueWords.length >= 2) {
+    return uniqueWords.slice(0, 3).join(' ');
+  }
+  
+  // Fallback: use topic context if scene didn't have good keywords
+  if (topicContext) {
+    const topicWords = topicContext.toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 3 && !stopWords.has(word));
+    
+    if (topicWords.length > 0) {
+      // Combine scene words with topic for better results
+      const combined = [...uniqueWords, ...topicWords].slice(0, 3);
+      return combined.join(' ') || topicContext;
+    }
+  }
+  
+  return uniqueWords.slice(0, 3).join(' ') || 'abstract motion background';
 }
 
 /**
