@@ -9,6 +9,16 @@
   margin: 0 auto;
 }
 
+/* Spin animation */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ===== Page Header ===== */
 .page-header-row {
   display: flex;
@@ -856,5 +866,205 @@
 
   .result-btn {
     justify-content: center;
+  }
+}
+
+/* ===== Prompt Tips ===== */
+.prompt-tips {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 10px;
+  border-left: 3px solid #3b82f6;
+}
+
+.prompt-tips strong {
+  display: block;
+  font-size: 13px;
+  color: #3b82f6;
+  margin-bottom: 8px;
+}
+
+.prompt-tips ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.prompt-tips li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+
+.prompt-tips li:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== New AI Advice Panel ===== */
+.ai-advice-panel .advice-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.advice-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: var(--text-secondary);
+}
+
+.advice-loading svg {
+  font-size: 28px;
+  color: #8b5cf6;
+}
+
+.advice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.advice-item {
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.advice-item:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.advice-category-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.15);
+  padding: 4px 10px;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.advice-prompt {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.advice-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.advice-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.advice-btn.use {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border: none;
+  color: white;
+}
+
+.advice-btn.use:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.advice-btn.copy {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 8px 12px;
+}
+
+.advice-btn.copy:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+/* ===== Content Hint ===== */
+.content-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* ===== Generation Error ===== */
+.generation-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.generation-error span {
+  font-size: 14px;
+  color: #ef4444;
+}
+
+.generation-error button {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.generation-error button:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ===== Result Button Primary ===== */
+.result-btn.primary {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border: none;
+  color: white;
+}
+
+.result-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+/* ===== Responsive Updates ===== */
+@media (max-width: 768px) {
+  .advice-list {
+    gap: 10px;
+  }
+
+  .advice-item {
+    padding: 14px;
+  }
+
+  .advice-actions {
+    flex-wrap: wrap;
   }
 }

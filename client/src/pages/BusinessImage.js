@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3 } from 'react-icons/fi';
+import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3, FiLoader } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import './BusinessImage.css';
 
@@ -12,6 +12,8 @@ const BusinessImage = () => {
   // Step 1: Prompt
   const [prompt, setPrompt] = useState('');
   const [showAdvice, setShowAdvice] = useState(false);
+  const [aiAdvice, setAiAdvice] = useState([]);
+  const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
   
   // Step 2: Settings
   const [brandLinked, setBrandLinked] = useState(true);
@@ -26,42 +28,7 @@ const BusinessImage = () => {
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
-
-  // AI advice examples
-  const aiAdviceExamples = [
-    {
-      category: 'Product Launch',
-      examples: [
-        'Minimalist product showcase with soft shadows on white marble background',
-        'Premium product floating with golden light rays and luxury feel',
-        'Modern tech product with futuristic neon glow and dark background'
-      ]
-    },
-    {
-      category: 'Sale & Promotion',
-      examples: [
-        'Bold "50% OFF" text with confetti and celebration vibes',
-        'Flash sale banner with countdown timer aesthetic and urgency',
-        'Seasonal discount graphic with festive colors and decorations'
-      ]
-    },
-    {
-      category: 'Brand Awareness',
-      examples: [
-        'Inspirational quote with elegant typography on gradient background',
-        'Behind-the-scenes style image showing brand authenticity',
-        'Lifestyle shot featuring product in real-world setting'
-      ]
-    },
-    {
-      category: 'Social Proof',
-      examples: [
-        'Customer testimonial card with star ratings and clean design',
-        'Before/after comparison split image with dramatic effect',
-        'User-generated content style with authentic feel'
-      ]
-    }
-  ];
+  const [generationError, setGenerationError] = useState(null);
 
   // Post type options
   const postTypes = [
@@ -71,7 +38,7 @@ const BusinessImage = () => {
     { id: 'review', label: 'Review', icon: FiCheckCircle, description: 'Customer testimonial' }
   ];
 
-  // Aspect ratio options
+  // Aspect ratio options with Replicate-compatible formats
   const aspectRatios = [
     { id: '1:1', label: '1:1', icon: FiSquare, description: 'Square' },
     { id: '4:5', label: '4:5', icon: FiSmartphone, description: 'Portrait' },
@@ -79,13 +46,107 @@ const BusinessImage = () => {
     { id: '16:9', label: '16:9', icon: FiMonitor, description: 'Landscape' }
   ];
 
-  const handleUseAdvice = (example) => {
-    setPrompt(example);
+  // Generate AI advice based on user's prompt
+  const generateAIAdvice = async () => {
+    setIsLoadingAdvice(true);
+    setShowAdvice(true);
+    
+    try {
+      const basePrompt = prompt.trim() || 'business marketing';
+      
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Based on this image idea: "${basePrompt}"
+          
+Generate 6 creative and specific AI image prompts that would work great for Instagram business posts. 
+
+For each suggestion, provide a detailed visual description that an AI image generator can understand. Include:
+- Visual composition and layout
+- Color palette and mood
+- Lighting style
+- Background elements
+- Any text overlay suggestions
+
+Format your response as JSON array with this structure:
+[
+  {"category": "Category Name", "prompt": "Detailed image prompt..."},
+  ...
+]
+
+Categories should be relevant like: "Product Focus", "Lifestyle Shot", "Bold Typography", "Minimalist", "Premium Feel", "Social Proof"
+
+Return ONLY the JSON array, no other text.`
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.response) {
+        try {
+          // Extract JSON from the response
+          let jsonStr = data.response;
+          const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            jsonStr = jsonMatch[0];
+          }
+          const suggestions = JSON.parse(jsonStr);
+          setAiAdvice(suggestions);
+        } catch (parseError) {
+          // Fallback to default suggestions if parsing fails
+          setAiAdvice(getDefaultAdvice(basePrompt));
+        }
+      } else {
+        setAiAdvice(getDefaultAdvice(basePrompt));
+      }
+    } catch (error) {
+      console.error('AI Advice error:', error);
+      setAiAdvice(getDefaultAdvice(prompt || 'product'));
+    } finally {
+      setIsLoadingAdvice(false);
+    }
+  };
+
+  // Default fallback advice
+  const getDefaultAdvice = (topic) => [
+    {
+      category: 'Product Showcase',
+      prompt: `Professional product photography of ${topic}, centered composition on white marble surface, soft natural lighting from the left, subtle shadows, clean minimalist aesthetic, high-end commercial look, 4K quality`
+    },
+    {
+      category: 'Lifestyle Shot',
+      prompt: `Lifestyle photography featuring ${topic} in a modern home setting, warm natural lighting, bokeh background, person using the product naturally, authentic and relatable mood, Instagram aesthetic`
+    },
+    {
+      category: 'Bold Typography',
+      prompt: `Eye-catching marketing graphic for ${topic}, bold sans-serif typography, vibrant gradient background (purple to pink), modern geometric shapes, clean layout with ample white space, social media optimized`
+    },
+    {
+      category: 'Premium Feel',
+      prompt: `Luxury brand photography of ${topic}, dark moody background, golden accent lighting, reflective surface, premium packaging, sophisticated and elegant aesthetic, high contrast, magazine quality`
+    },
+    {
+      category: 'Minimalist Design',
+      prompt: `Ultra-minimalist product shot of ${topic}, pure white background, single light source creating soft shadows, centered composition, negative space, Scandinavian design aesthetic, clean and modern`
+    },
+    {
+      category: 'Dynamic Action',
+      prompt: `Dynamic action shot featuring ${topic}, motion blur effect, energetic composition, vibrant colors, high contrast, lifestyle context, young and modern vibe, social media engagement focused`
+    }
+  ];
+
+  const handleUseAdvice = (advicePrompt) => {
+    setPrompt(advicePrompt);
     setShowAdvice(false);
   };
 
-  const handleCopyPrompt = (example) => {
-    navigator.clipboard.writeText(example);
+  const handleCopyPrompt = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   };
 
   const handleNext = () => {
@@ -100,12 +161,98 @@ const BusinessImage = () => {
     }
   };
 
+  // Build optimized prompt for image generation
+  const buildOptimizedPrompt = () => {
+    const postTypeDescriptions = {
+      'ad': 'promotional advertisement design, marketing focused, call-to-action oriented',
+      'highlights': 'feature showcase, benefits focused, informative layout',
+      'before-after': 'split comparison design, transformation visual, side by side layout',
+      'review': 'testimonial style, social proof design, customer quote layout'
+    };
+
+    let enhancedPrompt = prompt;
+    
+    // Add post type context
+    enhancedPrompt += `. Style: ${postTypeDescriptions[postType] || 'professional marketing design'}`;
+    
+    // Add content overlay hints if provided
+    if (heading || subheading || cta) {
+      enhancedPrompt += '. Design should include space for text overlay';
+      if (heading) enhancedPrompt += ` with headline "${heading}"`;
+      if (cta) enhancedPrompt += ` and button text "${cta}"`;
+    }
+    
+    // Add quality modifiers
+    enhancedPrompt += '. High quality, professional photography, sharp details, vibrant colors, Instagram-ready, commercial grade';
+    
+    return enhancedPrompt;
+  };
+
+  // Generate image using Replicate API
   const handleGenerate = async () => {
     setIsGenerating(true);
-    // TODO: Connect to actual image generation API
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    setGeneratedImage('/api/placeholder/1024/1024');
-    setIsGenerating(false);
+    setGenerationError(null);
+    
+    try {
+      const optimizedPrompt = buildOptimizedPrompt();
+      
+      console.log('Generating image with prompt:', optimizedPrompt);
+      console.log('Aspect ratio:', aspectRatio);
+
+      const response = await fetch('/api/ai/image/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: optimizedPrompt,
+          aspectRatio: aspectRatio,
+          numOutputs: 1,
+          outputFormat: 'webp',
+          outputQuality: 95
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.imageUrl) {
+        setGeneratedImage(data.imageUrl);
+        console.log('Image generated successfully:', data.imageUrl);
+      } else {
+        throw new Error(data.error || 'Failed to generate image');
+      }
+    } catch (error) {
+      console.error('Image generation error:', error);
+      setGenerationError(error.message || 'Failed to generate image. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Download generated image
+  const handleDownload = async () => {
+    if (!generatedImage) return;
+    
+    try {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `generated-image-${Date.now()}.webp`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      // Fallback: open in new tab
+      window.open(generatedImage, '_blank');
+    }
+  };
+
+  // Regenerate image
+  const handleRegenerate = () => {
+    setGeneratedImage(null);
+    handleGenerate();
   };
 
   const canProceedStep1 = prompt.trim().length > 0;
@@ -156,25 +303,48 @@ const BusinessImage = () => {
               <div className="step-header">
                 <span className="step-label">Step 1 of 3</span>
                 <h2>Describe Your Visual Idea</h2>
-                <p>Tell us what you want to create</p>
+                <p>Tell us what you want to create - be specific for best results</p>
               </div>
 
               <div className="prompt-card">
                 <div className="prompt-input-row">
                   <textarea
                     className="prompt-textarea"
-                    placeholder="Describe your image idea... e.g., 'A clean and inviting layout showcasing nasal strips, with a background that evokes freshness and clarity'"
+                    placeholder="Describe your image in detail...
+
+Example: A premium skincare product bottle on white marble, soft natural lighting, minimalist composition, subtle water droplets, luxury spa aesthetic, clean background with eucalyptus leaves"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    rows={5}
+                    rows={6}
                   />
                   <button 
                     className="ai-advice-btn"
-                    onClick={() => setShowAdvice(!showAdvice)}
+                    onClick={generateAIAdvice}
+                    disabled={isLoadingAdvice}
                   >
-                    <FiZap />
-                    <span>AI Advice</span>
+                    {isLoadingAdvice ? (
+                      <>
+                        <FiLoader className="spin" />
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FiZap />
+                        <span>AI Advice</span>
+                      </>
+                    )}
                   </button>
+                </div>
+
+                {/* Prompt tips */}
+                <div className="prompt-tips">
+                  <strong>💡 Tips for better results:</strong>
+                  <ul>
+                    <li>Describe the subject, composition, and mood</li>
+                    <li>Mention lighting style (soft, dramatic, natural)</li>
+                    <li>Include color palette or aesthetic (minimal, luxury, vibrant)</li>
+                    <li>Specify background details</li>
+                  </ul>
                 </div>
 
                 {/* AI Advice Panel */}
@@ -182,36 +352,39 @@ const BusinessImage = () => {
                   <div className="ai-advice-panel">
                     <div className="advice-header">
                       <FiZap className="advice-icon" />
-                      <h3>AI Inspiration</h3>
+                      <h3>AI-Generated Suggestions</h3>
+                      <p className="advice-subtitle">Based on your idea: "{prompt || 'your topic'}"</p>
                     </div>
-                    <div className="advice-categories">
-                      {aiAdviceExamples.map((category, idx) => (
-                        <div key={idx} className="advice-category">
-                          <h4>{category.category}</h4>
-                          <div className="advice-examples">
-                            {category.examples.map((example, exIdx) => (
-                              <div key={exIdx} className="advice-example">
-                                <p>{example}</p>
-                                <div className="example-actions">
-                                  <button 
-                                    className="example-btn use"
-                                    onClick={() => handleUseAdvice(example)}
-                                  >
-                                    Use
-                                  </button>
-                                  <button 
-                                    className="example-btn copy"
-                                    onClick={() => handleCopyPrompt(example)}
-                                  >
-                                    <FiCopy />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                    
+                    {isLoadingAdvice ? (
+                      <div className="advice-loading">
+                        <FiLoader className="spin" />
+                        <span>Generating personalized suggestions...</span>
+                      </div>
+                    ) : (
+                      <div className="advice-list">
+                        {aiAdvice.map((advice, idx) => (
+                          <div key={idx} className="advice-item">
+                            <div className="advice-category-badge">{advice.category}</div>
+                            <p className="advice-prompt">{advice.prompt}</p>
+                            <div className="advice-actions">
+                              <button 
+                                className="advice-btn use"
+                                onClick={() => handleUseAdvice(advice.prompt)}
+                              >
+                                Use This
+                              </button>
+                              <button 
+                                className="advice-btn copy"
+                                onClick={() => handleCopyPrompt(advice.prompt)}
+                              >
+                                <FiCopy />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -341,7 +514,8 @@ const BusinessImage = () => {
 
                 {/* Content Details */}
                 <div className="content-details">
-                  <h3><FiEdit3 /> Content Details</h3>
+                  <h3><FiEdit3 /> Content Details (Optional)</h3>
+                  <p className="content-hint">Add text to include in your design</p>
                   
                   <div className="input-group">
                     <label>Heading</label>
@@ -375,18 +549,26 @@ const BusinessImage = () => {
                 </div>
               </div>
 
+              {/* Error Message */}
+              {generationError && (
+                <div className="generation-error">
+                  <span>⚠️ {generationError}</span>
+                  <button onClick={() => setGenerationError(null)}>Dismiss</button>
+                </div>
+              )}
+
               {/* Generated Image Preview */}
               {generatedImage && (
                 <div className="generated-result">
-                  <h3>Generated Image</h3>
+                  <h3>🎉 Generated Image</h3>
                   <div className="result-preview">
                     <img src={generatedImage} alt="Generated" />
                     <div className="result-actions">
-                      <button className="result-btn">
+                      <button className="result-btn primary" onClick={handleDownload}>
                         <FiDownload />
                         <span>Download</span>
                       </button>
-                      <button className="result-btn" onClick={() => setGeneratedImage(null)}>
+                      <button className="result-btn" onClick={handleRegenerate}>
                         <FiRefreshCw />
                         <span>Regenerate</span>
                       </button>
@@ -408,7 +590,7 @@ const BusinessImage = () => {
                   {isGenerating ? (
                     <>
                       <FiRefreshCw className="spin" />
-                      <span>Generating...</span>
+                      <span>Generating... (30-60s)</span>
                     </>
                   ) : (
                     <>
