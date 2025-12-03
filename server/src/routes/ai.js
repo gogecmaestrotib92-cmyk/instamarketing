@@ -3289,6 +3289,115 @@ router.post('/voiceover-video/generate', async (req, res) => {
         
         console.log(`   📊 Scene planning: ${sentences.length} sentences, targeting ${targetScenes} scenes`);
         
+        // Helper function to extract visual keywords from scene text
+        const extractSceneKeywords = (text, baseTopic) => {
+          // Remove common stop words and extract meaningful visual keywords
+          const stopWords = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 
+            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
+            'must', 'can', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through',
+            'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then',
+            'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most',
+            'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very',
+            'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'about', 'against', 'this', 'that',
+            'these', 'those', 'your', 'you', 'its', 'it', 'they', 'their', 'what', 'which', 'who', 'whom',
+            'tip', 'tips', 'fact', 'facts', 'way', 'ways', 'thing', 'things', 'first', 'second', 'third',
+            'one', 'two', 'three', 'four', 'five', 'number', 'also', 'get', 'make', 'know', 'take', 'see']);
+          
+          // Visual keyword mappings for common concepts
+          const visualMappings = {
+            // Fitness terms
+            'abs': 'fitness workout gym abs',
+            'muscle': 'gym workout muscles fitness',
+            'exercise': 'workout exercise fitness gym',
+            'workout': 'gym workout fitness training',
+            'plank': 'plank exercise fitness core',
+            'crunch': 'abs workout gym fitness',
+            'core': 'core workout fitness abs',
+            'cardio': 'running cardio fitness exercise',
+            'strength': 'gym weights strength training',
+            'weight': 'gym weights fitness training',
+            'diet': 'healthy food nutrition diet',
+            'protein': 'protein food nutrition fitness',
+            'calories': 'food nutrition healthy eating',
+            'fat': 'fitness workout weight loss',
+            'burn': 'workout exercise fitness energy',
+            
+            // Health terms
+            'health': 'healthy lifestyle wellness',
+            'healthy': 'healthy food lifestyle wellness',
+            'sleep': 'sleeping rest bedroom night',
+            'water': 'water drinking hydration',
+            'hydration': 'water drinking health',
+            'energy': 'energy active lifestyle fitness',
+            'rest': 'relaxation rest peaceful',
+            'recovery': 'rest recovery relaxation',
+            
+            // Success/motivation terms
+            'success': 'success celebration achievement',
+            'goal': 'achievement goal success target',
+            'motivation': 'motivation success inspiration',
+            'results': 'success achievement results',
+            'progress': 'progress improvement success',
+            'consistency': 'discipline consistency routine',
+            'discipline': 'discipline focus determination',
+            
+            // Body parts
+            'body': 'fitness body workout gym',
+            'legs': 'legs workout fitness gym',
+            'arms': 'arms workout gym fitness',
+            'back': 'back workout gym fitness',
+            'chest': 'chest workout gym fitness'
+          };
+          
+          // Clean and extract words from text
+          const words = text.toLowerCase()
+            .replace(/[^\w\s]/g, ' ')
+            .split(/\s+/)
+            .filter(w => w.length > 2 && !stopWords.has(w));
+          
+          // Look for visual mappings first
+          for (const word of words) {
+            if (visualMappings[word]) {
+              return visualMappings[word];
+            }
+          }
+          
+          // Get unique meaningful words (max 3)
+          const uniqueWords = [...new Set(words)].slice(0, 3);
+          
+          // If we have meaningful words, combine with base topic
+          if (uniqueWords.length > 0) {
+            // Extract core topic word (e.g., "abs" from "3 tips for abs")
+            const topicWords = baseTopic.toLowerCase()
+              .replace(/[^\w\s]/g, ' ')
+              .split(/\s+/)
+              .filter(w => w.length > 2 && !stopWords.has(w));
+            
+            const coreTopicWord = topicWords[topicWords.length - 1] || topicWords[0] || '';
+            
+            // Combine scene keywords with topic for relevance
+            if (coreTopicWord && visualMappings[coreTopicWord]) {
+              return visualMappings[coreTopicWord];
+            }
+            
+            return `${uniqueWords.join(' ')} ${coreTopicWord}`.trim();
+          }
+          
+          // Fallback to topic-based search
+          const topicWords = baseTopic.toLowerCase()
+            .replace(/[^\w\s]/g, ' ')
+            .split(/\s+/)
+            .filter(w => w.length > 2 && !stopWords.has(w));
+          
+          for (const word of topicWords) {
+            if (visualMappings[word]) {
+              return visualMappings[word];
+            }
+          }
+          
+          return topicWords.slice(-2).join(' ') || 'lifestyle';
+        };
+        
         let currentTime = 0;
         for (let i = 0; i < sentences.length; i += sentencesPerScene) {
           const sceneSentences = sentences.slice(i, i + sentencesPerScene);
@@ -3296,9 +3405,8 @@ router.post('/voiceover-video/generate', async (req, res) => {
           const sceneWords = sceneText.split(' ').filter(w => w.length > 0).length;
           const sceneDuration = sceneWords * secondsPerWord;
           
-          // Use the TOPIC directly as search term - this is what works!
-          // The topic is what the user wants to see
-          const searchTerm = topic;
+          // Extract keywords from scene content to match storytelling
+          const searchTerm = extractSceneKeywords(sceneText, topic);
           
           scenes.push({
             index: scenes.length,
@@ -3309,7 +3417,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
             duration: sceneDuration
           });
           
-          console.log(`      Scene ${scenes.length}: "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
+          console.log(`      Scene ${scenes.length}: "${searchTerm}" (${sceneDuration.toFixed(1)}s) - from: "${sceneText.substring(0, 50)}..."`);
           currentTime += sceneDuration;
         }
         console.log(`   ✅ Identified ${scenes.length} scenes for video matching`);
