@@ -3289,21 +3289,21 @@ router.post('/voiceover-video/generate', async (req, res) => {
         
         console.log(`   📊 Scene planning: ${sentences.length} sentences, targeting ${targetScenes} scenes`);
         
-        // USE THE TOPIC DIRECTLY for video search - this is what the user wants!
-        // Add variety by using topic + category keywords
-        const topicSearchTerms = getTopicVideoSearchTerms(topic, contentType);
-        console.log(`   🎯 Topic-based search terms: ${topicSearchTerms.join(', ')}`);
+        // Use AI to generate video search keywords for each scene
+        console.log(`   🤖 Generating AI video keywords for topic: "${topic}"...`);
+        const aiVideoKeywords = await generateAIVideoKeywords(topic, scriptResult.script, targetScenes, openaiService);
+        console.log(`   🎯 AI generated ${aiVideoKeywords.length} scene keywords`);
         
         let currentTime = 0;
+        let sceneIdx = 0;
         for (let i = 0; i < sentences.length; i += sentencesPerScene) {
           const sceneSentences = sentences.slice(i, i + sentencesPerScene);
           const sceneText = sceneSentences.join(' ');
           const sceneWords = sceneText.split(' ').filter(w => w.length > 0).length;
           const sceneDuration = sceneWords * secondsPerWord;
           
-          // Use topic-based search terms, cycling through for variety
-          const searchTermIndex = scenes.length % topicSearchTerms.length;
-          const searchTerm = topicSearchTerms[searchTermIndex];
+          // Use AI-generated keyword for this scene, fallback to topic
+          const searchTerm = aiVideoKeywords[sceneIdx] || `${topic} cinematic`;
           
           scenes.push({
             index: scenes.length,
@@ -3316,6 +3316,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
           
           console.log(`      Scene ${scenes.length}: "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
           currentTime += sceneDuration;
+          sceneIdx++;
         }
         console.log(`   ✅ Identified ${scenes.length} scenes for video matching`);
       }
@@ -3606,103 +3607,109 @@ function extractSearchKeywords(text, topicContext = '') {
 }
 
 /**
- * Helper: Generate video search terms based on the user's topic
- * This uses the ACTUAL TOPIC the user entered, not extracted keywords from script
- * Returns multiple search terms for variety across scenes
+ * Helper: Use AI to generate video search keywords for each scene
+ * This ensures videos are DIRECTLY related to both the topic AND the script content
  */
-function getTopicVideoSearchTerms(topic, contentType = 'tips') {
-  // Clean the topic
+async function generateAIVideoKeywords(topic, script, numScenes, openaiService) {
+  try {
+    if (!openaiService || !openaiService.client) {
+      console.log('   ⚠️ OpenAI not available for video keywords, using fallback');
+      return getFallbackVideoKeywords(topic, numScenes);
+    }
+
+    const prompt = `You are a stock video search expert. Given a topic and script, generate ${numScenes} different video search queries that would find VISUALLY RELEVANT stock footage on Pexels.
+
+TOPIC: "${topic}"
+
+SCRIPT: "${script.substring(0, 500)}"
+
+Generate ${numScenes} video search queries. Each query should:
+1. Be 2-4 words that describe a VISUAL scene (not abstract concepts)
+2. Be directly related to the topic "${topic}"
+3. Be something that would have good stock video results on Pexels
+4. Be different from each other for visual variety
+
+IMPORTANT: Focus on VISUAL, CONCRETE things that can be filmed:
+- ✅ Good: "person counting money", "luxury car driving", "gym workout training"
+- ❌ Bad: "success mindset", "financial freedom", "motivation tips"
+
+Return ONLY a JSON array of ${numScenes} search strings, nothing else.
+Example: ["business meeting office", "money cash counting", "success celebration"]`;
+
+    const response = await openaiService.client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 200
+    });
+
+    const content = response.choices[0]?.message?.content?.trim();
+    
+    // Parse JSON response
+    try {
+      const keywords = JSON.parse(content);
+      if (Array.isArray(keywords) && keywords.length > 0) {
+        console.log(`   ✅ AI generated keywords: ${keywords.join(', ')}`);
+        return keywords;
+      }
+    } catch (parseError) {
+      // Try to extract keywords from non-JSON response
+      const matches = content.match(/"([^"]+)"/g);
+      if (matches && matches.length > 0) {
+        const keywords = matches.map(m => m.replace(/"/g, ''));
+        console.log(`   ✅ AI keywords (parsed): ${keywords.join(', ')}`);
+        return keywords;
+      }
+    }
+
+    console.log('   ⚠️ AI response not parseable, using fallback');
+    return getFallbackVideoKeywords(topic, numScenes);
+
+  } catch (error) {
+    console.log(`   ⚠️ AI keyword generation failed: ${error.message}, using fallback`);
+    return getFallbackVideoKeywords(topic, numScenes);
+  }
+}
+
+/**
+ * Helper: Fallback video keywords when AI is not available
+ */
+function getFallbackVideoKeywords(topic, numScenes) {
   const cleanTopic = topic.toLowerCase().trim();
   
-  // Topic-specific video mappings for common subjects
-  const TOPIC_VIDEO_MAP = {
-    // Money/Finance
-    'money': ['money cash finance', 'business success wealth', 'luxury lifestyle rich', 'office professional work'],
-    'finance': ['finance money banking', 'business corporate office', 'trading stocks investment', 'success wealth rich'],
-    'wealth': ['wealth luxury rich', 'money cash success', 'mansion lifestyle luxurious', 'business success'],
-    'investment': ['investment trading stocks', 'money finance banking', 'business professional', 'success wealthy'],
-    'crypto': ['cryptocurrency bitcoin digital', 'technology trading', 'money finance digital', 'futuristic tech'],
-    'bitcoin': ['bitcoin cryptocurrency digital', 'technology trading money', 'digital futuristic', 'finance trading'],
-    
-    // Business
-    'business': ['business office corporate', 'professional meeting work', 'success entrepreneur', 'teamwork collaboration'],
-    'entrepreneur': ['entrepreneur startup business', 'success hustle work', 'office laptop working', 'motivation success'],
-    'startup': ['startup business office', 'technology innovation', 'teamwork meeting', 'entrepreneur success'],
-    'marketing': ['marketing business digital', 'social media phone', 'creative advertising', 'business strategy'],
-    
-    // Health/Fitness
-    'fitness': ['fitness gym workout', 'exercise training running', 'healthy lifestyle active', 'sports athletics'],
-    'health': ['health wellness lifestyle', 'fitness exercise gym', 'healthy food nutrition', 'nature peaceful'],
-    'gym': ['gym workout fitness', 'exercise weights training', 'athlete sports', 'motivation fitness'],
-    'workout': ['workout exercise fitness', 'gym training athlete', 'running sports active', 'healthy lifestyle'],
-    'diet': ['healthy food nutrition', 'cooking kitchen vegetables', 'lifestyle wellness', 'fitness health'],
-    
-    // Motivation/Success
-    'motivation': ['motivation success inspirational', 'sunrise nature mountains', 'running athlete champion', 'victory celebration'],
-    'success': ['success achievement celebration', 'business professional', 'motivation inspirational', 'luxury lifestyle'],
-    'mindset': ['meditation peaceful thinking', 'success motivation', 'sunrise morning', 'nature peaceful calm'],
-    'productivity': ['productivity office working', 'laptop computer work', 'time clock planning', 'success achievement'],
-    
-    // Lifestyle
-    'travel': ['travel vacation beach', 'airplane flying journey', 'adventure exploring nature', 'city urban tourism'],
-    'food': ['food cooking kitchen', 'restaurant delicious meal', 'chef cooking preparation', 'eating lifestyle'],
-    'fashion': ['fashion style clothing', 'shopping luxury boutique', 'model runway stylish', 'urban city street'],
-    'beauty': ['beauty skincare cosmetics', 'fashion style elegant', 'luxury lifestyle glamour', 'woman beautiful'],
-    
-    // Technology
-    'technology': ['technology digital computer', 'coding programming laptop', 'futuristic innovation', 'smartphone apps digital'],
-    'tech': ['technology computer digital', 'innovation futuristic', 'coding programming', 'smartphone mobile'],
-    'ai': ['artificial intelligence technology', 'futuristic digital', 'robot automation', 'technology innovation'],
-    'coding': ['coding programming laptop', 'technology computer developer', 'software digital', 'office work tech'],
-    
-    // Relationships
-    'love': ['love couple romance', 'relationship happiness together', 'wedding romantic', 'happy couple'],
-    'relationship': ['couple together love', 'happiness romantic', 'family home', 'friends together happy'],
-    'dating': ['dating couple romantic', 'love relationship', 'dinner restaurant', 'happy together'],
-    
-    // Nature/Calm
-    'nature': ['nature mountains landscape', 'forest trees green', 'ocean beach water', 'sunset peaceful'],
-    'peace': ['peaceful nature calm', 'meditation relaxing', 'ocean waves beach', 'sunrise morning'],
-    'meditation': ['meditation yoga peaceful', 'calm relaxing nature', 'zen mindfulness', 'peaceful quiet'],
+  // Visual keyword mappings for common topics
+  const VISUAL_KEYWORDS = {
+    'money': ['person counting money', 'luxury car driving', 'business office meeting', 'wealthy lifestyle mansion', 'cash dollars bills', 'shopping luxury store'],
+    'finance': ['stock market trading', 'business meeting office', 'laptop computer working', 'city skyline business', 'professional handshake', 'money counting cash'],
+    'business': ['office meeting team', 'laptop working coffee', 'handshake business deal', 'city skyline buildings', 'presentation boardroom', 'entrepreneur working'],
+    'fitness': ['gym workout weights', 'running jogging outdoor', 'yoga stretching exercise', 'athlete training sports', 'healthy food preparation', 'person exercising gym'],
+    'health': ['healthy food vegetables', 'person exercising outdoors', 'yoga meditation peaceful', 'doctor medical healthcare', 'nature walking hiking', 'wellness spa relaxation'],
+    'motivation': ['sunrise mountain peak', 'person running athlete', 'victory celebration winner', 'ocean waves peaceful', 'city lights night', 'nature landscape beautiful'],
+    'success': ['celebration confetti party', 'trophy award winning', 'business handshake deal', 'luxury lifestyle car', 'graduation achievement', 'mountain peak summit'],
+    'travel': ['airplane flying clouds', 'beach vacation tropical', 'city tourism sightseeing', 'backpacker hiking nature', 'road trip driving scenic', 'passport luggage airport'],
+    'food': ['cooking kitchen chef', 'restaurant dining meal', 'food preparation ingredients', 'eating delicious plate', 'kitchen cooking healthy', 'cafe coffee breakfast'],
+    'technology': ['computer coding programming', 'smartphone mobile apps', 'futuristic digital technology', 'robot automation modern', 'data center servers', 'tech startup office'],
+    'love': ['couple romantic together', 'wedding ceremony love', 'holding hands walking', 'sunset romantic beach', 'family happy together', 'proposal engagement ring'],
   };
-  
-  // Content type video suggestions
-  const CONTENT_TYPE_VIDEOS = {
-    'tips': ['professional advice helping', 'education learning knowledge', 'office laptop working'],
-    'facts': ['education documentary information', 'science technology data', 'research discovery'],
-    'quotes': ['inspirational sunrise nature', 'peaceful ocean mountains', 'motivation success'],
-    'story': ['cinematic storytelling narrative', 'emotional journey life', 'dramatic scene'],
-    'tutorial': ['tutorial learning demonstration', 'hands showing teaching', 'step by step guide'],
-    'motivation': ['motivation success champion', 'sunrise victory achievement', 'running athlete winner']
-  };
-  
-  const searchTerms = [];
-  
-  // Check if topic matches any known mappings
-  for (const [keyword, videos] of Object.entries(TOPIC_VIDEO_MAP)) {
-    if (cleanTopic.includes(keyword)) {
-      searchTerms.push(...videos);
-      break; // Found a match, use these terms
+
+  // Find matching keywords
+  for (const [key, visuals] of Object.entries(VISUAL_KEYWORDS)) {
+    if (cleanTopic.includes(key)) {
+      // Shuffle and return requested number
+      const shuffled = visuals.sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, numScenes);
     }
   }
-  
-  // If no match found, use the topic directly with helpful additions
-  if (searchTerms.length === 0) {
-    // Use topic + generic visual terms
-    searchTerms.push(
-      `${cleanTopic} cinematic`,
-      `${cleanTopic} background`,
-      `${cleanTopic} lifestyle`,
-      `${cleanTopic} professional`
-    );
-  }
-  
-  // Add content type specific videos for variety
-  const contentVideos = CONTENT_TYPE_VIDEOS[contentType] || CONTENT_TYPE_VIDEOS['tips'];
-  searchTerms.push(...contentVideos);
-  
-  // Remove duplicates and return
-  return [...new Set(searchTerms)];
+
+  // Generic fallback
+  return [
+    `${topic} lifestyle`,
+    `${topic} professional`,
+    `${topic} cinematic`,
+    'office work professional',
+    'nature landscape peaceful',
+    'city urban lifestyle'
+  ].slice(0, numScenes);
 }
 
 /**
