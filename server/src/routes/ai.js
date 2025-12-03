@@ -3289,6 +3289,11 @@ router.post('/voiceover-video/generate', async (req, res) => {
         
         console.log(`   📊 Scene planning: ${sentences.length} sentences, targeting ${targetScenes} scenes`);
         
+        // USE THE TOPIC DIRECTLY for video search - this is what the user wants!
+        // Add variety by using topic + category keywords
+        const topicSearchTerms = getTopicVideoSearchTerms(topic, contentType);
+        console.log(`   🎯 Topic-based search terms: ${topicSearchTerms.join(', ')}`);
+        
         let currentTime = 0;
         for (let i = 0; i < sentences.length; i += sentencesPerScene) {
           const sceneSentences = sentences.slice(i, i + sentencesPerScene);
@@ -3296,19 +3301,20 @@ router.post('/voiceover-video/generate', async (req, res) => {
           const sceneWords = sceneText.split(' ').filter(w => w.length > 0).length;
           const sceneDuration = sceneWords * secondsPerWord;
           
-          // Extract keywords for video search - use topic as context
-          const keywords = extractSearchKeywords(sceneText, topic);
+          // Use topic-based search terms, cycling through for variety
+          const searchTermIndex = scenes.length % topicSearchTerms.length;
+          const searchTerm = topicSearchTerms[searchTermIndex];
           
           scenes.push({
             index: scenes.length,
             text: sceneText.substring(0, 100),
-            searchTerm: keywords,
+            searchTerm: searchTerm,
             startTime: currentTime,
             endTime: currentTime + sceneDuration,
             duration: sceneDuration
           });
           
-          console.log(`      Scene ${scenes.length}: "${keywords}" (${sceneDuration.toFixed(1)}s)`);
+          console.log(`      Scene ${scenes.length}: "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
           currentTime += sceneDuration;
         }
         console.log(`   ✅ Identified ${scenes.length} scenes for video matching`);
@@ -3597,6 +3603,106 @@ function extractSearchKeywords(text, topicContext = '') {
   }
   
   return uniqueWords.slice(0, 3).join(' ') || 'abstract motion background';
+}
+
+/**
+ * Helper: Generate video search terms based on the user's topic
+ * This uses the ACTUAL TOPIC the user entered, not extracted keywords from script
+ * Returns multiple search terms for variety across scenes
+ */
+function getTopicVideoSearchTerms(topic, contentType = 'tips') {
+  // Clean the topic
+  const cleanTopic = topic.toLowerCase().trim();
+  
+  // Topic-specific video mappings for common subjects
+  const TOPIC_VIDEO_MAP = {
+    // Money/Finance
+    'money': ['money cash finance', 'business success wealth', 'luxury lifestyle rich', 'office professional work'],
+    'finance': ['finance money banking', 'business corporate office', 'trading stocks investment', 'success wealth rich'],
+    'wealth': ['wealth luxury rich', 'money cash success', 'mansion lifestyle luxurious', 'business success'],
+    'investment': ['investment trading stocks', 'money finance banking', 'business professional', 'success wealthy'],
+    'crypto': ['cryptocurrency bitcoin digital', 'technology trading', 'money finance digital', 'futuristic tech'],
+    'bitcoin': ['bitcoin cryptocurrency digital', 'technology trading money', 'digital futuristic', 'finance trading'],
+    
+    // Business
+    'business': ['business office corporate', 'professional meeting work', 'success entrepreneur', 'teamwork collaboration'],
+    'entrepreneur': ['entrepreneur startup business', 'success hustle work', 'office laptop working', 'motivation success'],
+    'startup': ['startup business office', 'technology innovation', 'teamwork meeting', 'entrepreneur success'],
+    'marketing': ['marketing business digital', 'social media phone', 'creative advertising', 'business strategy'],
+    
+    // Health/Fitness
+    'fitness': ['fitness gym workout', 'exercise training running', 'healthy lifestyle active', 'sports athletics'],
+    'health': ['health wellness lifestyle', 'fitness exercise gym', 'healthy food nutrition', 'nature peaceful'],
+    'gym': ['gym workout fitness', 'exercise weights training', 'athlete sports', 'motivation fitness'],
+    'workout': ['workout exercise fitness', 'gym training athlete', 'running sports active', 'healthy lifestyle'],
+    'diet': ['healthy food nutrition', 'cooking kitchen vegetables', 'lifestyle wellness', 'fitness health'],
+    
+    // Motivation/Success
+    'motivation': ['motivation success inspirational', 'sunrise nature mountains', 'running athlete champion', 'victory celebration'],
+    'success': ['success achievement celebration', 'business professional', 'motivation inspirational', 'luxury lifestyle'],
+    'mindset': ['meditation peaceful thinking', 'success motivation', 'sunrise morning', 'nature peaceful calm'],
+    'productivity': ['productivity office working', 'laptop computer work', 'time clock planning', 'success achievement'],
+    
+    // Lifestyle
+    'travel': ['travel vacation beach', 'airplane flying journey', 'adventure exploring nature', 'city urban tourism'],
+    'food': ['food cooking kitchen', 'restaurant delicious meal', 'chef cooking preparation', 'eating lifestyle'],
+    'fashion': ['fashion style clothing', 'shopping luxury boutique', 'model runway stylish', 'urban city street'],
+    'beauty': ['beauty skincare cosmetics', 'fashion style elegant', 'luxury lifestyle glamour', 'woman beautiful'],
+    
+    // Technology
+    'technology': ['technology digital computer', 'coding programming laptop', 'futuristic innovation', 'smartphone apps digital'],
+    'tech': ['technology computer digital', 'innovation futuristic', 'coding programming', 'smartphone mobile'],
+    'ai': ['artificial intelligence technology', 'futuristic digital', 'robot automation', 'technology innovation'],
+    'coding': ['coding programming laptop', 'technology computer developer', 'software digital', 'office work tech'],
+    
+    // Relationships
+    'love': ['love couple romance', 'relationship happiness together', 'wedding romantic', 'happy couple'],
+    'relationship': ['couple together love', 'happiness romantic', 'family home', 'friends together happy'],
+    'dating': ['dating couple romantic', 'love relationship', 'dinner restaurant', 'happy together'],
+    
+    // Nature/Calm
+    'nature': ['nature mountains landscape', 'forest trees green', 'ocean beach water', 'sunset peaceful'],
+    'peace': ['peaceful nature calm', 'meditation relaxing', 'ocean waves beach', 'sunrise morning'],
+    'meditation': ['meditation yoga peaceful', 'calm relaxing nature', 'zen mindfulness', 'peaceful quiet'],
+  };
+  
+  // Content type video suggestions
+  const CONTENT_TYPE_VIDEOS = {
+    'tips': ['professional advice helping', 'education learning knowledge', 'office laptop working'],
+    'facts': ['education documentary information', 'science technology data', 'research discovery'],
+    'quotes': ['inspirational sunrise nature', 'peaceful ocean mountains', 'motivation success'],
+    'story': ['cinematic storytelling narrative', 'emotional journey life', 'dramatic scene'],
+    'tutorial': ['tutorial learning demonstration', 'hands showing teaching', 'step by step guide'],
+    'motivation': ['motivation success champion', 'sunrise victory achievement', 'running athlete winner']
+  };
+  
+  const searchTerms = [];
+  
+  // Check if topic matches any known mappings
+  for (const [keyword, videos] of Object.entries(TOPIC_VIDEO_MAP)) {
+    if (cleanTopic.includes(keyword)) {
+      searchTerms.push(...videos);
+      break; // Found a match, use these terms
+    }
+  }
+  
+  // If no match found, use the topic directly with helpful additions
+  if (searchTerms.length === 0) {
+    // Use topic + generic visual terms
+    searchTerms.push(
+      `${cleanTopic} cinematic`,
+      `${cleanTopic} background`,
+      `${cleanTopic} lifestyle`,
+      `${cleanTopic} professional`
+    );
+  }
+  
+  // Add content type specific videos for variety
+  const contentVideos = CONTENT_TYPE_VIDEOS[contentType] || CONTENT_TYPE_VIDEOS['tips'];
+  searchTerms.push(...contentVideos);
+  
+  // Remove duplicates and return
+  return [...new Set(searchTerms)];
 }
 
 /**
