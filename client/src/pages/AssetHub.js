@@ -295,7 +295,14 @@ const AssetHub = () => {
                 {/* Preview */}
                 <div className="asset-preview" onClick={() => setPreviewAsset(asset)}>
                   {asset.type === 'video' ? (
-                    <video src={asset.url} muted />
+                    <>
+                      {asset.thumbnail ? (
+                        <img src={asset.thumbnail} alt={asset.name} className="video-thumbnail" />
+                      ) : (
+                        <video src={asset.url} muted preload="metadata" />
+                      )}
+                      <div className="video-play-icon">▶</div>
+                    </>
                   ) : asset.type === 'carousel' ? (
                     <div className="carousel-preview">
                       {asset.images?.slice(0, 3).map((img, i) => (

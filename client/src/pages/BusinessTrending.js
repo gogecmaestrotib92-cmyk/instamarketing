@@ -309,11 +309,21 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         // Save to Asset Hub
         try {
           const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
-          existingAssets.unshift({
-            ...result,
-            url: composedVideoUrl || data.audioUrl
-          });
+          // Asset Hub expects type: 'video' and a valid video URL
+          const assetToSave = {
+            id: result.id,
+            type: 'video', // Asset Hub recognizes: 'video', 'image', 'carousel'
+            name: result.name,
+            url: composedVideoUrl || bgVideoUrl || data.audioUrl, // Use composed video or background video
+            thumbnail: bgVideoUrl, // Use background video as thumbnail
+            caption: result.script?.substring(0, 100) + '...',
+            createdAt: result.createdAt,
+            tags: [contentType, 'voiceover', 'trending'],
+            metadata: result.metadata
+          };
+          existingAssets.unshift(assetToSave);
           localStorage.setItem('assetHub', JSON.stringify(existingAssets));
+          console.log('✅ Saved to Asset Hub:', assetToSave.name);
         } catch (saveError) {
           console.error('Failed to save to Asset Hub:', saveError);
         }
@@ -461,12 +471,22 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
       // Save to Asset Hub
       try {
         const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
-        existingAssets.unshift({
-          ...result,
-          url: composedVideoUrl || backgroundUrl || voiceoverData.audioUrl
-        });
+        // Asset Hub expects type: 'video' or 'image' and a valid URL
+        const isVideoAsset = composedVideoUrl || (backgroundType_used !== 'ai-images' && backgroundUrl);
+        const assetToSave = {
+          id: result.id,
+          type: isVideoAsset ? 'video' : 'image', // Asset Hub recognizes: 'video', 'image', 'carousel'
+          name: result.name,
+          url: composedVideoUrl || backgroundUrl || voiceoverData.audioUrl,
+          thumbnail: backgroundUrl, // Use background as thumbnail
+          caption: result.script?.substring(0, 100) + '...',
+          createdAt: result.createdAt,
+          tags: [contentType, 'voiceover', backgroundType_used],
+          metadata: result.metadata
+        };
+        existingAssets.unshift(assetToSave);
         localStorage.setItem('assetHub', JSON.stringify(existingAssets));
-        console.log('Saved to Asset Hub');
+        console.log('✅ Saved to Asset Hub:', assetToSave.name);
       } catch (saveError) {
         console.error('Failed to save to Asset Hub:', saveError);
       }
