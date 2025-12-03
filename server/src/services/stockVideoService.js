@@ -119,7 +119,11 @@ async function searchPexelsVideos(query, options = {}) {
       }
     });
 
+    console.log(`   Pexels response status: ${response.status}`);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.log(`   Pexels error response: ${errorText}`);
       throw new Error(`Pexels API error: ${response.status}`);
     }
 
@@ -373,25 +377,26 @@ async function getVideoClipsForDuration(topic, targetDuration = 30, options = {}
 
 /**
  * Curated list of generic looping background videos
- * Using Cloudinary-hosted videos for reliability
- * These serve as fallback when Pexels API is unavailable
- * NOTE: These should NOT be used - Pexels API should be configured!
+ * Using direct Pexels video URLs that are known to work
+ * These serve as fallback when Pexels API search returns empty
  */
 const CURATED_BACKGROUNDS = {
   abstract: [
-    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
+    { name: 'Abstract Particles', url: 'https://videos.pexels.com/video-files/3129671/3129671-sd_640_360_30fps.mp4', duration: 10 },
+    { name: 'Blue Motion', url: 'https://videos.pexels.com/video-files/852400/852400-sd_640_360_30fps.mp4', duration: 12 }
   ],
   nature: [
-    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
+    { name: 'Ocean Waves', url: 'https://videos.pexels.com/video-files/1093662/1093662-sd_640_360_30fps.mp4', duration: 15 },
+    { name: 'Forest', url: 'https://videos.pexels.com/video-files/857251/857251-sd_640_360_30fps.mp4', duration: 10 }
   ],
   urban: [
-    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
+    { name: 'City Lights', url: 'https://videos.pexels.com/video-files/1826896/1826896-sd_640_360_25fps.mp4', duration: 12 }
   ],
   tech: [
-    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
+    { name: 'Tech Abstract', url: 'https://videos.pexels.com/video-files/3129671/3129671-sd_640_360_30fps.mp4', duration: 10 }
   ],
   fitness: [
-    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
+    { name: 'Gym Workout', url: 'https://videos.pexels.com/video-files/4761440/4761440-sd_640_360_25fps.mp4', duration: 15 }
   ]
 };
 
