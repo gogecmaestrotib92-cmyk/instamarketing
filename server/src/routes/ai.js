@@ -3201,6 +3201,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
       contentType = 'tips',
       duration = 15,
       voiceStyle = 'energetic',
+      voiceId = null, // ElevenLabs voice ID
       subtitleStyle = 'sentence', // 'word', 'phrase', 'sentence'
       useSceneVideos = true, // Get different videos for each scene
       maxWordsPerSubtitle = 6
@@ -3214,6 +3215,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
     console.log(`   Topic: "${topic}"`);
     console.log(`   Content Type: ${contentType}`);
     console.log(`   Voice Style: ${voiceStyle}`);
+    console.log(`   Voice ID: ${voiceId || 'default'}`);
     console.log(`   Scene Videos: ${useSceneVideos}`);
 
     // STEP 1: Generate script WITH visual scene descriptions
@@ -3251,7 +3253,12 @@ router.post('/voiceover-video/generate', async (req, res) => {
 
     if (elevenlabsService && elevenlabsService.isAvailable()) {
       try {
-        voiceResult = await elevenlabsService.generateVoiceover(scriptResult.script, voiceStyle);
+        // Use specific voiceId if provided, otherwise use style preset
+        if (voiceId) {
+          voiceResult = await elevenlabsService.textToSpeech(scriptResult.script, { voiceId });
+        } else {
+          voiceResult = await elevenlabsService.generateVoiceover(scriptResult.script, voiceStyle);
+        }
         if (voiceResult.success) {
           ttsProvider = 'elevenlabs';
           console.log('   ✅ ElevenLabs voiceover generated');

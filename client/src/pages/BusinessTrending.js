@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX, FiFilm, FiAlertCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX, FiFilm, FiAlertCircle, FiVolume2 } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
 import './BusinessTrending.css';
 
@@ -14,6 +14,7 @@ const BusinessTrending = () => {
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [backgroundType, setBackgroundType] = useState('stock-video');
   const [selectedMedia, setSelectedMedia] = useState(null);
+  const [selectedVoice, setSelectedVoice] = useState('Rachel'); // ElevenLabs voice
   
   // Business Info from Business Hub
   const [businessInfo, setBusinessInfo] = useState(null);
@@ -83,17 +84,30 @@ const BusinessTrending = () => {
     { id: 'upload', label: 'Choose Media', icon: FiUpload, description: 'Upload your own' },
   ];
 
-  // Voice style mapping based on content type
+  // ElevenLabs voice options
+  const voiceOptions = [
+    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', style: 'conversational', emoji: '👩', description: 'Warm, friendly female' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'professional', emoji: '👩‍💼', description: 'Clear, professional female' },
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', style: 'narrator', emoji: '👨', description: 'Deep, authoritative male' },
+    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', style: 'energetic', emoji: '🎤', description: 'Energetic young female' },
+    { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', style: 'youthful', emoji: '👧', description: 'Youthful female - Gen Z' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', style: 'dynamic', emoji: '🧑', description: 'Dynamic young male' },
+    { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', style: 'dramatic', emoji: '🎭', description: 'Deep dramatic male' },
+    { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', style: 'luxury', emoji: '🎩', description: 'Deep, rich male - luxury' },
+    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', style: 'british', emoji: '🇬🇧', description: 'British male - sophisticated' },
+    { id: 'pqHfZKP75CvOlQylNhV4', name: 'Bill', style: 'trustworthy', emoji: '📖', description: 'Trustworthy male - documentary' },
+  ];
+
+  // Voice style mapping based on selected voice
   const getVoiceStyle = () => {
-    const styleMap = {
-      'tips': 'energetic',
-      'facts': 'professional',
-      'quotes': 'calm',
-      'story': 'storytelling',
-      'tutorial': 'educational',
-      'motivation': 'motivational'
-    };
-    return styleMap[contentType] || 'energetic';
+    const voice = voiceOptions.find(v => v.name === selectedVoice);
+    return voice?.style || 'energetic';
+  };
+  
+  // Get voice ID from name
+  const getVoiceId = () => {
+    const voice = voiceOptions.find(v => v.name === selectedVoice);
+    return voice?.id || '21m00Tcm4TlvDq8ikWAM'; // Default to Rachel
   };
 
   // Generate AI Advice based on user's topic and business info
@@ -224,6 +238,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
             contentType: contentType,
             duration: 15,
             voiceStyle: getVoiceStyle(),
+            voiceId: getVoiceId(), // ElevenLabs voice ID
             subtitleStyle: 'sentence',
             useSceneVideos: true, // Get different videos for each scene
             maxWordsPerSubtitle: 6
@@ -723,6 +738,22 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Voice Picker */}
+          <div className="setting-group voice-picker">
+            <label><FiVolume2 /> Voice</label>
+            <select 
+              value={selectedVoice} 
+              onChange={(e) => setSelectedVoice(e.target.value)}
+              className="voice-select"
+            >
+              {voiceOptions.map((voice) => (
+                <option key={voice.id} value={voice.name}>
+                  {voice.emoji} {voice.name} - {voice.description}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Generations */}
