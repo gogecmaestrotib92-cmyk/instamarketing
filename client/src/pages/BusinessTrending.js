@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic } from 'react-icons/fi';
+import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import './BusinessTrending.css';
 
@@ -17,6 +17,9 @@ const BusinessTrending = () => {
   
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState('');
+  const [generatedResult, setGeneratedResult] = useState(null);
+  const [generationError, setGenerationError] = useState(null);
 
   // Content types
   const contentTypes = [
@@ -54,24 +57,167 @@ const BusinessTrending = () => {
     { id: 'upload', label: 'Choose Media', icon: FiUpload, description: 'Upload your own' },
   ];
 
+  // Voice style mapping based on content type
+  const getVoiceStyle = () => {
+    const styleMap = {
+      'tips': 'energetic',
+      'facts': 'professional',
+      'quotes': 'calm',
+      'story': 'storytelling',
+      'tutorial': 'educational',
+      'motivation': 'motivational'
+    };
+    return styleMap[contentType] || 'energetic';
+  };
+
   const handleGenerate = async () => {
     if (!postTopic.trim()) return;
     
     setIsGenerating(true);
-    // TODO: Connect to actual video generation API
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    setIsGenerating(false);
+    setGenerationError(null);
+    setGeneratedResult(null);
     
-    // Navigate to results or show preview
-    console.log('Generating voiceover video:', {
-      contentType,
-      postTopic,
-      template: selectedTemplate,
-      generations: numGenerations,
-      aspectRatio,
-      backgroundType,
-      media: selectedMedia
-    });
+    try {
+      // Step 1: Generate script with voiceover
+      setGenerationStep('Generating script and voiceover...');
+      console.log('Step 1: Generating script and voiceover for:', postTopic);
+      
+      const voiceoverResponse = await fetch('/api/ai/full-voiceover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: `${contentType}: ${postTopic}`,
+          duration: 30,
+          voiceStyle: getVoiceStyle()
+        })
+      });
+      
+      const voiceoverData = await voiceoverResponse.json();
+      
+      if (!voiceoverResponse.ok || voiceoverData.error) {
+        throw new Error(voiceoverData.error || 'Failed to generate voiceover');
+      }
+      
+      console.log('Voiceover generated:', voiceoverData);
+
+      // Step 2: Generate background media
+      setGenerationStep('Generating background media...');
+      let backgroundUrl = null;
+      
+      if (backgroundType === 'ai-videos') {
+        // Generate AI video background
+        const videoPrompt = `Cinematic ${contentType} background, ${postTopic}, smooth motion, high quality, trending style`;
+        
+        const videoResponse = await fetch('/api/ai/video/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: videoPrompt,
+            numFrames: 24,
+            fps: 8
+          })
+        });
+        
+        const videoData = await videoResponse.json();
+        
+        if (videoData.success && videoData.videoUrl) {
+          backgroundUrl = videoData.videoUrl;
+          console.log('Video background generated:', backgroundUrl);
+        } else {
+          console.warn('Video generation failed, continuing without background');
+        }
+      } else if (backgroundType === 'ai-images') {
+        // Generate AI image background
+        const imagePrompt = `${contentType} themed background image for: ${postTopic}, high quality, social media style`;
+        
+        const imageResponse = await fetch('/api/ai/image/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: imagePrompt,
+            aspectRatio: aspectRatio
+          })
+        });
+        
+        const imageData = await imageResponse.json();
+        
+        if (imageData.success && imageData.imageUrl) {
+          backgroundUrl = imageData.imageUrl;
+          console.log('Image background generated:', backgroundUrl);
+        }
+      }
+
+      // Step 3: Prepare final result
+      setGenerationStep('Preparing your video...');
+      
+      const result = {
+        id: Date.now().toString(),
+        type: 'voiceover-video',
+        name: `Voiceover - ${postTopic.substring(0, 30)}${postTopic.length > 30 ? '...' : ''}`,
+        script: voiceoverData.script,
+        audioUrl: voiceoverData.audioUrl,
+        backgroundUrl: backgroundUrl,
+        template: selectedTemplate,
+        aspectRatio: aspectRatio,
+        contentType: contentType,
+        createdAt: new Date().toISOString(),
+        metadata: {
+          postTopic,
+          contentType,
+          template: selectedTemplate,
+          aspectRatio,
+          backgroundType
+        }
+      };
+      
+      setGeneratedResult(result);
+      
+      // Save to Asset Hub
+      try {
+        const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
+        existingAssets.unshift({
+          ...result,
+          url: backgroundUrl || voiceoverData.audioUrl
+        });
+        localStorage.setItem('assetHub', JSON.stringify(existingAssets));
+        console.log('Saved to Asset Hub');
+      } catch (saveError) {
+        console.error('Failed to save to Asset Hub:', saveError);
+      }
+      
+      setGenerationStep('');
+      console.log('Generation complete:', result);
+      
+    } catch (error) {
+      console.error('Generation error:', error);
+      setGenerationError(error.message || 'Failed to generate. Please try again.');
+      setGenerationStep('');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download error:', error);
+      window.open(url, '_blank');
+    }
+  };
+
+  const handleRegenerate = () => {
+    setGeneratedResult(null);
+    handleGenerate();
   };
 
   const incrementGenerations = () => {
@@ -261,6 +407,89 @@ const BusinessTrending = () => {
             )}
           </div>
 
+          {/* Error Message */}
+          {generationError && (
+            <div className="generation-error">
+              <span>⚠️ {generationError}</span>
+              <button onClick={() => setGenerationError(null)}>×</button>
+            </div>
+          )}
+
+          {/* Generation Progress */}
+          {isGenerating && generationStep && (
+            <div className="generation-progress">
+              <div className="progress-spinner"></div>
+              <span>{generationStep}</span>
+            </div>
+          )}
+
+          {/* Generated Result */}
+          {generatedResult && !isGenerating && (
+            <div className="generation-result">
+              <h3>🎉 Generation Complete!</h3>
+              
+              <div className="result-preview">
+                {generatedResult.backgroundUrl && (
+                  <div className="result-media">
+                    {backgroundType === 'ai-videos' ? (
+                      <video 
+                        src={generatedResult.backgroundUrl} 
+                        controls 
+                        autoPlay 
+                        loop 
+                        muted
+                      />
+                    ) : (
+                      <img src={generatedResult.backgroundUrl} alt="Generated background" />
+                    )}
+                  </div>
+                )}
+                
+                {generatedResult.audioUrl && (
+                  <div className="result-audio">
+                    <label>🎙️ Voiceover Audio:</label>
+                    <audio src={generatedResult.audioUrl} controls />
+                  </div>
+                )}
+                
+                {generatedResult.script && (
+                  <div className="result-script">
+                    <label>📝 Generated Script:</label>
+                    <p>{generatedResult.script}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="result-actions">
+                {generatedResult.audioUrl && (
+                  <button 
+                    className="btn-download"
+                    onClick={() => handleDownload(generatedResult.audioUrl, `voiceover-${Date.now()}.mp3`)}
+                  >
+                    <FiDownload />
+                    <span>Download Audio</span>
+                  </button>
+                )}
+                {generatedResult.backgroundUrl && (
+                  <button 
+                    className="btn-download"
+                    onClick={() => handleDownload(generatedResult.backgroundUrl, `background-${Date.now()}.${backgroundType === 'ai-videos' ? 'mp4' : 'png'}`)}
+                  >
+                    <FiDownload />
+                    <span>Download Background</span>
+                  </button>
+                )}
+                <button 
+                  className="btn-regenerate"
+                  onClick={handleRegenerate}
+                >
+                  <FiRefreshCw />
+                  <span>Regenerate</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Generate Button */}
           <div className="form-actions">
             <button 
@@ -271,12 +500,12 @@ const BusinessTrending = () => {
               {isGenerating ? (
                 <>
                   <div className="spinner"></div>
-                  <span>Generating...</span>
+                  <span>{generationStep || 'Generating...'}</span>
                 </>
               ) : (
                 <>
                   <FiPlay />
-                  <span>Generate Voiceover Video</span>
+                  <span>{generatedResult ? 'Generate Another' : 'Generate Voiceover Video'}</span>
                 </>
               )}
             </button>
