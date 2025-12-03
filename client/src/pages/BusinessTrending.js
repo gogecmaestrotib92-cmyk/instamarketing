@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw } from 'react-icons/fi';
+import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import './BusinessTrending.css';
 
@@ -14,6 +14,11 @@ const BusinessTrending = () => {
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [backgroundType, setBackgroundType] = useState('ai-videos');
   const [selectedMedia, setSelectedMedia] = useState(null);
+  
+  // AI Advice state
+  const [showAdvice, setShowAdvice] = useState(false);
+  const [aiAdvice, setAiAdvice] = useState([]);
+  const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
   
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -68,6 +73,76 @@ const BusinessTrending = () => {
       'motivation': 'motivational'
     };
     return styleMap[contentType] || 'energetic';
+  };
+
+  // Generate AI Advice based on user's topic
+  const generateAIAdvice = async () => {
+    setIsLoadingAdvice(true);
+    setShowAdvice(true);
+    
+    try {
+      const baseTopic = postTopic.trim() || 'viral content ideas';
+      const contentLabel = contentTypes.find(c => c.id === contentType)?.label || 'Tips';
+      
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Based on this video topic: "${baseTopic}" for ${contentLabel} content type.
+
+Generate 6 viral voiceover video script ideas. Each should be catchy, engaging, and perfect for Instagram/TikTok.
+
+For each suggestion, provide:
+1. A hook (attention-grabbing first line)
+2. Brief description of the content flow
+
+Format as JSON array:
+[
+  {
+    "title": "Short catchy title",
+    "hook": "The opening hook line",
+    "description": "Brief content flow description"
+  }
+]
+
+Focus on trending formats, emotional hooks, and viral potential. Make them specific to: ${baseTopic}`,
+          systemPrompt: 'You are a viral content strategist specializing in short-form video. Return ONLY valid JSON array, no markdown or extra text.'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.response) {
+        try {
+          // Clean and parse JSON response
+          let jsonStr = data.response.trim();
+          if (jsonStr.startsWith('```')) {
+            jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '');
+          }
+          const suggestions = JSON.parse(jsonStr);
+          setAiAdvice(suggestions);
+        } catch (parseError) {
+          console.error('Failed to parse AI advice:', parseError);
+          // Fallback suggestions
+          setAiAdvice([
+            { title: `${contentLabel}: ${baseTopic}`, hook: `Here's what nobody tells you about ${baseTopic}...`, description: 'Eye-opening insights that challenge common beliefs' },
+            { title: `3 ${baseTopic} secrets`, hook: `Stop scrolling! These 3 ${baseTopic} tips changed everything...`, description: 'Quick, actionable tips with visual examples' },
+            { title: `${baseTopic} mistakes`, hook: `You're making these ${baseTopic} mistakes every day...`, description: 'Common errors and how to fix them instantly' },
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error('AI advice error:', error);
+      setAiAdvice([]);
+    } finally {
+      setIsLoadingAdvice(false);
+    }
+  };
+
+  // Apply AI suggestion
+  const applyAdviceSuggestion = (suggestion) => {
+    setPostTopic(`${suggestion.hook} ${suggestion.description}`);
+    setShowAdvice(false);
   };
 
   const handleGenerate = async () => {
@@ -305,9 +380,50 @@ const BusinessTrending = () => {
               rows={5}
             />
             <div className="textarea-footer">
+              <button 
+                className="ai-advice-btn"
+                onClick={generateAIAdvice}
+                disabled={isLoadingAdvice}
+              >
+                <FiZap />
+                <span>AI Advice</span>
+              </button>
               <span className="char-count">{postTopic.length}/500</span>
             </div>
           </div>
+
+          {/* AI Advice Panel */}
+          {showAdvice && (
+            <div className="ai-advice-panel">
+              <div className="advice-header">
+                <h4><FiZap /> AI Suggestions</h4>
+                <button className="close-advice" onClick={() => setShowAdvice(false)}>
+                  <FiX />
+                </button>
+              </div>
+              
+              {isLoadingAdvice ? (
+                <div className="advice-loading">
+                  <div className="advice-spinner"></div>
+                  <span>Generating viral ideas...</span>
+                </div>
+              ) : (
+                <div className="advice-grid">
+                  {aiAdvice.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      className="advice-card"
+                      onClick={() => applyAdviceSuggestion(suggestion)}
+                    >
+                      <span className="advice-title">{suggestion.title}</span>
+                      <span className="advice-hook">"{suggestion.hook}"</span>
+                      <span className="advice-desc">{suggestion.description}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           
           {/* Content Type Pills */}
           <div className="content-pills">
