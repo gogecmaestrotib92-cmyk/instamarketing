@@ -368,21 +368,23 @@ async function getVideoClipsForDuration(topic, targetDuration = 30, options = {}
  * Curated list of generic looping background videos
  * Using Cloudinary-hosted videos for reliability
  * These serve as fallback when Pexels API is unavailable
+ * NOTE: These should NOT be used - Pexels API should be configured!
  */
 const CURATED_BACKGROUNDS = {
   abstract: [
-    { name: 'Abstract Blue', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle', duration: 15 },
-    { name: 'Gradient Flow', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/elephants', duration: 12 }
+    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
   ],
   nature: [
-    { name: 'Ocean Waves', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle', duration: 15 },
-    { name: 'Elephants', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/elephants', duration: 12 }
+    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
   ],
   urban: [
-    { name: 'City Scene', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/elephants', duration: 12 }
+    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
   ],
   tech: [
-    { name: 'Tech Abstract', url: 'https://res.cloudinary.com/demo/video/upload/v1/samples/sea-turtle', duration: 15 }
+    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
+  ],
+  fitness: [
+    { name: 'Abstract Motion', url: 'https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e282f6b0a82a8a7a5d2e2e0f9ffc', duration: 15 }
   ]
 };
 
