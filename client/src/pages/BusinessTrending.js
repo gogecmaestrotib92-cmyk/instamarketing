@@ -779,17 +779,27 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         {generatedResult && !isGenerating && (
           <div className="generation-result">
             <div className="result-header">
-              <h3>🎉 Generated!</h3>
+              {generatedResult.composedVideoUrl ? (
+                <h3>🎉 Video Ready!</h3>
+              ) : (
+                <h3>⏳ Rendering...</h3>
+              )}
               <span className="tts-provider">
                 {generatedResult.ttsProvider || 'AI'}
                 {generatedResult.ttsProvider === 'ElevenLabs' && <span className="premium-tag">PRO</span>}
               </span>
             </div>
             
-            {/* Tip for users */}
-            {generatedResult.instructions && (
-              <div className="result-tip">
-                {generatedResult.instructions}
+            {/* Status message */}
+            {!generatedResult.composedVideoUrl && (
+              <div className="result-tip warning">
+                ⏳ Video is still rendering. This can take 1-2 minutes. Refresh to check status or download the audio now.
+              </div>
+            )}
+            
+            {generatedResult.composedVideoUrl && (
+              <div className="result-tip success">
+                ✅ Your video is ready! Subtitles are synced with voiceover.
               </div>
             )}
             
@@ -805,20 +815,21 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
                     loop
                     playsInline
                   />
-                  <span className="media-label">📹 Full Composed Video</span>
+                  <span className="media-label">📹 Full Video with Subtitles</span>
                 </div>
-              ) : generatedResult.backgroundUrl && (
-                <div className="result-media">
-                  <img src={generatedResult.backgroundUrl} alt="Generated background" />
-                  <span className="media-label">🖼️ Background Image</span>
-                </div>
-              )}
-              
-              {/* Only show separate audio if no composed video */}
-              {generatedResult.audioUrl && !generatedResult.composedVideoUrl && (
-                <div className="result-audio">
-                  <label>🎙️ Voiceover</label>
-                  <audio src={generatedResult.audioUrl} controls />
+              ) : (
+                /* Show audio player while video is rendering */
+                <div className="result-rendering">
+                  <div className="rendering-animation">
+                    <div className="rendering-spinner"></div>
+                    <span>Video rendering in progress...</span>
+                  </div>
+                  {generatedResult.audioUrl && (
+                    <div className="result-audio">
+                      <label>🎙️ Voiceover (ready)</label>
+                      <audio src={generatedResult.audioUrl} controls />
+                    </div>
+                  )}
                 </div>
               )}
               
@@ -834,17 +845,12 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
               {/* Show video download if composed video available */}
               {generatedResult.composedVideoUrl && (
                 <button className="btn-action download primary" onClick={() => handleDownload(generatedResult.composedVideoUrl, `voiceover-video-${Date.now()}.mp4`)}>
-                  <FiDownload /> Video
+                  <FiDownload /> Download Video
                 </button>
               )}
               {generatedResult.audioUrl && (
                 <button className="btn-action download" onClick={() => handleDownload(generatedResult.audioUrl, `voiceover-${Date.now()}.mp3`)}>
                   <FiDownload /> Audio
-                </button>
-              )}
-              {generatedResult.backgroundUrl && !generatedResult.composedVideoUrl && (
-                <button className="btn-action download" onClick={() => handleDownload(generatedResult.backgroundUrl, `background-${Date.now()}.png`)}>
-                  <FiDownload /> Image
                 </button>
               )}
               <button className="btn-action secondary" onClick={handleRegenerate}>
