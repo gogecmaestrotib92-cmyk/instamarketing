@@ -10,7 +10,9 @@
  */
 
 // Read API keys at runtime (not module load time) for Vercel compatibility
-const getPexelsKey = () => process.env.PEXELS_API_KEY;
+// Fallback to hardcoded key if env variable not set
+const PEXELS_HARDCODED_KEY = '9kV0qJ9k1b1Ou9BTGXFDPyFrqjU4oqGsuJ0tbzor5r2O942zz6WMyIyl';
+const getPexelsKey = () => process.env.PEXELS_API_KEY || PEXELS_HARDCODED_KEY;
 const getPixabayKey = () => process.env.PIXABAY_API_KEY;
 
 // Popular categories for vertical videos
