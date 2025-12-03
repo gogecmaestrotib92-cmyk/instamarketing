@@ -3059,4 +3059,306 @@ router.post('/autopilot/v2/stop', (req, res) => {
   });
 });
 
+// ==================== Stock Video Routes ====================
+
+// Import stock video service
+let stockVideoService = null;
+try {
+  stockVideoService = require('../services/stockVideoService');
+  console.log('✅ Stock video service loaded');
+} catch (e) {
+  console.log('Stock video service not available:', e.message);
+}
+
+/**
+ * Search stock videos from Pexels and Pixabay
+ * POST /api/ai/stock-video/search
+ */
+router.post('/stock-video/search', async (req, res) => {
+  try {
+    if (!stockVideoService) {
+      return res.status(500).json({ error: 'Stock video service not available' });
+    }
+
+    const { query, contentType, orientation = 'portrait', perPage = 10 } = req.body;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    console.log(`🎬 Stock video search: "${query}" (${contentType})`);
+
+    const videos = await stockVideoService.searchStockVideos(query, {
+      orientation,
+      perPage,
+      minDuration: 5,
+      maxDuration: 60
+    });
+
+    res.json({
+      success: true,
+      videos,
+      count: videos.length
+    });
+  } catch (error) {
+    console.error('Stock video search error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get a random stock video for a topic
+ * POST /api/ai/stock-video/random
+ */
+router.post('/stock-video/random', async (req, res) => {
+  try {
+    if (!stockVideoService) {
+      return res.status(500).json({ error: 'Stock video service not available' });
+    }
+
+    const { topic, contentType = 'default' } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+
+    console.log(`🎬 Getting random stock video for: "${topic}" (${contentType})`);
+
+    const video = await stockVideoService.getRandomStockVideo(topic, contentType);
+
+    if (!video) {
+      return res.status(404).json({ error: 'No suitable videos found' });
+    }
+
+    res.json({
+      success: true,
+      video
+    });
+  } catch (error) {
+    console.error('Random stock video error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get stock video clips for a target duration (for stitching)
+ * POST /api/ai/stock-video/clips
+ */
+router.post('/stock-video/clips', async (req, res) => {
+  try {
+    if (!stockVideoService) {
+      return res.status(500).json({ error: 'Stock video service not available' });
+    }
+
+    const { topic, targetDuration = 30, contentType = 'default' } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+
+    console.log(`🎬 Getting clips for ${targetDuration}s video on: "${topic}"`);
+
+    const clips = await stockVideoService.getVideoClipsForDuration(topic, targetDuration, {
+      contentType
+    });
+
+    res.json({
+      success: true,
+      clips,
+      totalDuration: clips.reduce((sum, c) => sum + c.useDuration, 0)
+    });
+  } catch (error) {
+    console.error('Stock video clips error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Compose video with audio using Shotstack
+ * Loops the video to match audio duration
+ * POST /api/ai/compose-video
+ */
+router.post('/compose-video', async (req, res) => {
+  try {
+    if (!shotstackClient) {
+      return res.status(500).json({ error: 'Shotstack service not available' });
+    }
+
+    let { videoUrl, audioUrl, audioDuration, subtitles = [], soundEffects = [] } = req.body;
+
+    if (!videoUrl) {
+      return res.status(400).json({ error: 'Video URL is required' });
+    }
+
+    console.log('🎬 Composing video with Shotstack...');
+    console.log('   Video:', videoUrl);
+    console.log('   Audio:', audioUrl || 'none');
+    console.log('   Duration:', audioDuration || 'auto');
+    console.log('   Subtitles:', subtitles.length);
+
+    // Upload video to Cloudinary if it's a temporary URL
+    if (cloudinaryUpload && (videoUrl.includes('replicate.delivery') || videoUrl.includes('pexels.com') || videoUrl.includes('pixabay.com'))) {
+      console.log('📤 Uploading video to Cloudinary for persistent URL...');
+      try {
+        const videoResponse = await fetch(videoUrl);
+        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+        const uploadResult = await cloudinaryUpload(videoBuffer, {
+          folder: 'instamarketing/composed',
+          resource_type: 'video'
+        });
+        if (uploadResult.success) {
+          videoUrl = uploadResult.url;
+          console.log('✅ Video uploaded:', videoUrl);
+        }
+      } catch (uploadErr) {
+        console.error('⚠️ Video upload failed:', uploadErr.message);
+      }
+    }
+
+    // Upload audio to Cloudinary if needed
+    if (cloudinaryUpload && audioUrl && audioUrl.includes('replicate.delivery')) {
+      console.log('📤 Uploading audio to Cloudinary...');
+      try {
+        const audioResponse = await fetch(audioUrl);
+        const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+        const uploadResult = await cloudinaryUpload(audioBuffer, {
+          folder: 'instamarketing/audio',
+          resource_type: 'video'
+        });
+        if (uploadResult.success) {
+          audioUrl = uploadResult.url;
+          console.log('✅ Audio uploaded:', audioUrl);
+        }
+      } catch (uploadErr) {
+        console.error('⚠️ Audio upload failed:', uploadErr.message);
+      }
+    }
+
+    // Create Shotstack render with looping support
+    const jobResult = await shotstackClient.createShotstackRender(
+      videoUrl,
+      audioUrl,
+      subtitles,
+      {
+        duration: audioDuration || 30,
+        musicVolume: 1,
+        videoVolume: 0, // Mute original video
+        soundEffects,
+        loopVideo: true // Enable video looping
+      }
+    );
+
+    if (jobResult.success && jobResult.jobId) {
+      console.log('✅ Shotstack job started:', jobResult.jobId);
+      res.json({
+        success: true,
+        jobId: jobResult.jobId,
+        message: 'Video composition started'
+      });
+    } else {
+      throw new Error('Failed to start Shotstack render');
+    }
+  } catch (error) {
+    console.error('Compose video error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Compose video with multiple clips stitched together
+ * POST /api/ai/compose-video/multi-clip
+ */
+router.post('/compose-video/multi-clip', async (req, res) => {
+  try {
+    if (!shotstackClient) {
+      return res.status(500).json({ error: 'Shotstack service not available' });
+    }
+
+    const { clips, audioUrl, audioDuration, subtitles = [] } = req.body;
+
+    if (!clips || !Array.isArray(clips) || clips.length === 0) {
+      return res.status(400).json({ error: 'At least one video clip is required' });
+    }
+
+    console.log(`🎬 Composing multi-clip video (${clips.length} clips)...`);
+
+    // Upload all clips to Cloudinary for persistent URLs
+    const uploadedClips = [];
+    for (const clip of clips) {
+      let url = clip.url;
+      
+      if (cloudinaryUpload && (url.includes('pexels.com') || url.includes('pixabay.com'))) {
+        try {
+          const response = await fetch(url);
+          const buffer = Buffer.from(await response.arrayBuffer());
+          const result = await cloudinaryUpload(buffer, {
+            folder: 'instamarketing/clips',
+            resource_type: 'video'
+          });
+          if (result.success) {
+            url = result.url;
+          }
+        } catch (e) {
+          console.error('Clip upload failed:', e.message);
+        }
+      }
+
+      uploadedClips.push({
+        ...clip,
+        url
+      });
+    }
+
+    // Build multi-clip timeline
+    const jobResult = await shotstackClient.createMultiClipRender(
+      uploadedClips,
+      audioUrl,
+      subtitles,
+      { duration: audioDuration }
+    );
+
+    if (jobResult.success && jobResult.jobId) {
+      console.log('✅ Multi-clip job started:', jobResult.jobId);
+      res.json({
+        success: true,
+        jobId: jobResult.jobId,
+        message: 'Multi-clip video composition started'
+      });
+    } else {
+      throw new Error('Failed to start multi-clip render');
+    }
+  } catch (error) {
+    console.error('Multi-clip compose error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Check Shotstack render status
+ * GET /api/ai/compose-video/status/:jobId
+ */
+router.get('/compose-video/status/:jobId', async (req, res) => {
+  try {
+    if (!shotstackClient) {
+      return res.status(500).json({ error: 'Shotstack service not available' });
+    }
+
+    const { jobId } = req.params;
+
+    if (!jobId) {
+      return res.status(400).json({ error: 'Job ID is required' });
+    }
+
+    const status = await shotstackClient.getRenderStatus(jobId);
+
+    res.json({
+      success: true,
+      ...status
+    });
+  } catch (error) {
+    console.error('Compose status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

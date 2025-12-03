@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX } from 'react-icons/fi';
+import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX, FiFilm } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import './BusinessTrending.css';
 
@@ -12,7 +12,7 @@ const BusinessTrending = () => {
   const [selectedTemplate, setSelectedTemplate] = useState('viral-karaoke');
   const [numGenerations, setNumGenerations] = useState(1);
   const [aspectRatio, setAspectRatio] = useState('9:16');
-  const [backgroundType, setBackgroundType] = useState('ai-videos');
+  const [backgroundType, setBackgroundType] = useState('stock-video');
   const [selectedMedia, setSelectedMedia] = useState(null);
   
   // AI Advice state
@@ -57,8 +57,9 @@ const BusinessTrending = () => {
 
   // Background types
   const backgroundTypes = [
-    { id: 'ai-videos', label: 'AI Videos', icon: FiVideo, description: 'AI-generated backgrounds' },
+    { id: 'stock-video', label: 'Stock Videos', icon: FiFilm, description: 'Pexels/Pixabay loops', recommended: true },
     { id: 'ai-images', label: 'AI Images', icon: FiImage, description: 'AI-generated images' },
+    { id: 'ai-videos', label: 'AI Videos', icon: FiVideo, description: 'Short AI clips (~5s)' },
     { id: 'upload', label: 'Choose Media', icon: FiUpload, description: 'Upload your own' },
   ];
 
@@ -112,7 +113,8 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
 
       const data = await response.json();
       
-      if (data.success && data.response) {
+      // Server returns { response: "..." } without success field
+      if (data.response) {
         try {
           // Clean and parse JSON response
           let jsonStr = data.response.trim();
@@ -123,17 +125,37 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           setAiAdvice(suggestions);
         } catch (parseError) {
           console.error('Failed to parse AI advice:', parseError);
-          // Fallback suggestions
+          // Fallback suggestions based on topic
           setAiAdvice([
             { title: `${contentLabel}: ${baseTopic}`, hook: `Here's what nobody tells you about ${baseTopic}...`, description: 'Eye-opening insights that challenge common beliefs' },
             { title: `3 ${baseTopic} secrets`, hook: `Stop scrolling! These 3 ${baseTopic} tips changed everything...`, description: 'Quick, actionable tips with visual examples' },
             { title: `${baseTopic} mistakes`, hook: `You're making these ${baseTopic} mistakes every day...`, description: 'Common errors and how to fix them instantly' },
+            { title: `The truth about ${baseTopic}`, hook: `I tested this for 30 days and here's what happened...`, description: 'Personal experience story with real results' },
+            { title: `${baseTopic} in 60 seconds`, hook: `Everything you need to know about ${baseTopic}...`, description: 'Fast-paced informative breakdown' },
+            { title: `Why ${baseTopic} matters`, hook: `This changed my perspective on ${baseTopic}...`, description: 'Emotional hook with valuable insights' },
           ]);
         }
+      } else if (data.error) {
+        console.error('AI advice API error:', data.error);
+        // Show fallback suggestions on API error
+        setAiAdvice([
+          { title: `${contentLabel}: ${baseTopic}`, hook: `Here's what nobody tells you about ${baseTopic}...`, description: 'Eye-opening insights that challenge common beliefs' },
+          { title: `3 ${baseTopic} secrets`, hook: `Stop scrolling! These 3 ${baseTopic} tips changed everything...`, description: 'Quick, actionable tips with visual examples' },
+          { title: `${baseTopic} mistakes`, hook: `You're making these ${baseTopic} mistakes every day...`, description: 'Common errors and how to fix them instantly' },
+          { title: `The truth about ${baseTopic}`, hook: `I tested this for 30 days and here's what happened...`, description: 'Personal experience story with real results' },
+          { title: `${baseTopic} in 60 seconds`, hook: `Everything you need to know about ${baseTopic}...`, description: 'Fast-paced informative breakdown' },
+          { title: `Why ${baseTopic} matters`, hook: `This changed my perspective on ${baseTopic}...`, description: 'Emotional hook with valuable insights' },
+        ]);
       }
     } catch (error) {
       console.error('AI advice error:', error);
-      setAiAdvice([]);
+      // Show fallback on network error
+      const baseTopic = postTopic.trim() || 'viral content';
+      setAiAdvice([
+        { title: `Viral Tips`, hook: `Here's what nobody tells you about ${baseTopic}...`, description: 'Eye-opening insights' },
+        { title: `3 Secrets`, hook: `Stop scrolling! These tips changed everything...`, description: 'Quick, actionable tips' },
+        { title: `Common Mistakes`, hook: `You're making these mistakes every day...`, description: 'Common errors and fixes' },
+      ]);
     } finally {
       setIsLoadingAdvice(false);
     }
@@ -211,8 +233,82 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
       setGenerationStep('Creating background visual...');
       let backgroundUrl = null;
       let backgroundType_used = backgroundType;
+      let composedVideoUrl = null;
+      let compositionJobId = null;
+      let stockVideoData = null;
       
-      if (backgroundType === 'ai-images') {
+      if (backgroundType === 'stock-video') {
+        // Search for stock video that matches the topic
+        setGenerationStep('Finding matching stock video...');
+        
+        const stockResponse = await fetch('/api/ai/stock-video/random', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: postTopic,
+            contentType: contentType
+          })
+        });
+        
+        const stockData = await stockResponse.json();
+        
+        if (stockData.success && stockData.video) {
+          stockVideoData = stockData.video;
+          backgroundUrl = stockData.video.url;
+          console.log('✅ Stock video found:', stockData.video);
+          
+          // Start Shotstack composition with video looping to match audio
+          setGenerationStep('Composing video with voiceover...');
+          
+          const composeResponse = await fetch('/api/ai/compose-video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              videoUrl: backgroundUrl,
+              audioUrl: voiceoverData.audioUrl,
+              audioDuration: voiceoverData.duration || 30,
+              subtitles: [] // Could add auto-generated subtitles here
+            })
+          });
+          
+          const composeData = await composeResponse.json();
+          
+          if (composeData.success && composeData.jobId) {
+            compositionJobId = composeData.jobId;
+            console.log('✅ Video composition started:', compositionJobId);
+            
+            // Poll for composition status
+            setGenerationStep('Rendering video (this may take a minute)...');
+            
+            let attempts = 0;
+            const maxAttempts = 60; // 5 minutes max
+            
+            while (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+              
+              const statusResponse = await fetch(`/api/ai/compose-video/status/${compositionJobId}`);
+              const statusData = await statusResponse.json();
+              
+              if (statusData.status === 'done' && statusData.url) {
+                composedVideoUrl = statusData.url;
+                console.log('✅ Video composed:', composedVideoUrl);
+                break;
+              } else if (statusData.status === 'failed') {
+                console.error('❌ Video composition failed:', statusData.error);
+                break;
+              }
+              
+              attempts++;
+              setGenerationStep(`Rendering video... ${Math.round((statusData.progress || 0))}%`);
+            }
+          }
+        } else {
+          console.warn('No stock video found, falling back to AI image');
+          backgroundType_used = 'ai-images';
+        }
+      }
+      
+      if (backgroundType === 'ai-images' || (backgroundType === 'stock-video' && !backgroundUrl)) {
         // Generate AI image - this works well as a static background
         const imagePrompt = `${contentType} aesthetic background, ${postTopic}, minimalist, high quality, gradient, social media style, 9:16 vertical`;
         
@@ -229,11 +325,11 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         
         if (imageData.success && imageData.imageUrl) {
           backgroundUrl = imageData.imageUrl;
+          backgroundType_used = 'ai-images';
           console.log('✅ Image background generated:', backgroundUrl);
         }
       } else if (backgroundType === 'ai-videos') {
         // For now, generate an AI image instead since AI video is too short
-        // In production, you'd use stock video APIs like Pexels or pre-made loops
         setGenerationStep('Creating visual background...');
         
         const imagePrompt = `Cinematic ${contentType} scene, ${postTopic}, dramatic lighting, trending aesthetic, vertical composition`;
@@ -266,6 +362,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         script: voiceoverData.script,
         audioUrl: voiceoverData.audioUrl,
         backgroundUrl: backgroundUrl,
+        composedVideoUrl: composedVideoUrl, // Full composed video if available
         backgroundType: backgroundType_used,
         template: selectedTemplate,
         aspectRatio: aspectRatio,
@@ -277,12 +374,15 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           contentType,
           template: selectedTemplate,
           aspectRatio,
-          backgroundType: backgroundType_used
+          backgroundType: backgroundType_used,
+          stockVideo: stockVideoData
         },
         // Instructions for user
-        instructions: backgroundType === 'ai-videos' 
-          ? '💡 Tip: AI-generated videos are only ~5 seconds. For longer videos, use a video editor to loop the background or add stock footage, then overlay your voiceover.'
-          : null
+        instructions: composedVideoUrl 
+          ? '✅ Your video is ready! Audio and video have been combined.'
+          : (backgroundType === 'ai-videos' 
+            ? '💡 Tip: AI-generated videos are only ~5 seconds. For longer videos, use a video editor to loop the background or add stock footage, then overlay your voiceover.'
+            : null)
       };
       
       setGeneratedResult(result);
@@ -292,7 +392,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
         existingAssets.unshift({
           ...result,
-          url: backgroundUrl || voiceoverData.audioUrl
+          url: composedVideoUrl || backgroundUrl || voiceoverData.audioUrl
         });
         localStorage.setItem('assetHub', JSON.stringify(existingAssets));
         console.log('Saved to Asset Hub');
@@ -488,11 +588,12 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
               {backgroundTypes.map((bg) => (
                 <button
                   key={bg.id}
-                  className={`bg-pill ${backgroundType === bg.id ? 'active' : ''}`}
+                  className={`bg-pill ${backgroundType === bg.id ? 'active' : ''} ${bg.recommended ? 'recommended' : ''}`}
                   onClick={() => setBackgroundType(bg.id)}
                   title={bg.description}
                 >
                   <bg.icon />
+                  {bg.recommended && <span className="rec-dot"></span>}
                 </button>
               ))}
             </div>
@@ -574,13 +675,28 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
             )}
             
             <div className="result-content">
-              {generatedResult.backgroundUrl && (
+              {/* Show composed video if available */}
+              {generatedResult.composedVideoUrl ? (
+                <div className="result-media composed-video">
+                  <video 
+                    src={generatedResult.composedVideoUrl} 
+                    controls 
+                    autoPlay 
+                    muted
+                    loop
+                    playsInline
+                  />
+                  <span className="media-label">📹 Full Composed Video</span>
+                </div>
+              ) : generatedResult.backgroundUrl && (
                 <div className="result-media">
                   <img src={generatedResult.backgroundUrl} alt="Generated background" />
+                  <span className="media-label">🖼️ Background Image</span>
                 </div>
               )}
               
-              {generatedResult.audioUrl && (
+              {/* Only show separate audio if no composed video */}
+              {generatedResult.audioUrl && !generatedResult.composedVideoUrl && (
                 <div className="result-audio">
                   <label>🎙️ Voiceover</label>
                   <audio src={generatedResult.audioUrl} controls />
@@ -596,12 +712,18 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
             </div>
             
             <div className="result-actions">
+              {/* Show video download if composed video available */}
+              {generatedResult.composedVideoUrl && (
+                <button className="btn-action download primary" onClick={() => handleDownload(generatedResult.composedVideoUrl, `voiceover-video-${Date.now()}.mp4`)}>
+                  <FiDownload /> Video
+                </button>
+              )}
               {generatedResult.audioUrl && (
                 <button className="btn-action download" onClick={() => handleDownload(generatedResult.audioUrl, `voiceover-${Date.now()}.mp3`)}>
                   <FiDownload /> Audio
                 </button>
               )}
-              {generatedResult.backgroundUrl && (
+              {generatedResult.backgroundUrl && !generatedResult.composedVideoUrl && (
                 <button className="btn-action download" onClick={() => handleDownload(generatedResult.backgroundUrl, `background-${Date.now()}.png`)}>
                   <FiDownload /> Image
                 </button>

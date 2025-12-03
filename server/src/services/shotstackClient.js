@@ -43,7 +43,9 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
     musicVolume = 1,
     fps = 25,
     resolution = 'hd', // hd = 1080p
-    soundEffects = [] // Array of {url, startTime, name}
+    soundEffects = [], // Array of {url, startTime, name}
+    loopVideo = false, // Loop video to match audio duration
+    videoDurationOriginal = null // Original video duration for looping calculation
   } = options;
 
   // Calculate duration from subtitles if not provided
@@ -187,23 +189,55 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
   }
   
   // Track 2: Main video (BOTTOM layer - added LAST!)
-  tracks.push({
-    clips: [
-      {
+  // If loopVideo is true, we create multiple video clips to cover the full duration
+  const videoClips = [];
+  
+  if (loopVideo && videoDurationOriginal && videoDurationOriginal < videoDuration) {
+    // Calculate how many loops we need
+    const loopsNeeded = Math.ceil(videoDuration / videoDurationOriginal);
+    console.log(`   🔄 Looping video ${loopsNeeded} times (original: ${videoDurationOriginal}s, target: ${videoDuration}s)`);
+    
+    let currentStart = 0;
+    for (let i = 0; i < loopsNeeded; i++) {
+      const remainingDuration = videoDuration - currentStart;
+      const clipLength = Math.min(videoDurationOriginal, remainingDuration);
+      
+      videoClips.push({
         asset: {
           type: 'video',
           src: videoUrl,
-          volume: videoVolume
+          volume: videoVolume,
+          trim: 0 // Start from beginning of source video
         },
-        start: 0,
-        length: videoDuration,
-        fit: 'cover', // Cover entire frame, crop if needed
+        start: currentStart,
+        length: clipLength,
+        fit: 'cover',
         scale: 1,
-        position: 'center'
-      }
-    ]
-  });
-  console.log(`   📊 Added video track as track ${tracks.length} (BOTTOM layer - last in array)`);
+        position: 'center',
+        // Add crossfade between loops for smoother transition
+        transition: i > 0 ? { in: 'fade' } : undefined
+      });
+      
+      currentStart += clipLength;
+    }
+  } else {
+    // Single video clip (original behavior)
+    videoClips.push({
+      asset: {
+        type: 'video',
+        src: videoUrl,
+        volume: videoVolume
+      },
+      start: 0,
+      length: videoDuration,
+      fit: 'cover', // Cover entire frame, crop if needed
+      scale: 1,
+      position: 'center'
+    });
+  }
+  
+  tracks.push({ clips: videoClips });
+  console.log(`   📊 Added video track with ${videoClips.length} clip(s) as track ${tracks.length} (BOTTOM layer)`);
   
   // Track 3: Sound effects (audio clips)
   if (soundEffects && soundEffects.length > 0) {
@@ -583,6 +617,177 @@ module.exports = {
   pollRenderStatus,
   renderVideo,
   buildTimeline,
+  buildMultiClipTimeline,
+  createMultiClipRender,
   DEFAULT_SUBTITLE_STYLE,
   VERTICAL_REEL_TEMPLATE
 };
+
+/**
+ * Build a timeline with multiple video clips stitched together
+ * Perfect for creating longer videos from multiple short stock clips
+ * 
+ * @param {Array} clips - Array of {url, useDuration, startAt}
+ * @param {string} audioUrl - Background audio URL
+ * @param {Array} subtitles - Subtitle array
+ * @param {Object} options - Additional options
+ * @returns {Object} Shotstack timeline
+ */
+function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
+  const {
+    subtitleStyle = DEFAULT_SUBTITLE_STYLE,
+    videoVolume = 0,
+    musicVolume = 1,
+    fps = 25
+  } = options;
+
+  // Calculate total duration from clips
+  const totalDuration = clips.reduce((sum, clip) => sum + (clip.useDuration || clip.duration || 10), 0);
+  
+  console.log(`🎬 Building multi-clip timeline: ${clips.length} clips, ${totalDuration}s total`);
+
+  const tracks = [];
+  
+  // Build subtitle clips (same as single video)
+  let subtitleClips = [];
+  if (subtitles && subtitles.length > 0) {
+    const validSubtitles = subtitles.filter(sub => 
+      sub.text && sub.text.trim() !== '' && 
+      typeof sub.start === 'number' && 
+      typeof sub.end === 'number' && 
+      sub.end > sub.start
+    );
+
+    if (validSubtitles.length > 0) {
+      subtitleClips = validSubtitles.map((subtitle, index) => ({
+        asset: {
+          type: 'title',
+          text: subtitle.text.toUpperCase(),
+          style: 'chunk',
+          size: 'medium',
+          color: '#ffffff'
+        },
+        start: subtitle.start,
+        length: Math.max(0.1, subtitle.end - subtitle.start),
+        position: 'center',
+        offset: { x: 0, y: -0.35 },
+        transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
+      }));
+
+      tracks.push({ clips: subtitleClips });
+    }
+  }
+
+  // Build video clips track - clips play sequentially
+  let currentStart = 0;
+  const videoClips = clips.map((clip, index) => {
+    const clipDuration = clip.useDuration || clip.duration || 10;
+    const startAt = clip.startAt || 0;
+    
+    const videoClip = {
+      asset: {
+        type: 'video',
+        src: clip.url,
+        volume: videoVolume,
+        trim: startAt // Start from this point in source video
+      },
+      start: currentStart,
+      length: clipDuration,
+      fit: 'cover',
+      scale: 1,
+      position: 'center',
+      // Smooth transition between clips
+      transition: index > 0 ? { in: 'fade' } : undefined
+    };
+
+    currentStart += clipDuration;
+    return videoClip;
+  });
+
+  tracks.push({ clips: videoClips });
+  console.log(`   📊 Added ${videoClips.length} video clips to timeline`);
+
+  // Build soundtrack
+  let soundtrack = null;
+  if (audioUrl) {
+    soundtrack = {
+      src: audioUrl,
+      effect: 'fadeOut',
+      volume: musicVolume
+    };
+  }
+
+  return {
+    timeline: {
+      background: '#000000',
+      tracks: tracks,
+      ...(soundtrack && { soundtrack })
+    },
+    output: {
+      format: 'mp4',
+      fps: fps,
+      size: {
+        width: 1080,
+        height: 1920
+      }
+    }
+  };
+}
+
+/**
+ * Create a Shotstack render job with multiple clips stitched together
+ * 
+ * @param {Array} clips - Array of video clips
+ * @param {string} audioUrl - Background audio URL
+ * @param {Array} subtitles - Subtitle array
+ * @param {Object} options - Render options
+ * @returns {Promise<Object>}
+ */
+async function createMultiClipRender(clips, audioUrl, subtitles = [], options = {}) {
+  if (!SHOTSTACK_API_KEY) {
+    throw new Error('SHOTSTACK_API_KEY environment variable is not set');
+  }
+
+  if (!clips || clips.length === 0) {
+    throw new Error('At least one video clip is required');
+  }
+
+  console.log('🎬 Creating multi-clip Shotstack render...');
+  console.log(`   Clips: ${clips.length}`);
+  console.log('   Audio:', audioUrl || 'none');
+  console.log('   Subtitles:', subtitles.length);
+
+  const editPayload = buildMultiClipTimeline(clips, audioUrl, subtitles, options);
+
+  console.log('📋 Multi-clip timeline built');
+
+  try {
+    const response = await fetch(`${SHOTSTACK_HOST}/render`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': SHOTSTACK_API_KEY
+      },
+      body: JSON.stringify(editPayload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('❌ Shotstack API error:', JSON.stringify(data, null, 2));
+      throw new Error(data.message || `Shotstack API error: ${response.status}`);
+    }
+
+    console.log('✅ Multi-clip render job submitted:', data.response?.id);
+
+    return {
+      success: true,
+      jobId: data.response?.id,
+      message: data.response?.message || 'Render job created'
+    };
+
+  } catch (error) {
+    console.error('❌ Multi-clip render error:', error.message);
+    throw error;
+  }
+}
