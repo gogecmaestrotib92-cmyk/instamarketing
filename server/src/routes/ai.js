@@ -3282,120 +3282,213 @@ router.post('/voiceover-video/generate', async (req, res) => {
         // Split script into sentences for scene detection
         const sentences = scriptResult.script.match(/[^.!?]+[.!?]+/g) || [scriptResult.script];
         
-        // Aim for 4-6 scenes regardless of sentence count
-        const targetScenes = Math.min(6, Math.max(3, Math.ceil(estimatedDuration / 6))); // ~6 seconds per scene
+        // Aim for 3-5 scenes for 15 second videos
+        const targetScenes = Math.min(5, Math.max(3, Math.ceil(estimatedDuration / 5))); // ~5 seconds per scene
         const sentencesPerScene = Math.max(1, Math.ceil(sentences.length / targetScenes));
         const secondsPerWord = estimatedDuration / scriptResult.script.split(' ').length;
         
         console.log(`   📊 Scene planning: ${sentences.length} sentences, targeting ${targetScenes} scenes`);
         
-        // Helper function to extract visual keywords from scene text
-        const extractSceneKeywords = (text, baseTopic) => {
-          // Remove common stop words and extract meaningful visual keywords
-          const stopWords = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 
-            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might',
-            'must', 'can', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through',
-            'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then',
-            'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most',
-            'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very',
-            'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'about', 'against', 'this', 'that',
-            'these', 'those', 'your', 'you', 'its', 'it', 'they', 'their', 'what', 'which', 'who', 'whom',
-            'tip', 'tips', 'fact', 'facts', 'way', 'ways', 'thing', 'things', 'first', 'second', 'third',
-            'one', 'two', 'three', 'four', 'five', 'number', 'also', 'get', 'make', 'know', 'take', 'see']);
+        // Comprehensive visual keyword mappings - maps concepts to searchable video terms
+        const visualMappings = {
+          // Fitness & Exercise
+          'abs': 'abs workout fitness',
+          'muscle': 'muscle gym workout',
+          'exercise': 'exercise fitness gym',
+          'workout': 'workout gym fitness',
+          'plank': 'plank exercise core',
+          'crunch': 'crunch abs exercise',
+          'crunches': 'crunch abs exercise',
+          'pushup': 'pushup exercise fitness',
+          'pushups': 'pushup exercise fitness',
+          'squat': 'squat exercise gym',
+          'squats': 'squat exercise gym',
+          'core': 'core workout abs',
+          'cardio': 'running cardio fitness',
+          'running': 'running jogging fitness',
+          'jogging': 'jogging running outdoor',
+          'strength': 'weights gym strength',
+          'weights': 'weights gym training',
+          'training': 'training gym fitness',
+          'gym': 'gym workout fitness',
+          'stretch': 'stretching yoga fitness',
+          'stretching': 'stretching yoga fitness',
+          'yoga': 'yoga stretching meditation',
+          'meditation': 'meditation peaceful calm',
           
-          // Visual keyword mappings for common concepts
-          const visualMappings = {
-            // Fitness terms
-            'abs': 'fitness workout gym abs',
-            'muscle': 'gym workout muscles fitness',
-            'exercise': 'workout exercise fitness gym',
-            'workout': 'gym workout fitness training',
-            'plank': 'plank exercise fitness core',
-            'crunch': 'abs workout gym fitness',
-            'core': 'core workout fitness abs',
-            'cardio': 'running cardio fitness exercise',
-            'strength': 'gym weights strength training',
-            'weight': 'gym weights fitness training',
-            'diet': 'healthy food nutrition diet',
-            'protein': 'protein food nutrition fitness',
-            'calories': 'food nutrition healthy eating',
-            'fat': 'fitness workout weight loss',
-            'burn': 'workout exercise fitness energy',
-            
-            // Health terms
-            'health': 'healthy lifestyle wellness',
-            'healthy': 'healthy food lifestyle wellness',
-            'sleep': 'sleeping rest bedroom night',
-            'water': 'water drinking hydration',
-            'hydration': 'water drinking health',
-            'energy': 'energy active lifestyle fitness',
-            'rest': 'relaxation rest peaceful',
-            'recovery': 'rest recovery relaxation',
-            
-            // Success/motivation terms
-            'success': 'success celebration achievement',
-            'goal': 'achievement goal success target',
-            'motivation': 'motivation success inspiration',
-            'results': 'success achievement results',
-            'progress': 'progress improvement success',
-            'consistency': 'discipline consistency routine',
-            'discipline': 'discipline focus determination',
-            
-            // Body parts
-            'body': 'fitness body workout gym',
-            'legs': 'legs workout fitness gym',
-            'arms': 'arms workout gym fitness',
-            'back': 'back workout gym fitness',
-            'chest': 'chest workout gym fitness'
-          };
+          // Nutrition & Food
+          'nutrition': 'healthy food vegetables',
+          'diet': 'healthy food salad',
+          'food': 'food cooking kitchen',
+          'eating': 'eating food healthy',
+          'eat': 'eating food meal',
+          'protein': 'protein food meat eggs',
+          'calories': 'food healthy eating',
+          'carbs': 'bread pasta food',
+          'vegetables': 'vegetables salad healthy',
+          'fruits': 'fruits healthy food',
+          'meal': 'meal food cooking',
+          'meals': 'meal prep cooking',
+          'breakfast': 'breakfast food morning',
+          'lunch': 'lunch food meal',
+          'dinner': 'dinner food meal',
+          'snack': 'snack healthy food',
+          'water': 'water drinking glass',
+          'hydration': 'water drinking hydration',
+          'drink': 'drinking water beverage',
+          'cooking': 'cooking kitchen food',
+          'kitchen': 'kitchen cooking food',
           
-          // Clean and extract words from text
-          const words = text.toLowerCase()
-            .replace(/[^\w\s]/g, ' ')
-            .split(/\s+/)
-            .filter(w => w.length > 2 && !stopWords.has(w));
+          // Health & Wellness
+          'health': 'healthy lifestyle wellness',
+          'healthy': 'healthy food lifestyle',
+          'wellness': 'wellness spa relaxation',
+          'sleep': 'sleeping bedroom night',
+          'sleeping': 'sleeping bed rest',
+          'rest': 'rest relaxation peaceful',
+          'recovery': 'rest massage recovery',
+          'energy': 'energy active morning',
+          'tired': 'tired rest sleeping',
+          'stress': 'stress relaxation calm',
+          'relax': 'relaxation spa peaceful',
+          'relaxation': 'relaxation spa massage',
           
-          // Look for visual mappings first
+          // Body Parts
+          'body': 'body fitness workout',
+          'legs': 'legs workout gym',
+          'arms': 'arms workout biceps',
+          'back': 'back workout gym',
+          'chest': 'chest workout gym',
+          'shoulders': 'shoulders workout gym',
+          'biceps': 'biceps arms workout',
+          'triceps': 'triceps arms workout',
+          
+          // Success & Motivation
+          'success': 'success celebration winner',
+          'successful': 'success business achievement',
+          'goal': 'goal target achievement',
+          'goals': 'goals planning success',
+          'achieve': 'achievement success winner',
+          'achievement': 'achievement trophy success',
+          'motivation': 'motivation inspiration sunrise',
+          'motivated': 'motivation success energy',
+          'inspiration': 'inspiration sunrise nature',
+          'results': 'results success achievement',
+          'progress': 'progress growth success',
+          'improvement': 'improvement growth progress',
+          'consistency': 'routine calendar planning',
+          'consistent': 'routine discipline focus',
+          'discipline': 'discipline focus determination',
+          'focus': 'focus concentration work',
+          'determination': 'determination strength power',
+          'mindset': 'thinking meditation focus',
+          'confidence': 'confidence success power',
+          'believe': 'inspiration motivation sunrise',
+          
+          // Time & Routine
+          'morning': 'morning sunrise wake',
+          'night': 'night stars moon',
+          'daily': 'routine calendar day',
+          'routine': 'routine morning schedule',
+          'schedule': 'schedule calendar planning',
+          'time': 'clock time schedule',
+          'minutes': 'clock timer time',
+          'hours': 'clock time schedule',
+          'week': 'calendar week planning',
+          'month': 'calendar planning goals',
+          
+          // Actions
+          'start': 'start beginning action',
+          'begin': 'start beginning sunrise',
+          'try': 'action motivation start',
+          'change': 'transformation change growth',
+          'transform': 'transformation change fitness',
+          'build': 'building construction strength',
+          'grow': 'growth nature plants',
+          'learn': 'learning study education',
+          'practice': 'practice training repetition',
+          
+          // Nature & Environment
+          'nature': 'nature forest outdoor',
+          'outdoor': 'outdoor nature hiking',
+          'sun': 'sun sunrise outdoor',
+          'sunrise': 'sunrise morning nature',
+          'sunset': 'sunset evening nature',
+          'beach': 'beach ocean waves',
+          'ocean': 'ocean waves beach',
+          'mountain': 'mountain hiking nature',
+          'forest': 'forest trees nature',
+          
+          // Lifestyle
+          'lifestyle': 'lifestyle modern living',
+          'life': 'life lifestyle living',
+          'living': 'living lifestyle home',
+          'home': 'home living room',
+          'work': 'work office business',
+          'business': 'business office professional',
+          'money': 'money finance wealth',
+          'wealth': 'wealth money success'
+        };
+        
+        // Helper function to extract the best search term from scene text
+        const extractSceneKeywords = (sceneText, baseTopic, sceneIndex) => {
+          const text = sceneText.toLowerCase();
+          
+          // Priority 1: Look for specific visual keywords in the scene text
+          const words = text.replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+          
           for (const word of words) {
             if (visualMappings[word]) {
+              console.log(`      Scene ${sceneIndex + 1} keyword found: "${word}" -> "${visualMappings[word]}"`);
               return visualMappings[word];
             }
           }
           
-          // Get unique meaningful words (max 3)
-          const uniqueWords = [...new Set(words)].slice(0, 3);
+          // Priority 2: Check for common phrases
+          const phrasePatterns = [
+            { pattern: /nutrition|diet|eat|food|meal/i, search: 'healthy food nutrition' },
+            { pattern: /workout|exercise|training|gym/i, search: 'workout gym fitness' },
+            { pattern: /sleep|rest|recovery/i, search: 'sleeping rest bedroom' },
+            { pattern: /water|hydrat|drink/i, search: 'drinking water hydration' },
+            { pattern: /success|goal|achieve|result/i, search: 'success achievement celebration' },
+            { pattern: /motivation|inspire|believe/i, search: 'motivation inspiration sunrise' },
+            { pattern: /morning|wake|start.*day/i, search: 'morning sunrise routine' },
+            { pattern: /night|evening|before.*bed/i, search: 'night relaxation bedroom' },
+            { pattern: /protein|muscle|strength/i, search: 'protein muscle gym' },
+            { pattern: /cardio|running|jog/i, search: 'running cardio fitness' },
+            { pattern: /stretch|yoga|flex/i, search: 'yoga stretching fitness' },
+            { pattern: /stress|relax|calm/i, search: 'relaxation meditation calm' },
+            { pattern: /energy|power|strong/i, search: 'energy fitness active' },
+            { pattern: /focus|concentrat|mind/i, search: 'focus meditation concentration' },
+            { pattern: /routine|habit|daily|consistent/i, search: 'routine calendar planning' },
+            { pattern: /tip|advice|secret|trick/i, search: 'idea lightbulb inspiration' }
+          ];
           
-          // If we have meaningful words, combine with base topic
-          if (uniqueWords.length > 0) {
-            // Extract core topic word (e.g., "abs" from "3 tips for abs")
-            const topicWords = baseTopic.toLowerCase()
-              .replace(/[^\w\s]/g, ' ')
-              .split(/\s+/)
-              .filter(w => w.length > 2 && !stopWords.has(w));
-            
-            const coreTopicWord = topicWords[topicWords.length - 1] || topicWords[0] || '';
-            
-            // Combine scene keywords with topic for relevance
-            if (coreTopicWord && visualMappings[coreTopicWord]) {
-              return visualMappings[coreTopicWord];
+          for (const { pattern, search } of phrasePatterns) {
+            if (pattern.test(text)) {
+              console.log(`      Scene ${sceneIndex + 1} phrase match: "${pattern}" -> "${search}"`);
+              return search;
             }
-            
-            return `${uniqueWords.join(' ')} ${coreTopicWord}`.trim();
           }
           
-          // Fallback to topic-based search
-          const topicWords = baseTopic.toLowerCase()
-            .replace(/[^\w\s]/g, ' ')
-            .split(/\s+/)
-            .filter(w => w.length > 2 && !stopWords.has(w));
-          
+          // Priority 3: Fall back to topic-based search
+          const topicWords = baseTopic.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 2);
           for (const word of topicWords) {
             if (visualMappings[word]) {
+              console.log(`      Scene ${sceneIndex + 1} using topic keyword: "${word}" -> "${visualMappings[word]}"`);
               return visualMappings[word];
             }
           }
           
-          return topicWords.slice(-2).join(' ') || 'lifestyle';
+          // Priority 4: Use last meaningful word from topic
+          const meaningfulTopicWords = topicWords.filter(w => !['tips', 'for', 'about', 'the', 'how', 'why', 'what'].includes(w));
+          if (meaningfulTopicWords.length > 0) {
+            const lastWord = meaningfulTopicWords[meaningfulTopicWords.length - 1];
+            console.log(`      Scene ${sceneIndex + 1} using topic fallback: "${lastWord}"`);
+            return lastWord + ' lifestyle';
+          }
+          
+          return 'motivation lifestyle';
         };
         
         let currentTime = 0;
@@ -3406,10 +3499,13 @@ router.post('/voiceover-video/generate', async (req, res) => {
           const sceneDuration = sceneWords * secondsPerWord;
           
           // Extract keywords from scene content to match storytelling
-          const searchTerm = extractSceneKeywords(sceneText, topic);
+          const sceneIndex = scenes.length;
+          const searchTerm = extractSceneKeywords(sceneText, topic, sceneIndex);
+          
+          console.log(`      Scene ${sceneIndex + 1}: "${sceneText.substring(0, 60)}..." -> search: "${searchTerm}"`);
           
           scenes.push({
-            index: scenes.length,
+            index: sceneIndex,
             text: sceneText.substring(0, 100),
             searchTerm: searchTerm,
             startTime: currentTime,
