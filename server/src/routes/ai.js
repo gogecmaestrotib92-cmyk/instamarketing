@@ -3346,12 +3346,18 @@ router.post('/voiceover-video/generate', async (req, res) => {
     // STEP 5: Start Shotstack composition
     console.log('\n🎬 Step 5: Starting video composition...');
     let compositionJobId = null;
+    let compositionError = null;
+    
+    console.log(`   Shotstack available: ${!!shotstackClient}`);
+    console.log(`   Scene videos found: ${sceneVideos.length}`);
+    console.log(`   Background video: ${backgroundVideo ? 'yes' : 'no'}`);
     
     if (shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
       // Upload audio to Cloudinary for Shotstack
       let audioUrl = voiceResult.audioUrl;
       if (cloudinaryUpload && audioUrl && !audioUrl.includes('cloudinary.com')) {
         try {
+          console.log('   📤 Uploading audio to Cloudinary...');
           const audioResponse = await fetch(audioUrl);
           const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
           const uploadResult = await cloudinaryUpload(audioBuffer, {
@@ -3360,100 +3366,123 @@ router.post('/voiceover-video/generate', async (req, res) => {
           });
           if (uploadResult.success) {
             audioUrl = uploadResult.url;
+            console.log('   ✅ Audio uploaded to Cloudinary');
           }
         } catch (e) {
-          console.log('   ⚠️ Audio upload failed, using original URL');
+          console.log('   ⚠️ Audio upload failed, using original URL:', e.message);
         }
       }
 
-      if (sceneVideos.length > 1) {
-        // Multi-clip composition with scene switching
-        const clips = [];
-        for (const sceneVideo of sceneVideos) {
+      try {
+        if (sceneVideos.length > 1) {
+          // Multi-clip composition with scene switching
+          const clips = [];
+          for (const sceneVideo of sceneVideos) {
+            // Upload video to Cloudinary
+            let videoUrl = sceneVideo.url;
+            if (cloudinaryUpload && (videoUrl.includes('pexels.com') || videoUrl.includes('pixabay.com'))) {
+              try {
+                console.log(`   📤 Uploading scene video ${clips.length + 1}...`);
+                const videoResponse = await fetch(videoUrl);
+                const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+                const uploadResult = await cloudinaryUpload(videoBuffer, {
+                  folder: 'instamarketing/scenes',
+                  resource_type: 'video'
+                });
+                if (uploadResult.success) {
+                  videoUrl = uploadResult.url;
+                }
+              } catch (e) {
+                console.log(`   ⚠️ Scene video upload failed: ${e.message}`);
+              }
+            }
+            
+            clips.push({
+              url: videoUrl,
+              duration: sceneVideo.duration || 10,
+              useDuration: sceneVideo.useDuration || sceneVideo.playbackDuration,
+              startAt: 0 // Start from beginning of each clip
+            });
+          }
+
+          console.log(`   🎬 Creating multi-clip render with ${clips.length} clips...`);
+          // Create multi-clip render
+          const jobResult = await shotstackClient.createMultiClipRender(
+            clips,
+            audioUrl,
+            subtitles,
+            {
+              musicVolume: 1,
+              videoVolume: 0
+            }
+          );
+
+          if (jobResult.success) {
+            compositionJobId = jobResult.jobId;
+            console.log(`   ✅ Multi-clip composition started: ${compositionJobId}`);
+          } else {
+            compositionError = jobResult.error || 'Multi-clip render failed';
+            console.log(`   ❌ Multi-clip render failed: ${compositionError}`);
+          }
+        } else if (backgroundVideo || sceneVideos.length === 1) {
+          // Single video composition with looping
+          const video = sceneVideos[0] || backgroundVideo;
+          let videoUrl = video.url;
+          
           // Upload video to Cloudinary
-          let videoUrl = sceneVideo.url;
           if (cloudinaryUpload && (videoUrl.includes('pexels.com') || videoUrl.includes('pixabay.com'))) {
             try {
+              console.log('   📤 Uploading video to Cloudinary...');
               const videoResponse = await fetch(videoUrl);
               const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
               const uploadResult = await cloudinaryUpload(videoBuffer, {
-                folder: 'instamarketing/scenes',
+                folder: 'instamarketing/composed',
                 resource_type: 'video'
               });
               if (uploadResult.success) {
                 videoUrl = uploadResult.url;
+                console.log('   ✅ Video uploaded to Cloudinary');
               }
             } catch (e) {
-              console.log(`   ⚠️ Scene video upload failed: ${e.message}`);
+              console.log(`   ⚠️ Video upload failed: ${e.message}`);
             }
           }
+
+          console.log(`   🎬 Creating single video render...`);
+          console.log(`   Video URL: ${videoUrl}`);
+          console.log(`   Audio URL: ${audioUrl}`);
+          console.log(`   Subtitles: ${subtitles.length}`);
           
-          clips.push({
-            url: videoUrl,
-            duration: sceneVideo.duration || 10,
-            useDuration: sceneVideo.useDuration || sceneVideo.playbackDuration,
-            startAt: 0 // Start from beginning of each clip
-          });
-        }
-
-        // Create multi-clip render
-        const jobResult = await shotstackClient.createMultiClipRender(
-          clips,
-          audioUrl,
-          subtitles,
-          {
-            musicVolume: 1,
-            videoVolume: 0
-          }
-        );
-
-        if (jobResult.success) {
-          compositionJobId = jobResult.jobId;
-          console.log(`   ✅ Multi-clip composition started: ${compositionJobId}`);
-        }
-      } else if (backgroundVideo || sceneVideos.length === 1) {
-        // Single video composition with looping
-        const video = sceneVideos[0] || backgroundVideo;
-        let videoUrl = video.url;
-        
-        // Upload video to Cloudinary
-        if (cloudinaryUpload && (videoUrl.includes('pexels.com') || videoUrl.includes('pixabay.com'))) {
-          try {
-            const videoResponse = await fetch(videoUrl);
-            const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-            const uploadResult = await cloudinaryUpload(videoBuffer, {
-              folder: 'instamarketing/composed',
-              resource_type: 'video'
-            });
-            if (uploadResult.success) {
-              videoUrl = uploadResult.url;
+          const jobResult = await shotstackClient.createShotstackRender(
+            videoUrl,
+            audioUrl,
+            subtitles,
+            {
+              duration: estimatedDuration,
+              musicVolume: 1,
+              videoVolume: 0,
+              loopVideo: true,
+              videoDurationOriginal: video.duration
             }
-          } catch (e) {
-            console.log(`   ⚠️ Video upload failed: ${e.message}`);
+          );
+
+          if (jobResult.success) {
+            compositionJobId = jobResult.jobId;
+            console.log(`   ✅ Single video composition started: ${compositionJobId}`);
+          } else {
+            compositionError = jobResult.error || 'Single video render failed';
+            console.log(`   ❌ Single video render failed: ${compositionError}`);
           }
         }
-
-        const jobResult = await shotstackClient.createShotstackRender(
-          videoUrl,
-          audioUrl,
-          subtitles,
-          {
-            duration: estimatedDuration,
-            musicVolume: 1,
-            videoVolume: 0,
-            loopVideo: true,
-            videoDurationOriginal: video.duration
-          }
-        );
-
-        if (jobResult.success) {
-          compositionJobId = jobResult.jobId;
-          console.log(`   ✅ Single video composition started: ${compositionJobId}`);
-        }
+      } catch (renderError) {
+        compositionError = renderError.message;
+        console.log(`   ❌ Shotstack render error: ${compositionError}`);
       }
     } else if (!shotstackClient) {
+      compositionError = 'Shotstack client not available';
       console.log('   ⚠️ Shotstack not available, skipping video composition');
     } else {
+      compositionError = 'No stock videos found for composition';
       console.log('   ⚠️ No videos found, skipping video composition');
     }
 
@@ -3471,10 +3500,11 @@ router.post('/voiceover-video/generate', async (req, res) => {
       videos: sceneVideos.map(v => ({ source: v.source, id: v.id, sceneIndex: v.sceneIndex, url: v.url })),
       backgroundVideo: backgroundVideo ? { source: backgroundVideo.source, id: backgroundVideo.id, url: backgroundVideo.url } : null,
       compositionJobId,
-      compositionStatus: compositionJobId ? 'processing' : 'not_started',
+      compositionError,
+      compositionStatus: compositionJobId ? 'processing' : 'failed',
       message: compositionJobId 
         ? 'Video composition started successfully' 
-        : 'Voiceover generated but video composition could not start. You can manually combine the audio with a video.'
+        : `Voiceover generated but video composition failed: ${compositionError || 'Unknown error'}. You can download the audio and combine it with video manually.`
     };
 
     console.log('\n✅ Enhanced voiceover video generation complete');
