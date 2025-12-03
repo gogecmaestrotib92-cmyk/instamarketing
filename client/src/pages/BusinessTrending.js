@@ -245,24 +245,31 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           
           let attempts = 0;
           const maxAttempts = 60;
+          const service = data.compositionService || '';
           
           while (attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 5000));
             
-            const statusResponse = await fetch(`/api/ai/compose-video/status/${data.compositionJobId}`);
+            const statusUrl = `/api/ai/compose-video/status/${data.compositionJobId}${service ? `?service=${service}` : ''}`;
+            const statusResponse = await fetch(statusUrl);
             const statusData = await statusResponse.json();
             
-            if (statusData.status === 'done' && statusData.url) {
-              composedVideoUrl = statusData.url;
+            // Handle different status formats from different services
+            const isDone = statusData.status === 'done' || statusData.status === 'succeeded';
+            const videoUrl = statusData.url || statusData.videoUrl;
+            
+            if (isDone && videoUrl) {
+              composedVideoUrl = videoUrl;
               console.log('✅ Video composed:', composedVideoUrl);
               break;
-            } else if (statusData.status === 'failed') {
+            } else if (statusData.status === 'failed' || statusData.status === 'error') {
               console.error('❌ Video composition failed:', statusData.error);
               break;
             }
             
             attempts++;
             setGenerationStep(`Rendering video with subtitles... ${Math.round((statusData.progress || 0))}%`);
+          }
           }
         } else {
           console.log('⚠️ No composition job started:', data.message);
