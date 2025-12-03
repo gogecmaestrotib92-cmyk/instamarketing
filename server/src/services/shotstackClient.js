@@ -111,18 +111,18 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         // Shotstack offset: positive y moves UP, negative y moves DOWN
         // Values are relative (-1 to 1), where 0.5 = 50% from center
         // IMPORTANT: Keep offset values small to prevent text going off-screen
-        let offset = { x: 0, y: -0.25 }; // Lower portion but still safe
+        let offset = { x: 0, y: -0.2 }; // Lower portion but safer - closer to center
         let position = 'center'; // Always use center for precise control
         
         // Adjust offset based on desired visual position
-        // Using conservative values to keep text within safe zone
+        // Using very conservative values to keep text within safe zone
         const desiredPosition = subtitle.position || subtitleStyle.position || 'bottom';
         if (desiredPosition === 'top') {
-          offset = { x: 0, y: 0.25 }; // Upper portion - safe zone
+          offset = { x: 0, y: 0.2 }; // Upper portion - safe zone
         } else if (desiredPosition === 'center' || desiredPosition === 'middle') {
           offset = { x: 0, y: 0 }; // True center
         } else if (desiredPosition === 'bottom') {
-          offset = { x: 0, y: -0.25 }; // Lower portion - safe zone above Instagram UI
+          offset = { x: 0, y: -0.2 }; // Lower portion - safe zone above Instagram UI
         }
 
         // Valid Shotstack styles: minimal, blockbuster, vogue, sketchy, skinny, chunk, chunkLight, marker, future, subtitle
@@ -150,13 +150,13 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
 
         // Instagram/YouTube Reels style - bold, punchy text
         // Using 'chunk' style for that viral TikTok/Reels look
-        // Size 'small' to ensure text fits within frame even with long sentences
+        // Size 'x-small' for vertical 9:16 video to ensure text never goes out of frame
         const clip = {
           asset: {
             type: 'title',
             text: subtitle.text.toUpperCase(), // ALL CAPS for viral style
             style: 'chunk', // Bold chunky style like viral reels
-            size: 'small', // Small size to ensure it fits in frame
+            size: 'x-small', // Extra small size to ensure it fits in vertical video frame
             color: '#ffffff' // Pure white text
           },
           start: subtitle.start,
@@ -677,13 +677,13 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
             type: 'title',
             text: formattedText,
             style: 'chunk',
-            size: 'small', // Smaller size for vertical video to fit in frame
+            size: 'x-small', // Extra small size for vertical 9:16 video to stay in frame
             color: '#ffffff'
           },
           start: subtitle.start,
           length: Math.max(0.1, subtitle.end - subtitle.start),
           position: 'center',
-          offset: { x: 0, y: -0.25 }, // Safe zone offset - not too far down
+          offset: { x: 0, y: -0.2 }, // Safe zone offset - closer to center for safety
           transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
         };
       });
