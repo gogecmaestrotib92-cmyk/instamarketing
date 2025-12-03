@@ -27,32 +27,6 @@ try {
   console.log('Shotstack not available for AI routes:', e.message);
 }
 
-// Try to load Creatomate as alternative to Shotstack
-let creatomateService = null;
-try {
-  creatomateService = require('../services/creatomate');
-  if (creatomateService.isAvailable()) {
-    console.log('✅ Creatomate service loaded for AI routes');
-  } else {
-    console.log('⚠️ Creatomate API key not configured');
-  }
-} catch (e) {
-  console.log('Creatomate not available:', e.message);
-}
-
-// Try to load JSON2Video as another alternative
-let json2videoService = null;
-try {
-  json2videoService = require('../services/json2video');
-  if (json2videoService.isAvailable()) {
-    console.log('✅ JSON2Video service loaded for AI routes');
-  } else {
-    console.log('⚠️ JSON2Video API key not configured');
-  }
-} catch (e) {
-  console.log('JSON2Video not available:', e.message);
-}
-
 /**
  * AI Content Generation Routes
  * OpenAI + Google Text-to-Speech + Replicate Video + Video Composer
@@ -1005,54 +979,6 @@ router.get('/shotstack/status/:jobId', async (req, res) => {
     res.json(status);
   } catch (error) {
     console.error('Shotstack status error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * Get Creatomate render job status
- * GET /api/ai/creatomate/status/:renderId
- */
-router.get('/creatomate/status/:renderId', async (req, res) => {
-  try {
-    const { renderId } = req.params;
-    
-    if (!renderId) {
-      return res.status(400).json({ error: 'renderId is required' });
-    }
-    
-    if (!creatomateService || !creatomateService.isAvailable()) {
-      return res.status(503).json({ error: 'Creatomate service not available' });
-    }
-    
-    const status = await creatomateService.getRenderStatus(renderId);
-    res.json(status);
-  } catch (error) {
-    console.error('Creatomate status error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * Get JSON2Video render job status
- * GET /api/ai/json2video/status/:projectId
- */
-router.get('/json2video/status/:projectId', async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    
-    if (!projectId) {
-      return res.status(400).json({ error: 'projectId is required' });
-    }
-    
-    if (!json2videoService || !json2videoService.isAvailable()) {
-      return res.status(503).json({ error: 'JSON2Video service not available' });
-    }
-    
-    const status = await json2videoService.getRenderStatus(projectId);
-    res.json(status);
-  } catch (error) {
-    console.error('JSON2Video status error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -3705,11 +3631,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
     let compositionError = null;
     let compositionService = null;
     
-    const json2videoAvailable = json2videoService && json2videoService.isAvailable();
-    const creatomateAvailable = creatomateService && creatomateService.isAvailable();
     console.log(`   Shotstack available: ${!!shotstackClient}`);
-    console.log(`   Creatomate available: ${creatomateAvailable}`);
-    console.log(`   JSON2Video available: ${json2videoAvailable}`);
     console.log(`   Scene videos found: ${sceneVideos.length}`);
     console.log(`   Background video: ${backgroundVideo ? 'yes' : 'no'}`);
     
@@ -3846,49 +3768,10 @@ router.post('/voiceover-video/generate', async (req, res) => {
       }
     }
     
-    // TRY CREATOMATE as fallback if Shotstack failed
-    if (!compositionJobId && creatomateAvailable && (sceneVideos.length > 0 || backgroundVideo)) {
-      try {
-        console.log('   🎬 Using Creatomate for video composition...');
-        
-        // Prepare clips for Creatomate
-        const clips = sceneVideos.length > 0 
-          ? sceneVideos.map(sv => ({
-              url: sv.url,
-              duration: sv.useDuration || sv.duration || 5,
-              startTime: sv.startAt || 0,
-              sourceDuration: sv.duration || 30
-            }))
-          : [{
-              url: backgroundVideo.url,
-              duration: estimatedDuration,
-              startTime: 0,
-              sourceDuration: backgroundVideo.duration || 30
-            }];
-        
-        const creatomateResult = await creatomateService.createMultiClipRender({
-          clips: clips,
-          audioUrl: audioUrl,
-          subtitles: subtitles,
-          totalDuration: estimatedDuration
-        });
-        
-        if (creatomateResult.success) {
-          compositionJobId = creatomateResult.renderId;
-          compositionService = 'creatomate';
-          console.log(`   ✅ Creatomate composition started: ${compositionJobId}`);
-        } else {
-          console.log('   ⚠️ Creatomate failed');
-        }
-      } catch (creatomateError) {
-        console.log(`   ⚠️ Creatomate error: ${creatomateError.message}`);
-      }
-    }
-    
     // Final status
     if (!compositionJobId && !compositionService) {
-      if (!creatomateAvailable && !shotstackClient) {
-        compositionError = 'No video composition service available (configure CREATOMATE_API_KEY or SHOTSTACK_API_KEY)';
+      if (!shotstackClient) {
+        compositionError = 'No video composition service available (configure SHOTSTACK_API_KEY)';
       } else if (sceneVideos.length === 0 && !backgroundVideo) {
         compositionError = 'No stock videos found for composition';
       }
@@ -4318,9 +4201,8 @@ router.post('/compose-video/multi-clip', async (req, res) => {
 
 /**
  * Check video composition render status
- * Supports JSON2Video, Creatomate, and Shotstack
+ * Uses Shotstack for video rendering
  * GET /api/ai/compose-video/status/:jobId
- * Query params: service=json2video|creatomate|shotstack (optional)
  */
 router.get('/compose-video/status/:jobId', async (req, res) => {
   try {
@@ -4331,57 +4213,14 @@ router.get('/compose-video/status/:jobId', async (req, res) => {
       return res.status(400).json({ error: 'Job ID is required' });
     }
 
-    console.log(`📊 Checking render status for ${jobId} (service: ${service || 'auto-detect'})`);
+    console.log(`📊 Checking render status for ${jobId} (service: ${service || 'shotstack'})`);
 
     let status = null;
 
-    // Try JSON2Video first (if service is specified or auto-detect)
-    if ((service === 'json2video' || !service) && json2videoService && json2videoService.isAvailable()) {
+    // Check Shotstack
+    if (shotstackClient) {
       try {
-        console.log('   Trying JSON2Video...');
-        status = await json2videoService.getRenderStatus(jobId);
-        if (status && status.success) {
-          console.log(`   JSON2Video status: ${status.status}`);
-          return res.json({
-            success: true,
-            service: 'json2video',
-            ...status
-          });
-        }
-      } catch (e) {
-        console.log(`   JSON2Video check failed: ${e.message}`);
-        if (service === 'json2video') {
-          // If explicitly asked for JSON2Video, return the error
-          return res.status(500).json({ error: e.message, service: 'json2video' });
-        }
-      }
-    }
-
-    // Try Creatomate
-    if ((service === 'creatomate' || !service) && creatomateService && creatomateService.isAvailable()) {
-      try {
-        console.log('   Trying Creatomate...');
-        status = await creatomateService.getRenderStatus(jobId);
-        if (status && status.success) {
-          console.log(`   Creatomate status: ${status.status}`);
-          return res.json({
-            success: true,
-            service: 'creatomate',
-            ...status
-          });
-        }
-      } catch (e) {
-        console.log(`   Creatomate check failed: ${e.message}`);
-        if (service === 'creatomate') {
-          return res.status(500).json({ error: e.message, service: 'creatomate' });
-        }
-      }
-    }
-
-    // Try Shotstack
-    if ((service === 'shotstack' || !service) && shotstackClient) {
-      try {
-        console.log('   Trying Shotstack...');
+        console.log('   Checking Shotstack...');
         status = await shotstackClient.getRenderStatus(jobId);
         if (status) {
           console.log(`   Shotstack status: ${status.status}`);
@@ -4393,21 +4232,15 @@ router.get('/compose-video/status/:jobId', async (req, res) => {
         }
       } catch (e) {
         console.log(`   Shotstack check failed: ${e.message}`);
-        if (service === 'shotstack') {
-          return res.status(500).json({ error: e.message, service: 'shotstack' });
-        }
+        return res.status(500).json({ error: e.message, service: 'shotstack' });
       }
     }
 
     // No service could provide status
     return res.status(404).json({ 
-      error: 'Could not find render job in any service',
+      error: 'Could not find render job',
       jobId,
-      servicesChecked: [
-        json2videoService && json2videoService.isAvailable() ? 'json2video' : null,
-        creatomateService && creatomateService.isAvailable() ? 'creatomate' : null,
-        shotstackClient ? 'shotstack' : null
-      ].filter(Boolean)
+      servicesChecked: shotstackClient ? ['shotstack'] : []
     });
   } catch (error) {
     console.error('Compose status error:', error);
