@@ -14,17 +14,21 @@ const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
 
 // Popular categories for vertical videos
 const VIDEO_CATEGORIES = {
-  'tips': ['lifestyle', 'technology', 'office', 'work'],
-  'motivation': ['nature', 'sunrise', 'ocean', 'mountains', 'city'],
-  'education': ['books', 'study', 'technology', 'abstract'],
+  'tips': ['lifestyle', 'technology', 'office', 'work', 'professional'],
+  'facts': ['technology', 'science', 'data', 'abstract', 'documentary'],
+  'quotes': ['nature', 'sunset', 'ocean', 'mountains', 'peaceful', 'inspirational'],
+  'story': ['people', 'urban', 'lifestyle', 'journey', 'cinematic', 'storytelling'],
+  'tutorial': ['hands', 'workspace', 'technology', 'demonstration', 'step by step'],
+  'motivation': ['nature', 'sunrise', 'ocean', 'mountains', 'city', 'success', 'achievement'],
+  'education': ['books', 'study', 'technology', 'abstract', 'learning'],
   'lifestyle': ['urban', 'nature', 'travel', 'city life'],
-  'business': ['office', 'meeting', 'technology', 'work'],
+  'business': ['office', 'meeting', 'technology', 'work', 'professional'],
   'fitness': ['gym', 'running', 'yoga', 'sports'],
   'food': ['cooking', 'kitchen', 'food', 'restaurant'],
   'travel': ['travel', 'airplane', 'beach', 'city'],
   'fashion': ['fashion', 'style', 'shopping', 'urban'],
   'tech': ['technology', 'computer', 'coding', 'abstract'],
-  'default': ['abstract', 'light', 'particles', 'gradient']
+  'default': ['abstract', 'light', 'particles', 'gradient', 'motion']
 };
 
 /**

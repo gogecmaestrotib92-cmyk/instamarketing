@@ -137,6 +137,21 @@ class OpenAIService {
         topics = []
       } = context;
       
+      // Detect content type from topic prefix (e.g., "story: business growth")
+      const contentTypeMatch = topic.match(/^(tips|facts|quotes|story|tutorial|motivation):\s*/i);
+      const contentType = contentTypeMatch ? contentTypeMatch[1].toLowerCase() : null;
+      const cleanTopic = contentType ? topic.replace(/^[^:]+:\s*/, '') : topic;
+      
+      // Content type specific instructions
+      const contentTypeInstructions = {
+        tips: 'Structure as actionable tips. Use numbered format (1, 2, 3) if multiple tips. Be practical and immediately useful.',
+        facts: 'Present surprising or little-known facts. Use phrases like "Did you know..." or "Here\'s something crazy...". Make it educational but entertaining.',
+        quotes: 'Center around an inspiring quote or wisdom. Include the quote and add your perspective. Make it thought-provoking.',
+        story: 'Tell a compelling story with a beginning, middle, and end. Use narrative techniques like "I was...", "Then something changed...". Be personal and relatable.',
+        tutorial: 'Teach one specific skill or concept step-by-step. Use clear instructions like "First...", "Next...", "Finally...". Be educational.',
+        motivation: 'Be inspiring and empowering. Use powerful language that sparks action. Include a call to believe in oneself or take action.'
+      };
+      
       const hookInstructions = {
         question: 'Start with a compelling question that makes viewers curious',
         statistic: 'Start with a shocking or surprising statistic',
@@ -184,6 +199,7 @@ ${targetAudience ? `TARGET AUDIENCE: ${targetAudience}` : ''}
 TONE: ${toneInstructions[brandTone] || 'professional'}
 HOOK STYLE: ${hookInstructions[hookStyle] || hookInstructions.question}
 GOAL: ${goalInstructions[contentGoal] || goalInstructions.engagement}
+${contentType ? `CONTENT FORMAT: ${contentType.toUpperCase()} - ${contentTypeInstructions[contentType]}` : ''}
 
 ${duration <= 9 ? `
 SHORT FORMAT STRUCTURE (${duration} seconds):
@@ -193,8 +209,8 @@ SHORT FORMAT STRUCTURE (${duration} seconds):
 ` : `
 LONGER FORMAT STRUCTURE:
 1. HOOK (0-3 sec): ${hookInstructions[hookStyle]}
-2. VALUE (3-12 sec): Deliver the promise
-3. CTA (12-${duration} sec): Follow/Save call
+2. VALUE (3-${Math.floor(duration * 0.8)} sec): Deliver the promise
+3. CTA (${Math.floor(duration * 0.8)}-${duration} sec): Follow/Save call
 `}
 
 RULES:
@@ -205,7 +221,7 @@ RULES:
 - NO timestamps, brackets, or stage directions
 - Just the spoken words` 
           },
-          { role: 'user', content: `Write a viral ${duration}-second Reel script about: ${topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)] : topic}` }
+          { role: 'user', content: `Write a viral ${duration}-second ${contentType || 'Reel'} script about: ${cleanTopic}` }
         ],
         max_tokens: 150,
         temperature: 0.9
