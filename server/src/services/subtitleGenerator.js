@@ -18,17 +18,17 @@ try {
 
 class SubtitleGenerator {
   constructor() {
-    // Speaking rates (words per minute) - SLOWED DOWN to match TTS output
-    // TTS services like ElevenLabs/Google speak slower than natural human speech
-    // These rates are tuned to match typical TTS audio timing
+    // Speaking rates (words per minute) - FURTHER SLOWED to match TTS output
+    // TTS services speak slower than natural speech - need accurate sync
+    // These rates are tuned for ElevenLabs/Google TTS timing
     this.speakingRates = {
-      slow: 90,        // Was 120 - very slow narration
-      normal: 110,     // Was 150 - standard TTS pace
-      fast: 140,       // Was 180 - faster but still clear
-      energetic: 125,  // Was 170 - upbeat but not rushing
-      calm: 95,        // Was 130 - relaxed pace
-      professional: 105, // Was 145 - clear business tone
-      friendly: 115    // Was 155 - conversational
+      slow: 75,        // Very slow narration
+      normal: 95,      // Standard TTS pace - SLOWED from 110
+      fast: 120,       // Faster but still clear
+      energetic: 105,  // Upbeat but not rushing
+      calm: 80,        // Relaxed pace
+      professional: 90, // Clear business tone - SLOWED
+      friendly: 100    // Conversational
     };
 
     // Output directory for subtitle files - use /tmp on Vercel
@@ -142,14 +142,14 @@ class SubtitleGenerator {
         }
         
         // Add extra time buffer per word to account for TTS articulation
-        chunkDuration += chunk.length * 0.05; // 50ms per word buffer
+        chunkDuration += chunk.length * 0.1; // 100ms per word buffer (was 50ms)
         
         // Add pause at end of sentence - TTS pauses longer at sentence breaks
         const isEndOfSentence = i + maxWordsPerCaption >= words.length;
         if (isEndOfSentence) {
-          chunkDuration += 0.5; // 500ms pause after sentences (was 300ms)
+          chunkDuration += 0.7; // 700ms pause after sentences (was 500ms)
         } else {
-          chunkDuration += 0.15; // 150ms pause between chunks within sentence
+          chunkDuration += 0.25; // 250ms pause between chunks within sentence (was 150ms)
         }
 
         captions.push({

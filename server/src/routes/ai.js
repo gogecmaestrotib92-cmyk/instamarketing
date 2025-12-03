@@ -3692,14 +3692,17 @@ router.post('/voiceover-video/generate', async (req, res) => {
           }
 
           console.log(`   🎬 Creating multi-clip render with ${clips.length} clips...`);
-          // Create multi-clip render
+          console.log(`   📊 Target duration from audio: ${estimatedDuration}s`);
+          
+          // Create multi-clip render - pass target duration to sync with audio
           const jobResult = await shotstackClient.createMultiClipRender(
             clips,
             audioUrl,
             subtitles,
             {
               musicVolume: 1,
-              videoVolume: 0
+              videoVolume: 0,
+              targetDuration: estimatedDuration // Sync video to audio duration
             }
           );
 

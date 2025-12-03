@@ -138,21 +138,33 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         console.log(`   Style mapping: "${requestedStyle}" -> "${finalStyle}"`);
         console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position}, offset: ${JSON.stringify(offset)}`);
 
-        // Instagram/YouTube Reels style - bold, punchy text
-        // Using 'chunk' style for that viral TikTok/Reels look
-        // Size 'xx-small' for vertical 9:16 video to ensure text NEVER goes out of frame
+        // VIRAL REELS STYLE - Big, bold, attention-grabbing subtitles
+        // Using 'chunk' style for that TikTok/Instagram Reels viral look
+        // Break text into max 3-4 words per line for vertical video
+        const words = subtitle.text.trim().split(/\s+/);
+        let formattedText = subtitle.text.toUpperCase();
+        if (words.length > 3) {
+          // Split into lines of max 3 words for better readability
+          const lines = [];
+          for (let w = 0; w < words.length; w += 3) {
+            lines.push(words.slice(w, w + 3).join(' ').toUpperCase());
+          }
+          formattedText = lines.join('\n');
+        }
+        
         const clip = {
           asset: {
             type: 'title',
-            text: subtitle.text.toUpperCase(), // ALL CAPS for viral style
+            text: formattedText, // ALL CAPS, multi-line for viral style
             style: 'chunk', // Bold chunky style like viral reels
-            size: 'xx-small', // Smallest size to guarantee it fits in vertical video frame
-            color: '#ffffff' // Pure white text
+            size: 'large', // LARGE size for viral impact - readable on mobile
+            color: '#ffffff', // Pure white text
+            background: '#000000cc' // Semi-transparent black background for readability
           },
           start: subtitle.start,
           length: clipDuration,
-          position: position,
-          offset: offset,
+          position: 'center', // Center position for maximum visibility
+          offset: { x: 0, y: 0.15 }, // Slightly below center for viral look
           transition: Object.keys(transition).length > 0 ? transition : undefined
         };
         
@@ -631,13 +643,35 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
     subtitleStyle = DEFAULT_SUBTITLE_STYLE,
     videoVolume = 0,
     musicVolume = 1,
-    fps = 25
+    fps = 25,
+    targetDuration = null // Sync video clips to this duration (audio duration)
   } = options;
 
-  // Calculate total duration from clips
-  const totalDuration = clips.reduce((sum, clip) => sum + (clip.useDuration || clip.duration || 10), 0);
+  // Calculate total duration from clips OR use target duration from audio
+  let totalDuration = clips.reduce((sum, clip) => sum + (clip.useDuration || clip.duration || 10), 0);
   
-  console.log(`🎬 Building multi-clip timeline: ${clips.length} clips, ${totalDuration}s total`);
+  // If we have subtitles, use the subtitle end time as the authoritative duration
+  if (subtitles && subtitles.length > 0) {
+    const subtitleEndTime = Math.max(...subtitles.map(s => s.end || 0));
+    if (subtitleEndTime > 0) {
+      totalDuration = subtitleEndTime + 0.5; // Add small buffer
+      console.log(`   📊 Using subtitle duration: ${totalDuration.toFixed(1)}s (last subtitle ends at ${subtitleEndTime.toFixed(1)}s)`);
+    }
+  }
+  
+  // Override with targetDuration if provided
+  if (targetDuration && targetDuration > 0) {
+    totalDuration = targetDuration;
+    console.log(`   📊 Using target duration: ${totalDuration.toFixed(1)}s`);
+  }
+  
+  console.log(`🎬 Building multi-clip timeline: ${clips.length} clips, ${totalDuration.toFixed(1)}s total`);
+
+  // Recalculate clip durations to match total audio duration
+  const clipRequestedDuration = clips.reduce((sum, clip) => sum + (clip.useDuration || clip.duration || 10), 0);
+  const durationScale = totalDuration / clipRequestedDuration;
+  
+  console.log(`   📊 Duration scaling factor: ${durationScale.toFixed(2)} (clips: ${clipRequestedDuration.toFixed(1)}s -> target: ${totalDuration.toFixed(1)}s)`);
 
   const tracks = [];
   
@@ -653,14 +687,13 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
 
     if (validSubtitles.length > 0) {
       subtitleClips = validSubtitles.map((subtitle, index) => {
-        // Break long subtitles into multiple lines (max 4 words per line for vertical video)
+        // VIRAL STYLE: Break into max 3 words per line for vertical video
         const words = subtitle.text.trim().split(/\s+/);
         let formattedText = subtitle.text.toUpperCase();
-        if (words.length > 4) {
-          // Split into lines of max 4 words each
+        if (words.length > 3) {
           const lines = [];
-          for (let i = 0; i < words.length; i += 4) {
-            lines.push(words.slice(i, i + 4).join(' ').toUpperCase());
+          for (let i = 0; i < words.length; i += 3) {
+            lines.push(words.slice(i, i + 3).join(' ').toUpperCase());
           }
           formattedText = lines.join('\n');
         }
@@ -669,14 +702,15 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
           asset: {
             type: 'title',
             text: formattedText,
-            style: 'chunk',
-            size: 'xx-small', // Smallest size to guarantee text stays in frame
-            color: '#ffffff'
+            style: 'chunk', // Bold viral style
+            size: 'large', // LARGE for viral impact
+            color: '#ffffff',
+            background: '#000000cc' // Semi-transparent background
           },
           start: subtitle.start,
           length: Math.max(0.1, subtitle.end - subtitle.start),
-          position: 'bottom', // Bottom center position for subtitles
-          offset: { x: 0, y: 0.1 }, // Slight upward offset to stay in safe zone
+          position: 'center', // Center for maximum visibility
+          offset: { x: 0, y: 0.15 }, // Below center for viral look
           transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
         };
       });
@@ -686,10 +720,14 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
   }
 
   // Build video clips track - clips play sequentially
+  // Scale each clip's duration to match the total audio/subtitle duration
   let currentStart = 0;
   const videoClips = clips.map((clip, index) => {
-    const clipDuration = clip.useDuration || clip.duration || 10;
+    const originalDuration = clip.useDuration || clip.duration || 10;
+    const scaledDuration = originalDuration * durationScale; // Scale to match audio
     const startAt = clip.startAt || 0;
+    
+    console.log(`   📹 Clip ${index + 1}: ${originalDuration.toFixed(1)}s -> ${scaledDuration.toFixed(1)}s (starts at ${currentStart.toFixed(1)}s)`);
     
     const videoClip = {
       asset: {
@@ -699,7 +737,7 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
         trim: startAt // Start from this point in source video
       },
       start: currentStart,
-      length: clipDuration,
+      length: scaledDuration,
       fit: 'cover',
       scale: 1,
       position: 'center',
@@ -707,7 +745,7 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
       transition: index > 0 ? { in: 'fade' } : undefined
     };
 
-    currentStart += clipDuration;
+    currentStart += scaledDuration;
     return videoClip;
   });
 
