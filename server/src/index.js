@@ -16,7 +16,7 @@ console.log('[SERVER] JWT_SECRET exists:', !!process.env.JWT_SECRET);
 // Import routes with error handling
 let authRoutes, postRoutes, reelRoutes, campaignRoutes, analyticsRoutes;
 let scheduleRoutes, mediaRoutes, aiVideoRoutes, aiRoutes, advancedVideoRoutes;
-let instagramRoutes, renderVideoRoutes, jobsRoutes;
+let instagramRoutes, renderVideoRoutes, jobsRoutes, webhooksRoutes;
 
 try {
   console.log('[SERVER] Loading auth routes...');
@@ -45,6 +45,8 @@ try {
   renderVideoRoutes = require('./routes/render-video');
   console.log('[SERVER] Loading jobs routes...');
   jobsRoutes = require('./routes/jobs');
+  console.log('[SERVER] Loading webhooks routes...');
+  webhooksRoutes = require('./routes/webhooks');
   console.log('[SERVER] All routes loaded successfully!');
 } catch (routeError) {
   console.error('[SERVER] FATAL: Failed to load routes:', routeError.message);
@@ -152,6 +154,7 @@ if (advancedVideoRoutes) app.use('/api/video', advancedVideoRoutes);
 if (instagramRoutes) app.use('/api/instagram', instagramRoutes);
 if (renderVideoRoutes) app.use('/api/render-video', renderVideoRoutes);
 if (jobsRoutes) app.use('/api/jobs', jobsRoutes);
+if (webhooksRoutes) app.use('/api/webhooks', webhooksRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

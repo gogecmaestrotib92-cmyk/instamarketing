@@ -222,9 +222,12 @@ Include 4-6 scenes.`
   
   const canProceedStep2 = videoStyle && aspectRatio;
 
+  // State for showing generation progress
+  const [generationStatus, setGenerationStatus] = useState('');
+
   // Poll for job status
   const pollJobStatus = async (jobId) => {
-    const maxAttempts = 120; // 10 minutes max (5s intervals)
+    const maxAttempts = 180; // 15 minutes max (5s intervals) - AI takes time!
     let attempts = 0;
     
     while (attempts < maxAttempts) {
@@ -237,11 +240,22 @@ Include 4-6 scenes.`
         
         console.log(`[BusinessVideo] Poll ${attempts}: status=${data.status}, progress=${data.progress}`);
         
+        // Update UI with current status
+        if (data.statusMessage) {
+          setGenerationStatus(data.statusMessage);
+        }
+        
         if (data.status === 'done' && data.videoUrl) {
           return { success: true, videoUrl: data.videoUrl };
         } else if (data.status === 'failed') {
           return { success: false, error: data.error || 'Video generation failed' };
         }
+        
+        // Show specific status for AI generation
+        if (data.status === 'waiting_for_ai') {
+          setGenerationStatus(`🎬 AI generating videos... (${Math.floor(attempts * 5 / 60)}:${String(attempts * 5 % 60).padStart(2, '0')} elapsed)`);
+        }
+        
         // Still processing, continue polling
       } catch (err) {
         console.error('[BusinessVideo] Poll error:', err);
@@ -256,6 +270,7 @@ Include 4-6 scenes.`
   const handleGenerateVideo = async () => {
     setIsGenerating(true);
     setGenerationError(null);
+    setGenerationStatus('Starting video generation...');
     
     try {
       // Build the full script text
@@ -283,6 +298,7 @@ Include 4-6 scenes.`
       // Handle async processing (202 response for product videos)
       if (data.isProductVideo && data.jobId) {
         console.log('[BusinessVideo] Product video - triggering processing for job:', data.jobId);
+        setGenerationStatus('📝 Processing script & finding content...');
         
         // Trigger the process endpoint
         const processResponse = await fetch(`/api/jobs/${data.jobId}/process`, {
@@ -301,6 +317,7 @@ Include 4-6 scenes.`
         } else {
           // Still processing, start polling
           console.log('[BusinessVideo] Starting polling for job:', data.jobId);
+          setGenerationStatus('🎬 Generating AI videos... (5-10 min)');
           const result = await pollJobStatus(data.jobId);
           
           if (result.success) {
@@ -741,7 +758,7 @@ Include 4-6 scenes.`
                   {isGenerating ? (
                     <>
                       <FiLoader className="spin" />
-                      <span>Generating Video... (2-3 min)</span>
+                      <span>{generationStatus || 'Starting...'}</span>
                     </>
                   ) : (
                     <>

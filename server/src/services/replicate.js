@@ -87,6 +87,75 @@ class ReplicateService {
   }
 
   /**
+   * Start async video generation with Kling - returns immediately with prediction ID
+   * The result will be sent to the webhook when complete
+   * @param {string} prompt - Text description of the video scene
+   * @param {string} webhookUrl - URL to receive completion notification
+   * @param {object} options - Generation options
+   */
+  async startAsyncKlingVideo(prompt, webhookUrl, options = {}) {
+    try {
+      const { duration = 5, aspectRatio = '9:16' } = options;
+      console.log('🎬 Starting ASYNC Kling v1.6 video generation...');
+      console.log('Prompt:', prompt);
+      console.log('Webhook:', webhookUrl);
+
+      const klingDuration = parseInt(duration) >= 10 ? 10 : 5;
+      
+      const prediction = await this.replicate.predictions.create({
+        model: 'kwaivgi/kling-v1.6-standard',
+        input: {
+          prompt: prompt,
+          duration: klingDuration,
+          aspect_ratio: aspectRatio,
+          cfg_scale: 0.5
+        },
+        webhook: webhookUrl,
+        webhook_events_filter: ['completed'] // Only notify on completion
+      });
+
+      console.log('📝 Async Kling prediction created:', prediction.id);
+      
+      return {
+        success: true,
+        predictionId: prediction.id,
+        status: 'starting'
+      };
+
+    } catch (error) {
+      console.error('Async Kling start error:', error.message);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Check the status of a Replicate prediction
+   * @param {string} predictionId - The prediction ID to check
+   */
+  async checkPredictionStatus(predictionId) {
+    try {
+      const prediction = await this.replicate.predictions.get(predictionId);
+      
+      return {
+        id: prediction.id,
+        status: prediction.status,
+        output: prediction.output,
+        error: prediction.error
+      };
+    } catch (error) {
+      console.error('Check prediction error:', error.message);
+      return {
+        id: predictionId,
+        status: 'error',
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Generate video from text prompt using Luma Ray Flash 2 (high quality, fast)
    * @param {string} prompt - Text description of the video
    * @param {object} options - Generation options

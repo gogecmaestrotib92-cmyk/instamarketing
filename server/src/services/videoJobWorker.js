@@ -318,13 +318,12 @@ async function findVideosForScenes(job) {
 }
 
 /**
- * STEP 2 (PRODUCT): Find videos for product/brand video
- * Uses stock videos with enhanced search based on business context
- * (Kling AI is too slow for Vercel's timeout - would need a queue system)
- * Order: Pexels → Pixabay → Curated
+ * STEP 2 (PRODUCT): Start async AI video generation for product/brand videos
+ * Uses Replicate webhooks - starts all predictions and returns immediately
+ * Webhook will update scenes as they complete
  */
 async function findVideosForProductScenes(job) {
-  console.log(`[Job ${job._id}] 🎬 Starting video search for product video`);
+  console.log(`[Job ${job._id}] 🎬 Starting ASYNC AI video generation for product video`);
   
   const businessName = job.businessInfo?.businessName || '';
   const industry = job.businessInfo?.industry || '';
@@ -332,57 +331,77 @@ async function findVideosForProductScenes(job) {
   
   console.log(`[Job ${job._id}] Business: ${businessName}, Industry: ${industry}, Product: ${productName}`);
   
+  // Determine webhook URL based on environment
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}` 
+    : process.env.APP_URL || 'https://instamarketing-git-main-gogecmaestrotib92-cmyks-projects.vercel.app';
+  const webhookUrl = `${baseUrl}/api/webhooks/replicate`;
+  
+  console.log(`[Job ${job._id}] Webhook URL: ${webhookUrl}`);
+  
+  // Start async predictions for all scenes
   for (let i = 0; i < job.scenes.length; i++) {
     const scene = job.scenes[i];
     await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
-      `Finding video for scene ${i + 1}/${job.scenes.length}...`);
+      `Starting AI generation for scene ${i + 1}/${job.scenes.length}...`);
     
     try {
-      // Build enhanced search query with industry context
-      let searchQuery = scene.visual || '';
-      
-      // Add industry-specific keywords to improve search results
-      if (industry) {
-        const industryKeywords = {
-          'fitness': 'workout gym exercise fitness training',
-          'food': 'cooking food restaurant kitchen chef',
-          'technology': 'tech computer digital modern office',
-          'fashion': 'fashion style clothing boutique model',
-          'beauty': 'beauty skincare makeup cosmetics spa',
-          'health': 'health wellness medical care doctor',
-          'education': 'learning education school study books',
-          'travel': 'travel vacation destination adventure journey',
-          'real estate': 'house property home interior architecture',
-          'finance': 'business money finance office professional'
-        };
-        const keywords = industryKeywords[industry.toLowerCase()] || industry;
-        // Combine visual with industry context
-        searchQuery = `${searchQuery} ${keywords.split(' ')[0]}`;
+      // Build enhanced prompt with business context
+      let prompt = scene.visual || '';
+      if (productName) {
+        prompt = `${prompt}, featuring ${productName}`;
       }
+      if (businessName) {
+        prompt = `${prompt}, ${businessName} brand style`;
+      }
+      if (industry) {
+        prompt = `${prompt}, ${industry} industry aesthetic`;
+      }
+      prompt = `${prompt}. ${scene.text}. Professional product video, high quality, cinematic lighting, smooth camera motion, 4K quality.`;
       
-      console.log(`[Job ${job._id}] Scene ${i}: Enhanced search: "${searchQuery}"`);
+      console.log(`[Job ${job._id}] Scene ${i}: Starting Kling with prompt: "${prompt.substring(0, 100)}..."`);
       
-      // Use stock video fallback (already handles Pexels → Pixabay → Curated)
-      const stockResult = await findStockVideoFallback(scene, job, i);
-      job.scenes[i].videoUrl = stockResult.videoUrl;
-      job.scenes[i].source = stockResult.source;
-      console.log(`[Job ${job._id}] Scene ${i}: ✅ Found ${stockResult.source} video`);
+      // Start async Kling generation
+      const result = await replicateService.startAsyncKlingVideo(prompt, webhookUrl, {
+        duration: scene.duration || 5,
+        aspectRatio: job.aspectRatio || '9:16'
+      });
+      
+      if (result.success) {
+        // Save prediction ID for webhook to find
+        job.scenes[i].replicatePredictionId = result.predictionId;
+        job.scenes[i].replicateStatus = 'pending';
+        console.log(`[Job ${job._id}] Scene ${i}: ✅ Kling prediction started: ${result.predictionId}`);
+      } else {
+        console.log(`[Job ${job._id}] Scene ${i}: Kling start failed, using stock video fallback`);
+        // Fallback to stock videos immediately
+        const stockResult = await findStockVideoFallback(scene, job, i);
+        job.scenes[i].videoUrl = stockResult.videoUrl;
+        job.scenes[i].source = stockResult.source;
+      }
       
     } catch (error) {
       console.error(`[Job ${job._id}] Scene ${i} error:`, error.message);
-      // Final fallback
+      // Fallback to curated
       const fallbackVideos = CURATED_VIDEOS.fitness;
       const fallback = fallbackVideos[i % fallbackVideos.length];
       job.scenes[i].videoUrl = fallback.url;
       job.scenes[i].source = 'curated';
     }
-    
-    // Update progress
-    const progress = 30 + Math.floor((i / job.scenes.length) * 15);
-    await updateJobStatus(job, 'finding_videos', progress, `Finding videos... ${i + 1}/${job.scenes.length}`);
   }
   
   await job.save();
+  
+  // Check if any scenes are waiting for AI
+  const pendingScenes = job.scenes.filter(s => s.replicateStatus === 'pending');
+  
+  if (pendingScenes.length > 0) {
+    console.log(`[Job ${job._id}] ${pendingScenes.length} scenes waiting for Kling AI (async)`);
+    job.status = 'waiting_for_ai';
+    job.statusMessage = `Generating ${pendingScenes.length} AI videos... (5-10 min)`;
+    await job.save();
+  }
+  
   return job;
 }
 
@@ -1032,8 +1051,67 @@ async function processJob(jobId) {
   }
 }
 
+/**
+ * Continue processing after AI videos are ready (called by webhook)
+ * Handles: fallback for failed scenes, audio generation, rendering
+ */
+async function continueProcessingAfterAI(jobId) {
+  console.log(`\n========== CONTINUING JOB ${jobId} (after AI) ==========`);
+  
+  let job = await VideoJob.findById(jobId);
+  if (!job) {
+    throw new Error('Job not found');
+  }
+  
+  try {
+    // Handle any failed scenes that need fallback
+    const failedScenes = job.scenes.filter(s => !s.videoUrl || s.needsFallback);
+    if (failedScenes.length > 0) {
+      job.statusMessage = `Finding backup videos for ${failedScenes.length} scene(s)...`;
+      await job.save();
+      
+      for (let i = 0; i < job.scenes.length; i++) {
+        const scene = job.scenes[i];
+        if (!scene.videoUrl || scene.needsFallback) {
+          console.log(`[Job ${jobId}] Scene ${i}: Getting fallback video...`);
+          const fallbackResult = await findStockVideoFallback(scene, job, i);
+          job.scenes[i].videoUrl = fallbackResult.videoUrl;
+          job.scenes[i].source = fallbackResult.source;
+          job.scenes[i].needsFallback = false;
+        }
+      }
+      await job.save();
+    }
+    
+    // Step 3: Generate Voiceover
+    job.statusMessage = '🎙️ Generating voiceover...';
+    await job.save();
+    job = await generateVoiceover(job);
+    
+    // Step 4: Render final video
+    job.statusMessage = '🎬 Rendering final video...';
+    await job.save();
+    job = await renderVideo(job);
+    
+    job.statusMessage = '✅ Video complete!';
+    await job.save();
+    
+    console.log(`========== JOB ${jobId} COMPLETE (after AI) ==========\n`);
+    return job;
+    
+  } catch (error) {
+    console.error(`[Job ${jobId}] CONTINUE FAILED:`, error.message);
+    job.status = 'failed';
+    job.statusMessage = `❌ Error: ${error.message}`;
+    job.error = error.message;
+    await job.save();
+    throw error;
+  }
+}
+
 module.exports = {
   processJob,
+  continueProcessingAfterAI,
   generateScript,
   findVideosForScenes,
   generateVoiceover,

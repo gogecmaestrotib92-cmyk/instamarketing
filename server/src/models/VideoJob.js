@@ -14,7 +14,14 @@ const SceneSchema = new mongoose.Schema({
   visual: { type: String }, // visual description for video search
   videoUrl: { type: String }, // Cloudinary URL after upload
   audioUrl: { type: String }, // Voiceover audio URL
-  audioDuration: { type: Number } // Actual audio duration
+  audioDuration: { type: Number }, // Actual audio duration
+  source: { type: String }, // 'pexels', 'pixabay', 'kling-ai', 'curated'
+  aiGenerated: { type: Boolean, default: false },
+  needsFallback: { type: Boolean, default: false }, // Set when AI fails
+  // Replicate async tracking
+  replicatePredictionId: { type: String }, // Replicate prediction ID for async
+  replicateStatus: { type: String }, // 'pending', 'processing', 'succeeded', 'failed'
+  replicateError: { type: String }
 });
 
 const VideoJobSchema = new mongoose.Schema({
@@ -42,7 +49,7 @@ const VideoJobSchema = new mongoose.Schema({
   // Job status
   status: {
     type: String,
-    enum: ['pending', 'generating_script', 'finding_videos', 'generating_audio', 'rendering', 'done', 'failed'],
+    enum: ['pending', 'generating_script', 'finding_videos', 'waiting_for_ai', 'generating_audio', 'rendering', 'done', 'failed'],
     default: 'pending'
   },
   progress: { type: Number, default: 0 }, // 0-100
