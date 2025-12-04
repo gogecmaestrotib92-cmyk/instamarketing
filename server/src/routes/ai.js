@@ -3726,16 +3726,22 @@ router.post('/voiceover-video/generate', async (req, res) => {
     console.log(`   Audio URL: ${audioUrl?.includes('cloudinary') ? '✅ Already on Cloudinary' : '⚠️ Not on Cloudinary'}`);
     
     // TRY SHOTSTACK FIRST (most reliable, has watermark on free tier but works well)
-    // VERSION: v3 - Download Pexels videos ourselves with browser headers (Dec 4, 2025 02:45 UTC)
-    // FIX: Server downloads from Pexels, then uploads buffer to Cloudinary
+    // VERSION: v6 - Use Cloudinary fetch URL to proxy Pexels videos
+    // FIX: Cloudinary fetch transforms Pexels URL into Cloudinary CDN URL
     if (shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
-      console.log('   🔧 PEXELS FIX v3 ACTIVE - Server downloads then uploads to Cloudinary');
+      console.log('   🔧 PEXELS FIX v6 - Using Cloudinary fetch URL proxy');
+
+      // Helper function to convert Pexels URL to Cloudinary fetch URL
+      const getCloudinaryFetchUrl = (pexelsUrl) => {
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'ddvtwoyxp';
+        // Cloudinary fetch URL format: https://res.cloudinary.com/{cloud}/video/fetch/{url}
+        const encodedUrl = encodeURIComponent(pexelsUrl);
+        return `https://res.cloudinary.com/${cloudName}/video/fetch/${encodedUrl}`;
+      };
 
       try {
         if (sceneVideos.length > 1) {
           // Multi-clip composition with scene switching
-          // IMPORTANT: Download Pexels videos ourselves then upload to Cloudinary
-          // Pexels blocks third-party downloads (403) - both from Shotstack AND Cloudinary
           console.log(`   📤 Processing ${sceneVideos.length} scene videos for Shotstack...`);
           
           const clips = [];
@@ -3743,50 +3749,13 @@ router.post('/voiceover-video/generate', async (req, res) => {
             const sceneVideo = sceneVideos[idx];
             let videoUrl = sceneVideo.url;
             
-            // Download from Pexels ourselves, then upload to Cloudinary
+            // Convert Pexels URL to Cloudinary fetch URL
             if (videoUrl.includes('pexels.com')) {
-              console.log(`   📥 Downloading scene ${idx + 1} from Pexels: ${videoUrl.substring(0, 50)}...`);
-              try {
-                // Download video with proper headers
-                const videoResponse = await fetch(videoUrl, {
-                  headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
-                    'Referer': 'https://www.pexels.com/',
-                    'Origin': 'https://www.pexels.com'
-                  }
-                });
-                
-                console.log(`   📥 Pexels response status: ${videoResponse.status}`);
-                
-                if (videoResponse.ok) {
-                  const videoBuffer = await videoResponse.buffer();
-                  console.log(`   📤 Uploading scene ${idx + 1} to Cloudinary (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)...`);
-                  
-                  if (cloudinaryUpload) {
-                    const uploadResult = await cloudinaryUpload(videoBuffer, {
-                      folder: 'instamarketing/videos',
-                      resource_type: 'video',
-                      format: 'mp4'
-                    });
-                    
-                    if (uploadResult.success) {
-                      videoUrl = uploadResult.url;
-                      console.log(`   ✅ Scene ${idx + 1} on Cloudinary: ${videoUrl}`);
-                    } else {
-                      console.log(`   ⚠️ Scene ${idx + 1} Cloudinary upload failed: ${uploadResult.error}`);
-                    }
-                  } else {
-                    console.log(`   ⚠️ cloudinaryUpload function not available!`);
-                  }
-                } else {
-                  console.log(`   ⚠️ Scene ${idx + 1} Pexels download failed: ${videoResponse.status} ${videoResponse.statusText}`);
-                }
-              } catch (uploadErr) {
-                console.log(`   ⚠️ Scene ${idx + 1} processing error: ${uploadErr.message}`);
-              }
-            } else {
-              console.log(`   ✅ Scene ${idx + 1} not Pexels, using directly: ${videoUrl.substring(0, 50)}...`);
+              const cloudinaryUrl = getCloudinaryFetchUrl(videoUrl);
+              console.log(`   🔄 Scene ${idx + 1}: Converting Pexels to Cloudinary fetch`);
+              console.log(`      From: ${videoUrl.substring(0, 60)}...`);
+              console.log(`      To: ${cloudinaryUrl.substring(0, 80)}...`);
+              videoUrl = cloudinaryUrl;
             }
             
             clips.push({
@@ -3799,7 +3768,7 @@ router.post('/voiceover-video/generate', async (req, res) => {
           
           // Log final clip URLs being sent to Shotstack
           console.log(`   🎬 Final clip URLs for Shotstack:`);
-          clips.forEach((c, i) => console.log(`      ${i + 1}. ${c.url.substring(0, 70)}...`));
+          clips.forEach((c, i) => console.log(`      ${i + 1}. ${c.url.substring(0, 80)}...`));
 
           console.log(`   🎬 Creating multi-clip render with ${clips.length} clips...`);
           console.log(`   📊 Target duration from audio: ${estimatedDuration}s`);
@@ -3828,61 +3797,18 @@ router.post('/voiceover-video/generate', async (req, res) => {
           // Single video composition with looping
           const video = sceneVideos[0] || backgroundVideo;
           // IMPORTANT: Download from Pexels ourselves then upload to Cloudinary
-          // Pexels blocks third-party downloads (403)
+          // Use Cloudinary fetch URL to proxy Pexels videos
           let videoUrl = video.url;
-          const originalUrl = videoUrl;
           
           console.log(`   📥 Single video mode - Original URL: ${videoUrl}`);
-          console.log(`   📥 cloudinaryUpload available: ${!!cloudinaryUpload}`);
-          console.log(`   📥 Is Pexels URL: ${videoUrl.includes('pexels.com')}`);
           
           if (videoUrl.includes('pexels.com')) {
-            console.log('   📥 ATTEMPTING PEXELS DOWNLOAD...');
-            try {
-              const videoResponse = await fetch(videoUrl, {
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                  'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
-                  'Referer': 'https://www.pexels.com/',
-                  'Origin': 'https://www.pexels.com'
-                }
-              });
-              
-              console.log(`   📥 Pexels response: ${videoResponse.status} ${videoResponse.statusText}`);
-              
-              if (videoResponse.ok) {
-                const videoBuffer = await videoResponse.buffer();
-                console.log(`   📤 Downloaded ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB, uploading to Cloudinary...`);
-                
-                if (cloudinaryUpload) {
-                  const uploadResult = await cloudinaryUpload(videoBuffer, {
-                    folder: 'instamarketing/videos',
-                    resource_type: 'video',
-                    format: 'mp4'
-                  });
-                  
-                  console.log(`   📤 Cloudinary result: ${JSON.stringify(uploadResult).substring(0, 200)}`);
-                  
-                  if (uploadResult.success && uploadResult.url) {
-                    videoUrl = uploadResult.url;
-                    console.log(`   ✅ SUCCESS! New URL: ${videoUrl}`);
-                  } else {
-                    console.log(`   ❌ Cloudinary upload failed: ${uploadResult.error || 'No URL returned'}`);
-                  }
-                } else {
-                  console.log(`   ❌ cloudinaryUpload function is NULL!`);
-                }
-              } else {
-                console.log(`   ❌ Pexels download failed: ${videoResponse.status}`);
-              }
-            } catch (uploadErr) {
-              console.log(`   ❌ Exception during download/upload: ${uploadErr.message}`);
-              console.log(`   ❌ Stack: ${uploadErr.stack}`);
-            }
+            // Convert to Cloudinary fetch URL
+            const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'ddvtwoyxp';
+            const encodedUrl = encodeURIComponent(videoUrl);
+            videoUrl = `https://res.cloudinary.com/${cloudName}/video/fetch/${encodedUrl}`;
+            console.log(`   🔄 Converted to Cloudinary fetch URL`);
           }
-          
-          console.log(`   🎬 FINAL VIDEO URL FOR SHOTSTACK: ${videoUrl}`);
-          console.log(`   🎬 URL changed: ${videoUrl !== originalUrl}`);
 
           console.log(`   🎬 Creating single video render...`);
           console.log(`   Video URL: ${videoUrl}`);
