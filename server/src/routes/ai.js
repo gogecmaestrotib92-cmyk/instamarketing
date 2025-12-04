@@ -3714,29 +3714,14 @@ router.post('/voiceover-video/generate', async (req, res) => {
     console.log(`   Scene videos found: ${sceneVideos.length}`);
     console.log(`   Background video: ${backgroundVideo ? 'yes' : 'no'}`);
     
-    // Prepare audio URL
+    // Prepare audio URL - ElevenLabs already uploads to Cloudinary, so it should already be a cloud URL
     let audioUrl = voiceResult.audioUrl;
+    console.log(`   Audio URL: ${audioUrl?.includes('cloudinary') ? '✅ Already on Cloudinary' : '⚠️ Not on Cloudinary'}`);
     
     // TRY SHOTSTACK FIRST (most reliable, has watermark on free tier but works well)
     if (shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
-      // Upload audio to Cloudinary for Shotstack
-      if (cloudinaryUpload && audioUrl && !audioUrl.includes('cloudinary.com')) {
-        try {
-          console.log('   📤 Uploading audio to Cloudinary...');
-          const audioResponse = await fetch(audioUrl);
-          const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
-          const uploadResult = await cloudinaryUpload(audioBuffer, {
-            folder: 'instamarketing/voiceovers',
-            resource_type: 'video'
-          });
-          if (uploadResult.success) {
-            audioUrl = uploadResult.url;
-            console.log('   ✅ Audio uploaded to Cloudinary');
-          }
-        } catch (e) {
-          console.log('   ⚠️ Audio upload failed, using original URL:', e.message);
-        }
-      }
+      // Skip audio re-upload - ElevenLabs service already handles Cloudinary upload
+      // This saves 5-10 seconds!
 
       try {
         if (sceneVideos.length > 1) {
@@ -4664,35 +4649,18 @@ Return ONLY the script text, no scene labels or directions.`;
     if (shotstackClient && selectedVideos.length > 0) {
       try {
         // OPTIMIZATION: Pexels URLs are persistent - NO need to upload to Cloudinary!
-        // This saves 10-30 seconds per video
         const uploadedClips = selectedVideos.map(video => ({
-          url: video.url, // Use Pexels URL directly - it's persistent
+          url: video.url,
           duration: video.duration || 10,
           useDuration: video.useDuration || 5,
           startAt: 0
         }));
         
-        console.log(`   ⚡ Using ${uploadedClips.length} Pexels URLs directly (no upload needed)`);
+        console.log(`   ⚡ Using ${uploadedClips.length} Pexels URLs directly`);
         
-        // Only upload audio (ElevenLabs URLs expire)
+        // Audio: ElevenLabs service already uploads to Cloudinary, so skip re-upload
         let audioUrl = voiceResult.audioUrl;
-        if (cloudinaryUpload && audioUrl && !audioUrl.includes('cloudinary.com')) {
-          try {
-            console.log('   📤 Uploading audio to Cloudinary...');
-            const audioResponse = await fetch(audioUrl);
-            const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
-            const uploadResult = await cloudinaryUpload(audioBuffer, {
-              folder: 'instamarketing/video-first',
-              resource_type: 'video'
-            });
-            if (uploadResult.success) {
-              audioUrl = uploadResult.url;
-              console.log('   ✅ Audio uploaded');
-            }
-          } catch (e) {
-            console.log(`   ⚠️ Audio upload failed, using original URL: ${e.message}`);
-          }
-        }
+        console.log(`   Audio URL: ${audioUrl?.includes('cloudinary') ? '✅ Already on Cloudinary' : '⚠️ Not on Cloudinary'}`);
         
         // Create multi-clip render
         console.log(`   🎬 Creating ${uploadedClips.length}-clip render synced to ${audioDuration.toFixed(2)}s audio...`);
@@ -4704,7 +4672,7 @@ Return ONLY the script text, no scene labels or directions.`;
           {
             musicVolume: 1,
             videoVolume: 0,
-            targetDuration: audioDuration // Sync videos to audio duration
+            targetDuration: audioDuration
           }
         );
         
