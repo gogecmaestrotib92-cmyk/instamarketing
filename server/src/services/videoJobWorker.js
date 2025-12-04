@@ -147,12 +147,20 @@ async function generateScript(job) {
 
 /**
  * STEP 2: Find videos for each scene by searching Pexels
+ * For product/brand videos, use AI generation first
  */
 async function findVideosForScenes(job) {
   await updateJobStatus(job, 'finding_videos', 30, 'Searching for matching videos...');
   
   const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
   console.log(`[Job ${job._id}] Pexels API key configured: ${!!PEXELS_API_KEY}`);
+  console.log(`[Job ${job._id}] isProductVideo: ${job.isProductVideo}`);
+  
+  // For product/brand videos, use AI-first approach
+  if (job.isProductVideo) {
+    console.log(`[Job ${job._id}] 🎨 Product video detected - using AI-first approach`);
+    return findVideosForProductScenes(job);
+  }
   
   if (!PEXELS_API_KEY) {
     console.log(`[Job ${job._id}] ⚠️ No Pexels API key! Add PEXELS_API_KEY to Vercel env vars`);
@@ -307,6 +315,131 @@ async function findVideosForScenes(job) {
   
   await job.save();
   return job;
+}
+
+/**
+ * STEP 2 (PRODUCT): Find videos for product/brand video using AI-first approach
+ * Order: Kling AI → Pexels → Pixabay → Curated
+ */
+async function findVideosForProductScenes(job) {
+  console.log(`[Job ${job._id}] 🎬 Starting AI-first video generation for product video`);
+  
+  const businessName = job.businessInfo?.businessName || '';
+  const productName = job.businessInfo?.productName || '';
+  const brandImages = job.businessInfo?.brandImages || [];
+  
+  console.log(`[Job ${job._id}] Business: ${businessName}, Product: ${productName}, Images: ${brandImages.length}`);
+  
+  for (let i = 0; i < job.scenes.length; i++) {
+    const scene = job.scenes[i];
+    await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
+      `Generating AI video for scene ${i + 1}/${job.scenes.length}...`);
+    
+    try {
+      // Build an enhanced prompt that includes business/product context
+      let prompt = scene.visual;
+      if (productName) {
+        prompt = `${prompt}, featuring ${productName}`;
+      }
+      if (businessName) {
+        prompt = `${prompt}, ${businessName} brand style`;
+      }
+      prompt = `${prompt}. ${scene.text}. Professional product video, high quality, cinematic lighting, smooth motion.`;
+      
+      console.log(`[Job ${job._id}] Scene ${i}: AI prompt: "${prompt}"`);
+      
+      // Try Kling AI first for product videos
+      const klingResult = await generateVideoWithKling(scene, job._id, i);
+      
+      if (klingResult.success) {
+        job.scenes[i].videoUrl = klingResult.videoUrl;
+        job.scenes[i].source = 'kling-ai';
+        job.scenes[i].aiGenerated = true;
+        console.log(`[Job ${job._id}] Scene ${i}: ✅ Kling AI video generated`);
+      } else {
+        // Fallback to stock videos if AI fails
+        console.log(`[Job ${job._id}] Scene ${i}: Kling failed, trying stock videos...`);
+        
+        const stockResult = await findStockVideoFallback(scene, job, i);
+        job.scenes[i].videoUrl = stockResult.videoUrl;
+        job.scenes[i].source = stockResult.source;
+      }
+      
+    } catch (error) {
+      console.error(`[Job ${job._id}] Scene ${i} error:`, error.message);
+      // Final fallback
+      const fallbackVideos = CURATED_VIDEOS.fitness;
+      const fallback = fallbackVideos[i % fallbackVideos.length];
+      job.scenes[i].videoUrl = fallback.url;
+      job.scenes[i].source = 'curated';
+    }
+    
+    // Update progress
+    const progress = 30 + Math.floor((i / job.scenes.length) * 15);
+    await updateJobStatus(job, 'finding_videos', progress, `Finding videos... ${i + 1}/${job.scenes.length}`);
+  }
+  
+  await job.save();
+  return job;
+}
+
+/**
+ * Fallback to stock videos (Pexels → Pixabay → Curated)
+ */
+async function findStockVideoFallback(scene, job, sceneIndex) {
+  const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+  
+  // Try Pexels
+  if (PEXELS_API_KEY) {
+    try {
+      let searchQuery = scene.visual || job.topic;
+      searchQuery = searchQuery
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(' ')
+        .filter(w => w.length > 2)
+        .slice(0, 3)
+        .join(' ');
+      
+      const response = await axios.get('https://api.pexels.com/videos/search', {
+        params: { query: searchQuery, orientation: 'portrait', size: 'medium', per_page: 5 },
+        headers: { 'Authorization': PEXELS_API_KEY },
+        timeout: 10000
+      });
+      
+      if (response.data.videos?.length > 0) {
+        const video = response.data.videos[0];
+        const videoFile = video.video_files.find(f => f.quality === 'hd' || f.quality === 'sd') || video.video_files[0];
+        
+        // Download and upload to Cloudinary
+        const videoResponse = await axios.get(videoFile.link, { responseType: 'arraybuffer', timeout: 30000 });
+        const videoBuffer = Buffer.from(videoResponse.data);
+        
+        const cloudinaryUrl = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            { resource_type: 'video', folder: 'job-videos', public_id: `job_${job._id}_scene_${sceneIndex}` },
+            (error, result) => error ? reject(error) : resolve(result.secure_url)
+          );
+          uploadStream.end(videoBuffer);
+        });
+        
+        return { videoUrl: cloudinaryUrl, source: 'pexels' };
+      }
+    } catch (e) {
+      console.log(`[Job ${job._id}] Pexels fallback failed: ${e.message}`);
+    }
+  }
+  
+  // Try Pixabay
+  const pixabayResult = await searchPixabayVideo(scene, job, sceneIndex);
+  if (pixabayResult.success) {
+    return { videoUrl: pixabayResult.videoUrl, source: 'pixabay' };
+  }
+  
+  // Final fallback: curated
+  const fallbackVideos = CURATED_VIDEOS.fitness;
+  const fallback = fallbackVideos[sceneIndex % fallbackVideos.length];
+  return { videoUrl: fallback.url, source: 'curated' };
 }
 
 /**

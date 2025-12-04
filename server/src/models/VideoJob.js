@@ -28,6 +28,17 @@ const VideoJobSchema = new mongoose.Schema({
   voiceId: { type: String }, // ElevenLabs voice ID
   voiceStyle: { type: String, default: 'energetic' },
   
+  // Business/Product info - if present, use AI video generation first
+  isProductVideo: { type: Boolean, default: false },
+  businessInfo: {
+    businessName: String,
+    industry: String,
+    brandImages: [String], // URLs to product/brand images for image-to-video
+    productName: String
+  },
+  videoStyle: { type: String, default: 'dynamic' }, // dynamic, cinematic, minimal, etc.
+  aspectRatio: { type: String, default: '9:16' }, // 9:16, 16:9, 1:1
+  
   // Job status
   status: {
     type: String,

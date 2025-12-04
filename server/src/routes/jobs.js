@@ -18,7 +18,18 @@ const { processJob } = require('../services/videoJobWorker');
  */
 router.post('/', async (req, res) => {
   try {
-    const { topic, contentType, targetDuration, voiceId, voiceStyle, userId } = req.body;
+    const { 
+      topic, 
+      contentType, 
+      targetDuration, 
+      voiceId, 
+      voiceStyle, 
+      userId,
+      businessInfo,
+      style,
+      aspectRatio,
+      includeCharacters
+    } = req.body;
     
     if (!topic) {
       return res.status(400).json({ error: 'Topic is required' });
@@ -30,6 +41,10 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: 'Server configuration error: OpenAI API key missing' });
     }
     
+    // Determine if this is a product/brand video (should use AI-first)
+    const isProductVideo = !!(businessInfo && (businessInfo.brandImages?.length > 0 || businessInfo.productName));
+    console.log(`[Jobs API] isProductVideo: ${isProductVideo}, businessInfo:`, businessInfo ? 'present' : 'none');
+    
     // Create job in database
     const job = new VideoJob({
       userId: userId || null,
@@ -38,6 +53,10 @@ router.post('/', async (req, res) => {
       targetDuration: targetDuration || 15,
       voiceId: voiceId || 'pNInz6obpgDQGcFmaJgB',
       voiceStyle: voiceStyle || 'energetic',
+      isProductVideo,
+      businessInfo: businessInfo || null,
+      videoStyle: style || 'dynamic',
+      aspectRatio: aspectRatio || '9:16',
       status: 'pending',
       progress: 0,
       statusMessage: 'Queued...'
