@@ -14,7 +14,8 @@ const BusinessCreate = () => {
       subtitle: 'Voiceover Video',
       description: 'Faceless subtitle videos & AI voices. Create engaging content with trending topics.',
       color: '#8b5cf6',
-      path: '/app/create/business/trending'
+      path: '/app/create/business/trending',
+      isLive: true // ✅ Feature is fully functional
     },
     {
       id: 'video',
@@ -23,7 +24,8 @@ const BusinessCreate = () => {
       subtitle: 'Promo Videos',
       description: 'Short, impactful promo videos. Perfect for social media marketing.',
       color: '#3b82f6',
-      path: '/app/create/business/video'
+      path: '/app/create/business/video',
+      isLive: false
     },
     {
       id: 'image',
@@ -32,7 +34,8 @@ const BusinessCreate = () => {
       subtitle: 'AD & Stacking Design',
       description: 'Create stunning ad images and stacking designs for your business campaigns.',
       color: '#10b981',
-      path: '/app/create/business/image'
+      path: '/app/create/business/image',
+      isLive: false
     },
     {
       id: 'ad-creatives',
@@ -41,7 +44,8 @@ const BusinessCreate = () => {
       subtitle: 'Business Ads',
       description: 'Professional ads for your business. Boost engagement and conversions.',
       color: '#f59e0b',
-      path: '/app/create/business/ad-creatives'
+      path: '/app/create/business/ad-creatives',
+      isLive: false
     }
   ];
 
@@ -61,6 +65,12 @@ const BusinessCreate = () => {
               onClick={() => navigate(card.path)}
               style={{ '--card-color': card.color }}
             >
+              {card.isLive && (
+                <div className="live-indicator" title="Feature is live!">
+                  <span className="live-dot"></span>
+                  <span className="live-text">LIVE</span>
+                </div>
+              )}
               <div className="card-icon-wrapper">
                 <card.icon className="card-icon" />
               </div>
