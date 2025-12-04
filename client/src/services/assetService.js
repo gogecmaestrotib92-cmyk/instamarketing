@@ -129,10 +129,12 @@ export const deleteAssetFromHub = (assetId) => {
   }
 };
 
-export default {
+const assetService = {
   saveAssetToHub,
   saveVideoToHub,
   saveImageToHub,
   getAssetsFromHub,
   deleteAssetFromHub
 };
+
+export default assetService;
