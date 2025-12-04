@@ -679,7 +679,7 @@ Include 4-6 scenes.`
                   {isGenerating ? (
                     <>
                       <FiLoader className="spin" />
-                      <span>Generating Video... (1-2 min)</span>
+                      <span>Generating Video... (5-10 min)</span>
                     </>
                   ) : (
                     <>
