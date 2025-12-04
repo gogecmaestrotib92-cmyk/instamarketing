@@ -9,20 +9,47 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const postRoutes = require('./routes/posts');
-const reelRoutes = require('./routes/reels');
-const campaignRoutes = require('./routes/campaigns');
-const analyticsRoutes = require('./routes/analytics');
-const scheduleRoutes = require('./routes/schedule');
-const mediaRoutes = require('./routes/media');
-const aiVideoRoutes = require('./routes/ai-video');
-const aiRoutes = require('./routes/ai');
-const advancedVideoRoutes = require('./routes/advancedVideo');
-const instagramRoutes = require('./routes/instagram');
-const renderVideoRoutes = require('./routes/render-video');
-const jobsRoutes = require('./routes/jobs');
+console.log('[SERVER] Starting server initialization...');
+console.log('[SERVER] MONGODB_URI exists:', !!process.env.MONGODB_URI);
+console.log('[SERVER] JWT_SECRET exists:', !!process.env.JWT_SECRET);
+
+// Import routes with error handling
+let authRoutes, postRoutes, reelRoutes, campaignRoutes, analyticsRoutes;
+let scheduleRoutes, mediaRoutes, aiVideoRoutes, aiRoutes, advancedVideoRoutes;
+let instagramRoutes, renderVideoRoutes, jobsRoutes;
+
+try {
+  console.log('[SERVER] Loading auth routes...');
+  authRoutes = require('./routes/auth');
+  console.log('[SERVER] Loading post routes...');
+  postRoutes = require('./routes/posts');
+  console.log('[SERVER] Loading reel routes...');
+  reelRoutes = require('./routes/reels');
+  console.log('[SERVER] Loading campaign routes...');
+  campaignRoutes = require('./routes/campaigns');
+  console.log('[SERVER] Loading analytics routes...');
+  analyticsRoutes = require('./routes/analytics');
+  console.log('[SERVER] Loading schedule routes...');
+  scheduleRoutes = require('./routes/schedule');
+  console.log('[SERVER] Loading media routes...');
+  mediaRoutes = require('./routes/media');
+  console.log('[SERVER] Loading ai-video routes...');
+  aiVideoRoutes = require('./routes/ai-video');
+  console.log('[SERVER] Loading ai routes...');
+  aiRoutes = require('./routes/ai');
+  console.log('[SERVER] Loading advancedVideo routes...');
+  advancedVideoRoutes = require('./routes/advancedVideo');
+  console.log('[SERVER] Loading instagram routes...');
+  instagramRoutes = require('./routes/instagram');
+  console.log('[SERVER] Loading render-video routes...');
+  renderVideoRoutes = require('./routes/render-video');
+  console.log('[SERVER] Loading jobs routes...');
+  jobsRoutes = require('./routes/jobs');
+  console.log('[SERVER] All routes loaded successfully!');
+} catch (routeError) {
+  console.error('[SERVER] FATAL: Failed to load routes:', routeError.message);
+  console.error('[SERVER] Stack:', routeError.stack);
+}
 
 // Scheduler is optional (only available in development)
 let initScheduler = null;
@@ -79,27 +106,12 @@ app.use(async (req, res, next) => {
 // Static files for uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/reels', reelRoutes);
-app.use('/api/campaigns', campaignRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/schedule', scheduleRoutes);
-app.use('/api/media', mediaRoutes);
-app.use('/api/ai-video', aiVideoRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/video', advancedVideoRoutes);
-app.use('/api/instagram', instagramRoutes);
-app.use('/api/render-video', renderVideoRoutes);
-app.use('/api/jobs', jobsRoutes);
-
-// Health check endpoint
+// Health check endpoint - MUST be before other routes to avoid crashes
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    dbState: mongoose.connection.readyState, // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
+    dbState: mongoose.connection.readyState,
     dbStateLabel: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState],
     env: {
       mongo: !!process.env.MONGODB_URI,
@@ -107,9 +119,39 @@ app.get('/api/health', (req, res) => {
       jwt: !!process.env.JWT_SECRET,
       replicate: !!process.env.REPLICATE_API_TOKEN
     },
+    routesLoaded: {
+      auth: !!authRoutes,
+      posts: !!postRoutes,
+      reels: !!reelRoutes,
+      campaigns: !!campaignRoutes,
+      analytics: !!analyticsRoutes,
+      schedule: !!scheduleRoutes,
+      media: !!mediaRoutes,
+      aiVideo: !!aiVideoRoutes,
+      ai: !!aiRoutes,
+      advancedVideo: !!advancedVideoRoutes,
+      instagram: !!instagramRoutes,
+      renderVideo: !!renderVideoRoutes,
+      jobs: !!jobsRoutes
+    },
     error: isConnected ? null : 'DB not connected'
   });
 });
+
+// API Routes - only register if loaded successfully
+if (authRoutes) app.use('/api/auth', authRoutes);
+if (postRoutes) app.use('/api/posts', postRoutes);
+if (reelRoutes) app.use('/api/reels', reelRoutes);
+if (campaignRoutes) app.use('/api/campaigns', campaignRoutes);
+if (analyticsRoutes) app.use('/api/analytics', analyticsRoutes);
+if (scheduleRoutes) app.use('/api/schedule', scheduleRoutes);
+if (mediaRoutes) app.use('/api/media', mediaRoutes);
+if (aiVideoRoutes) app.use('/api/ai-video', aiVideoRoutes);
+if (aiRoutes) app.use('/api/ai', aiRoutes);
+if (advancedVideoRoutes) app.use('/api/video', advancedVideoRoutes);
+if (instagramRoutes) app.use('/api/instagram', instagramRoutes);
+if (renderVideoRoutes) app.use('/api/render-video', renderVideoRoutes);
+if (jobsRoutes) app.use('/api/jobs', jobsRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
