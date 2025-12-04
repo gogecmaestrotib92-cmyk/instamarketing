@@ -54,6 +54,8 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   console.log('[AUTH] Login request received');
   console.log('[AUTH] Request body:', req.body);
+  console.log('[AUTH] MongoDB connection state:', require('mongoose').connection.readyState);
+  // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
   
   try {
     const { email, password } = req.body;
@@ -62,6 +64,16 @@ router.post('/login', async (req, res) => {
     if (!email || !password) {
       console.log('[AUTH] Missing email or password');
       return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Check if DB is connected
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      console.error('[AUTH] Database not connected! State:', mongoose.connection.readyState);
+      return res.status(500).json({ 
+        error: 'Database connection failed', 
+        details: 'MongoDB is not connected. Please check MONGODB_URI environment variable.'
+      });
     }
 
     // Find user
@@ -110,7 +122,12 @@ router.post('/login', async (req, res) => {
     console.log('[AUTH] Login successful for:', email);
   } catch (error) {
     console.error('[AUTH] Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    console.error('[AUTH] Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Login failed', 
+      details: error.message,
+      mongoState: require('mongoose').connection.readyState
+    });
   }
 });
 

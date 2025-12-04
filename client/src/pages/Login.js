@@ -17,18 +17,26 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('[LOGIN] handleSubmit called');
+    console.log('[LOGIN] Email:', email, 'Password length:', password?.length);
     
     if (!email || !password) {
+      console.log('[LOGIN] Validation failed - empty fields');
       toast.error('Please fill in all fields');
       return;
     }
 
     setLoading(true);
+    console.log('[LOGIN] Starting login request...');
     try {
       await login(email, password);
+      console.log('[LOGIN] Login successful!');
       toast.success('Welcome back!');
       navigate('/app/dashboard');
     } catch (error) {
+      console.error('[LOGIN] Login failed:', error);
+      console.error('[LOGIN] Error response:', error.response?.data);
+      console.error('[LOGIN] Error status:', error.response?.status);
       toast.error(error.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);

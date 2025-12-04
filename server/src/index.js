@@ -100,8 +100,10 @@ app.get('/api/health', (req, res) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     dbState: mongoose.connection.readyState, // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
+    dbStateLabel: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState],
     env: {
       mongo: !!process.env.MONGODB_URI,
+      mongoUri: process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 20) + '...' : 'NOT SET',
       jwt: !!process.env.JWT_SECRET,
       replicate: !!process.env.REPLICATE_API_TOKEN
     },
