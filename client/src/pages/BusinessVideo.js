@@ -247,13 +247,16 @@ Include 4-6 scenes.`
       });
       
       const data = await response.json();
+      console.log('[BusinessVideo] API response:', data);
       
-      if (data.success && data.job?.result?.videoUrl) {
-        setGeneratedVideo(data.job.result.videoUrl);
+      if (data.success && data.videoUrl) {
+        setGeneratedVideo(data.videoUrl);
       } else if (data.error) {
         throw new Error(data.error);
+      } else if (data.status === 'failed') {
+        throw new Error(data.message || 'Video generation failed');
       } else {
-        throw new Error('Video generation failed');
+        throw new Error('Video generation failed - no video URL returned');
       }
       
     } catch (error) {
