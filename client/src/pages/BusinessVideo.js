@@ -222,6 +222,36 @@ Include 4-6 scenes.`
   
   const canProceedStep2 = videoStyle && aspectRatio;
 
+  // Poll for job status
+  const pollJobStatus = async (jobId) => {
+    const maxAttempts = 120; // 10 minutes max (5s intervals)
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+      
+      try {
+        const response = await fetch(`/api/jobs/${jobId}`);
+        const data = await response.json();
+        
+        console.log(`[BusinessVideo] Poll ${attempts}: status=${data.status}, progress=${data.progress}`);
+        
+        if (data.status === 'done' && data.videoUrl) {
+          return { success: true, videoUrl: data.videoUrl };
+        } else if (data.status === 'failed') {
+          return { success: false, error: data.error || 'Video generation failed' };
+        }
+        // Still processing, continue polling
+      } catch (err) {
+        console.error('[BusinessVideo] Poll error:', err);
+        // Continue polling on network errors
+      }
+    }
+    
+    return { success: false, error: 'Video generation timed out. Please check Asset Hub later.' };
+  };
+
   // Generate video
   const handleGenerateVideo = async () => {
     setIsGenerating(true);
@@ -249,6 +279,19 @@ Include 4-6 scenes.`
       
       const data = await response.json();
       console.log('[BusinessVideo] API response:', data);
+      
+      // Handle async processing (202 response for product videos)
+      if (data.status === 'processing' && data.jobId) {
+        console.log('[BusinessVideo] Starting polling for job:', data.jobId);
+        const result = await pollJobStatus(data.jobId);
+        
+        if (result.success) {
+          data.videoUrl = result.videoUrl;
+          data.success = true;
+        } else {
+          throw new Error(result.error);
+        }
+      }
       
       if (data.success && data.videoUrl) {
         setGeneratedVideo(data.videoUrl);

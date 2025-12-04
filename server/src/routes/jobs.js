@@ -90,8 +90,29 @@ router.post('/', async (req, res) => {
     console.log(`[Jobs API] Created job ${job._id} for topic: "${topic}"`);
     console.log(`[Jobs API] ENV check - OpenAI: ${!!process.env.OPENAI_API_KEY}, ElevenLabs: ${!!process.env.ELEVENLABS_API_KEY}, Shotstack: ${!!process.env.SHOTSTACK_API_KEY}`);
     
-    // On Vercel serverless, we need to process synchronously
-    // The 120s Pro timeout should be enough for most videos
+    // For product videos with AI generation, return immediately and process async
+    // These take too long for Vercel's timeout
+    if (isProductVideo) {
+      console.log(`[Jobs API] Product video - starting async processing`);
+      
+      // Start processing in background (don't await)
+      processJob(job._id).catch(err => {
+        console.error(`[Jobs API] Background processing failed:`, err.message);
+      });
+      
+      // Return immediately with job ID for polling
+      return res.status(202).json({
+        success: true,
+        jobId: job._id,
+        status: 'processing',
+        progress: 0,
+        message: 'Video generation started. This may take 5-10 minutes for AI-generated product videos.',
+        pollUrl: `/api/jobs/${job._id}`
+      });
+    }
+    
+    // For regular stock video jobs, process synchronously (faster)
+    // The 120s Pro timeout should be enough for stock videos
     try {
       await processJob(job._id);
       
