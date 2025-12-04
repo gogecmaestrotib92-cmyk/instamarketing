@@ -3726,30 +3726,49 @@ router.post('/voiceover-video/generate', async (req, res) => {
       try {
         if (sceneVideos.length > 1) {
           // Multi-clip composition with scene switching
-          // IMPORTANT: Upload Pexels videos to Cloudinary first - Pexels blocks third-party downloads (403)
-          console.log(`   📤 Uploading ${sceneVideos.length} scene videos to Cloudinary (Pexels blocks Shotstack)...`);
+          // IMPORTANT: Download Pexels videos ourselves then upload to Cloudinary
+          // Pexels blocks third-party downloads (403) - both from Shotstack AND Cloudinary
+          console.log(`   📤 Processing ${sceneVideos.length} scene videos for Shotstack...`);
           
           const clips = [];
           for (let idx = 0; idx < sceneVideos.length; idx++) {
             const sceneVideo = sceneVideos[idx];
             let videoUrl = sceneVideo.url;
             
-            // Upload Pexels videos to Cloudinary so Shotstack can access them
-            if (cloudinaryService && videoUrl.includes('pexels.com')) {
+            // Download from Pexels ourselves, then upload to Cloudinary
+            if (cloudinaryService && cloudinaryUpload && videoUrl.includes('pexels.com')) {
               try {
-                console.log(`   📤 Uploading scene ${idx + 1} to Cloudinary...`);
-                const uploadResult = await cloudinaryService.uploadFromUrl(videoUrl, {
-                  folder: 'instamarketing/videos',
-                  resource_type: 'video'
+                console.log(`   📥 Downloading scene ${idx + 1} from Pexels...`);
+                // Download video with proper headers
+                const videoResponse = await fetch(videoUrl, {
+                  headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
+                    'Referer': 'https://www.pexels.com/'
+                  }
                 });
-                if (uploadResult.success) {
-                  videoUrl = uploadResult.url;
-                  console.log(`   ✅ Scene ${idx + 1} uploaded: ${videoUrl.substring(0, 60)}...`);
+                
+                if (videoResponse.ok) {
+                  const videoBuffer = await videoResponse.buffer();
+                  console.log(`   📤 Uploading scene ${idx + 1} to Cloudinary (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)...`);
+                  
+                  const uploadResult = await cloudinaryUpload(videoBuffer, {
+                    folder: 'instamarketing/videos',
+                    resource_type: 'video',
+                    format: 'mp4'
+                  });
+                  
+                  if (uploadResult.success) {
+                    videoUrl = uploadResult.url;
+                    console.log(`   ✅ Scene ${idx + 1} uploaded: ${videoUrl.substring(0, 60)}...`);
+                  } else {
+                    console.log(`   ⚠️ Scene ${idx + 1} Cloudinary upload failed: ${uploadResult.error}`);
+                  }
                 } else {
-                  console.log(`   ⚠️ Scene ${idx + 1} upload failed, using original URL`);
+                  console.log(`   ⚠️ Scene ${idx + 1} download failed: ${videoResponse.status}`);
                 }
               } catch (uploadErr) {
-                console.log(`   ⚠️ Scene ${idx + 1} upload error: ${uploadErr.message}`);
+                console.log(`   ⚠️ Scene ${idx + 1} processing error: ${uploadErr.message}`);
               }
             }
             
@@ -3787,24 +3806,42 @@ router.post('/voiceover-video/generate', async (req, res) => {
         } else if (backgroundVideo || sceneVideos.length === 1) {
           // Single video composition with looping
           const video = sceneVideos[0] || backgroundVideo;
-          // IMPORTANT: Upload Pexels videos to Cloudinary - Pexels blocks third-party downloads (403)
+          // IMPORTANT: Download from Pexels ourselves then upload to Cloudinary
+          // Pexels blocks third-party downloads (403)
           let videoUrl = video.url;
           
-          if (cloudinaryService && videoUrl.includes('pexels.com')) {
+          if (cloudinaryUpload && videoUrl.includes('pexels.com')) {
             try {
-              console.log('   📤 Uploading video to Cloudinary (Pexels blocks Shotstack)...');
-              const uploadResult = await cloudinaryService.uploadFromUrl(videoUrl, {
-                folder: 'instamarketing/videos',
-                resource_type: 'video'
+              console.log('   📥 Downloading video from Pexels...');
+              const videoResponse = await fetch(videoUrl, {
+                headers: {
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                  'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
+                  'Referer': 'https://www.pexels.com/'
+                }
               });
-              if (uploadResult.success) {
-                videoUrl = uploadResult.url;
-                console.log(`   ✅ Video uploaded: ${videoUrl.substring(0, 60)}...`);
+              
+              if (videoResponse.ok) {
+                const videoBuffer = await videoResponse.buffer();
+                console.log(`   📤 Uploading to Cloudinary (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)...`);
+                
+                const uploadResult = await cloudinaryUpload(videoBuffer, {
+                  folder: 'instamarketing/videos',
+                  resource_type: 'video',
+                  format: 'mp4'
+                });
+                
+                if (uploadResult.success) {
+                  videoUrl = uploadResult.url;
+                  console.log(`   ✅ Video uploaded: ${videoUrl.substring(0, 60)}...`);
+                } else {
+                  console.log(`   ⚠️ Cloudinary upload failed: ${uploadResult.error}`);
+                }
               } else {
-                console.log(`   ⚠️ Upload failed: ${uploadResult.error}, using original URL`);
+                console.log(`   ⚠️ Pexels download failed: ${videoResponse.status}`);
               }
             } catch (uploadErr) {
-              console.log(`   ⚠️ Upload error: ${uploadErr.message}, using original URL`);
+              console.log(`   ⚠️ Video processing error: ${uploadErr.message}`);
             }
           }
 
