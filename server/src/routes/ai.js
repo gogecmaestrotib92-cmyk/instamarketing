@@ -4476,4 +4476,341 @@ router.post('/validate-image', async (req, res) => {
   }
 });
 
+// ==================== VIDEO-FIRST GENERATION ====================
+// NEW APPROACH: Select videos FIRST, then generate script to match their durations
+// This ensures perfect sync between visuals and voiceover
+
+// Load curated videos service
+let curatedVideosService = null;
+try {
+  curatedVideosService = require('../services/curatedVideos');
+  console.log('✅ Curated videos service loaded for Video-First approach');
+} catch (e) {
+  console.log('Curated videos not available:', e.message);
+}
+
+/**
+ * VIDEO-FIRST Generation Pipeline
+ * 1. Select best curated videos for topic (EXACT durations known)
+ * 2. Generate script that FITS those video durations
+ * 3. Generate voiceover synced to video timing
+ * 4. Generate subtitles from voiceover timestamps
+ * 5. Render final video with Shotstack
+ * 
+ * POST /api/ai/generate-video-first
+ */
+router.post('/generate-video-first', async (req, res) => {
+  try {
+    const {
+      topic,
+      contentType = 'motivation', // fitness, health, motivation, hooks
+      targetDuration = 15, // Target video length in seconds
+      voiceId = null, // ElevenLabs voice ID
+      maxWordsPerSubtitle = 3
+    } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+
+    console.log('\n🎬 ========== VIDEO-FIRST GENERATION ==========');
+    console.log(`   Topic: "${topic}"`);
+    console.log(`   Content Type: ${contentType}`);
+    console.log(`   Target Duration: ${targetDuration}s`);
+
+    // ==================== STEP 1: SELECT VIDEOS FIRST ====================
+    console.log('\n📹 STEP 1: Selecting curated videos FIRST...');
+    
+    let selectedVideos = [];
+    let totalVideoDuration = 0;
+    
+    if (curatedVideosService) {
+      // Get 3-5 videos that fit our target duration
+      const numScenes = Math.ceil(targetDuration / 5); // ~5 seconds per scene
+      
+      // Extract keywords from topic for video matching
+      const topicKeywords = topic.toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length > 3);
+      
+      console.log(`   Looking for ${numScenes} scenes, keywords: ${topicKeywords.join(', ')}`);
+      
+      // Build scene requests
+      const sceneRequests = [];
+      for (let i = 0; i < numScenes; i++) {
+        // Rotate through keywords for variety
+        const keyword = topicKeywords[i % topicKeywords.length] || contentType;
+        sceneRequests.push({
+          index: i,
+          searchTerm: keyword,
+          duration: Math.min(5, targetDuration / numScenes) // Each scene ~5s
+        });
+      }
+      
+      // Get curated videos for each scene
+      selectedVideos = curatedVideosService.getCuratedVideosForScenes(sceneRequests, contentType);
+      
+      if (selectedVideos.length === 0) {
+        // Fallback: get random defaults
+        console.log('   ⚠️ No curated videos found, using defaults...');
+        for (let i = 0; i < numScenes; i++) {
+          const defaultVideo = curatedVideosService.getRandomDefault(contentType);
+          if (defaultVideo) {
+            selectedVideos.push({
+              ...defaultVideo,
+              sceneIndex: i,
+              useDuration: Math.min(5, targetDuration / numScenes)
+            });
+          }
+        }
+      }
+      
+      // Calculate total video duration
+      totalVideoDuration = selectedVideos.reduce((sum, v) => sum + (v.useDuration || v.duration || 5), 0);
+      
+      console.log(`   ✅ Selected ${selectedVideos.length} videos (total: ${totalVideoDuration.toFixed(1)}s)`);
+      selectedVideos.forEach((v, i) => {
+        console.log(`      ${i + 1}. "${v.description}" (${v.useDuration || v.duration}s) - matched: ${v.matchedKeyword}`);
+      });
+    } else {
+      console.log('   ⚠️ Curated videos service not available');
+      totalVideoDuration = targetDuration;
+    }
+
+    // ==================== STEP 2: GENERATE SCRIPT TO FIT VIDEO DURATIONS ====================
+    console.log('\n📝 STEP 2: Generating script to FIT video durations...');
+    
+    // Calculate words based on video duration (2.5 words/second speaking rate)
+    const maxWords = Math.floor(totalVideoDuration * 2.5);
+    
+    // Build scene descriptions for GPT
+    const sceneDescriptions = selectedVideos.map((v, i) => 
+      `Scene ${i + 1} (${v.useDuration || v.duration}s): ${v.description}`
+    ).join('\n');
+    
+    let script = '';
+    try {
+      const scriptPrompt = `You are a viral video scriptwriter. Write a script for this ${totalVideoDuration.toFixed(0)}-second video.
+
+TOPIC: "${topic}"
+
+VIDEO SCENES (write script that matches these visuals):
+${sceneDescriptions || `Single scene (${totalVideoDuration}s): Generic ${contentType} content`}
+
+RULES:
+1. MAXIMUM ${maxWords} words total (VERY IMPORTANT - video is ${totalVideoDuration.toFixed(0)} seconds)
+2. Write script that MATCHES what's happening in each scene
+3. Use viral hooks: questions, bold claims, or curiosity gaps
+4. End with a call-to-action
+5. Be punchy and conversational
+
+Return ONLY the script text, no scene labels or directions.`;
+
+      const scriptResult = await openaiService.client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: scriptPrompt }],
+        max_tokens: 300,
+        temperature: 0.8
+      });
+      
+      script = scriptResult.choices[0]?.message?.content?.trim() || '';
+      
+      // Verify word count
+      const wordCount = script.split(/\s+/).length;
+      console.log(`   ✅ Script generated: ${wordCount} words for ${totalVideoDuration.toFixed(1)}s video`);
+      
+      if (wordCount > maxWords * 1.2) {
+        console.log(`   ⚠️ Script too long (${wordCount} > ${maxWords}), may need trimming`);
+      }
+    } catch (scriptError) {
+      console.error('   ❌ Script generation failed:', scriptError.message);
+      // Fallback script
+      script = `Here's something amazing about ${topic}. This is going to change everything. Don't miss this. Follow for more!`;
+    }
+    
+    console.log(`   📜 Script: "${script.substring(0, 100)}..."`);
+
+    // ==================== STEP 3: GENERATE VOICEOVER WITH TIMESTAMPS ====================
+    console.log('\n🎤 STEP 3: Generating voiceover with EXACT timestamps...');
+    
+    let voiceResult = null;
+    let wordTimestamps = null;
+    let audioDuration = totalVideoDuration;
+    
+    if (elevenlabsService && elevenlabsService.isAvailable()) {
+      try {
+        // Use timestamps API for EXACT word timing
+        if (typeof elevenlabsService.textToSpeechWithTimestamps === 'function') {
+          voiceResult = await elevenlabsService.textToSpeechWithTimestamps(script, { 
+            voiceId: voiceId || undefined 
+          });
+          
+          if (voiceResult.success && voiceResult.wordTimings?.length > 0) {
+            wordTimestamps = voiceResult.wordTimings;
+            // Get actual audio duration from last word
+            const lastWord = wordTimestamps[wordTimestamps.length - 1];
+            audioDuration = lastWord.end + 0.3; // Small buffer
+            console.log(`   ✅ Voiceover with ${wordTimestamps.length} word timestamps (${audioDuration.toFixed(2)}s)`);
+          } else if (voiceResult.success) {
+            console.log('   ✅ Voiceover generated (no timestamps)');
+          }
+        } else {
+          // Fallback to regular TTS
+          voiceResult = await elevenlabsService.textToSpeech(script, { 
+            voiceId: voiceId || '21m00Tcm4TlvDq8ikWAM' 
+          });
+        }
+      } catch (e) {
+        console.error('   ❌ ElevenLabs error:', e.message);
+      }
+    }
+    
+    if (!voiceResult || !voiceResult.success) {
+      console.log('   ⚠️ Falling back to Google TTS...');
+      voiceResult = await googleTTSService.generateVoiceover(script, 'energetic');
+    }
+    
+    if (!voiceResult.success) {
+      return res.status(500).json({ error: 'Failed to generate voiceover' });
+    }
+
+    // ==================== STEP 4: GENERATE SUBTITLES ====================
+    console.log('\n📝 STEP 4: Generating subtitles...');
+    
+    let subtitles = [];
+    
+    if (wordTimestamps && wordTimestamps.length > 0) {
+      // Use EXACT timestamps from ElevenLabs
+      subtitles = generateSubtitlesFromTimestamps(wordTimestamps, maxWordsPerSubtitle);
+      console.log(`   ✅ ${subtitles.length} subtitle segments with EXACT timing`);
+    } else {
+      // Fallback: estimate timing based on word count
+      subtitles = createBasicSubtitles(script, audioDuration);
+      console.log(`   ✅ ${subtitles.length} subtitle segments (estimated timing)`);
+    }
+
+    // ==================== STEP 5: RENDER VIDEO WITH SHOTSTACK ====================
+    console.log('\n🎬 STEP 5: Rendering video with Shotstack...');
+    
+    let compositionJobId = null;
+    let compositionError = null;
+    
+    if (shotstackClient && selectedVideos.length > 0) {
+      try {
+        // Upload videos to Cloudinary for persistent URLs
+        const uploadedClips = [];
+        
+        for (const video of selectedVideos) {
+          let videoUrl = video.url;
+          
+          if (cloudinaryUpload && videoUrl.includes('pexels.com')) {
+            try {
+              console.log(`   📤 Uploading video ${uploadedClips.length + 1}...`);
+              const videoResponse = await fetch(videoUrl);
+              const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+              const uploadResult = await cloudinaryUpload(videoBuffer, {
+                folder: 'instamarketing/video-first',
+                resource_type: 'video'
+              });
+              if (uploadResult.success) {
+                videoUrl = uploadResult.url;
+              }
+            } catch (e) {
+              console.log(`   ⚠️ Upload failed: ${e.message}`);
+            }
+          }
+          
+          uploadedClips.push({
+            url: videoUrl,
+            duration: video.duration || 10,
+            useDuration: video.useDuration || 5,
+            startAt: 0
+          });
+        }
+        
+        // Upload audio
+        let audioUrl = voiceResult.audioUrl;
+        if (cloudinaryUpload && audioUrl && !audioUrl.includes('cloudinary.com')) {
+          try {
+            console.log('   📤 Uploading audio...');
+            const audioResponse = await fetch(audioUrl);
+            const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+            const uploadResult = await cloudinaryUpload(audioBuffer, {
+              folder: 'instamarketing/video-first',
+              resource_type: 'video'
+            });
+            if (uploadResult.success) {
+              audioUrl = uploadResult.url;
+            }
+          } catch (e) {
+            console.log(`   ⚠️ Audio upload failed: ${e.message}`);
+          }
+        }
+        
+        // Create multi-clip render
+        console.log(`   🎬 Creating ${uploadedClips.length}-clip render synced to ${audioDuration.toFixed(2)}s audio...`);
+        
+        const jobResult = await shotstackClient.createMultiClipRender(
+          uploadedClips,
+          audioUrl,
+          subtitles,
+          {
+            musicVolume: 1,
+            videoVolume: 0,
+            targetDuration: audioDuration // Sync videos to audio duration
+          }
+        );
+        
+        if (jobResult.success) {
+          compositionJobId = jobResult.jobId;
+          console.log(`   ✅ Render job started: ${compositionJobId}`);
+        } else {
+          compositionError = jobResult.error;
+          console.log(`   ❌ Render failed: ${compositionError}`);
+        }
+      } catch (renderError) {
+        compositionError = renderError.message;
+        console.error('   ❌ Render error:', compositionError);
+      }
+    } else {
+      compositionError = 'Shotstack not available or no videos selected';
+    }
+
+    // ==================== RETURN RESULT ====================
+    console.log('\n✅ ========== VIDEO-FIRST GENERATION COMPLETE ==========');
+    
+    const result = {
+      success: true,
+      approach: 'VIDEO-FIRST',
+      topic,
+      script,
+      audioUrl: voiceResult.audioUrl,
+      audioDuration: audioDuration.toFixed(2),
+      videos: selectedVideos.map(v => ({
+        description: v.description,
+        duration: v.useDuration || v.duration,
+        matchedKeyword: v.matchedKeyword,
+        url: v.url
+      })),
+      totalVideoDuration: totalVideoDuration.toFixed(2),
+      subtitles,
+      subtitleCount: subtitles.length,
+      hasExactTimestamps: !!wordTimestamps,
+      compositionJobId,
+      compositionError,
+      compositionStatus: compositionJobId ? 'processing' : 'failed',
+      message: compositionJobId 
+        ? 'Video-First generation started! Poll /api/ai/compose-video/status/:jobId for result.'
+        : `Generation completed but rendering failed: ${compositionError}`
+    };
+    
+    res.json(result);
+    
+  } catch (error) {
+    console.error('Video-First generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
