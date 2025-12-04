@@ -318,52 +318,55 @@ async function findVideosForScenes(job) {
 }
 
 /**
- * STEP 2 (PRODUCT): Find videos for product/brand video using AI-first approach
- * Order: Kling AI → Pexels → Pixabay → Curated
+ * STEP 2 (PRODUCT): Find videos for product/brand video
+ * Uses stock videos with enhanced search based on business context
+ * (Kling AI is too slow for Vercel's timeout - would need a queue system)
+ * Order: Pexels → Pixabay → Curated
  */
 async function findVideosForProductScenes(job) {
-  console.log(`[Job ${job._id}] 🎬 Starting AI-first video generation for product video`);
+  console.log(`[Job ${job._id}] 🎬 Starting video search for product video`);
   
   const businessName = job.businessInfo?.businessName || '';
+  const industry = job.businessInfo?.industry || '';
   const productName = job.businessInfo?.productName || '';
-  const brandImages = job.businessInfo?.brandImages || [];
   
-  console.log(`[Job ${job._id}] Business: ${businessName}, Product: ${productName}, Images: ${brandImages.length}`);
+  console.log(`[Job ${job._id}] Business: ${businessName}, Industry: ${industry}, Product: ${productName}`);
   
   for (let i = 0; i < job.scenes.length; i++) {
     const scene = job.scenes[i];
     await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
-      `Generating AI video for scene ${i + 1}/${job.scenes.length}...`);
+      `Finding video for scene ${i + 1}/${job.scenes.length}...`);
     
     try {
-      // Build an enhanced prompt that includes business/product context
-      let prompt = scene.visual;
-      if (productName) {
-        prompt = `${prompt}, featuring ${productName}`;
-      }
-      if (businessName) {
-        prompt = `${prompt}, ${businessName} brand style`;
-      }
-      prompt = `${prompt}. ${scene.text}. Professional product video, high quality, cinematic lighting, smooth motion.`;
+      // Build enhanced search query with industry context
+      let searchQuery = scene.visual || '';
       
-      console.log(`[Job ${job._id}] Scene ${i}: AI prompt: "${prompt}"`);
-      
-      // Try Kling AI first for product videos
-      const klingResult = await generateVideoWithKling(scene, job._id, i);
-      
-      if (klingResult.success) {
-        job.scenes[i].videoUrl = klingResult.videoUrl;
-        job.scenes[i].source = 'kling-ai';
-        job.scenes[i].aiGenerated = true;
-        console.log(`[Job ${job._id}] Scene ${i}: ✅ Kling AI video generated`);
-      } else {
-        // Fallback to stock videos if AI fails
-        console.log(`[Job ${job._id}] Scene ${i}: Kling failed, trying stock videos...`);
-        
-        const stockResult = await findStockVideoFallback(scene, job, i);
-        job.scenes[i].videoUrl = stockResult.videoUrl;
-        job.scenes[i].source = stockResult.source;
+      // Add industry-specific keywords to improve search results
+      if (industry) {
+        const industryKeywords = {
+          'fitness': 'workout gym exercise fitness training',
+          'food': 'cooking food restaurant kitchen chef',
+          'technology': 'tech computer digital modern office',
+          'fashion': 'fashion style clothing boutique model',
+          'beauty': 'beauty skincare makeup cosmetics spa',
+          'health': 'health wellness medical care doctor',
+          'education': 'learning education school study books',
+          'travel': 'travel vacation destination adventure journey',
+          'real estate': 'house property home interior architecture',
+          'finance': 'business money finance office professional'
+        };
+        const keywords = industryKeywords[industry.toLowerCase()] || industry;
+        // Combine visual with industry context
+        searchQuery = `${searchQuery} ${keywords.split(' ')[0]}`;
       }
+      
+      console.log(`[Job ${job._id}] Scene ${i}: Enhanced search: "${searchQuery}"`);
+      
+      // Use stock video fallback (already handles Pexels → Pixabay → Curated)
+      const stockResult = await findStockVideoFallback(scene, job, i);
+      job.scenes[i].videoUrl = stockResult.videoUrl;
+      job.scenes[i].source = stockResult.source;
+      console.log(`[Job ${job._id}] Scene ${i}: ✅ Found ${stockResult.source} video`);
       
     } catch (error) {
       console.error(`[Job ${job._id}] Scene ${i} error:`, error.message);

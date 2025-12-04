@@ -281,15 +281,34 @@ Include 4-6 scenes.`
       console.log('[BusinessVideo] API response:', data);
       
       // Handle async processing (202 response for product videos)
-      if (data.status === 'processing' && data.jobId) {
-        console.log('[BusinessVideo] Starting polling for job:', data.jobId);
-        const result = await pollJobStatus(data.jobId);
+      if (data.isProductVideo && data.jobId) {
+        console.log('[BusinessVideo] Product video - triggering processing for job:', data.jobId);
         
-        if (result.success) {
-          data.videoUrl = result.videoUrl;
+        // Trigger the process endpoint
+        const processResponse = await fetch(`/api/jobs/${data.jobId}/process`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const processData = await processResponse.json();
+        console.log('[BusinessVideo] Process response:', processData);
+        
+        if (processData.status === 'done' && processData.videoUrl) {
+          data.videoUrl = processData.videoUrl;
           data.success = true;
+        } else if (processData.status === 'failed') {
+          throw new Error(processData.error || 'Video generation failed');
         } else {
-          throw new Error(result.error);
+          // Still processing, start polling
+          console.log('[BusinessVideo] Starting polling for job:', data.jobId);
+          const result = await pollJobStatus(data.jobId);
+          
+          if (result.success) {
+            data.videoUrl = result.videoUrl;
+            data.success = true;
+          } else {
+            throw new Error(result.error);
+          }
         }
       }
       
@@ -722,7 +741,7 @@ Include 4-6 scenes.`
                   {isGenerating ? (
                     <>
                       <FiLoader className="spin" />
-                      <span>Generating Video... (5-10 min)</span>
+                      <span>Generating Video... (2-3 min)</span>
                     </>
                   ) : (
                     <>

@@ -90,23 +90,19 @@ router.post('/', async (req, res) => {
     console.log(`[Jobs API] Created job ${job._id} for topic: "${topic}"`);
     console.log(`[Jobs API] ENV check - OpenAI: ${!!process.env.OPENAI_API_KEY}, ElevenLabs: ${!!process.env.ELEVENLABS_API_KEY}, Shotstack: ${!!process.env.SHOTSTACK_API_KEY}`);
     
-    // For product videos with AI generation, return immediately and process async
-    // These take too long for Vercel's timeout
+    // For product videos with AI generation, just save the job and return
+    // Client will trigger processing with a separate request
     if (isProductVideo) {
-      console.log(`[Jobs API] Product video - starting async processing`);
+      console.log(`[Jobs API] Product video - returning job for async processing`);
       
-      // Start processing in background (don't await)
-      processJob(job._id).catch(err => {
-        console.error(`[Jobs API] Background processing failed:`, err.message);
-      });
-      
-      // Return immediately with job ID for polling
+      // Return immediately with job ID - client will call /process endpoint
       return res.status(202).json({
         success: true,
         jobId: job._id,
-        status: 'processing',
+        status: 'pending',
         progress: 0,
-        message: 'Video generation started. This may take 5-10 minutes for AI-generated product videos.',
+        isProductVideo: true,
+        message: 'Video job created. Starting processing...',
         pollUrl: `/api/jobs/${job._id}`
       });
     }
@@ -184,6 +180,65 @@ router.get('/:id', async (req, res) => {
     
   } catch (error) {
     console.error('[Jobs API] Get error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/jobs/:id/process
+ * Trigger processing for a job (used for async product videos)
+ * This endpoint processes one step at a time to stay within timeout
+ */
+router.post('/:id/process', async (req, res) => {
+  try {
+    const job = await VideoJob.findById(req.params.id);
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    
+    // If already done or failed, just return status
+    if (job.status === 'done' || job.status === 'failed') {
+      return res.json({
+        jobId: job._id,
+        status: job.status,
+        videoUrl: job.finalVideoUrl,
+        error: job.error
+      });
+    }
+    
+    console.log(`[Jobs API] Processing job ${job._id}, current status: ${job.status}`);
+    
+    // Process the job
+    try {
+      await processJob(job._id);
+      
+      // Reload to get final status
+      const finalJob = await VideoJob.findById(job._id);
+      
+      res.json({
+        jobId: finalJob._id,
+        status: finalJob.status,
+        progress: finalJob.progress,
+        videoUrl: finalJob.finalVideoUrl,
+        error: finalJob.error
+      });
+    } catch (processError) {
+      console.error(`[Jobs API] Process error:`, processError.message);
+      
+      job.status = 'failed';
+      job.error = processError.message;
+      await job.save();
+      
+      res.status(500).json({
+        jobId: job._id,
+        status: 'failed',
+        error: processError.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('[Jobs API] Process endpoint error:', error);
     res.status(500).json({ error: error.message });
   }
 });
