@@ -11,14 +11,24 @@ const axios = require('axios');
 const FormData = require('form-data');
 const cloudinary = require('cloudinary').v2;
 
-// Initialize OpenAI
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize OpenAI lazily (to ensure env vars are loaded)
+let openaiClient = null;
+function getOpenAI() {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY not configured');
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
 
 // Initialize Cloudinary
 cloudinary.config({
   cloud_name: 'ddvtwoyxp',
-  api_key: process.env.CLOUDINARY_API_KEY || '123456789012345', // Use env var
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'your-secret-here'
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
 // Curated videos database (Cloudinary-hosted)
@@ -74,7 +84,10 @@ function findVideoForScene(sceneVisual, category = 'fitness') {
 async function generateScript(job) {
   await updateJobStatus(job, 'generating_script', 10, 'Generating script...');
   
-  const prompt = `Create a ${job.targetDuration}-second video script about: "${job.topic}"
+  try {
+    const openai = getOpenAI();
+    
+    const prompt = `Create a ${job.targetDuration}-second video script about: "${job.topic}"
   
   Return ONLY valid JSON in this exact format:
   {
@@ -95,51 +108,59 @@ async function generateScript(job) {
   - Make it punchy and engaging for social media
   - Visual descriptions should be simple: "person working out", "typing on laptop", etc.`;
   
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
-    temperature: 0.7
-  });
-  
-  const content = JSON.parse(response.choices[0].message.content);
-  
-  // Build scenes array
-  const scenes = [];
-  let order = 0;
-  
-  // Add hook as first scene
-  scenes.push({
-    order: order++,
-    text: content.hook,
-    duration: 3,
-    visual: 'attention grabbing intro'
-  });
-  
-  // Add main scenes
-  for (const scene of content.scenes) {
+    console.log(`[Job ${job._id}] Calling OpenAI for script generation...`);
+    
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      temperature: 0.7
+    });
+    
+    const content = JSON.parse(response.choices[0].message.content);
+    console.log(`[Job ${job._id}] Script generated:`, content.hook);
+    
+    // Build scenes array
+    const scenes = [];
+    let order = 0;
+    
+    // Add hook as first scene
     scenes.push({
       order: order++,
-      text: scene.text,
-      duration: scene.duration || 5,
-      visual: scene.visual
+      text: content.hook,
+      duration: 3,
+      visual: 'attention grabbing intro'
     });
+    
+    // Add main scenes
+    for (const scene of content.scenes) {
+      scenes.push({
+        order: order++,
+        text: scene.text,
+        duration: scene.duration || 5,
+        visual: scene.visual
+      });
+    }
+    
+    // Add CTA as last scene
+    scenes.push({
+      order: order++,
+      text: content.cta,
+      duration: 3,
+      visual: 'call to action'
+    });
+    
+    job.script = JSON.stringify(content);
+    job.scenes = scenes;
+    await job.save();
+    
+    console.log(`[Job ${job._id}] Generated ${scenes.length} scenes`);
+    return job;
+    
+  } catch (error) {
+    console.error(`[Job ${job._id}] Script generation error:`, error.message);
+    throw new Error(`Script generation failed: ${error.message}`);
   }
-  
-  // Add CTA as last scene
-  scenes.push({
-    order: order++,
-    text: content.cta,
-    duration: 3,
-    visual: 'call to action'
-  });
-  
-  job.script = JSON.stringify(content);
-  job.scenes = scenes;
-  await job.save();
-  
-  console.log(`[Job ${job._id}] Generated ${scenes.length} scenes`);
-  return job;
 }
 
 /**

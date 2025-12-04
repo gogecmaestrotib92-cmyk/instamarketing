@@ -225,13 +225,14 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
     setGeneratedResult(null);
     
     try {
-      // Use job-based async generation for stock videos
+      // Use job-based generation for stock videos
       if (backgroundType === 'stock-video') {
-        setGenerationStep('Creating video job...');
+        setGenerationStep('Generating video (this may take 1-2 minutes)...');
         console.log('🎬 Creating video generation job');
         
-        // Step 1: Create the job
-        const createResponse = await fetch('/api/jobs', {
+        // Create and process job in one request
+        // Vercel Pro has 120s timeout, should be enough
+        const response = await fetch('/api/jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -242,54 +243,23 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           })
         });
         
-        const createData = await createResponse.json();
+        const data = await response.json();
         
-        if (!createResponse.ok || createData.error) {
-          throw new Error(createData.error || 'Failed to create video job');
+        if (!response.ok || data.error || data.status === 'failed') {
+          throw new Error(data.error || 'Failed to generate video');
         }
         
-        const jobId = createData.jobId;
-        console.log('✅ Job created:', jobId);
-        
-        // Step 2: Poll for completion
-        let attempts = 0;
-        const maxAttempts = 120; // 120 x 3s = 6 minutes max
-        let finalData = null;
-        
-        while (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 3000)); // Poll every 3 seconds
-          
-          const statusResponse = await fetch(`/api/jobs/${jobId}`);
-          const statusData = await statusResponse.json();
-          
-          // Update UI with status
-          setGenerationStep(`${statusData.statusMessage} (${statusData.progress || 0}%)`);
-          console.log(`[Poll ${attempts}] ${statusData.status}: ${statusData.statusMessage}`);
-          
-          if (statusData.status === 'done') {
-            finalData = statusData;
-            console.log('✅ Job complete:', finalData.videoUrl);
-            break;
-          } else if (statusData.status === 'failed') {
-            throw new Error(statusData.error || 'Video generation failed');
-          }
-          
-          attempts++;
-        }
-        
-        if (!finalData) {
-          throw new Error('Video generation timed out. Please try again.');
-        }
+        console.log('✅ Video generated:', data);
         
         // Build result
         const result = {
           id: Date.now().toString(),
           type: 'voiceover-video',
           name: `Voiceover - ${postTopic.substring(0, 30)}${postTopic.length > 30 ? '...' : ''}`,
-          script: null, // Script is stored in job
-          audioUrl: finalData.audioUrl,
+          script: null,
+          audioUrl: data.audioUrl,
           backgroundUrl: null,
-          composedVideoUrl: finalData.videoUrl,
+          composedVideoUrl: data.videoUrl,
           backgroundType: 'stock-video',
           template: selectedTemplate,
           aspectRatio: aspectRatio,
@@ -302,8 +272,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
             template: selectedTemplate,
             aspectRatio,
             backgroundType: 'stock-video',
-            jobId: jobId,
-            duration: finalData.duration
+            jobId: data.jobId
           },
           instructions: '✅ Your video is ready! Subtitles are synced to voiceover and videos switch with the story.'
         };
@@ -317,7 +286,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
             id: result.id,
             type: 'video',
             name: result.name,
-            url: finalData.videoUrl,
+            url: data.videoUrl,
             thumbnail: null,
             caption: postTopic.substring(0, 100),
             createdAt: result.createdAt,
@@ -328,6 +297,12 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           localStorage.setItem('assetHub', JSON.stringify(existingAssets));
           console.log('✅ Saved to Asset Hub:', assetToSave.name);
         } catch (saveError) {
+          console.error('Failed to save to Asset Hub:', saveError);
+        }
+        
+        setGenerationStep('');
+        return;
+      }
           console.error('Failed to save to Asset Hub:', saveError);
         }
         

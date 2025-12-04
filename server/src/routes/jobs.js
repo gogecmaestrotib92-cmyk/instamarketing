@@ -4,6 +4,7 @@
  * POST /api/jobs - Create a new video generation job
  * GET /api/jobs/:id - Get job status (for polling)
  * GET /api/jobs - List user's jobs
+ * POST /api/jobs/:id/process - Trigger processing (for Vercel serverless)
  */
 
 const express = require('express');
@@ -23,6 +24,12 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Topic is required' });
     }
     
+    // Check env vars
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('[Jobs API] OPENAI_API_KEY not configured');
+      return res.status(500).json({ error: 'Server configuration error: OpenAI API key missing' });
+    }
+    
     // Create job in database
     const job = new VideoJob({
       userId: userId || null,
@@ -38,20 +45,40 @@ router.post('/', async (req, res) => {
     
     await job.save();
     console.log(`[Jobs API] Created job ${job._id} for topic: "${topic}"`);
+    console.log(`[Jobs API] ENV check - OpenAI: ${!!process.env.OPENAI_API_KEY}, ElevenLabs: ${!!process.env.ELEVENLABS_API_KEY}, Shotstack: ${!!process.env.SHOTSTACK_API_KEY}`);
     
-    // Start processing in background (don't await)
-    // This allows the request to return immediately
-    processJob(job._id).catch(err => {
-      console.error(`[Jobs API] Job ${job._id} failed:`, err.message);
-    });
-    
-    // Return job ID immediately
-    res.status(201).json({
-      success: true,
-      jobId: job._id,
-      status: job.status,
-      message: 'Job created, processing started'
-    });
+    // On Vercel serverless, we need to process synchronously
+    // The 120s Pro timeout should be enough for most videos
+    try {
+      await processJob(job._id);
+      
+      // Reload job to get final status
+      const finalJob = await VideoJob.findById(job._id);
+      
+      res.status(201).json({
+        success: true,
+        jobId: finalJob._id,
+        status: finalJob.status,
+        progress: finalJob.progress,
+        videoUrl: finalJob.finalVideoUrl,
+        audioUrl: finalJob.audioUrl,
+        message: finalJob.status === 'done' ? 'Video generated!' : finalJob.statusMessage
+      });
+    } catch (processError) {
+      console.error(`[Jobs API] Processing failed:`, processError.message);
+      
+      // Update job with error
+      job.status = 'failed';
+      job.error = processError.message;
+      await job.save();
+      
+      res.status(500).json({
+        success: false,
+        jobId: job._id,
+        status: 'failed',
+        error: processError.message
+      });
+    }
     
   } catch (error) {
     console.error('[Jobs API] Create error:', error);
