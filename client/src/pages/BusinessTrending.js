@@ -225,85 +225,76 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
     setGeneratedResult(null);
     
     try {
-      // Use VIDEO-FIRST approach: select videos first, then generate script to match
+      // Use job-based async generation for stock videos
       if (backgroundType === 'stock-video') {
-        setGenerationStep('Selecting video clips & generating matching voiceover...');
-        console.log('🎬 Using VIDEO-FIRST generation approach');
+        setGenerationStep('Creating video job...');
+        console.log('🎬 Creating video generation job');
         
-        const response = await fetch('/api/ai/generate-video-first', {
+        // Step 1: Create the job
+        const createResponse = await fetch('/api/jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic: postTopic,
             contentType: contentType,
             targetDuration: 15,
-            voiceId: getVoiceId(), // ElevenLabs voice ID
-            maxWordsPerSubtitle: 4
+            voiceId: getVoiceId()
           })
         });
         
-        const data = await response.json();
+        const createData = await createResponse.json();
         
-        if (!response.ok || data.error) {
-          throw new Error(data.error || 'Failed to generate voiceover video');
+        if (!createResponse.ok || createData.error) {
+          throw new Error(createData.error || 'Failed to create video job');
         }
         
-        console.log('✅ VIDEO-FIRST generation complete:', data);
+        const jobId = createData.jobId;
+        console.log('✅ Job created:', jobId);
         
-        // If composition was started, poll for it
-        let composedVideoUrl = null;
-        if (data.compositionJobId) {
-          setGenerationStep('Rendering video with subtitles (this may take 1-2 minutes)...');
+        // Step 2: Poll for completion
+        let attempts = 0;
+        const maxAttempts = 120; // 120 x 3s = 6 minutes max
+        let finalData = null;
+        
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 3000)); // Poll every 3 seconds
           
-          let attempts = 0;
-          const maxAttempts = 60;
-          const service = data.compositionService || '';
+          const statusResponse = await fetch(`/api/jobs/${jobId}`);
+          const statusData = await statusResponse.json();
           
-          while (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            
-            const statusUrl = `/api/ai/compose-video/status/${data.compositionJobId}${service ? `?service=${service}` : ''}`;
-            const statusResponse = await fetch(statusUrl);
-            const statusData = await statusResponse.json();
-            
-            // Handle different status formats from different services
-            const isDone = statusData.status === 'done' || statusData.status === 'succeeded';
-            const videoUrl = statusData.url || statusData.videoUrl;
-            
-            if (isDone && videoUrl) {
-              composedVideoUrl = videoUrl;
-              console.log('✅ Video composed:', composedVideoUrl);
-              break;
-            } else if (statusData.status === 'failed' || statusData.status === 'error') {
-              console.error('❌ Video composition failed:', statusData.error);
-              break;
-            }
-            
-            attempts++;
-            setGenerationStep(`Rendering video with subtitles... ${Math.round((statusData.progress || 0))}%`);
+          // Update UI with status
+          setGenerationStep(`${statusData.statusMessage} (${statusData.progress || 0}%)`);
+          console.log(`[Poll ${attempts}] ${statusData.status}: ${statusData.statusMessage}`);
+          
+          if (statusData.status === 'done') {
+            finalData = statusData;
+            console.log('✅ Job complete:', finalData.videoUrl);
+            break;
+          } else if (statusData.status === 'failed') {
+            throw new Error(statusData.error || 'Video generation failed');
           }
-        } else {
-          console.log('⚠️ No composition job started:', data.message);
+          
+          attempts++;
         }
         
-        // Get background video URL from response
-        const bgVideoUrl = data.backgroundVideo?.url || 
-                          (data.videos && data.videos.length > 0 ? data.videos[0].url : null);
+        if (!finalData) {
+          throw new Error('Video generation timed out. Please try again.');
+        }
         
         // Build result
         const result = {
           id: Date.now().toString(),
           type: 'voiceover-video',
           name: `Voiceover - ${postTopic.substring(0, 30)}${postTopic.length > 30 ? '...' : ''}`,
-          script: data.script,
-          audioUrl: data.audioUrl,
-          backgroundUrl: bgVideoUrl,
-          composedVideoUrl: composedVideoUrl,
+          script: null, // Script is stored in job
+          audioUrl: finalData.audioUrl,
+          backgroundUrl: null,
+          composedVideoUrl: finalData.videoUrl,
           backgroundType: 'stock-video',
           template: selectedTemplate,
           aspectRatio: aspectRatio,
           contentType: contentType,
-          ttsProvider: data.ttsProvider === 'elevenlabs' ? 'ElevenLabs' : 'Google TTS',
+          ttsProvider: 'ElevenLabs',
           createdAt: new Date().toISOString(),
           metadata: {
             postTopic,
@@ -311,15 +302,10 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
             template: selectedTemplate,
             aspectRatio,
             backgroundType: 'stock-video',
-            subtitleCount: data.subtitleCount,
-            sceneCount: data.sceneCount,
-            estimatedDuration: data.estimatedDuration
+            jobId: jobId,
+            duration: finalData.duration
           },
-          instructions: composedVideoUrl 
-            ? '✅ Your video is ready! Subtitles are synced to voiceover and videos switch with the story.'
-            : (data.compositionJobId 
-              ? '⏳ Video is still rendering. Check back in a moment.'
-              : '⚠️ Voiceover generated but video composition failed. You can download the audio and combine it with video manually.')
+          instructions: '✅ Your video is ready! Subtitles are synced to voiceover and videos switch with the story.'
         };
         
         setGeneratedResult(result);
@@ -327,15 +313,13 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         // Save to Asset Hub
         try {
           const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
-          // Asset Hub expects type: 'video' and a valid video URL
-          // Don't set thumbnail - let AssetHub generate it from the video
           const assetToSave = {
             id: result.id,
-            type: 'video', // Asset Hub recognizes: 'video', 'image', 'carousel'
+            type: 'video',
             name: result.name,
-            url: composedVideoUrl || bgVideoUrl || data.audioUrl, // Use composed video or background video
-            thumbnail: null, // Let Asset Hub generate thumbnail from video element
-            caption: result.script?.substring(0, 100) + '...',
+            url: finalData.videoUrl,
+            thumbnail: null,
+            caption: postTopic.substring(0, 100),
             createdAt: result.createdAt,
             tags: [contentType, 'voiceover', 'trending'],
             metadata: result.metadata
