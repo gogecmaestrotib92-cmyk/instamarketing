@@ -49,36 +49,6 @@ const CURATED_VIDEOS = {
 };
 
 /**
- * Find the best matching video for a scene
- */
-function findVideoForScene(sceneVisual, category = 'fitness') {
-  const videos = CURATED_VIDEOS[category] || CURATED_VIDEOS.fitness;
-  if (videos.length === 0) {
-    return CURATED_VIDEOS.fitness[0]; // Fallback
-  }
-  
-  const visualLower = sceneVisual.toLowerCase();
-  let bestMatch = null;
-  let bestScore = 0;
-  
-  for (const video of videos) {
-    let score = 0;
-    for (const keyword of video.keywords) {
-      if (visualLower.includes(keyword)) {
-        score += 1;
-      }
-    }
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = video;
-    }
-  }
-  
-  // If no match, return random
-  return bestMatch || videos[Math.floor(Math.random() * videos.length)];
-}
-
-/**
  * STEP 1: Generate script and scenes
  */
 async function generateScript(job) {
@@ -164,31 +134,136 @@ async function generateScript(job) {
 }
 
 /**
- * STEP 2: Find videos for each scene
+ * STEP 2: Find videos for each scene by searching Pexels
  */
 async function findVideosForScenes(job) {
-  await updateJobStatus(job, 'finding_videos', 30, 'Finding matching video clips...');
+  await updateJobStatus(job, 'finding_videos', 30, 'Searching for matching videos...');
   
-  // Determine category from topic
-  const topicLower = job.topic.toLowerCase();
-  let category = 'fitness';
-  if (topicLower.includes('business') || topicLower.includes('money') || topicLower.includes('entrepreneur')) {
-    category = 'business';
-  } else if (topicLower.includes('food') || topicLower.includes('cooking') || topicLower.includes('recipe')) {
-    category = 'food';
-  } else if (topicLower.includes('tech') || topicLower.includes('ai') || topicLower.includes('code')) {
-    category = 'technology';
+  const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+  if (!PEXELS_API_KEY) {
+    console.log(`[Job ${job._id}] No Pexels API key, using fallback videos`);
+    return useFallbackVideos(job);
   }
   
-  // Assign videos to scenes
+  // Search Pexels for each scene and upload to Cloudinary
   for (let i = 0; i < job.scenes.length; i++) {
     const scene = job.scenes[i];
-    const video = findVideoForScene(scene.visual, category);
-    job.scenes[i].videoUrl = video.url;
-    console.log(`[Job ${job._id}] Scene ${i}: "${scene.visual}" -> ${video.url}`);
+    const searchQuery = scene.visual || job.topic;
+    
+    try {
+      console.log(`[Job ${job._id}] Scene ${i}: Searching Pexels for "${searchQuery}"`);
+      
+      // Search Pexels
+      const searchResponse = await axios.get(
+        `https://api.pexels.com/videos/search`,
+        {
+          params: {
+            query: searchQuery,
+            orientation: 'portrait',
+            size: 'medium',
+            per_page: 5
+          },
+          headers: {
+            'Authorization': PEXELS_API_KEY
+          },
+          timeout: 10000
+        }
+      );
+      
+      const videos = searchResponse.data.videos;
+      if (!videos || videos.length === 0) {
+        console.log(`[Job ${job._id}] Scene ${i}: No results, trying topic search`);
+        // Fallback to topic search
+        const topicResponse = await axios.get(
+          `https://api.pexels.com/videos/search`,
+          {
+            params: {
+              query: job.topic,
+              orientation: 'portrait',
+              size: 'medium',
+              per_page: 5
+            },
+            headers: {
+              'Authorization': PEXELS_API_KEY
+            },
+            timeout: 10000
+          }
+        );
+        
+        if (!topicResponse.data.videos || topicResponse.data.videos.length === 0) {
+          throw new Error('No videos found');
+        }
+        
+        videos.push(...topicResponse.data.videos);
+      }
+      
+      // Pick a random video from results (to add variety)
+      const randomIndex = Math.floor(Math.random() * Math.min(videos.length, 3));
+      const selectedVideo = videos[randomIndex];
+      
+      // Find HD video file
+      const videoFile = selectedVideo.video_files.find(f => 
+        f.quality === 'hd' && f.height > f.width
+      ) || selectedVideo.video_files.find(f => 
+        f.quality === 'hd'
+      ) || selectedVideo.video_files[0];
+      
+      console.log(`[Job ${job._id}] Scene ${i}: Downloading ${videoFile.width}x${videoFile.height}`);
+      
+      // Download video
+      const videoResponse = await axios.get(videoFile.link, {
+        responseType: 'arraybuffer',
+        timeout: 30000
+      });
+      
+      const videoBuffer = Buffer.from(videoResponse.data);
+      console.log(`[Job ${job._id}] Scene ${i}: Downloaded ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+      
+      // Upload to Cloudinary
+      const cloudinaryUrl = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: 'video',
+            folder: 'job-videos',
+            public_id: `job_${job._id}_scene_${i}`
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+        uploadStream.end(videoBuffer);
+      });
+      
+      job.scenes[i].videoUrl = cloudinaryUrl;
+      console.log(`[Job ${job._id}] Scene ${i}: Uploaded to ${cloudinaryUrl}`);
+      
+    } catch (error) {
+      console.error(`[Job ${job._id}] Scene ${i} failed: ${error.message}, using fallback`);
+      // Use fallback video
+      const fallbackVideos = CURATED_VIDEOS.fitness;
+      const fallback = fallbackVideos[i % fallbackVideos.length];
+      job.scenes[i].videoUrl = fallback.url;
+    }
+    
+    // Update progress
+    const progress = 30 + Math.floor((i / job.scenes.length) * 15);
+    await updateJobStatus(job, 'finding_videos', progress, `Finding videos... ${i + 1}/${job.scenes.length}`);
   }
   
   await job.save();
+  return job;
+}
+
+/**
+ * Fallback to curated videos when Pexels search fails
+ */
+function useFallbackVideos(job) {
+  const fallbackVideos = CURATED_VIDEOS.fitness;
+  for (let i = 0; i < job.scenes.length; i++) {
+    const video = fallbackVideos[i % fallbackVideos.length];
+    job.scenes[i].videoUrl = video.url;
+  }
   return job;
 }
 
