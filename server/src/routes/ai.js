@@ -629,26 +629,158 @@ router.get('/video/models', (req, res) => {
 // ==================== Image Generation Routes ====================
 
 /**
+ * Industry-specific visual style keywords based on professional photography standards
+ */
+const INDUSTRY_VISUAL_STYLES = {
+  'E-Commerce / Retail': {
+    lighting: 'bright studio lighting, soft shadows, product photography lighting setup',
+    composition: 'clean white background, centered product, negative space for text',
+    style: 'commercial product photography, lifestyle context, aspirational',
+    colors: 'vibrant saturated colors, clean whites, brand color accents'
+  },
+  'Food & Beverage': {
+    lighting: 'warm natural light, side lighting for texture, food photography lighting',
+    composition: 'overhead flat lay, 45-degree angle, close-up macro details',
+    style: 'appetizing food styling, steam/freshness, garnish details',
+    colors: 'warm color palette, rich earth tones, fresh greens'
+  },
+  'Fashion & Beauty': {
+    lighting: 'soft diffused beauty lighting, rim light, editorial lighting',
+    composition: 'editorial style, rule of thirds, dynamic poses',
+    style: 'high fashion editorial, beauty campaign, luxury aesthetic',
+    colors: 'skin tones accurate, rich textures, metallic accents'
+  },
+  'Health & Fitness': {
+    lighting: 'high contrast dramatic lighting, gym environment, natural outdoor light',
+    composition: 'action shots, dynamic movement, motivational',
+    style: 'athletic lifestyle, energetic, powerful poses',
+    colors: 'high contrast, neon accents, clean minimal backgrounds'
+  },
+  'Technology': {
+    lighting: 'clean modern lighting, subtle gradients, tech showcase lighting',
+    composition: 'minimal composition, device focus, floating elements',
+    style: 'futuristic, sleek modern, innovation focused',
+    colors: 'blue tones, gradients, dark mode aesthetic, neon accents'
+  },
+  'Real Estate': {
+    lighting: 'golden hour exterior, bright interior natural light, HDR style',
+    composition: 'wide angle, leading lines, architectural symmetry',
+    style: 'architectural photography, interior design magazine, luxury living',
+    colors: 'warm inviting tones, natural materials, sky blue accents'
+  },
+  'Travel & Hospitality': {
+    lighting: 'golden hour, blue hour, natural dramatic lighting',
+    composition: 'landscape panoramic, point of view, establishing shots',
+    style: 'wanderlust aesthetic, experiential, discovery moments',
+    colors: 'vibrant saturated, natural palette, sunset/sunrise tones'
+  },
+  'Professional Services': {
+    lighting: 'corporate office lighting, clean professional lighting',
+    composition: 'business environment, handshake moments, team collaboration',
+    style: 'corporate professional, trustworthy, approachable',
+    colors: 'navy blue, white, subtle brand colors, clean backgrounds'
+  },
+  'default': {
+    lighting: 'professional studio lighting, soft natural light',
+    composition: 'balanced composition, clear focal point',
+    style: 'commercial quality, professional, polished',
+    colors: 'harmonious color palette, brand-aligned'
+  }
+};
+
+/**
+ * Enhance prompt using AI for better image generation accuracy
+ * Uses OpenAI to add professional photography terms and visual details
+ */
+async function enhanceImagePrompt(basePrompt, options = {}) {
+  const { industry, postType, brandColors, style } = options;
+  
+  // Get industry-specific visual guidance
+  const industryStyle = INDUSTRY_VISUAL_STYLES[industry] || INDUSTRY_VISUAL_STYLES['default'];
+  
+  try {
+    const OpenAI = require('openai');
+    const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const enhanceRequest = `You are an expert at writing prompts for AI image generators like Flux and Midjourney.
+
+Take this basic prompt and enhance it with specific, concrete visual details that will produce a high-quality, professional image.
+
+BASIC PROMPT: "${basePrompt}"
+
+CONTEXT:
+- Industry: ${industry || 'general business'}
+- Post Type: ${postType || 'promotional'}
+- Brand Colors: ${brandColors || 'not specified'}
+- Style: ${style || 'professional'}
+
+INDUSTRY-SPECIFIC VISUAL GUIDANCE:
+- Lighting: ${industryStyle.lighting}
+- Composition: ${industryStyle.composition}
+- Style: ${industryStyle.style}
+- Colors: ${industryStyle.colors}
+
+RULES FOR ENHANCED PROMPT:
+1. Incorporate the industry-specific guidance above naturally
+2. Add specific lighting terms that match the industry
+3. Add camera/lens details (shallow depth of field, 85mm portrait, wide angle, macro, etc.)
+4. Add composition terms that work for the content
+5. Add texture/material details when relevant
+6. Be SPECIFIC and CONCRETE - describe exactly what should be visible
+7. Include the brand colors if specified: ${brandColors || 'use industry-appropriate colors'}
+8. Add quality modifiers: 8k, ultra detailed, professional photography, commercial quality
+9. Keep total length under 200 words
+10. NEVER include any text, words, letters, numbers, or logos in the image description
+
+Return ONLY the enhanced prompt, nothing else.`;
+
+    const response = await openaiClient.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: enhanceRequest }],
+      temperature: 0.7,
+      max_tokens: 350
+    });
+
+    const enhancedPrompt = response.choices[0].message.content.trim();
+    console.log('✨ Enhanced prompt:', enhancedPrompt);
+    return enhancedPrompt;
+    
+  } catch (error) {
+    console.error('Prompt enhancement failed, using original:', error.message);
+    // Fallback: at least add basic quality modifiers
+    return `${basePrompt}. ${industryStyle.lighting}, ${industryStyle.style}. Professional photography, 8k, ultra detailed, commercial quality.`;
+  }
+}
+
+/**
  * Generate image from text prompt using Flux Schnell
  * Optionally uses reference image for style guidance
  * POST /api/ai/image/generate
  */
 router.post('/image/generate', async (req, res) => {
   try {
-    const { prompt, aspectRatio = '1:1', numOutputs = 1, outputFormat = 'webp', outputQuality = 90, referenceImage } = req.body;
+    const { prompt, aspectRatio = '1:1', numOutputs = 1, outputFormat = 'webp', outputQuality = 90, referenceImage, enhancePrompt = true, industry, postType, brandColors, style } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
+    // Enhance prompt with AI for better accuracy
+    let finalPrompt = prompt;
+    if (enhancePrompt) {
+      console.log('🧠 Enhancing prompt with AI...');
+      finalPrompt = await enhanceImagePrompt(prompt, { industry, postType, brandColors, style });
+    }
+
     console.log('🖼️ Generating image with Flux Schnell...');
-    console.log('Prompt:', prompt);
+    console.log('Original Prompt:', prompt);
+    console.log('Final Prompt:', finalPrompt);
     console.log('Aspect Ratio:', aspectRatio);
     if (referenceImage) {
       console.log('Reference Image:', referenceImage);
     }
 
-    const result = await replicateService.textToImage(prompt, {
+    const result = await replicateService.textToImage(finalPrompt, {
       aspectRatio,
       numOutputs,
       outputFormat,
@@ -664,7 +796,8 @@ router.post('/image/generate', async (req, res) => {
       success: true,
       imageUrl: result.imageUrl,
       allImages: result.allImages,
-      predictionId: result.predictionId
+      predictionId: result.predictionId,
+      enhancedPrompt: finalPrompt
     });
   } catch (error) {
     console.error('Image generation error:', error);

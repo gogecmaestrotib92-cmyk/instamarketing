@@ -277,7 +277,16 @@ Return ONLY the JSON array, no other text.`
         aspectRatio: aspectRatio,
         numOutputs: 1,
         outputFormat: 'webp',
-        outputQuality: 95
+        outputQuality: 95,
+        // Pass context for AI prompt enhancement
+        enhancePrompt: true,
+        industry: businessInfo?.industry || 'general business',
+        postType: postType,
+        brandColors: businessInfo?.brandColors?.join(', ') || null,
+        style: postType === 'promotional' ? 'commercial advertising' : 
+               postType === 'product' ? 'product photography' :
+               postType === 'lifestyle' ? 'lifestyle photography' :
+               postType === 'quote' ? 'inspirational graphic' : 'professional'
       };
 
       // Add reference image if selected
