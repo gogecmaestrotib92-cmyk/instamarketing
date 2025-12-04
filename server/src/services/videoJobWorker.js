@@ -140,8 +140,11 @@ async function findVideosForScenes(job) {
   await updateJobStatus(job, 'finding_videos', 30, 'Searching for matching videos...');
   
   const PEXELS_API_KEY = process.env.PEXELS_API_KEY;
+  console.log(`[Job ${job._id}] Pexels API key configured: ${!!PEXELS_API_KEY}`);
+  
   if (!PEXELS_API_KEY) {
-    console.log(`[Job ${job._id}] No Pexels API key, using fallback videos`);
+    console.log(`[Job ${job._id}] ⚠️ No Pexels API key! Add PEXELS_API_KEY to Vercel env vars`);
+    console.log(`[Job ${job._id}] Using fallback curated videos instead`);
     return useFallbackVideos(job);
   }
   
