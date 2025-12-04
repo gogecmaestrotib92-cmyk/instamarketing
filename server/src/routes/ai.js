@@ -3719,9 +3719,11 @@ router.post('/voiceover-video/generate', async (req, res) => {
     console.log(`   Audio URL: ${audioUrl?.includes('cloudinary') ? '✅ Already on Cloudinary' : '⚠️ Not on Cloudinary'}`);
     
     // TRY SHOTSTACK FIRST (most reliable, has watermark on free tier but works well)
+    // VERSION: v2 - Download Pexels videos ourselves with browser headers
     if (shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
       // Skip audio re-upload - ElevenLabs service already handles Cloudinary upload
       // This saves 5-10 seconds!
+      console.log('   🔧 Using Pexels download fix v2');
 
       try {
         if (sceneVideos.length > 1) {
@@ -3736,40 +3738,49 @@ router.post('/voiceover-video/generate', async (req, res) => {
             let videoUrl = sceneVideo.url;
             
             // Download from Pexels ourselves, then upload to Cloudinary
-            if (cloudinaryService && cloudinaryUpload && videoUrl.includes('pexels.com')) {
+            if (videoUrl.includes('pexels.com')) {
+              console.log(`   📥 Downloading scene ${idx + 1} from Pexels: ${videoUrl.substring(0, 50)}...`);
               try {
-                console.log(`   📥 Downloading scene ${idx + 1} from Pexels...`);
                 // Download video with proper headers
                 const videoResponse = await fetch(videoUrl, {
                   headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
-                    'Referer': 'https://www.pexels.com/'
+                    'Referer': 'https://www.pexels.com/',
+                    'Origin': 'https://www.pexels.com'
                   }
                 });
+                
+                console.log(`   📥 Pexels response status: ${videoResponse.status}`);
                 
                 if (videoResponse.ok) {
                   const videoBuffer = await videoResponse.buffer();
                   console.log(`   📤 Uploading scene ${idx + 1} to Cloudinary (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)...`);
                   
-                  const uploadResult = await cloudinaryUpload(videoBuffer, {
-                    folder: 'instamarketing/videos',
-                    resource_type: 'video',
-                    format: 'mp4'
-                  });
-                  
-                  if (uploadResult.success) {
-                    videoUrl = uploadResult.url;
-                    console.log(`   ✅ Scene ${idx + 1} uploaded: ${videoUrl.substring(0, 60)}...`);
+                  if (cloudinaryUpload) {
+                    const uploadResult = await cloudinaryUpload(videoBuffer, {
+                      folder: 'instamarketing/videos',
+                      resource_type: 'video',
+                      format: 'mp4'
+                    });
+                    
+                    if (uploadResult.success) {
+                      videoUrl = uploadResult.url;
+                      console.log(`   ✅ Scene ${idx + 1} on Cloudinary: ${videoUrl}`);
+                    } else {
+                      console.log(`   ⚠️ Scene ${idx + 1} Cloudinary upload failed: ${uploadResult.error}`);
+                    }
                   } else {
-                    console.log(`   ⚠️ Scene ${idx + 1} Cloudinary upload failed: ${uploadResult.error}`);
+                    console.log(`   ⚠️ cloudinaryUpload function not available!`);
                   }
                 } else {
-                  console.log(`   ⚠️ Scene ${idx + 1} download failed: ${videoResponse.status}`);
+                  console.log(`   ⚠️ Scene ${idx + 1} Pexels download failed: ${videoResponse.status} ${videoResponse.statusText}`);
                 }
               } catch (uploadErr) {
                 console.log(`   ⚠️ Scene ${idx + 1} processing error: ${uploadErr.message}`);
               }
+            } else {
+              console.log(`   ✅ Scene ${idx + 1} not Pexels, using directly: ${videoUrl.substring(0, 50)}...`);
             }
             
             clips.push({
@@ -3779,6 +3790,10 @@ router.post('/voiceover-video/generate', async (req, res) => {
               startAt: 0
             });
           }
+          
+          // Log final clip URLs being sent to Shotstack
+          console.log(`   🎬 Final clip URLs for Shotstack:`);
+          clips.forEach((c, i) => console.log(`      ${i + 1}. ${c.url.substring(0, 70)}...`));
 
           console.log(`   🎬 Creating multi-clip render with ${clips.length} clips...`);
           console.log(`   📊 Target duration from audio: ${estimatedDuration}s`);
