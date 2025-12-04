@@ -34,11 +34,11 @@ cloudinary.config({
 // Curated videos database (Cloudinary-hosted)
 const CURATED_VIDEOS = {
   fitness: [
-    { id: '4761433', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1749687697/pexels-4761433_m6gdne.mp4', keywords: ['abs', 'floor', 'core', 'workout', 'exercise'], duration: 15 },
-    { id: '5319340', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1749687702/pexels-5319340_m93sj9.mp4', keywords: ['training', 'core', 'gym', 'fitness'], duration: 10 },
-    { id: '4761486', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1749687706/pexels-4761486_w10bam.mp4', keywords: ['plank', 'side', 'stability', 'balance'], duration: 12 },
-    { id: '4761718', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1749687715/pexels-4761718_vj2g1b.mp4', keywords: ['dumbbell', 'weights', 'strength', 'arms'], duration: 12 },
-    { id: '4761735', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1749687722/pexels-4761735_qghyrj.mp4', keywords: ['shoulder', 'press', 'overhead', 'strength'], duration: 10 }
+    { id: '4761433', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1764852474/instamarketing/curated-videos/pexels-4761433.mp4', keywords: ['abs', 'floor', 'core', 'workout', 'exercise'], duration: 15 },
+    { id: '5319340', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1764852477/instamarketing/curated-videos/pexels-5319340.mp4', keywords: ['training', 'core', 'gym', 'fitness'], duration: 10 },
+    { id: '4761486', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1764852488/instamarketing/curated-videos/pexels-4761486.mp4', keywords: ['plank', 'side', 'stability', 'balance'], duration: 12 },
+    { id: '4761718', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1764852495/instamarketing/curated-videos/pexels-4761718.mp4', keywords: ['dumbbell', 'weights', 'strength', 'arms'], duration: 12 },
+    { id: '4761735', url: 'https://res.cloudinary.com/ddvtwoyxp/video/upload/v1764852502/instamarketing/curated-videos/pexels-4761735.mp4', keywords: ['shoulder', 'press', 'overhead', 'strength'], duration: 10 }
   ],
   // TODO: Add more categories
   business: [],
