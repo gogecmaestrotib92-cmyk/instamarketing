@@ -227,6 +227,13 @@ async function generateVoiceover(job) {
   const { audio_base64, alignment } = response.data;
   const audioBuffer = Buffer.from(audio_base64, 'base64');
   
+  console.log(`[Job ${job._id}] Audio buffer size: ${audioBuffer.length} bytes`);
+  
+  // Verify Cloudinary is configured
+  if (!process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    throw new Error('Cloudinary credentials not configured');
+  }
+  
   // Upload to Cloudinary
   const audioUrl = await new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -236,8 +243,13 @@ async function generateVoiceover(job) {
         public_id: `job_${job._id}_audio`
       },
       (error, result) => {
-        if (error) reject(error);
-        else resolve(result.secure_url);
+        if (error) {
+          console.error(`[Job ${job._id}] Cloudinary upload error:`, error);
+          reject(error);
+        } else {
+          console.log(`[Job ${job._id}] Audio uploaded to: ${result.secure_url}`);
+          resolve(result.secure_url);
+        }
       }
     );
     uploadStream.end(audioBuffer);
@@ -406,28 +418,42 @@ async function renderVideo(job) {
   
   // Submit to Shotstack
   const shotstackKey = process.env.SHOTSTACK_API_KEY;
+  if (!shotstackKey) {
+    throw new Error('SHOTSTACK_API_KEY not configured');
+  }
+  
   const shotstackEnv = process.env.SHOTSTACK_ENV || 'v1';
   const baseUrl = shotstackEnv === 'stage' 
     ? 'https://api.shotstack.io/stage'
     : 'https://api.shotstack.io/v1';
   
-  const renderResponse = await axios.post(
-    `${baseUrl}/render`,
-    renderPayload,
-    {
-      headers: {
-        'x-api-key': shotstackKey,
-        'Content-Type': 'application/json'
-      },
-      timeout: 30000
-    }
-  );
+  console.log(`[Job ${job._id}] Submitting to Shotstack...`);
+  console.log(`[Job ${job._id}] Video clips: ${videoClips.length}, Subtitle clips: ${subtitleClips.length}`);
+  console.log(`[Job ${job._id}] Audio URL: ${job.audioUrl}`);
+  console.log(`[Job ${job._id}] First video URL: ${videoClips[0]?.asset?.src}`);
   
-  job.shotstackJobId = renderResponse.data.response.id;
-  job.shotstackStatus = 'queued';
-  await job.save();
-  
-  console.log(`[Job ${job._id}] Shotstack render queued: ${job.shotstackJobId}`);
+  try {
+    const renderResponse = await axios.post(
+      `${baseUrl}/render`,
+      renderPayload,
+      {
+        headers: {
+          'x-api-key': shotstackKey,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    );
+    
+    job.shotstackJobId = renderResponse.data.response.id;
+    job.shotstackStatus = 'queued';
+    await job.save();
+    
+    console.log(`[Job ${job._id}] Shotstack render queued: ${job.shotstackJobId}`);
+  } catch (submitError) {
+    console.error(`[Job ${job._id}] Shotstack submit error:`, submitError.response?.data || submitError.message);
+    throw new Error(`Shotstack submit failed: ${submitError.response?.data?.message || submitError.message}`);
+  }
   
   // Poll for completion
   await pollShotstackRender(job, baseUrl, shotstackKey);
@@ -452,14 +478,17 @@ async function pollShotstackRender(job, baseUrl, shotstackKey) {
       }
     );
     
-    const status = statusResponse.data.response.status;
+    const responseData = statusResponse.data.response;
+    const status = responseData.status;
     job.shotstackStatus = status;
     
     const progress = 70 + Math.min(25, i * 2); // 70% -> 95%
     await updateJobStatus(job, 'rendering', progress, `Rendering... ${status}`);
     
+    console.log(`[Job ${job._id}] Shotstack poll ${i}: ${status}`);
+    
     if (status === 'done') {
-      job.finalVideoUrl = statusResponse.data.response.url;
+      job.finalVideoUrl = responseData.url;
       job.status = 'done';
       job.progress = 100;
       job.statusMessage = 'Complete!';
@@ -470,7 +499,10 @@ async function pollShotstackRender(job, baseUrl, shotstackKey) {
     }
     
     if (status === 'failed') {
-      throw new Error('Shotstack render failed');
+      // Get error details from Shotstack
+      const errorMsg = responseData.error || 'Unknown render error';
+      console.error(`[Job ${job._id}] Shotstack FAILED:`, JSON.stringify(responseData, null, 2));
+      throw new Error(`Shotstack render failed: ${errorMsg}`);
     }
   }
   
