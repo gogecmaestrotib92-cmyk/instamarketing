@@ -4691,15 +4691,24 @@ Return ONLY the script text, no scene labels or directions.`;
     
     if (shotstackClient && selectedVideos.length > 0) {
       try {
-        // OPTIMIZATION: Pexels URLs are persistent - NO need to upload to Cloudinary!
-        const uploadedClips = selectedVideos.map(video => ({
-          url: video.url,
-          duration: video.duration || 10,
-          useDuration: video.useDuration || 5,
-          startAt: 0
-        }));
+        // Convert Pexels URLs to Cloudinary fetch URLs (Pexels blocks Shotstack)
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'ddvtwoyxp';
+        const uploadedClips = selectedVideos.map(video => {
+          let videoUrl = video.url;
+          // Use Cloudinary fetch to proxy Pexels videos
+          if (videoUrl.includes('pexels.com')) {
+            const encodedUrl = encodeURIComponent(videoUrl);
+            videoUrl = `https://res.cloudinary.com/${cloudName}/video/fetch/${encodedUrl}`;
+          }
+          return {
+            url: videoUrl,
+            duration: video.duration || 10,
+            useDuration: video.useDuration || 5,
+            startAt: 0
+          };
+        });
         
-        console.log(`   ⚡ Using ${uploadedClips.length} Pexels URLs directly`);
+        console.log(`   ⚡ Using ${uploadedClips.length} Cloudinary fetch URLs`);
         
         // Audio: ElevenLabs service already uploads to Cloudinary, so skip re-upload
         let audioUrl = voiceResult.audioUrl;

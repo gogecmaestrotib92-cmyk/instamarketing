@@ -225,23 +225,20 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
     setGeneratedResult(null);
     
     try {
-      // Use enhanced voiceover-video endpoint for full pipeline
+      // Use VIDEO-FIRST approach: select videos first, then generate script to match
       if (backgroundType === 'stock-video') {
-        setGenerationStep('Creating your video... (selecting clips, generating voiceover)');
-        console.log('🎬 Using enhanced voiceover-video endpoint');
+        setGenerationStep('Selecting video clips & generating matching voiceover...');
+        console.log('🎬 Using VIDEO-FIRST generation approach');
         
-        const response = await fetch('/api/ai/voiceover-video/generate', {
+        const response = await fetch('/api/ai/generate-video-first', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             topic: postTopic,
             contentType: contentType,
-            duration: 15,
-            voiceStyle: getVoiceStyle(),
+            targetDuration: 15,
             voiceId: getVoiceId(), // ElevenLabs voice ID
-            subtitleStyle: 'sentence',
-            useSceneVideos: true, // Get different videos for each scene
-            maxWordsPerSubtitle: 6
+            maxWordsPerSubtitle: 4
           })
         });
         
@@ -251,7 +248,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           throw new Error(data.error || 'Failed to generate voiceover video');
         }
         
-        console.log('✅ Enhanced generation complete:', data);
+        console.log('✅ VIDEO-FIRST generation complete:', data);
         
         // If composition was started, poll for it
         let composedVideoUrl = null;
