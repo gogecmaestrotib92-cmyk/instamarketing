@@ -3726,16 +3726,40 @@ router.post('/voiceover-video/generate', async (req, res) => {
       try {
         if (sceneVideos.length > 1) {
           // Multi-clip composition with scene switching
-          // OPTIMIZATION: Use Pexels URLs directly - they're persistent, no need for Cloudinary upload
-          const clips = sceneVideos.map((sceneVideo, idx) => {
-            console.log(`   ⚡ Using scene video ${idx + 1} URL directly (no upload)`);
-            return {
-              url: sceneVideo.url, // Pexels URLs are persistent
+          // IMPORTANT: Upload Pexels videos to Cloudinary first - Pexels blocks third-party downloads (403)
+          console.log(`   📤 Uploading ${sceneVideos.length} scene videos to Cloudinary (Pexels blocks Shotstack)...`);
+          
+          const clips = [];
+          for (let idx = 0; idx < sceneVideos.length; idx++) {
+            const sceneVideo = sceneVideos[idx];
+            let videoUrl = sceneVideo.url;
+            
+            // Upload Pexels videos to Cloudinary so Shotstack can access them
+            if (cloudinaryService && videoUrl.includes('pexels.com')) {
+              try {
+                console.log(`   📤 Uploading scene ${idx + 1} to Cloudinary...`);
+                const uploadResult = await cloudinaryService.uploadFromUrl(videoUrl, {
+                  folder: 'instamarketing/videos',
+                  resource_type: 'video'
+                });
+                if (uploadResult.success) {
+                  videoUrl = uploadResult.url;
+                  console.log(`   ✅ Scene ${idx + 1} uploaded: ${videoUrl.substring(0, 60)}...`);
+                } else {
+                  console.log(`   ⚠️ Scene ${idx + 1} upload failed, using original URL`);
+                }
+              } catch (uploadErr) {
+                console.log(`   ⚠️ Scene ${idx + 1} upload error: ${uploadErr.message}`);
+              }
+            }
+            
+            clips.push({
+              url: videoUrl,
               duration: sceneVideo.duration || 10,
               useDuration: sceneVideo.useDuration || sceneVideo.playbackDuration,
               startAt: 0
-            };
-          });
+            });
+          }
 
           console.log(`   🎬 Creating multi-clip render with ${clips.length} clips...`);
           console.log(`   📊 Target duration from audio: ${estimatedDuration}s`);
@@ -3763,9 +3787,26 @@ router.post('/voiceover-video/generate', async (req, res) => {
         } else if (backgroundVideo || sceneVideos.length === 1) {
           // Single video composition with looping
           const video = sceneVideos[0] || backgroundVideo;
-          // OPTIMIZATION: Use Pexels URLs directly - they're persistent
+          // IMPORTANT: Upload Pexels videos to Cloudinary - Pexels blocks third-party downloads (403)
           let videoUrl = video.url;
-          console.log('   ⚡ Using video URL directly (no Cloudinary upload needed)');
+          
+          if (cloudinaryService && videoUrl.includes('pexels.com')) {
+            try {
+              console.log('   📤 Uploading video to Cloudinary (Pexels blocks Shotstack)...');
+              const uploadResult = await cloudinaryService.uploadFromUrl(videoUrl, {
+                folder: 'instamarketing/videos',
+                resource_type: 'video'
+              });
+              if (uploadResult.success) {
+                videoUrl = uploadResult.url;
+                console.log(`   ✅ Video uploaded: ${videoUrl.substring(0, 60)}...`);
+              } else {
+                console.log(`   ⚠️ Upload failed: ${uploadResult.error}, using original URL`);
+              }
+            } catch (uploadErr) {
+              console.log(`   ⚠️ Upload error: ${uploadErr.message}, using original URL`);
+            }
+          }
 
           console.log(`   🎬 Creating single video render...`);
           console.log(`   Video URL: ${videoUrl}`);
