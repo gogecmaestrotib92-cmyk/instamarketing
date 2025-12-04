@@ -60,7 +60,23 @@ async function generateScript(job) {
   try {
     const openai = getOpenAI();
     
-    const prompt = `Create a ${job.targetDuration}-second video script about: "${job.topic}"
+    // Build business context for the script
+    let businessContext = '';
+    if (job.businessInfo) {
+      const parts = [];
+      if (job.businessInfo.businessName) parts.push(`Brand Name: ${job.businessInfo.businessName}`);
+      if (job.businessInfo.productName) parts.push(`Product/Service: ${job.businessInfo.productName}`);
+      if (job.businessInfo.industry) parts.push(`Industry: ${job.businessInfo.industry}`);
+      if (job.businessInfo.description) parts.push(`About: ${job.businessInfo.description.substring(0, 200)}`);
+      if (job.businessInfo.brandVoice) parts.push(`Brand Voice: ${job.businessInfo.brandVoice}`);
+      if (job.businessInfo.targetAudience) parts.push(`Target Audience: ${job.businessInfo.targetAudience.substring(0, 100)}`);
+      
+      if (parts.length > 0) {
+        businessContext = `\n\nBUSINESS CONTEXT:\n${parts.join('\n')}\n\nIMPORTANT: Create the script SPECIFICALLY for this brand. The video should feel like an official ${job.businessInfo.businessName || 'brand'} advertisement.`;
+      }
+    }
+    
+    const prompt = `Create a ${job.targetDuration}-second video script about: "${job.topic}"${businessContext}
   
   Return ONLY valid JSON in this exact format:
   {
@@ -81,13 +97,16 @@ async function generateScript(job) {
   - DO NOT use abstract concepts like "success" or "motivation" - use concrete visuals
   - DO NOT use full sentences - just 2-3 searchable words
   - Think: what would I type into a stock video site to find this clip?
+  ${job.businessInfo?.industry ? `- For ${job.businessInfo.industry} industry, use industry-relevant visuals` : ''}
   
   Other rules:
   - Keep total duration close to ${job.targetDuration} seconds
   - Each scene should be 3-7 seconds
-  - Make it punchy and engaging for social media`;
+  - Make it punchy and engaging for social media
+  ${job.businessInfo?.businessName ? `- Mention "${job.businessInfo.businessName}" naturally 1-2 times in the script` : ''}`;
   
     console.log(`[Job ${job._id}] Calling OpenAI for script generation...`);
+    console.log(`[Job ${job._id}] Business context: ${businessContext ? 'included' : 'none'}`);
     
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -328,8 +347,9 @@ async function findVideosForProductScenes(job) {
   const businessName = job.businessInfo?.businessName || '';
   const industry = job.businessInfo?.industry || '';
   const productName = job.businessInfo?.productName || '';
+  const brandImages = job.businessInfo?.brandImages || [];
   
-  console.log(`[Job ${job._id}] Business: ${businessName}, Industry: ${industry}, Product: ${productName}`);
+  console.log(`[Job ${job._id}] Business: ${businessName}, Industry: ${industry}, Product: ${productName}, Images: ${brandImages.length}`);
   
   // Determine webhook URL based on environment
   const baseUrl = process.env.VERCEL_URL 
@@ -339,6 +359,26 @@ async function findVideosForProductScenes(job) {
   
   console.log(`[Job ${job._id}] Webhook URL: ${webhookUrl}`);
   
+  // Build brand context for all prompts
+  let brandContext = '';
+  if (businessName) brandContext += `for ${businessName} brand`;
+  if (productName) brandContext += `, showcasing ${productName}`;
+  if (industry) brandContext += `, ${industry} industry style`;
+  
+  // Get industry-specific visual style
+  const industryStyles = {
+    'E-Commerce / Retail': 'clean white background product shots, lifestyle usage, unboxing moments',
+    'Food & Beverage': 'appetizing close-ups, steam rising, fresh ingredients, table setting',
+    'Fashion & Beauty': 'runway style, editorial fashion, beauty close-ups, fabric textures',
+    'Health & Fitness': 'gym action shots, workout intensity, athletic movement, transformation',
+    'Technology': 'sleek device showcase, futuristic interfaces, innovation demos',
+    'Real Estate': 'property walkthroughs, interior design, architecture highlights',
+    'Travel & Hospitality': 'destination beauty, luxury experiences, scenic views',
+    'Professional Services': 'office environment, team collaboration, client meetings',
+    'default': 'professional commercial quality, modern aesthetic'
+  };
+  const visualStyle = industryStyles[industry] || industryStyles['default'];
+  
   // Start async predictions for all scenes
   for (let i = 0; i < job.scenes.length; i++) {
     const scene = job.scenes[i];
@@ -347,19 +387,21 @@ async function findVideosForProductScenes(job) {
     
     try {
       // Build enhanced prompt with business context
-      let prompt = scene.visual || '';
-      if (productName) {
-        prompt = `${prompt}, featuring ${productName}`;
-      }
-      if (businessName) {
-        prompt = `${prompt}, ${businessName} brand style`;
-      }
-      if (industry) {
-        prompt = `${prompt}, ${industry} industry aesthetic`;
-      }
-      prompt = `${prompt}. ${scene.text}. Professional product video, high quality, cinematic lighting, smooth camera motion, 4K quality.`;
+      let prompt = `Create a ${scene.duration || 5} second video clip ${brandContext}.`;
       
-      console.log(`[Job ${job._id}] Scene ${i}: Starting Kling with prompt: "${prompt.substring(0, 100)}..."`);
+      // Add scene-specific visual
+      prompt += ` Scene: ${scene.visual || scene.text}.`;
+      
+      // Add industry-specific style
+      prompt += ` Visual style: ${visualStyle}.`;
+      
+      // Add the voiceover text as context
+      prompt += ` The video should match this narration: "${scene.text}".`;
+      
+      // Add quality modifiers
+      prompt += ' Professional commercial quality, smooth camera motion, cinematic lighting, 4K resolution, Instagram/TikTok ready.';
+      
+      console.log(`[Job ${job._id}] Scene ${i}: Starting Kling with prompt: "${prompt.substring(0, 150)}..."`);
       
       // Start async Kling generation
       const result = await replicateService.startAsyncKlingVideo(prompt, webhookUrl, {
@@ -374,8 +416,8 @@ async function findVideosForProductScenes(job) {
         console.log(`[Job ${job._id}] Scene ${i}: ✅ Kling prediction started: ${result.predictionId}`);
       } else {
         console.log(`[Job ${job._id}] Scene ${i}: Kling start failed, using stock video fallback`);
-        // Fallback to stock videos immediately
-        const stockResult = await findStockVideoFallback(scene, job, i);
+        // Fallback to stock videos - use brand-relevant search
+        const stockResult = await findStockVideoFallback(scene, job, i, { businessName, industry, productName });
         job.scenes[i].videoUrl = stockResult.videoUrl;
         job.scenes[i].source = stockResult.source;
       }

@@ -42,7 +42,13 @@ router.post('/', async (req, res) => {
     }
     
     // Determine if this is a product/brand video (should use AI-first)
-    const isProductVideo = !!(businessInfo && (businessInfo.brandImages?.length > 0 || businessInfo.productName));
+    // Now triggers when ANY business info is provided, not just images/productName
+    const isProductVideo = !!(businessInfo && (
+      businessInfo.brandImages?.length > 0 || 
+      businessInfo.productName ||
+      businessInfo.businessName ||
+      businessInfo.industry
+    ));
     console.log(`[Jobs API] isProductVideo: ${isProductVideo}, businessInfo:`, businessInfo ? 'present' : 'none');
     
     // Normalize businessInfo - extract just URLs from brandImages if they are objects
@@ -64,9 +70,13 @@ router.post('/', async (req, res) => {
         businessName: businessInfo.businessName || null,
         industry: businessInfo.industry || null,
         brandImages: brandImageUrls,
-        productName: businessInfo.productName || null
+        productName: businessInfo.productName || null,
+        description: businessInfo.description || null,
+        brandVoice: businessInfo.brandVoice || null,
+        targetAudience: businessInfo.targetAudience || null,
+        brandColors: businessInfo.brandColors || []
       };
-      console.log(`[Jobs API] Normalized ${brandImageUrls.length} brand images`);
+      console.log(`[Jobs API] Normalized business info: ${normalizedBusinessInfo.businessName}, ${normalizedBusinessInfo.industry}`);
     }
     
     // Create job in database
