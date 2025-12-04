@@ -45,6 +45,30 @@ router.post('/', async (req, res) => {
     const isProductVideo = !!(businessInfo && (businessInfo.brandImages?.length > 0 || businessInfo.productName));
     console.log(`[Jobs API] isProductVideo: ${isProductVideo}, businessInfo:`, businessInfo ? 'present' : 'none');
     
+    // Normalize businessInfo - extract just URLs from brandImages if they are objects
+    let normalizedBusinessInfo = null;
+    if (businessInfo) {
+      let brandImageUrls = [];
+      if (businessInfo.brandImages && Array.isArray(businessInfo.brandImages)) {
+        brandImageUrls = businessInfo.brandImages.map(img => {
+          // If it's an object with url property, extract the url
+          if (typeof img === 'object' && img.url) {
+            return img.url;
+          }
+          // If it's already a string, use it as is
+          return typeof img === 'string' ? img : null;
+        }).filter(Boolean);
+      }
+      
+      normalizedBusinessInfo = {
+        businessName: businessInfo.businessName || null,
+        industry: businessInfo.industry || null,
+        brandImages: brandImageUrls,
+        productName: businessInfo.productName || null
+      };
+      console.log(`[Jobs API] Normalized ${brandImageUrls.length} brand images`);
+    }
+    
     // Create job in database
     const job = new VideoJob({
       userId: userId || null,
@@ -54,7 +78,7 @@ router.post('/', async (req, res) => {
       voiceId: voiceId || 'pNInz6obpgDQGcFmaJgB',
       voiceStyle: voiceStyle || 'energetic',
       isProductVideo,
-      businessInfo: businessInfo || null,
+      businessInfo: normalizedBusinessInfo,
       videoStyle: style || 'dynamic',
       aspectRatio: aspectRatio || '9:16',
       status: 'pending',
