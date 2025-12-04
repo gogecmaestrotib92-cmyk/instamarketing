@@ -561,9 +561,13 @@ module.exports = {
   CONCEPT_TO_VIDEO_MAP
 };
 
+// Import curated video database
+const { getCuratedVideoForTerm, getCuratedVideosForScenes } = require('./curatedVideos');
+
 /**
  * Get different stock videos for each scene/segment
- * Perfect for voiceover videos where visuals change with the story
+ * PRIORITY 1: Use curated videos (guaranteed to match)
+ * PRIORITY 2: Pexels API search (fallback, less reliable)
  * 
  * @param {Array} scenes - Array of { searchTerm, duration, startTime, endTime }
  * @param {Object} options - Search options
@@ -574,55 +578,31 @@ async function getVideosForScenes(scenes, options = {}) {
     return [];
   }
 
-  console.log(`🎬 Finding videos for ${scenes.length} scenes...`);
+  const contentType = options.contentType || 'fitness';
+  console.log(`🎬 Finding videos for ${scenes.length} scenes (${contentType} content)...`);
+  console.log(`   📦 PRIORITY 1: Curated video database`);
   
   const sceneClips = [];
-  const usedVideoIds = new Set(); // Track used videos to avoid duplicates
+  const usedVideoIds = new Set();
   
   for (const scene of scenes) {
-    // Use the search term - apply smart improvements
-    let searchTerm = scene.searchTerm || scene.keywords || 'fitness workout';
+    const searchTerm = scene.searchTerm || scene.keywords || 'fitness workout';
     const sceneDuration = scene.duration || (scene.endTime - scene.startTime) || 10;
     
-    // STEP 1: Improve the search term using concept mapping
-    searchTerm = smartImproveSearchTerm(searchTerm);
+    console.log(`   Scene ${scene.index + 1}: "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
     
-    console.log(`   Scene ${scene.index + 1}: Searching "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
+    // ========== STEP 1: TRY CURATED VIDEOS FIRST ==========
+    let video = getCuratedVideoForTerm(searchTerm, contentType);
     
-    // STEP 2: Search for videos with multiple strategies
-    let videos = [];
-    let searchAttempt = 0;
-    const searchStrategies = [
-      searchTerm, // Original improved term
-      searchTerm.split(' ').slice(0, 2).join(' '), // First 2 words
-      getRelatedSearchTerm(searchTerm), // Related alternative
-      'fitness workout gym' // Final fallback for fitness content
-    ];
-    
-    while (videos.length === 0 && searchAttempt < searchStrategies.length) {
-      const currentSearch = searchStrategies[searchAttempt];
-      console.log(`      Attempt ${searchAttempt + 1}: "${currentSearch}"`);
-      
-      videos = await searchStockVideos(currentSearch, {
-        ...options,
-        perPage: 20,
-        minDuration: Math.max(3, sceneDuration * 0.5),
-        maxDuration: 60
-      });
-      
-      searchAttempt++;
+    // Check if we already used this video
+    let curatedAttempts = 0;
+    while (video && usedVideoIds.has(video.id) && curatedAttempts < 5) {
+      video = getCuratedVideoForTerm(searchTerm, contentType);
+      curatedAttempts++;
     }
     
-    console.log(`      Found ${videos.length} videos after ${searchAttempt} attempt(s)`);
-    
-    // Filter out already used videos
-    const availableVideos = videos.filter(v => !usedVideoIds.has(`${v.source}-${v.id}`));
-    
-    if (availableVideos.length > 0) {
-      // Pick from top 5 results (most relevant) randomly
-      const video = availableVideos[Math.floor(Math.random() * Math.min(5, availableVideos.length))];
-      usedVideoIds.add(`${video.source}-${video.id}`);
-      
+    if (video && !usedVideoIds.has(video.id)) {
+      usedVideoIds.add(video.id);
       sceneClips.push({
         ...video,
         sceneIndex: scene.index,
@@ -630,38 +610,84 @@ async function getVideosForScenes(scenes, options = {}) {
         useDuration: sceneDuration,
         startAt: scene.startTime || 0,
         endAt: scene.endTime || (scene.startTime + sceneDuration),
-        // For Shotstack multi-clip
         playbackStart: scene.startTime || 0,
         playbackDuration: sceneDuration
       });
+      console.log(`      ✅ CURATED: "${video.matchedKeyword}" → ${video.description}`);
+      continue; // Move to next scene
+    }
+    
+    // ========== STEP 2: FALLBACK TO PEXELS API ==========
+    console.log(`      ⚠️ No curated match, trying Pexels API...`);
+    
+    const improvedTerm = smartImproveSearchTerm(searchTerm);
+    let videos = [];
+    let searchAttempt = 0;
+    const searchStrategies = [
+      improvedTerm,
+      improvedTerm.split(' ').slice(0, 2).join(' '),
+      getRelatedSearchTerm(improvedTerm),
+      'fitness workout gym'
+    ];
+    
+    while (videos.length === 0 && searchAttempt < searchStrategies.length) {
+      const currentSearch = searchStrategies[searchAttempt];
+      videos = await searchStockVideos(currentSearch, {
+        ...options,
+        perPage: 15,
+        minDuration: 3,
+        maxDuration: 60
+      });
+      searchAttempt++;
+    }
+    
+    // Filter out used videos
+    const availableVideos = videos.filter(v => !usedVideoIds.has(`${v.source}-${v.id}`));
+    
+    if (availableVideos.length > 0) {
+      const apiVideo = availableVideos[Math.floor(Math.random() * Math.min(5, availableVideos.length))];
+      usedVideoIds.add(`${apiVideo.source}-${apiVideo.id}`);
       
-      console.log(`      ✅ Found: ${video.source} #${video.id} (${video.duration}s)`);
+      sceneClips.push({
+        ...apiVideo,
+        sceneIndex: scene.index,
+        sceneSearchTerm: searchTerm,
+        useDuration: sceneDuration,
+        startAt: scene.startTime || 0,
+        endAt: scene.endTime || (scene.startTime + sceneDuration),
+        playbackStart: scene.startTime || 0,
+        playbackDuration: sceneDuration
+      });
+      console.log(`      ✅ PEXELS API: ${apiVideo.source} #${apiVideo.id}`);
     } else {
-      // FINAL FALLBACK: Use curated background
-      console.log(`      ⚠️ No API results, using curated fallback...`);
-      const curatedBg = getCuratedBackground('fitness');
+      // ========== STEP 3: ABSOLUTE FALLBACK ==========
+      console.log(`      ⚠️ No API results, using default curated...`);
+      const defaults = CURATED_BACKGROUNDS.fitness || CURATED_BACKGROUNDS.abstract;
+      const fallbackVideo = defaults[Math.floor(Math.random() * defaults.length)];
       
-      if (curatedBg) {
+      if (fallbackVideo) {
         sceneClips.push({
-          id: `curated-${Date.now()}-${scene.index}`,
-          source: 'curated',
-          url: curatedBg.url,
-          name: curatedBg.name,
-          duration: curatedBg.duration,
+          id: `fallback-${Date.now()}-${scene.index}`,
+          source: 'curated-fallback',
+          url: fallbackVideo.url,
+          description: fallbackVideo.name,
+          duration: fallbackVideo.duration,
           sceneIndex: scene.index,
-          sceneSearchTerm: 'curated-fallback',
+          sceneSearchTerm: 'fallback',
           useDuration: sceneDuration,
           startAt: scene.startTime || 0,
           endAt: scene.endTime || (scene.startTime + sceneDuration),
           playbackStart: scene.startTime || 0,
           playbackDuration: sceneDuration
         });
-        console.log(`      ✅ Using curated: ${curatedBg.name}`);
+        console.log(`      ✅ FALLBACK: ${fallbackVideo.name}`);
       }
     }
   }
   
   console.log(`   📹 Total: ${sceneClips.length} scene clips ready`);
+  console.log(`   📊 Sources: ${sceneClips.filter(v => v.source === 'curated').length} curated, ${sceneClips.filter(v => v.source === 'pexels').length} Pexels`);
+  
   return sceneClips;
 }
 
