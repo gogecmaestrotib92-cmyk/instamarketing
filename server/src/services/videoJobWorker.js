@@ -65,18 +65,24 @@ async function generateScript(job) {
     "scenes": [
       {
         "text": "What the voiceover says for this scene",
-        "visual": "Brief description of what video to show",
+        "visual": "2-3 word VIDEO SEARCH TERM for stock footage",
         "duration": 5
       }
     ],
     "cta": "Call to action (2-3 seconds)"
   }
   
-  Rules:
+  CRITICAL RULES FOR "visual" field:
+  - Use ONLY 2-3 simple words that work as stock video search terms
+  - Examples: "woman running", "coffee pouring", "laptop typing", "sunset beach", "gym workout", "cooking kitchen", "money cash", "happy family"
+  - DO NOT use abstract concepts like "success" or "motivation" - use concrete visuals
+  - DO NOT use full sentences - just 2-3 searchable words
+  - Think: what would I type into a stock video site to find this clip?
+  
+  Other rules:
   - Keep total duration close to ${job.targetDuration} seconds
   - Each scene should be 3-7 seconds
-  - Make it punchy and engaging for social media
-  - Visual descriptions should be simple: "person working out", "typing on laptop", etc.`;
+  - Make it punchy and engaging for social media`;
   
     console.log(`[Job ${job._id}] Calling OpenAI for script generation...`);
     
@@ -94,12 +100,15 @@ async function generateScript(job) {
     const scenes = [];
     let order = 0;
     
+    // Generate better search terms for hook and CTA based on topic
+    const topicWords = job.topic.toLowerCase().split(' ').slice(0, 2).join(' ');
+    
     // Add hook as first scene
     scenes.push({
       order: order++,
       text: content.hook,
       duration: 3,
-      visual: 'attention grabbing intro'
+      visual: topicWords || 'attention grabbing'
     });
     
     // Add main scenes
@@ -117,7 +126,7 @@ async function generateScript(job) {
       order: order++,
       text: content.cta,
       duration: 3,
-      visual: 'call to action'
+      visual: topicWords || 'thumbs up'
     });
     
     job.script = JSON.stringify(content);
@@ -151,60 +160,68 @@ async function findVideosForScenes(job) {
   // Search Pexels for each scene and upload to Cloudinary
   for (let i = 0; i < job.scenes.length; i++) {
     const scene = job.scenes[i];
-    const searchQuery = scene.visual || job.topic;
+    let searchQuery = scene.visual || job.topic;
+    
+    // Clean up search query - extract key words
+    searchQuery = searchQuery
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+      .split(' ')
+      .filter(w => w.length > 2) // Remove short words
+      .slice(0, 3) // Max 3 words
+      .join(' ');
     
     try {
       console.log(`[Job ${job._id}] Scene ${i}: Searching Pexels for "${searchQuery}"`);
       
-      // Search Pexels
-      const searchResponse = await axios.get(
-        `https://api.pexels.com/videos/search`,
-        {
-          params: {
-            query: searchQuery,
-            orientation: 'portrait',
-            size: 'medium',
-            per_page: 5
-          },
-          headers: {
-            'Authorization': PEXELS_API_KEY
-          },
-          timeout: 10000
-        }
-      );
+      let videos = [];
       
-      const videos = searchResponse.data.videos;
-      if (!videos || videos.length === 0) {
-        console.log(`[Job ${job._id}] Scene ${i}: No results, trying topic search`);
-        // Fallback to topic search
-        const topicResponse = await axios.get(
-          `https://api.pexels.com/videos/search`,
-          {
-            params: {
-              query: job.topic,
-              orientation: 'portrait',
-              size: 'medium',
-              per_page: 5
-            },
-            headers: {
-              'Authorization': PEXELS_API_KEY
-            },
-            timeout: 10000
+      // Try multiple search strategies
+      const searchStrategies = [
+        searchQuery,                                    // Original query
+        searchQuery.split(' ')[0],                      // First word only
+        job.topic.split(' ').slice(0, 2).join(' ')     // Topic first 2 words
+      ];
+      
+      for (const query of searchStrategies) {
+        if (videos.length >= 3) break;
+        
+        try {
+          const searchResponse = await axios.get(
+            `https://api.pexels.com/videos/search`,
+            {
+              params: {
+                query: query,
+                orientation: 'portrait',
+                size: 'medium',
+                per_page: 5
+              },
+              headers: {
+                'Authorization': PEXELS_API_KEY
+              },
+              timeout: 10000
+            }
+          );
+          
+          if (searchResponse.data.videos && searchResponse.data.videos.length > 0) {
+            videos = searchResponse.data.videos;
+            console.log(`[Job ${job._id}] Scene ${i}: Found ${videos.length} videos for "${query}"`);
+            break;
           }
-        );
-        
-        if (!topicResponse.data.videos || topicResponse.data.videos.length === 0) {
-          throw new Error('No videos found');
+        } catch (searchErr) {
+          console.log(`[Job ${job._id}] Scene ${i}: Search failed for "${query}"`);
         }
-        
-        videos.push(...topicResponse.data.videos);
       }
       
-      // Pick a random video from results (to add variety)
+      if (videos.length === 0) {
+        throw new Error('No videos found after all search strategies');
+      }
+      
+      // Pick a random video from top results (for variety)
       const randomIndex = Math.floor(Math.random() * Math.min(videos.length, 3));
       const selectedVideo = videos[randomIndex];
       
-      // Find HD video file
+      // Find HD video file (prefer portrait)
       const videoFile = selectedVideo.video_files.find(f => 
         f.quality === 'hd' && f.height > f.width
       ) || selectedVideo.video_files.find(f => 
