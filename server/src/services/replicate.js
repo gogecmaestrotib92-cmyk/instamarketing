@@ -39,6 +39,54 @@ class ReplicateService {
   }
 
   /**
+   * Generate video from text prompt using Kling v1.6 Standard
+   * Used as fallback when Pexels has no matching videos
+   * @param {string} prompt - Text description of the video scene
+   * @param {object} options - Generation options
+   */
+  async generateVideoWithKling(prompt, options = {}) {
+    try {
+      const { duration = 5, aspectRatio = '9:16' } = options;
+      console.log('🎬 Starting Kling v1.6 video generation...');
+      console.log('Prompt:', prompt);
+      console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
+
+      // Kling v1.6 Standard - 720p at 30fps, supports 5s and 10s
+      const klingDuration = parseInt(duration) >= 10 ? 10 : 5;
+      
+      const prediction = await this.replicate.predictions.create({
+        model: 'kwaivgi/kling-v1.6-standard',
+        input: {
+          prompt: prompt,
+          duration: klingDuration,
+          aspect_ratio: aspectRatio,
+          cfg_scale: 0.5  // Creativity vs prompt adherence
+        }
+      });
+
+      console.log('📝 Kling prediction created:', prediction.id);
+      
+      // Wait for completion (Kling can take 1-3 minutes)
+      const result = await this.waitForPrediction(prediction.id);
+      
+      if (result.success) {
+        console.log('✅ Kling video generation complete!');
+        return {
+          success: true,
+          videoUrl: result.output,
+          predictionId: prediction.id
+        };
+      } else {
+        throw new Error(result.error || 'Kling video generation failed');
+      }
+
+    } catch (error) {
+      console.error('Kling video generation error:', error.message);
+      return this.handleError(error);
+    }
+  }
+
+  /**
    * Generate video from text prompt using Luma Ray Flash 2 (high quality, fast)
    * @param {string} prompt - Text description of the video
    * @param {object} options - Generation options

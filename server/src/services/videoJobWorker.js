@@ -10,6 +10,10 @@ const OpenAI = require('openai');
 const axios = require('axios');
 const FormData = require('form-data');
 const cloudinary = require('cloudinary').v2;
+const ReplicateService = require('./replicate');
+
+// Initialize Replicate service for AI video generation fallback
+const replicateService = new ReplicateService();
 
 // Initialize OpenAI lazily (to ensure env vars are loaded)
 let openaiClient = null;
@@ -259,11 +263,29 @@ async function findVideosForScenes(job) {
       console.log(`[Job ${job._id}] Scene ${i}: Uploaded to ${cloudinaryUrl}`);
       
     } catch (error) {
-      console.error(`[Job ${job._id}] Scene ${i} failed: ${error.message}, using fallback`);
-      // Use fallback video
-      const fallbackVideos = CURATED_VIDEOS.fitness;
-      const fallback = fallbackVideos[i % fallbackVideos.length];
-      job.scenes[i].videoUrl = fallback.url;
+      console.error(`[Job ${job._id}] Scene ${i} Pexels failed: ${error.message}`);
+      
+      // FALLBACK: Try generating video with Kling AI
+      console.log(`[Job ${job._id}] Scene ${i}: Trying Kling AI video generation...`);
+      await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
+        `Generating AI video for scene ${i + 1}...`);
+      
+      try {
+        const klingResult = await generateVideoWithKling(scene, job._id, i);
+        if (klingResult.success) {
+          job.scenes[i].videoUrl = klingResult.videoUrl;
+          job.scenes[i].aiGenerated = true; // Mark as AI-generated
+          console.log(`[Job ${job._id}] Scene ${i}: Kling AI video generated successfully`);
+        } else {
+          throw new Error(klingResult.error || 'Kling generation failed');
+        }
+      } catch (klingError) {
+        console.error(`[Job ${job._id}] Scene ${i} Kling failed: ${klingError.message}, using curated fallback`);
+        // Final fallback: Use curated videos
+        const fallbackVideos = CURATED_VIDEOS.fitness;
+        const fallback = fallbackVideos[i % fallbackVideos.length];
+        job.scenes[i].videoUrl = fallback.url;
+      }
     }
     
     // Update progress
@@ -273,6 +295,61 @@ async function findVideosForScenes(job) {
   
   await job.save();
   return job;
+}
+
+/**
+ * Generate video using Kling AI when Pexels has no matching videos
+ * @param {object} scene - Scene object with text and visual description
+ * @param {string} jobId - Job ID for logging
+ * @param {number} sceneIndex - Scene index
+ */
+async function generateVideoWithKling(scene, jobId, sceneIndex) {
+  try {
+    // Build a detailed prompt for Kling
+    const prompt = `${scene.visual}. ${scene.text}. Cinematic, high quality, professional lighting, smooth motion.`;
+    
+    console.log(`[Job ${jobId}] Scene ${sceneIndex}: Kling prompt: "${prompt}"`);
+    
+    const result = await replicateService.generateVideoWithKling(prompt, {
+      duration: Math.min(scene.duration || 5, 5), // Kling supports 5 or 10 seconds
+      aspectRatio: '9:16' // Portrait for social media
+    });
+    
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+    
+    // Upload the Kling video to Cloudinary for consistent hosting
+    console.log(`[Job ${jobId}] Scene ${sceneIndex}: Downloading Kling video...`);
+    const videoResponse = await axios.get(result.videoUrl, {
+      responseType: 'arraybuffer',
+      timeout: 60000
+    });
+    
+    const videoBuffer = Buffer.from(videoResponse.data);
+    console.log(`[Job ${jobId}] Scene ${sceneIndex}: Uploading to Cloudinary...`);
+    
+    const cloudinaryUrl = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'video',
+          folder: 'ai-generated-videos',
+          public_id: `job_${jobId}_scene_${sceneIndex}_kling`
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result.secure_url);
+        }
+      );
+      uploadStream.end(videoBuffer);
+    });
+    
+    return { success: true, videoUrl: cloudinaryUrl };
+    
+  } catch (error) {
+    console.error(`[Job ${jobId}] Scene ${sceneIndex} Kling error:`, error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 /**
