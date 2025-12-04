@@ -12,6 +12,7 @@ const SceneSchema = new mongoose.Schema({
   text: { type: String, required: true },
   duration: { type: Number, default: 5 }, // seconds
   visual: { type: String }, // visual description for video search
+  enhancedPrompt: { type: String }, // AI-enhanced prompt for video generation
   videoUrl: { type: String }, // Cloudinary URL after upload
   audioUrl: { type: String }, // Voiceover audio URL
   audioDuration: { type: Number }, // Actual audio duration

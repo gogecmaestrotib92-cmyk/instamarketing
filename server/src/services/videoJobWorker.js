@@ -52,6 +52,143 @@ const CURATED_VIDEOS = {
 };
 
 /**
+ * Industry-specific video visual styles for AI generation
+ * Contains camera movements, lighting, composition, and visual keywords
+ */
+const INDUSTRY_VIDEO_STYLES = {
+  'E-Commerce / Retail': {
+    cameraMovement: 'smooth dolly shots, 360 product rotation, zoom transitions',
+    lighting: 'bright studio lighting, soft shadows, product spotlight',
+    composition: 'clean white background, lifestyle context, unboxing reveal',
+    visualKeywords: 'product showcase, packaging close-up, hands holding product, lifestyle usage, customer satisfaction',
+    mood: 'aspirational, premium feel, desire-inducing'
+  },
+  'Food & Beverage': {
+    cameraMovement: 'slow motion pour, overhead table scan, macro focus pull',
+    lighting: 'warm natural light, golden hour glow, steam backlighting',
+    composition: 'flat lay arrangement, close-up textures, action shots',
+    visualKeywords: 'appetizing presentation, steam rising, fresh ingredients, cooking action, pour shots, bite moments',
+    mood: 'appetizing, indulgent, fresh and inviting'
+  },
+  'Fashion & Beauty': {
+    cameraMovement: 'runway walk tracking, slow motion fabric flow, beauty close-ups',
+    lighting: 'editorial lighting, rim light, soft beauty lighting',
+    composition: 'full body to detail shots, texture focus, mirror reflections',
+    visualKeywords: 'model wearing product, fabric texture, makeup application, before/after, styling sequence',
+    mood: 'glamorous, aspirational, confident'
+  },
+  'Health & Fitness': {
+    cameraMovement: 'dynamic action tracking, slow motion power shots, motivational angles',
+    lighting: 'high contrast gym lighting, natural outdoor light, dramatic shadows',
+    composition: 'powerful poses, movement sequences, transformation shots',
+    visualKeywords: 'workout action, muscle definition, sweat drops, exercise form, outdoor training, gym environment',
+    mood: 'energetic, powerful, motivational'
+  },
+  'Technology': {
+    cameraMovement: 'smooth orbital rotation, screen focus pulls, reveal transitions',
+    lighting: 'clean modern lighting, subtle gradients, screen glow',
+    composition: 'device floating, interface close-ups, lifestyle integration',
+    visualKeywords: 'device showcase, app interface, tech innovation, hands using device, futuristic elements',
+    mood: 'innovative, sleek, cutting-edge'
+  },
+  'Real Estate': {
+    cameraMovement: 'steady walkthrough, drone aerials, room reveals',
+    lighting: 'golden hour exterior, bright interior, HDR style',
+    composition: 'wide establishing shots, architectural details, lifestyle vignettes',
+    visualKeywords: 'property exterior, interior rooms, amenities, neighborhood, luxury features',
+    mood: 'aspirational, welcoming, luxurious'
+  },
+  'Travel & Hospitality': {
+    cameraMovement: 'sweeping landscape pans, first-person POV, destination reveals',
+    lighting: 'golden hour, blue hour, natural dramatic lighting',
+    composition: 'panoramic vistas, intimate moments, cultural details',
+    visualKeywords: 'destination beauty, hotel amenities, local experiences, adventure moments, relaxation scenes',
+    mood: 'wanderlust, adventure, relaxation'
+  },
+  'Professional Services': {
+    cameraMovement: 'steady professional shots, office environment pans, team focus',
+    lighting: 'corporate office lighting, clean and professional',
+    composition: 'team collaboration, client meetings, workspace shots',
+    visualKeywords: 'professional team, office environment, client handshake, expert at work, consultation',
+    mood: 'trustworthy, professional, competent'
+  },
+  'default': {
+    cameraMovement: 'smooth cinematic movement, focus transitions',
+    lighting: 'professional lighting, balanced exposure',
+    composition: 'rule of thirds, clear focal points',
+    visualKeywords: 'professional visuals, engaging content',
+    mood: 'professional, engaging'
+  }
+};
+
+/**
+ * Enhance a video scene prompt with AI for better generation accuracy
+ * Uses OpenAI to add specific cinematography and visual details
+ */
+async function enhanceVideoPrompt(basePrompt, options = {}) {
+  const { industry, businessName, productName, brandVoice, sceneContext, duration } = options;
+  
+  // Get industry-specific style guidance
+  const industryStyle = INDUSTRY_VIDEO_STYLES[industry] || INDUSTRY_VIDEO_STYLES['default'];
+  
+  try {
+    const openai = getOpenAI();
+    
+    const enhanceRequest = `You are an expert video director and cinematographer who creates prompts for AI video generators like Kling AI and Runway.
+
+Take this basic video scene description and enhance it with specific, detailed visual and cinematography directions.
+
+BASIC SCENE: "${basePrompt}"
+
+CONTEXT:
+- Brand: ${businessName || 'not specified'}
+- Product/Service: ${productName || 'not specified'}
+- Industry: ${industry || 'general'}
+- Brand Voice: ${brandVoice || 'professional'}
+- Scene Duration: ${duration || 5} seconds
+- Scene Context: ${sceneContext || 'promotional video'}
+
+INDUSTRY-SPECIFIC VISUAL GUIDANCE:
+- Camera Movement: ${industryStyle.cameraMovement}
+- Lighting Style: ${industryStyle.lighting}
+- Composition: ${industryStyle.composition}
+- Visual Keywords: ${industryStyle.visualKeywords}
+- Mood: ${industryStyle.mood}
+
+RULES FOR ENHANCED VIDEO PROMPT:
+1. Describe EXACTLY what should happen in the video (action, movement)
+2. Specify camera movement (dolly, pan, zoom, tracking, static)
+3. Describe lighting mood and color temperature
+4. Include specific subjects and their actions
+5. Mention textures, materials, and visual details
+6. Keep it VISUAL - describe what we SEE, not concepts
+7. Include motion and transition hints
+8. Add atmosphere and mood descriptors
+9. Be specific about composition (close-up, wide shot, overhead)
+10. Keep under 150 words, focused and precise
+11. Do NOT include any text overlays or logos in the visual description
+
+Return ONLY the enhanced video prompt, nothing else.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: enhanceRequest }],
+      temperature: 0.7,
+      max_tokens: 250
+    });
+
+    const enhancedPrompt = response.choices[0].message.content.trim();
+    console.log(`✨ Enhanced video prompt: ${enhancedPrompt.substring(0, 100)}...`);
+    return enhancedPrompt;
+    
+  } catch (error) {
+    console.error('Video prompt enhancement failed, using fallback:', error.message);
+    // Fallback: add basic cinematography modifiers
+    return `${basePrompt}. ${industryStyle.cameraMovement}. ${industryStyle.lighting}. ${industryStyle.mood}. Professional cinematic quality, smooth motion, 4K resolution.`;
+  }
+}
+
+/**
  * STEP 1: Generate script and scenes
  */
 async function generateScript(job) {
@@ -348,6 +485,7 @@ async function findVideosForScenes(job) {
  * STEP 2 (PRODUCT): Start async AI video generation for product/brand videos
  * Uses Replicate webhooks - starts all predictions and returns immediately
  * Webhook will update scenes as they complete
+ * NOW WITH AI-ENHANCED PROMPTS for better accuracy
  */
 async function findVideosForProductScenes(job) {
   console.log(`[Job ${job._id}] 🎬 Starting ASYNC AI video generation for product video`);
@@ -355,9 +493,12 @@ async function findVideosForProductScenes(job) {
   const businessName = job.businessInfo?.businessName || '';
   const industry = job.businessInfo?.industry || '';
   const productName = job.businessInfo?.productName || '';
+  const brandVoice = job.businessInfo?.brandVoice || 'professional';
+  const description = job.businessInfo?.description || '';
   const brandImages = job.businessInfo?.brandImages || [];
   
-  console.log(`[Job ${job._id}] Business: ${businessName}, Industry: ${industry}, Product: ${productName}, Images: ${brandImages.length}`);
+  console.log(`[Job ${job._id}] Business: ${businessName}, Industry: ${industry}, Product: ${productName}`);
+  console.log(`[Job ${job._id}] Brand Voice: ${brandVoice}, Description: ${description.substring(0, 50)}...`);
   
   // Determine webhook URL based on environment
   const baseUrl = process.env.VERCEL_URL 
@@ -367,52 +508,34 @@ async function findVideosForProductScenes(job) {
   
   console.log(`[Job ${job._id}] Webhook URL: ${webhookUrl}`);
   
-  // Build brand context for all prompts
-  let brandContext = '';
-  if (businessName) brandContext += `for ${businessName} brand`;
-  if (productName) brandContext += `, showcasing ${productName}`;
-  if (industry) brandContext += `, ${industry} industry style`;
-  
-  // Get industry-specific visual style
-  const industryStyles = {
-    'E-Commerce / Retail': 'clean white background product shots, lifestyle usage, unboxing moments',
-    'Food & Beverage': 'appetizing close-ups, steam rising, fresh ingredients, table setting',
-    'Fashion & Beauty': 'runway style, editorial fashion, beauty close-ups, fabric textures',
-    'Health & Fitness': 'gym action shots, workout intensity, athletic movement, transformation',
-    'Technology': 'sleek device showcase, futuristic interfaces, innovation demos',
-    'Real Estate': 'property walkthroughs, interior design, architecture highlights',
-    'Travel & Hospitality': 'destination beauty, luxury experiences, scenic views',
-    'Professional Services': 'office environment, team collaboration, client meetings',
-    'default': 'professional commercial quality, modern aesthetic'
-  };
-  const visualStyle = industryStyles[industry] || industryStyles['default'];
-  
   // Start async predictions for all scenes
   for (let i = 0; i < job.scenes.length; i++) {
     const scene = job.scenes[i];
     await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
-      `Starting AI generation for scene ${i + 1}/${job.scenes.length}...`);
+      `Enhancing prompt for scene ${i + 1}/${job.scenes.length}...`);
     
     try {
-      // Build enhanced prompt with business context
-      let prompt = `Create a ${scene.duration || 5} second video clip ${brandContext}.`;
+      // Build base prompt from scene
+      const basePrompt = `${scene.visual || scene.text}. ${scene.text}`;
       
-      // Add scene-specific visual
-      prompt += ` Scene: ${scene.visual || scene.text}.`;
+      // Use AI to enhance the prompt with cinematography details
+      console.log(`[Job ${job._id}] Scene ${i}: Enhancing prompt with AI...`);
+      const enhancedPrompt = await enhanceVideoPrompt(basePrompt, {
+        industry,
+        businessName,
+        productName,
+        brandVoice,
+        sceneContext: `Scene ${i + 1} of ${job.scenes.length} for a ${job.targetDuration}s promotional video`,
+        duration: scene.duration || 5
+      });
       
-      // Add industry-specific style
-      prompt += ` Visual style: ${visualStyle}.`;
+      console.log(`[Job ${job._id}] Scene ${i}: Enhanced prompt ready (${enhancedPrompt.length} chars)`);
       
-      // Add the voiceover text as context
-      prompt += ` The video should match this narration: "${scene.text}".`;
+      // Start async Kling generation with enhanced prompt
+      await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
+        `Starting AI generation for scene ${i + 1}/${job.scenes.length}...`);
       
-      // Add quality modifiers
-      prompt += ' Professional commercial quality, smooth camera motion, cinematic lighting, 4K resolution, Instagram/TikTok ready.';
-      
-      console.log(`[Job ${job._id}] Scene ${i}: Starting Kling with prompt: "${prompt.substring(0, 150)}..."`);
-      
-      // Start async Kling generation
-      const result = await replicateService.startAsyncKlingVideo(prompt, webhookUrl, {
+      const result = await replicateService.startAsyncKlingVideo(enhancedPrompt, webhookUrl, {
         duration: scene.duration || 5,
         aspectRatio: job.aspectRatio || '9:16'
       });
@@ -421,6 +544,7 @@ async function findVideosForProductScenes(job) {
         // Save prediction ID for webhook to find
         job.scenes[i].replicatePredictionId = result.predictionId;
         job.scenes[i].replicateStatus = 'pending';
+        job.scenes[i].enhancedPrompt = enhancedPrompt; // Store for debugging
         console.log(`[Job ${job._id}] Scene ${i}: ✅ Kling prediction started: ${result.predictionId}`);
       } else {
         console.log(`[Job ${job._id}] Scene ${i}: Kling start failed, using stock video fallback`);
