@@ -28,6 +28,7 @@ import AssetHub from './pages/AssetHub';
 import ContentCalendar from './pages/ContentCalendar';
 import BusinessCreate from './pages/BusinessCreate';
 import BusinessImage from './pages/BusinessImage';
+import BusinessVideo from './pages/BusinessVideo';
 import BusinessTrending from './pages/BusinessTrending';
 import BusinessHub from './pages/BusinessHub';
 import EcommerceCreate from './pages/EcommerceCreate';
@@ -197,7 +198,7 @@ function AppRoutes() {
         {/* Business - main page with cards */}
         <Route path="create/business" element={<BusinessCreate />} />
         <Route path="create/business/trending" element={<BusinessTrending />} />
-        <Route path="create/business/video" element={<ComingSoon title="Video" description="Short, impactful promo videos" />} />
+        <Route path="create/business/video" element={<BusinessVideo />} />
         <Route path="create/business/image" element={<BusinessImage />} />
         <Route path="create/business/ad-creatives" element={<ComingSoon title="Ad Creatives" description="Ads for your business" />} />
         
