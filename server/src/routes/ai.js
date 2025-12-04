@@ -3195,6 +3195,13 @@ router.post('/stock-video/clips', async (req, res) => {
  * POST /api/ai/voiceover-video/generate
  */
 router.post('/voiceover-video/generate', async (req, res) => {
+  // IMMEDIATE LOG - Should always appear
+  console.log('========================================');
+  console.log('🚀 VOICEOVER-VIDEO ENDPOINT HIT - v4');
+  console.log('========================================');
+  console.log('cloudinaryUpload available:', !!cloudinaryUpload);
+  console.log('shotstackClient available:', !!shotstackClient);
+  
   try {
     const { 
       topic, 
