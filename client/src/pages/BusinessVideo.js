@@ -314,6 +314,18 @@ Include 4-6 scenes.`
           data.success = true;
         } else if (processData.status === 'failed') {
           throw new Error(processData.error || 'Video generation failed');
+        } else if (processData.status === 'waiting_for_ai') {
+          // AI videos being generated asynchronously
+          console.log('[BusinessVideo] Waiting for AI videos, starting polling...');
+          setGenerationStatus(processData.statusMessage || '🎬 Generating AI videos... (5-10 min)');
+          const result = await pollJobStatus(data.jobId);
+          
+          if (result.success) {
+            data.videoUrl = result.videoUrl;
+            data.success = true;
+          } else {
+            throw new Error(result.error);
+          }
         } else {
           // Still processing, start polling
           console.log('[BusinessVideo] Starting polling for job:', data.jobId);

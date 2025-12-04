@@ -1033,6 +1033,13 @@ async function processJob(jobId) {
     // Step 2: Find videos
     job = await findVideosForScenes(job);
     
+    // If waiting for AI videos (async Kling generation), stop here
+    // The webhook will call continueProcessingAfterAI when ready
+    if (job.status === 'waiting_for_ai') {
+      console.log(`[Job ${jobId}] Waiting for AI videos - will continue after webhook callbacks`);
+      return job;
+    }
+    
     // Step 3: Generate voiceover
     job = await generateVoiceover(job);
     

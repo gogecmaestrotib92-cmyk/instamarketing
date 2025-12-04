@@ -220,6 +220,7 @@ router.post('/:id/process', async (req, res) => {
         jobId: finalJob._id,
         status: finalJob.status,
         progress: finalJob.progress,
+        statusMessage: finalJob.statusMessage,
         videoUrl: finalJob.finalVideoUrl,
         error: finalJob.error
       });
