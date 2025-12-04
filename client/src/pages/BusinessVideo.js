@@ -278,6 +278,11 @@ Include 4-6 scenes.`
         ? `${generatedScript.hook} ${generatedScript.scenes.map(s => s.text).join(' ')} ${generatedScript.cta}`
         : scriptPrompt;
       
+      // Debug: Log what we're sending
+      console.log('[BusinessVideo] brandLinked:', brandLinked);
+      console.log('[BusinessVideo] businessInfo:', businessInfo);
+      console.log('[BusinessVideo] Sending businessInfo:', brandLinked ? businessInfo : null);
+      
       const response = await fetch('/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -294,6 +299,7 @@ Include 4-6 scenes.`
       
       const data = await response.json();
       console.log('[BusinessVideo] API response:', data);
+      console.log('[BusinessVideo] isProductVideo:', data.isProductVideo);
       
       // Handle async processing (202 response for product videos)
       if (data.isProductVideo && data.jobId) {

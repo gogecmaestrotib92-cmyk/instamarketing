@@ -60,6 +60,9 @@ async function generateScript(job) {
   try {
     const openai = getOpenAI();
     
+    // Log business info for debugging
+    console.log(`[Job ${job._id}] Business Info:`, JSON.stringify(job.businessInfo, null, 2));
+    
     // Build business context for the script
     let businessContext = '';
     if (job.businessInfo) {
@@ -71,9 +74,14 @@ async function generateScript(job) {
       if (job.businessInfo.brandVoice) parts.push(`Brand Voice: ${job.businessInfo.brandVoice}`);
       if (job.businessInfo.targetAudience) parts.push(`Target Audience: ${job.businessInfo.targetAudience.substring(0, 100)}`);
       
+      console.log(`[Job ${job._id}] Business context parts: ${parts.length}`);
+      
       if (parts.length > 0) {
         businessContext = `\n\nBUSINESS CONTEXT:\n${parts.join('\n')}\n\nIMPORTANT: Create the script SPECIFICALLY for this brand. The video should feel like an official ${job.businessInfo.businessName || 'brand'} advertisement.`;
+        console.log(`[Job ${job._id}] Using business context for script generation`);
       }
+    } else {
+      console.log(`[Job ${job._id}] No business info provided - using generic script`);
     }
     
     const prompt = `Create a ${job.targetDuration}-second video script about: "${job.topic}"${businessContext}

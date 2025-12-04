@@ -41,7 +41,11 @@ const VideoJobSchema = new mongoose.Schema({
     businessName: String,
     industry: String,
     brandImages: [String], // URLs to product/brand images for image-to-video
-    productName: String
+    productName: String,
+    description: String,
+    brandVoice: String,
+    targetAudience: String,
+    brandColors: [String]
   },
   videoStyle: { type: String, default: 'dynamic' }, // dynamic, cinematic, minimal, etc.
   aspectRatio: { type: String, default: '9:16' }, // 9:16, 16:9, 1:1
