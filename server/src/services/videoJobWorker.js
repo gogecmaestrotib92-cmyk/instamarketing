@@ -218,7 +218,7 @@ async function findVideosForScenes(job) {
       }
       
       if (videos.length === 0) {
-        throw new Error('No videos found after all search strategies');
+        throw new Error('No Pexels videos found');
       }
       
       // Pick a random video from top results (for variety)
@@ -232,7 +232,7 @@ async function findVideosForScenes(job) {
         f.quality === 'hd'
       ) || selectedVideo.video_files[0];
       
-      console.log(`[Job ${job._id}] Scene ${i}: Downloading ${videoFile.width}x${videoFile.height}`);
+      console.log(`[Job ${job._id}] Scene ${i}: Downloading Pexels ${videoFile.width}x${videoFile.height}`);
       
       // Download video
       const videoResponse = await axios.get(videoFile.link, {
@@ -260,31 +260,44 @@ async function findVideosForScenes(job) {
       });
       
       job.scenes[i].videoUrl = cloudinaryUrl;
-      console.log(`[Job ${job._id}] Scene ${i}: Uploaded to ${cloudinaryUrl}`);
+      job.scenes[i].source = 'pexels';
+      console.log(`[Job ${job._id}] Scene ${i}: Uploaded Pexels video to ${cloudinaryUrl}`);
       
     } catch (error) {
       console.error(`[Job ${job._id}] Scene ${i} Pexels failed: ${error.message}`);
       
-      // FALLBACK: Try generating video with Kling AI
-      console.log(`[Job ${job._id}] Scene ${i}: Trying Kling AI video generation...`);
-      await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
-        `Generating AI video for scene ${i + 1}...`);
+      // FALLBACK 1: Try Pixabay
+      console.log(`[Job ${job._id}] Scene ${i}: Trying Pixabay...`);
+      const pixabayResult = await searchPixabayVideo(scene, job, i);
       
-      try {
-        const klingResult = await generateVideoWithKling(scene, job._id, i);
-        if (klingResult.success) {
-          job.scenes[i].videoUrl = klingResult.videoUrl;
-          job.scenes[i].aiGenerated = true; // Mark as AI-generated
-          console.log(`[Job ${job._id}] Scene ${i}: Kling AI video generated successfully`);
-        } else {
-          throw new Error(klingResult.error || 'Kling generation failed');
+      if (pixabayResult.success) {
+        job.scenes[i].videoUrl = pixabayResult.videoUrl;
+        job.scenes[i].source = 'pixabay';
+        console.log(`[Job ${job._id}] Scene ${i}: Pixabay video found and uploaded`);
+      } else {
+        // FALLBACK 2: Try Kling AI
+        console.log(`[Job ${job._id}] Scene ${i}: Pixabay failed, trying Kling AI...`);
+        await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
+          `Generating AI video for scene ${i + 1}...`);
+        
+        try {
+          const klingResult = await generateVideoWithKling(scene, job._id, i);
+          if (klingResult.success) {
+            job.scenes[i].videoUrl = klingResult.videoUrl;
+            job.scenes[i].source = 'kling-ai';
+            job.scenes[i].aiGenerated = true;
+            console.log(`[Job ${job._id}] Scene ${i}: Kling AI video generated successfully`);
+          } else {
+            throw new Error(klingResult.error || 'Kling generation failed');
+          }
+        } catch (klingError) {
+          console.error(`[Job ${job._id}] Scene ${i} Kling failed: ${klingError.message}, using curated fallback`);
+          // Final fallback: Use curated videos
+          const fallbackVideos = CURATED_VIDEOS.fitness;
+          const fallback = fallbackVideos[i % fallbackVideos.length];
+          job.scenes[i].videoUrl = fallback.url;
+          job.scenes[i].source = 'curated';
         }
-      } catch (klingError) {
-        console.error(`[Job ${job._id}] Scene ${i} Kling failed: ${klingError.message}, using curated fallback`);
-        // Final fallback: Use curated videos
-        const fallbackVideos = CURATED_VIDEOS.fitness;
-        const fallback = fallbackVideos[i % fallbackVideos.length];
-        job.scenes[i].videoUrl = fallback.url;
       }
     }
     
@@ -348,6 +361,116 @@ async function generateVideoWithKling(scene, jobId, sceneIndex) {
     
   } catch (error) {
     console.error(`[Job ${jobId}] Scene ${sceneIndex} Kling error:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Search Pixabay for video when Pexels has no results
+ * @param {object} scene - Scene object with visual description
+ * @param {object} job - Job object
+ * @param {number} sceneIndex - Scene index
+ */
+async function searchPixabayVideo(scene, job, sceneIndex) {
+  const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY || 'u_f8wk1z5c1x';
+  
+  try {
+    let searchQuery = scene.visual || job.topic;
+    
+    // Clean up search query
+    searchQuery = searchQuery
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .split(' ')
+      .filter(w => w.length > 2)
+      .slice(0, 3)
+      .join('+'); // Pixabay uses + for spaces
+    
+    console.log(`[Job ${job._id}] Scene ${sceneIndex}: Searching Pixabay for "${searchQuery}"`);
+    
+    // Try multiple search strategies
+    const searchStrategies = [
+      searchQuery,
+      searchQuery.split('+')[0],
+      job.topic.split(' ').slice(0, 2).join('+')
+    ];
+    
+    let videos = [];
+    
+    for (const query of searchStrategies) {
+      if (videos.length > 0) break;
+      
+      try {
+        const response = await axios.get('https://pixabay.com/api/videos/', {
+          params: {
+            key: PIXABAY_API_KEY,
+            q: query,
+            video_type: 'all',
+            per_page: 5,
+            safesearch: true
+          },
+          timeout: 10000
+        });
+        
+        if (response.data.hits && response.data.hits.length > 0) {
+          videos = response.data.hits;
+          console.log(`[Job ${job._id}] Scene ${sceneIndex}: Pixabay found ${videos.length} videos for "${query}"`);
+          break;
+        }
+      } catch (searchErr) {
+        console.log(`[Job ${job._id}] Scene ${sceneIndex}: Pixabay search failed for "${query}"`);
+      }
+    }
+    
+    if (videos.length === 0) {
+      return { success: false, error: 'No Pixabay videos found' };
+    }
+    
+    // Pick a random video from results
+    const randomIndex = Math.floor(Math.random() * Math.min(videos.length, 3));
+    const selectedVideo = videos[randomIndex];
+    
+    // Pixabay provides videos in different sizes: large, medium, small, tiny
+    // Prefer medium for balance of quality and size
+    const videoUrl = selectedVideo.videos.medium?.url || 
+                     selectedVideo.videos.large?.url || 
+                     selectedVideo.videos.small?.url;
+    
+    if (!videoUrl) {
+      return { success: false, error: 'No valid video URL from Pixabay' };
+    }
+    
+    console.log(`[Job ${job._id}] Scene ${sceneIndex}: Downloading Pixabay video...`);
+    
+    // Download video
+    const videoResponse = await axios.get(videoUrl, {
+      responseType: 'arraybuffer',
+      timeout: 30000
+    });
+    
+    const videoBuffer = Buffer.from(videoResponse.data);
+    console.log(`[Job ${job._id}] Scene ${sceneIndex}: Downloaded ${(videoBuffer.length / 1024 / 1024).toFixed(2)} MB from Pixabay`);
+    
+    // Upload to Cloudinary
+    const cloudinaryUrl = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'video',
+          folder: 'job-videos',
+          public_id: `job_${job._id}_scene_${sceneIndex}_pixabay`
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result.secure_url);
+        }
+      );
+      uploadStream.end(videoBuffer);
+    });
+    
+    return { success: true, videoUrl: cloudinaryUrl };
+    
+  } catch (error) {
+    console.error(`[Job ${job._id}] Scene ${sceneIndex} Pixabay error:`, error.message);
     return { success: false, error: error.message };
   }
 }
