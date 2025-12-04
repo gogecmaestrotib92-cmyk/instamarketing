@@ -4,9 +4,11 @@ const fetch = require('node-fetch');
 
 // Import Cloudinary for cloud audio storage
 let uploadToCloudinary = null;
+let uploadBufferToCloudinary = null;
 try {
   const cloudinaryModule = require('./cloudinary');
   uploadToCloudinary = cloudinaryModule.uploadToCloudinary;
+  uploadBufferToCloudinary = cloudinaryModule.uploadBufferToCloudinary;
   console.log('✅ Cloudinary loaded for ElevenLabs audio uploads');
 } catch (e) {
   console.log('Cloudinary not available for ElevenLabs:', e.message);
@@ -331,12 +333,8 @@ class ElevenLabsService {
           return this.textToSpeech(text, options);
         }
 
-        // Convert base64 to buffer and save
+        // Convert base64 to buffer - UPLOAD DIRECTLY TO CLOUDINARY (skip disk for speed!)
         const audioBuffer = Buffer.from(audioBase64, 'base64');
-        const timestamp = Date.now();
-        const filename = `elevenlabs_ts_${timestamp}.mp3`;
-        const localPath = path.join(this.outputDir, filename);
-        fs.writeFileSync(localPath, audioBuffer);
 
         // Parse timestamps into word-level timings
         const wordTimings = this.parseAlignmentToWords(text, alignment);
@@ -344,20 +342,46 @@ class ElevenLabsService {
 
         console.log(`🎤 Got ${wordTimings.length} word timings, duration: ${audioDuration?.toFixed(2)}s`);
 
-        // Upload to Cloudinary
+        // Upload buffer directly to Cloudinary (FASTER - no disk write!)
         let cloudUrl = null;
-        if (uploadToCloudinary) {
+        if (uploadBufferToCloudinary) {
           try {
-            const uploadResult = await uploadToCloudinary(localPath, {
+            console.log('   📤 Uploading audio buffer to Cloudinary...');
+            const uploadResult = await uploadBufferToCloudinary(audioBuffer, {
               resource_type: 'video',
-              folder: 'instamarketing/voiceovers'
+              folder: 'instamarketing/voiceovers',
+              format: 'mp3'
             });
             if (uploadResult.success) {
               cloudUrl = uploadResult.url;
-              try { fs.unlinkSync(localPath); } catch (e) {}
+              console.log('   ✅ Audio uploaded:', cloudUrl);
             }
           } catch (e) {
-            console.log('Cloudinary upload failed:', e.message);
+            console.log('Cloudinary buffer upload failed:', e.message);
+          }
+        }
+        
+        // Fallback: save to disk if buffer upload failed
+        let localPath = null;
+        if (!cloudUrl) {
+          const timestamp = Date.now();
+          const filename = `elevenlabs_ts_${timestamp}.mp3`;
+          localPath = path.join(this.outputDir, filename);
+          try {
+            fs.writeFileSync(localPath, audioBuffer);
+            // Try file upload
+            if (uploadToCloudinary) {
+              const uploadResult = await uploadToCloudinary(localPath, {
+                resource_type: 'video',
+                folder: 'instamarketing/voiceovers'
+              });
+              if (uploadResult.success) {
+                cloudUrl = uploadResult.url;
+                try { fs.unlinkSync(localPath); } catch (e) {}
+              }
+            }
+          } catch (e) {
+            console.log('Disk fallback failed:', e.message);
           }
         }
 
@@ -368,7 +392,7 @@ class ElevenLabsService {
           duration: audioDuration,
           voiceId: voiceId,
           model: modelId,
-          wordTimings: wordTimings, // EXACT word-level timestamps!
+          wordTimings: wordTimings,
           hasTimestamps: true
         };
 
