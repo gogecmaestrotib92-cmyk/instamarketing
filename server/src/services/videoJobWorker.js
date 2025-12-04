@@ -10,10 +10,9 @@ const OpenAI = require('openai');
 const axios = require('axios');
 const FormData = require('form-data');
 const cloudinary = require('cloudinary').v2;
-const ReplicateService = require('./replicate');
+const replicateService = require('./replicate');
 
-// Initialize Replicate service for AI video generation fallback
-const replicateService = new ReplicateService();
+// replicateService is already an instance, no need to instantiate
 
 // Initialize OpenAI lazily (to ensure env vars are loaded)
 let openaiClient = null;
