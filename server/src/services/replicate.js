@@ -473,22 +473,22 @@ class ReplicateService {
       if (referenceImage) {
         console.log('📸 Using reference image for style guidance:', referenceImage);
         
-        // Use Flux Dev with IP-Adapter for image-guided generation
+        // Use Flux Pro with image prompt for style-guided generation
         prediction = await this.replicate.predictions.create({
-          model: 'xlabs-ai/flux-dev-realism',
+          model: 'black-forest-labs/flux-1.1-pro',
           input: {
             prompt: prompt,
-            image: referenceImage,
-            strength: 0.65, // Balance between reference and prompt (0.65 = good blend)
-            num_outputs: numOutputs,
+            image_prompt: referenceImage,
+            image_prompt_strength: 0.15, // Light style influence (0.1-0.3 is good)
+            aspect_ratio: aspectRatio,
             output_format: outputFormat,
             output_quality: outputQuality,
-            guidance: 3.5,
-            num_inference_steps: 28
+            safety_tolerance: 2,
+            prompt_upsampling: true
           }
         });
         
-        console.log('📝 IP-Adapter guided prediction created:', prediction.id);
+        console.log('📝 Image prompt guided prediction created:', prediction.id);
       } else {
         // Standard Flux Schnell - Fast, high quality text-to-image
         prediction = await this.replicate.predictions.create({
