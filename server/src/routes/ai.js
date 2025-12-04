@@ -3719,11 +3719,10 @@ router.post('/voiceover-video/generate', async (req, res) => {
     console.log(`   Audio URL: ${audioUrl?.includes('cloudinary') ? '✅ Already on Cloudinary' : '⚠️ Not on Cloudinary'}`);
     
     // TRY SHOTSTACK FIRST (most reliable, has watermark on free tier but works well)
-    // VERSION: v2 - Download Pexels videos ourselves with browser headers
+    // VERSION: v3 - Download Pexels videos ourselves with browser headers (Dec 4, 2025 02:45 UTC)
+    // FIX: Server downloads from Pexels, then uploads buffer to Cloudinary
     if (shotstackClient && (sceneVideos.length > 0 || backgroundVideo)) {
-      // Skip audio re-upload - ElevenLabs service already handles Cloudinary upload
-      // This saves 5-10 seconds!
-      console.log('   🔧 Using Pexels download fix v2');
+      console.log('   🔧 PEXELS FIX v3 ACTIVE - Server downloads then uploads to Cloudinary');
 
       try {
         if (sceneVideos.length > 1) {
