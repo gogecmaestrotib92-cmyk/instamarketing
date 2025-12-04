@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3, FiLoader, FiAlertCircle } from 'react-icons/fi';
-import { useNavigate, Link } from 'react-router-dom';
+import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3, FiLoader } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { saveImageToHub } from '../services/assetService';
 import './BusinessImage.css';
 
