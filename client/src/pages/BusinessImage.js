@@ -516,36 +516,6 @@ Example: A premium skincare product bottle on white marble, soft natural lightin
               </div>
 
               <div className="settings-card">
-                {/* Brand Details */}
-                <div className="setting-group">
-                  <div className="setting-row">
-                    <div>
-                      <h3>Brand Details</h3>
-                      <p className="setting-desc">
-                        {!hasBusinessInfo ? (
-                          <>
-                            <FiAlertCircle className="warning-icon" /> 
-                            <Link to="/app/business-hub" className="setup-link">Set up in Business Hub</Link>
-                          </>
-                        ) : brandLinked ? (
-                          <>✓ Brand identity will be applied to the image</>
-                        ) : (
-                          'Generic styling will be used'
-                        )}
-                      </p>
-                    </div>
-                    <label className="toggle-switch">
-                      <input 
-                        type="checkbox" 
-                        checked={brandLinked && hasBusinessInfo} 
-                        onChange={(e) => setBrandLinked(e.target.checked)}
-                        disabled={!hasBusinessInfo}
-                      />
-                      <span className={`toggle-slider ${!hasBusinessInfo ? 'disabled' : ''}`}></span>
-                    </label>
-                  </div>
-                </div>
-
                 {/* Post Type */}
                 <div className="setting-group">
                   <h3>Post Type</h3>
