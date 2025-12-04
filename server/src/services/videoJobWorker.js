@@ -446,62 +446,54 @@ async function renderVideo(job) {
     });
   }
   
-  // Create KARAOKE style subtitle clips - highlight current word in yellow
-  // We need word-level timing from job.subtitles
-  const wordTimings = job.subtitles; // Each has: { text, start, end }
+  // Create smooth subtitle clips - show phrase with current word in yellow
+  // Group words into phrases for display (4-5 words each)
+  const WORDS_PER_PHRASE = 5;
+  const wordTimings = job.subtitles;
+  const displayPhrases = [];
   
-  // Group words into display groups (3-4 words shown at a time)
-  const WORDS_PER_GROUP = 4;
-  const wordGroups = [];
-  
-  for (let i = 0; i < wordTimings.length; i += WORDS_PER_GROUP) {
-    const groupWords = wordTimings.slice(i, i + WORDS_PER_GROUP);
-    wordGroups.push({
-      words: groupWords,
-      start: groupWords[0].start,
-      end: groupWords[groupWords.length - 1].end
-    });
-  }
-  
-  // For each word group, create clips that highlight each word in sequence
-  for (const group of wordGroups) {
-    for (let wordIdx = 0; wordIdx < group.words.length; wordIdx++) {
-      const currentWord = group.words[wordIdx];
-      
-      // Build HTML with current word highlighted in yellow
-      const htmlWords = group.words.map((w, idx) => {
-        if (idx === wordIdx) {
-          // Current word - YELLOW with glow
-          return `<span style="color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 0 30px #FFA500;">${w.text}</span>`;
-        } else if (idx < wordIdx) {
-          // Already spoken - white
-          return `<span style="color: white;">${w.text}</span>`;
-        } else {
-          // Not yet spoken - dimmed white
-          return `<span style="color: rgba(255,255,255,0.7);">${w.text}</span>`;
-        }
-      }).join(' ');
-      
-      const html = `<div style="font-family: 'Montserrat', sans-serif; font-size: 52px; font-weight: 900; text-align: center; padding: 20px; text-shadow: 3px 3px 8px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5);">${htmlWords}</div>`;
-      
-      // Calculate duration for this word highlight
-      const wordStart = currentWord.start;
-      const wordEnd = currentWord.end;
-      const duration = Math.max(wordEnd - wordStart, 0.1);
-      
-      subtitleClips.push({
-        asset: {
-          type: 'html',
-          html: html,
-          width: 1080,
-          height: 250
-        },
-        start: wordStart,
-        length: duration,
-        position: 'bottom',
-        offset: { y: 0.12 }
+  for (let i = 0; i < wordTimings.length; i += WORDS_PER_PHRASE) {
+    const phraseWords = wordTimings.slice(i, i + WORDS_PER_PHRASE);
+    if (phraseWords.length > 0) {
+      displayPhrases.push({
+        words: phraseWords,
+        start: phraseWords[0].start,
+        end: phraseWords[phraseWords.length - 1].end
       });
     }
+  }
+  
+  // For each phrase, create ONE clip that shows all words with the LAST word highlighted
+  // This reduces blinking - phrase stays on screen for its full duration
+  for (const phrase of displayPhrases) {
+    // All words in white, last word in yellow (the "punch" word)
+    const htmlWords = phrase.words.map((w, idx) => {
+      if (idx === phrase.words.length - 1) {
+        // Last word of phrase - YELLOW highlight
+        return `<span style="color: #FFD700;">${w.text}</span>`;
+      } else {
+        // Other words - white
+        return `<span style="color: white;">${w.text}</span>`;
+      }
+    }).join(' ');
+    
+    const html = `<div style="font-family: 'Montserrat', sans-serif; font-size: 56px; font-weight: 900; text-align: center; padding: 20px; text-shadow: 3px 3px 8px rgba(0,0,0,0.95), 0 0 15px rgba(0,0,0,0.7);">${htmlWords}</div>`;
+    
+    // Phrase stays on screen for its full duration
+    const duration = phrase.end - phrase.start + 0.15; // Small overlap to prevent gaps
+    
+    subtitleClips.push({
+      asset: {
+        type: 'html',
+        html: html,
+        width: 1080,
+        height: 200
+      },
+      start: phrase.start,
+      length: duration,
+      position: 'bottom',
+      offset: { y: 0.12 }
+    });
   }
   
   // Shotstack timeline
