@@ -251,43 +251,82 @@ RULES:
         messages: [
           { 
             role: 'system', 
-            content: `You are a viral video script writer who creates scripts with matching visual scenes.
+            content: `You are a viral video script writer who creates scripts with PERFECTLY matched visual scenes.
 
 Create a ${duration}-second script with ${numScenes} scenes. For each scene, provide:
 1. The spoken text (short, punchy)
-2. A video search term for stock footage (2-3 words)
+2. A SPECIFIC video search term (2-4 words) that VISUALLY MATCHES the narration
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
   "script": "Full spoken script here",
   "scenes": [
-    {"text": "Hook sentence", "video": "exact video search term"},
-    {"text": "Value point 1", "video": "exact video search term"},
-    {"text": "Value point 2", "video": "exact video search term"},
-    {"text": "CTA sentence", "video": "exact video search term"}
+    {"text": "Hook sentence", "video": "specific visual action"},
+    {"text": "Value point", "video": "specific visual action"}
   ]
 }
 
-CRITICAL - VIDEO SEARCH TERMS must be REAL things you can film:
-✅ USE: "person gym workout", "abs crunch exercise", "running outdoor morning", "cooking kitchen", "woman stretching yoga", "man lifting weights", "healthy food plate", "sunset beach", "office working laptop"
-❌ NEVER USE: "consistency", "motivation", "success", "discipline", "results", "mindset", "focus", "key", "secret", "tip"
+=== CRITICAL VIDEO MATCHING RULES ===
 
-For a fitness topic like "3 tips for abs":
-- Scene 1: "woman doing crunches gym"
-- Scene 2: "healthy meal prep kitchen"  
-- Scene 3: "person plank exercise"
-- Scene 4: "fit person abs results"
+The video search term MUST show what the narrator is TALKING ABOUT at that exact moment.
+
+EXAMPLES OF PERFECT MATCHING:
+| Narration | Video Search Term |
+|-----------|------------------|
+| "Want flat abs?" | "person showing abs muscles" |
+| "Drink more water" | "person drinking water bottle" |
+| "Get enough sleep" | "person sleeping peacefully bed" |
+| "Here's how" | "person pointing explaining" |
+| "Start your morning right" | "person waking up stretching sunrise" |
+| "Most people fail because..." | "person frustrated confused" |
+| "The key is consistency" | "person training gym daily routine" |
+| "Reduce stress" | "person meditating relaxing" |
+| "Eat clean foods" | "healthy food salad vegetables" |
+| "Build muscle fast" | "muscular person lifting weights" |
+| "Stop wasting time" | "clock time passing" |
+| "Make money online" | "laptop money success" |
+| "Save thousands" | "money cash savings" |
+
+=== WHAT TO AVOID ===
+❌ NEVER use abstract words: "success", "motivation", "consistency", "discipline", "results", "mindset"
+❌ NEVER use vague terms: "journey", "process", "key", "secret", "tip", "hack"
+❌ NEVER mismatch: If talking about water, don't show gym equipment
+
+=== CONTENT TYPE SPECIFIC ===
+${contentType === 'fitness' ? `
+For FITNESS topics, ALWAYS use specific exercise visuals:
+- "crunches" → "person doing crunches gym"
+- "plank" → "person holding plank position"
+- "running" → "person running outdoor jogging"
+- "diet" → "healthy meal food plate"
+- "abs" → "fit person showing abs"
+` : ''}
+${contentType === 'motivation' ? `
+For MOTIVATION topics, show PEOPLE DOING THINGS:
+- Goals → "person achieving celebration"
+- Hard work → "person working determined focus"
+- Success → "businessman celebrating success"
+- Never give up → "athlete pushing through exhausted"
+` : ''}
+${contentType === 'business' ? `
+For BUSINESS topics, use professional imagery:
+- Money → "money cash dollars growing"
+- Work → "professional laptop office"
+- Success → "business handshake deal"
+- Growth → "graph chart upward growth"
+` : ''}
 
 Script rules:
 - Maximum ${maxWords} words total
-- Short punchy sentences
-- Write for speaking, not reading
-- No timestamps or stage directions` 
+- Short punchy sentences (5-8 words each)
+- Start with an attention-grabbing hook
+- End with a clear CTA
+- Write for SPEAKING, not reading` 
           },
           { role: 'user', content: `Create a ${contentType} video about: ${topic}` }
         ],
-        max_tokens: 400,
-        temperature: 0.8
+        max_tokens: 500,
+        temperature: 0.7
       });
 
       const content = response.choices[0].message.content.trim();
@@ -302,6 +341,25 @@ Script rules:
         
         const parsed = JSON.parse(jsonStr);
         console.log('   ✅ Parsed script with scenes:', parsed.scenes?.length || 0, 'scenes');
+        
+        // Validate and improve scene video terms
+        if (parsed.scenes && parsed.scenes.length > 0) {
+          parsed.scenes = parsed.scenes.map((scene, i) => {
+            let videoTerm = scene.video || '';
+            
+            // Replace any abstract terms that slipped through
+            const abstractTerms = ['consistency', 'motivation', 'success', 'discipline', 'results', 'mindset', 'focus', 'journey', 'process', 'key', 'secret', 'tip', 'hack', 'routine'];
+            const hasAbstract = abstractTerms.some(term => videoTerm.toLowerCase().includes(term));
+            
+            if (hasAbstract || videoTerm.length < 5) {
+              // Generate fallback based on scene text
+              videoTerm = this.extractVisualFromText(scene.text, contentType);
+              console.log(`      Scene ${i+1}: Improved "${scene.video}" → "${videoTerm}"`);
+            }
+            
+            return { ...scene, video: videoTerm };
+          });
+        }
         
         return {
           success: true,
@@ -321,6 +379,101 @@ Script rules:
       console.error('OpenAI script with scenes error:', error.message);
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * Extract visual search term from narration text
+   * Fallback when AI returns abstract terms
+   */
+  extractVisualFromText(text, contentType = 'default') {
+    if (!text) return 'abstract motion background';
+    
+    const lowerText = text.toLowerCase();
+    
+    // Keyword to visual mapping
+    const visualMap = {
+      // Body parts / fitness
+      'abs': 'person showing abs muscles',
+      'core': 'person core workout exercise',
+      'arm': 'person arm workout biceps',
+      'leg': 'person leg workout squats',
+      'chest': 'person chest workout pushups',
+      'muscle': 'muscular person gym workout',
+      'body': 'fit person body transformation',
+      
+      // Actions
+      'drink': 'person drinking water bottle',
+      'eat': 'person eating healthy food',
+      'sleep': 'person sleeping bed peaceful',
+      'run': 'person running jogging outdoor',
+      'walk': 'person walking outdoor',
+      'exercise': 'person exercising gym workout',
+      'workout': 'person gym workout training',
+      'train': 'athlete training gym',
+      'stretch': 'person stretching yoga',
+      'plank': 'person plank position exercise',
+      'crunch': 'person crunches abs exercise',
+      'lift': 'person lifting weights gym',
+      
+      // Health/wellness
+      'water': 'person drinking water hydration',
+      'diet': 'healthy food meal plate',
+      'food': 'healthy food cooking kitchen',
+      'calorie': 'food nutrition healthy eating',
+      'protein': 'protein food chicken eggs',
+      'vitamin': 'healthy food fruits vegetables',
+      'stress': 'person relaxing meditation calm',
+      'rest': 'person resting relaxing couch',
+      
+      // Time
+      'morning': 'person waking up sunrise morning',
+      'night': 'person relaxing night bedtime',
+      'daily': 'person daily routine morning',
+      'week': 'calendar time planning',
+      
+      // Money/business
+      'money': 'money cash dollars',
+      'rich': 'wealthy person luxury',
+      'business': 'business office professional',
+      'work': 'person working laptop office',
+      'save': 'piggy bank saving money',
+      'invest': 'investment stocks finance',
+      
+      // Emotions
+      'happy': 'happy person smiling celebrating',
+      'fail': 'person frustrated struggling',
+      'stop': 'person thinking contemplating',
+      'start': 'person starting beginning action',
+      'want': 'person desiring looking',
+      'need': 'person needing searching',
+      'try': 'person trying attempting effort',
+      
+      // Questions/hooks
+      'why': 'person questioning thinking',
+      'how': 'person explaining teaching',
+      'what': 'person curious looking',
+      'tip': 'person giving advice explaining',
+      'secret': 'person revealing secret'
+    };
+    
+    // Check for matches
+    for (const [keyword, visual] of Object.entries(visualMap)) {
+      if (lowerText.includes(keyword)) {
+        return visual;
+      }
+    }
+    
+    // Content type fallbacks
+    const fallbacks = {
+      'fitness': 'person gym workout training',
+      'motivation': 'person achieving success determined',
+      'business': 'business professional office laptop',
+      'health': 'healthy lifestyle person wellness',
+      'tips': 'person explaining teaching advice',
+      'default': 'person lifestyle modern'
+    };
+    
+    return fallbacks[contentType] || fallbacks.default;
   }
 
   /**

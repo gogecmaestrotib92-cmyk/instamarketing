@@ -36,47 +36,123 @@ const VIDEO_CATEGORIES = {
 
 // Map concepts to cinematic stock video search terms
 const CONCEPT_TO_VIDEO_MAP = {
-  // Emotions/States
-  'success': 'celebration victory',
-  'happy': 'happy people smiling',
-  'sad': 'rain melancholy',
-  'excited': 'celebration party',
-  'calm': 'peaceful nature water',
-  'stressed': 'busy city chaos',
-  'confident': 'confident person walking',
+  // Fitness specific
+  'abs': 'abs workout crunch exercise',
+  'core': 'core workout plank exercise',
+  'plank': 'plank exercise core workout',
+  'crunch': 'crunch abs exercise gym',
+  'pushup': 'pushups exercise workout',
+  'squat': 'squats leg workout gym',
+  'deadlift': 'deadlift weightlifting gym',
+  'cardio': 'running cardio treadmill',
+  'hiit': 'hiit workout intense exercise',
+  'stretch': 'stretching yoga flexibility',
+  'warmup': 'warmup stretching exercise',
+  'cooldown': 'stretching relaxing cooldown',
+  'muscle': 'muscular bodybuilder gym',
+  'bicep': 'bicep curl workout arm',
+  'tricep': 'tricep workout arm exercise',
+  'chest': 'chest workout pushup bench',
+  'back': 'back workout pullup gym',
+  'shoulder': 'shoulder workout gym',
+  'leg': 'leg workout squats gym',
+  'glute': 'glute workout hip exercise',
   
-  // Topics
-  'money': 'money finance wealth',
-  'business': 'business office corporate',
-  'health': 'healthy lifestyle fitness',
-  'fitness': 'workout gym exercise',
-  'food': 'cooking food kitchen',
-  'travel': 'travel adventure destination',
-  'technology': 'technology digital modern',
-  'nature': 'nature landscape scenic',
-  'love': 'couple romance love',
-  'family': 'family together home',
+  // Health & Wellness
+  'water': 'drinking water hydration',
+  'hydrate': 'drinking water bottle',
+  'sleep': 'person sleeping bed',
+  'rest': 'person resting relaxing',
+  'diet': 'healthy food meal prep',
+  'nutrition': 'healthy food vegetables',
+  'protein': 'protein food chicken eggs',
+  'calories': 'food nutrition tracking',
+  'meal': 'healthy meal cooking',
+  'breakfast': 'breakfast healthy morning',
+  'lunch': 'healthy lunch meal',
+  'dinner': 'healthy dinner cooking',
+  'stress': 'meditation relaxing calm',
+  'meditation': 'meditation yoga peaceful',
+  'yoga': 'yoga stretching peaceful',
+  'wellness': 'wellness spa relaxation',
+  
+  // Emotions/States
+  'success': 'person celebrating achievement',
+  'happy': 'happy person smiling',
+  'motivation': 'determined athlete training',
+  'discipline': 'focused person training',
+  'confidence': 'confident person walking',
+  'focus': 'person concentrated working',
+  'determination': 'athlete pushing hard',
+  'energy': 'energetic person active',
+  'tired': 'exhausted person resting',
+  'struggle': 'person struggling trying',
+  'fail': 'person frustrated struggling',
+  'win': 'person winning celebrating',
   
   // Actions
-  'growth': 'growth progress success',
-  'change': 'transformation change',
-  'think': 'thinking contemplating',
-  'learn': 'learning education study',
-  'work': 'working professional office',
-  'create': 'creative art design',
-  'build': 'construction building',
+  'run': 'person running jogging',
+  'walk': 'person walking outdoor',
+  'jump': 'person jumping exercise',
+  'lift': 'person lifting weights',
+  'train': 'athlete training gym',
+  'workout': 'person workout gym',
+  'exercise': 'person exercising fitness',
+  'eat': 'person eating food',
+  'drink': 'person drinking water',
+  'cook': 'cooking kitchen food',
+  'work': 'person working laptop',
+  'study': 'person studying reading',
+  'read': 'person reading book',
+  'write': 'person writing notes',
+  'think': 'person thinking contemplating',
+  'plan': 'person planning calendar',
   
   // Time
-  'morning': 'sunrise morning',
+  'morning': 'sunrise morning wakeup',
   'night': 'night city lights',
-  'future': 'futuristic technology',
-  'past': 'vintage nostalgic',
+  'daily': 'daily routine morning',
+  'weekly': 'calendar planning week',
+  'routine': 'morning routine lifestyle',
   
-  // Abstract
-  'idea': 'lightbulb inspiration idea',
+  // Business/Money
+  'money': 'money cash dollars',
+  'business': 'business office professional',
+  'invest': 'investment stocks finance',
+  'save': 'saving money piggybank',
+  'rich': 'luxury wealth success',
+  'poor': 'struggling financial stress',
+  'job': 'working office professional',
+  'career': 'professional business success',
+  'entrepreneur': 'entrepreneur working startup',
+  
+  // Lifestyle
+  'travel': 'travel adventure destination',
+  'nature': 'nature landscape scenic',
+  'beach': 'beach ocean waves',
+  'mountain': 'mountain hiking outdoor',
+  'city': 'city urban lifestyle',
+  'home': 'home interior cozy',
+  'family': 'family together home',
+  'friends': 'friends socializing together',
+  'love': 'couple romance love',
+  
+  // Abstract (improved mappings)
+  'idea': 'lightbulb inspiration creative',
   'dream': 'dreamy clouds fantasy',
-  'power': 'power energy strong',
-  'freedom': 'freedom flying birds'
+  'power': 'powerful strong energy',
+  'freedom': 'freedom flying birds sky',
+  'growth': 'plant growing nature',
+  'change': 'transformation butterfly',
+  'journey': 'road path walking',
+  'results': 'before after transformation',
+  'progress': 'progress improvement growth',
+  'consistency': 'person training daily gym',
+  'mindset': 'person thinking meditation',
+  'key': 'unlock solution answer',
+  'secret': 'reveal showing explaining',
+  'tip': 'advice teaching explaining',
+  'hack': 'clever solution shortcut'
 };
 
 /**
@@ -385,20 +461,40 @@ async function getVideoClipsForDuration(topic, targetDuration = 30, options = {}
 const CURATED_BACKGROUNDS = {
   abstract: [
     { name: 'Abstract Particles', url: 'https://videos.pexels.com/video-files/3129671/3129671-sd_640_360_30fps.mp4', duration: 10 },
-    { name: 'Blue Motion', url: 'https://videos.pexels.com/video-files/852400/852400-sd_640_360_30fps.mp4', duration: 12 }
+    { name: 'Blue Motion', url: 'https://videos.pexels.com/video-files/852400/852400-sd_640_360_30fps.mp4', duration: 12 },
+    { name: 'Light Rays', url: 'https://videos.pexels.com/video-files/856974/856974-sd_640_360_25fps.mp4', duration: 15 }
   ],
   nature: [
     { name: 'Ocean Waves', url: 'https://videos.pexels.com/video-files/1093662/1093662-sd_640_360_30fps.mp4', duration: 15 },
-    { name: 'Forest', url: 'https://videos.pexels.com/video-files/857251/857251-sd_640_360_30fps.mp4', duration: 10 }
+    { name: 'Forest', url: 'https://videos.pexels.com/video-files/857251/857251-sd_640_360_30fps.mp4', duration: 10 },
+    { name: 'Mountains', url: 'https://videos.pexels.com/video-files/1448735/1448735-sd_640_360_24fps.mp4', duration: 12 }
   ],
   urban: [
-    { name: 'City Lights', url: 'https://videos.pexels.com/video-files/1826896/1826896-sd_640_360_25fps.mp4', duration: 12 }
+    { name: 'City Lights', url: 'https://videos.pexels.com/video-files/1826896/1826896-sd_640_360_25fps.mp4', duration: 12 },
+    { name: 'City Night', url: 'https://videos.pexels.com/video-files/856025/856025-sd_640_360_25fps.mp4', duration: 10 }
   ],
   tech: [
-    { name: 'Tech Abstract', url: 'https://videos.pexels.com/video-files/3129671/3129671-sd_640_360_30fps.mp4', duration: 10 }
+    { name: 'Tech Abstract', url: 'https://videos.pexels.com/video-files/3129671/3129671-sd_640_360_30fps.mp4', duration: 10 },
+    { name: 'Data Flow', url: 'https://videos.pexels.com/video-files/3945029/3945029-sd_640_360_25fps.mp4', duration: 8 }
   ],
   fitness: [
-    { name: 'Gym Workout', url: 'https://videos.pexels.com/video-files/4761440/4761440-sd_640_360_25fps.mp4', duration: 15 }
+    { name: 'Gym Workout', url: 'https://videos.pexels.com/video-files/4761440/4761440-sd_640_360_25fps.mp4', duration: 15 },
+    { name: 'Running Outdoor', url: 'https://videos.pexels.com/video-files/4761637/4761637-sd_640_360_25fps.mp4', duration: 12 },
+    { name: 'Weights Training', url: 'https://videos.pexels.com/video-files/4761718/4761718-sd_640_360_25fps.mp4', duration: 10 },
+    { name: 'Yoga Stretch', url: 'https://videos.pexels.com/video-files/4325473/4325473-sd_640_360_25fps.mp4', duration: 15 },
+    { name: 'Abs Exercise', url: 'https://videos.pexels.com/video-files/4761523/4761523-sd_640_360_25fps.mp4', duration: 12 }
+  ],
+  motivation: [
+    { name: 'Sunrise Run', url: 'https://videos.pexels.com/video-files/4761637/4761637-sd_640_360_25fps.mp4', duration: 12 },
+    { name: 'Success Celebration', url: 'https://videos.pexels.com/video-files/3015488/3015488-sd_640_360_24fps.mp4', duration: 10 }
+  ],
+  business: [
+    { name: 'Office Work', url: 'https://videos.pexels.com/video-files/3252127/3252127-sd_640_360_25fps.mp4', duration: 12 },
+    { name: 'Laptop Working', url: 'https://videos.pexels.com/video-files/5313170/5313170-sd_640_360_25fps.mp4', duration: 10 }
+  ],
+  health: [
+    { name: 'Healthy Food', url: 'https://videos.pexels.com/video-files/4253310/4253310-sd_640_360_25fps.mp4', duration: 15 },
+    { name: 'Water Drinking', url: 'https://videos.pexels.com/video-files/4156933/4156933-sd_640_360_25fps.mp4', duration: 8 }
   ]
 };
 
@@ -458,8 +554,11 @@ module.exports = {
   getOptimizedQuery,
   getCuratedBackground,
   improveSearchTerm,
+  smartImproveSearchTerm,
+  getRelatedSearchTerm,
   VIDEO_CATEGORIES,
-  CURATED_BACKGROUNDS
+  CURATED_BACKGROUNDS,
+  CONCEPT_TO_VIDEO_MAP
 };
 
 /**
@@ -481,39 +580,46 @@ async function getVideosForScenes(scenes, options = {}) {
   const usedVideoIds = new Set(); // Track used videos to avoid duplicates
   
   for (const scene of scenes) {
-    // Use the search term directly - it's already been AI-generated or properly formatted
+    // Use the search term - apply smart improvements
     let searchTerm = scene.searchTerm || scene.keywords || 'fitness workout';
     const sceneDuration = scene.duration || (scene.endTime - scene.startTime) || 10;
     
+    // STEP 1: Improve the search term using concept mapping
+    searchTerm = smartImproveSearchTerm(searchTerm);
+    
     console.log(`   Scene ${scene.index + 1}: Searching "${searchTerm}" (${sceneDuration.toFixed(1)}s)`);
     
-    // Search for videos matching this scene - use the term DIRECTLY
-    let videos = await searchStockVideos(searchTerm, {
-      ...options,
-      perPage: 15,
-      minDuration: Math.max(3, sceneDuration * 0.5),
-      maxDuration: 60
-    });
+    // STEP 2: Search for videos with multiple strategies
+    let videos = [];
+    let searchAttempt = 0;
+    const searchStrategies = [
+      searchTerm, // Original improved term
+      searchTerm.split(' ').slice(0, 2).join(' '), // First 2 words
+      getRelatedSearchTerm(searchTerm), // Related alternative
+      'fitness workout gym' // Final fallback for fitness content
+    ];
     
-    console.log(`      Found ${videos.length} videos for "${searchTerm}"`);
-    
-    // If no results, try simpler search with first 2 words
-    if (videos.length === 0) {
-      const simpleTerms = searchTerm.split(' ').slice(0, 2).join(' ');
-      console.log(`      No results, trying simpler: "${simpleTerms}"`);
-      videos = await searchStockVideos(simpleTerms, {
+    while (videos.length === 0 && searchAttempt < searchStrategies.length) {
+      const currentSearch = searchStrategies[searchAttempt];
+      console.log(`      Attempt ${searchAttempt + 1}: "${currentSearch}"`);
+      
+      videos = await searchStockVideos(currentSearch, {
         ...options,
-        perPage: 15,
-        minDuration: 3,
+        perPage: 20,
+        minDuration: Math.max(3, sceneDuration * 0.5),
         maxDuration: 60
       });
+      
+      searchAttempt++;
     }
+    
+    console.log(`      Found ${videos.length} videos after ${searchAttempt} attempt(s)`);
     
     // Filter out already used videos
     const availableVideos = videos.filter(v => !usedVideoIds.has(`${v.source}-${v.id}`));
     
     if (availableVideos.length > 0) {
-      // Pick a random video from results
+      // Pick from top 5 results (most relevant) randomly
       const video = availableVideos[Math.floor(Math.random() * Math.min(5, availableVideos.length))];
       usedVideoIds.add(`${video.source}-${video.id}`);
       
@@ -531,28 +637,89 @@ async function getVideosForScenes(scenes, options = {}) {
       
       console.log(`      ✅ Found: ${video.source} #${video.id} (${video.duration}s)`);
     } else {
-      // Fallback: try generic search
-      console.log(`      ⚠️ No results, trying fallback...`);
-      const fallbackVideos = await searchStockVideos('abstract motion background', { perPage: 5 });
-      const fallback = fallbackVideos.find(v => !usedVideoIds.has(`${v.source}-${v.id}`)) || fallbackVideos[0];
+      // FINAL FALLBACK: Use curated background
+      console.log(`      ⚠️ No API results, using curated fallback...`);
+      const curatedBg = getCuratedBackground('fitness');
       
-      if (fallback) {
-        usedVideoIds.add(`${fallback.source}-${fallback.id}`);
+      if (curatedBg) {
         sceneClips.push({
-          ...fallback,
+          id: `curated-${Date.now()}-${scene.index}`,
+          source: 'curated',
+          url: curatedBg.url,
+          name: curatedBg.name,
+          duration: curatedBg.duration,
           sceneIndex: scene.index,
-          sceneSearchTerm: 'fallback',
+          sceneSearchTerm: 'curated-fallback',
           useDuration: sceneDuration,
           startAt: scene.startTime || 0,
           endAt: scene.endTime || (scene.startTime + sceneDuration),
           playbackStart: scene.startTime || 0,
           playbackDuration: sceneDuration
         });
-        console.log(`      ✅ Fallback: ${fallback.source} #${fallback.id}`);
+        console.log(`      ✅ Using curated: ${curatedBg.name}`);
       }
     }
   }
   
   console.log(`   📹 Total: ${sceneClips.length} scene clips ready`);
   return sceneClips;
+}
+
+/**
+ * Smart search term improvement - converts concepts to visual search terms
+ */
+function smartImproveSearchTerm(term) {
+  if (!term || term.length < 3) return 'abstract background motion';
+  
+  const lowerTerm = term.toLowerCase();
+  
+  // Check for direct concept matches
+  for (const [concept, videoTerm] of Object.entries(CONCEPT_TO_VIDEO_MAP)) {
+    if (lowerTerm.includes(concept)) {
+      return videoTerm;
+    }
+  }
+  
+  // Remove abstract words that don't search well
+  const abstractWords = ['the', 'a', 'an', 'your', 'my', 'our', 'this', 'that', 'here', 'there', 'just', 'really', 'very', 'so', 'such'];
+  const words = lowerTerm.split(' ').filter(w => !abstractWords.includes(w) && w.length > 2);
+  
+  if (words.length === 0) return 'lifestyle person modern';
+  
+  // Return cleaned term
+  return words.slice(0, 3).join(' ');
+}
+
+/**
+ * Get a related/alternative search term when original doesn't work
+ */
+function getRelatedSearchTerm(term) {
+  const lowerTerm = term.toLowerCase();
+  
+  // Category-based alternatives
+  const alternatives = {
+    'workout': ['gym exercise fitness', 'training athlete', 'person exercising'],
+    'gym': ['workout training fitness', 'exercise athlete', 'weightlifting'],
+    'abs': ['core workout', 'crunches exercise', 'fitness training'],
+    'muscle': ['bodybuilding gym', 'weightlifting', 'strength training'],
+    'run': ['jogging outdoor', 'cardio fitness', 'athlete running'],
+    'yoga': ['stretching meditation', 'flexibility exercise', 'wellness relaxation'],
+    'food': ['cooking kitchen', 'healthy meal', 'nutrition eating'],
+    'water': ['drinking hydration', 'health wellness', 'bottle liquid'],
+    'sleep': ['resting bed', 'relaxation night', 'peaceful calm'],
+    'morning': ['sunrise wakeup', 'daily routine', 'start day'],
+    'success': ['celebration achievement', 'victory winner', 'happy accomplished'],
+    'money': ['finance cash', 'wealth success', 'business profit'],
+    'business': ['office professional', 'corporate work', 'entrepreneur laptop']
+  };
+  
+  // Find a matching alternative
+  for (const [key, alts] of Object.entries(alternatives)) {
+    if (lowerTerm.includes(key)) {
+      return alts[Math.floor(Math.random() * alts.length)];
+    }
+  }
+  
+  // Generic fallback
+  return 'person lifestyle modern';
 }
