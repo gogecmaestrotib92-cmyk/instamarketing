@@ -4698,42 +4698,22 @@ Return ONLY the script text, no scene labels or directions.`;
     
     if (shotstackClient && selectedVideos.length > 0) {
       try {
-        // Upload videos to Cloudinary for persistent URLs
-        const uploadedClips = [];
+        // OPTIMIZATION: Pexels URLs are persistent - NO need to upload to Cloudinary!
+        // This saves 10-30 seconds per video
+        const uploadedClips = selectedVideos.map(video => ({
+          url: video.url, // Use Pexels URL directly - it's persistent
+          duration: video.duration || 10,
+          useDuration: video.useDuration || 5,
+          startAt: 0
+        }));
         
-        for (const video of selectedVideos) {
-          let videoUrl = video.url;
-          
-          if (cloudinaryUpload && videoUrl.includes('pexels.com')) {
-            try {
-              console.log(`   📤 Uploading video ${uploadedClips.length + 1}...`);
-              const videoResponse = await fetch(videoUrl);
-              const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-              const uploadResult = await cloudinaryUpload(videoBuffer, {
-                folder: 'instamarketing/video-first',
-                resource_type: 'video'
-              });
-              if (uploadResult.success) {
-                videoUrl = uploadResult.url;
-              }
-            } catch (e) {
-              console.log(`   ⚠️ Upload failed: ${e.message}`);
-            }
-          }
-          
-          uploadedClips.push({
-            url: videoUrl,
-            duration: video.duration || 10,
-            useDuration: video.useDuration || 5,
-            startAt: 0
-          });
-        }
+        console.log(`   ⚡ Using ${uploadedClips.length} Pexels URLs directly (no upload needed)`);
         
-        // Upload audio
+        // Only upload audio (ElevenLabs URLs expire)
         let audioUrl = voiceResult.audioUrl;
         if (cloudinaryUpload && audioUrl && !audioUrl.includes('cloudinary.com')) {
           try {
-            console.log('   📤 Uploading audio...');
+            console.log('   📤 Uploading audio to Cloudinary...');
             const audioResponse = await fetch(audioUrl);
             const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
             const uploadResult = await cloudinaryUpload(audioBuffer, {
@@ -4742,9 +4722,10 @@ Return ONLY the script text, no scene labels or directions.`;
             });
             if (uploadResult.success) {
               audioUrl = uploadResult.url;
+              console.log('   ✅ Audio uploaded');
             }
           } catch (e) {
-            console.log(`   ⚠️ Audio upload failed: ${e.message}`);
+            console.log(`   ⚠️ Audio upload failed, using original URL: ${e.message}`);
           }
         }
         
