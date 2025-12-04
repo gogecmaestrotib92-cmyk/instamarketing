@@ -303,12 +303,6 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         setGenerationStep('');
         return;
       }
-          console.error('Failed to save to Asset Hub:', saveError);
-        }
-        
-        setGenerationStep('');
-        return;
-      }
       
       // Fallback for non-stock-video backgrounds (AI images, uploads, etc.)
       // Step 1: Generate script with voiceover (Try ElevenLabs first, fallback to Google TTS)
