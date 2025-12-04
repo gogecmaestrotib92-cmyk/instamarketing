@@ -291,78 +291,97 @@ class ElevenLabsService {
 
       console.log(`🎤 ElevenLabs TTS with Timestamps: Converting ${text.length} chars`);
 
-      // Use the streaming endpoint with timestamps
-      const response = await fetch(`${this.baseUrl}/text-to-speech/${voiceId}/with-timestamps`, {
-        method: 'POST',
-        headers: {
-          'xi-api-key': this.apiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: text,
-          model_id: modelId,
-          voice_settings: voiceSettings
-        })
-      });
+      // Create abort controller for timeout (15 seconds max)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.log(`⚠️ Timestamps endpoint failed (${response.status}), falling back to basic TTS`);
-        // Fallback to regular TTS
-        return this.textToSpeech(text, options);
-      }
+      try {
+        // Use the streaming endpoint with timestamps
+        const response = await fetch(`${this.baseUrl}/text-to-speech/${voiceId}/with-timestamps`, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': this.apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: text,
+            model_id: modelId,
+            voice_settings: voiceSettings
+          }),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
 
-      const data = await response.json();
-      
-      // Extract audio (base64) and timestamps
-      const audioBase64 = data.audio_base64;
-      const alignment = data.alignment; // Contains character-level timing
-      
-      if (!audioBase64) {
-        console.log('⚠️ No audio in response, falling back to basic TTS');
-        return this.textToSpeech(text, options);
-      }
-
-      // Convert base64 to buffer and save
-      const audioBuffer = Buffer.from(audioBase64, 'base64');
-      const timestamp = Date.now();
-      const filename = `elevenlabs_ts_${timestamp}.mp3`;
-      const localPath = path.join(this.outputDir, filename);
-      fs.writeFileSync(localPath, audioBuffer);
-
-      // Parse timestamps into word-level timings
-      const wordTimings = this.parseAlignmentToWords(text, alignment);
-      const audioDuration = wordTimings.length > 0 ? wordTimings[wordTimings.length - 1].end : null;
-
-      console.log(`🎤 Got ${wordTimings.length} word timings, duration: ${audioDuration?.toFixed(2)}s`);
-
-      // Upload to Cloudinary
-      let cloudUrl = null;
-      if (uploadToCloudinary) {
-        try {
-          const uploadResult = await uploadToCloudinary(localPath, {
-            resource_type: 'video',
-            folder: 'instamarketing/voiceovers'
-          });
-          if (uploadResult.success) {
-            cloudUrl = uploadResult.url;
-            try { fs.unlinkSync(localPath); } catch (e) {}
-          }
-        } catch (e) {
-          console.log('Cloudinary upload failed:', e.message);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.log(`⚠️ Timestamps endpoint failed (${response.status}), falling back to basic TTS`);
+          // Fallback to regular TTS
+          return this.textToSpeech(text, options);
         }
-      }
 
-      return {
-        success: true,
-        audioUrl: cloudUrl || localPath,
-        localPath: localPath,
-        duration: audioDuration,
-        voiceId: voiceId,
-        model: modelId,
-        wordTimings: wordTimings, // EXACT word-level timestamps!
-        hasTimestamps: true
-      };
+        const data = await response.json();
+        
+        // Extract audio (base64) and timestamps
+        const audioBase64 = data.audio_base64;
+        const alignment = data.alignment; // Contains character-level timing
+        
+        if (!audioBase64) {
+          console.log('⚠️ No audio in response, falling back to basic TTS');
+          return this.textToSpeech(text, options);
+        }
+
+        // Convert base64 to buffer and save
+        const audioBuffer = Buffer.from(audioBase64, 'base64');
+        const timestamp = Date.now();
+        const filename = `elevenlabs_ts_${timestamp}.mp3`;
+        const localPath = path.join(this.outputDir, filename);
+        fs.writeFileSync(localPath, audioBuffer);
+
+        // Parse timestamps into word-level timings
+        const wordTimings = this.parseAlignmentToWords(text, alignment);
+        const audioDuration = wordTimings.length > 0 ? wordTimings[wordTimings.length - 1].end : null;
+
+        console.log(`🎤 Got ${wordTimings.length} word timings, duration: ${audioDuration?.toFixed(2)}s`);
+
+        // Upload to Cloudinary
+        let cloudUrl = null;
+        if (uploadToCloudinary) {
+          try {
+            const uploadResult = await uploadToCloudinary(localPath, {
+              resource_type: 'video',
+              folder: 'instamarketing/voiceovers'
+            });
+            if (uploadResult.success) {
+              cloudUrl = uploadResult.url;
+              try { fs.unlinkSync(localPath); } catch (e) {}
+            }
+          } catch (e) {
+            console.log('Cloudinary upload failed:', e.message);
+          }
+        }
+
+        return {
+          success: true,
+          audioUrl: cloudUrl || localPath,
+          localPath: localPath,
+          duration: audioDuration,
+          voiceId: voiceId,
+          model: modelId,
+          wordTimings: wordTimings, // EXACT word-level timestamps!
+          hasTimestamps: true
+        };
+
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          console.log('⚠️ Timestamps API timed out after 15s, falling back to basic TTS');
+        } else {
+          console.log('⚠️ Timestamps fetch error:', fetchError.message);
+        }
+        // Fallback to basic TTS
+        return this.textToSpeech(text, options);
+      }
 
     } catch (error) {
       console.error('ElevenLabs TTS with timestamps error:', error.message);
