@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiVideo, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiEdit3, FiCheckCircle, FiSquare, FiSmartphone, FiMonitor, FiUser, FiBox, FiFilm, FiPlay, FiLoader } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
+import { saveVideoToHub } from '../services/assetService';
 import './BusinessVideo.css';
 
 const BusinessVideo = () => {
@@ -251,6 +252,33 @@ Include 4-6 scenes.`
       
       if (data.success && data.videoUrl) {
         setGeneratedVideo(data.videoUrl);
+        
+        // Auto-save to Asset Hub
+        try {
+          const scriptText = generatedScript 
+            ? `${generatedScript.hook} ${generatedScript.scenes.map(s => s.text).join(' ')} ${generatedScript.cta}`
+            : scriptPrompt;
+          
+          saveVideoToHub({
+            name: `Video - ${scriptText.substring(0, 40)}${scriptText.length > 40 ? '...' : ''}`,
+            url: data.videoUrl,
+            caption: scriptText,
+            tags: [videoStyle, aspectRatio, brandLinked ? 'brand' : 'generic'].filter(Boolean),
+            source: 'BusinessVideo',
+            metadata: {
+              videoStyle,
+              aspectRatio,
+              includeCharacters,
+              brandLinked,
+              businessName: businessInfo?.businessName || null,
+              generatedAt: new Date().toISOString()
+            }
+          });
+          console.log('✅ Video auto-saved to Asset Hub');
+        } catch (saveError) {
+          console.error('Failed to auto-save to Asset Hub:', saveError);
+          // Don't throw - video was still generated successfully
+        }
       } else if (data.error) {
         throw new Error(data.error);
       } else if (data.status === 'failed') {

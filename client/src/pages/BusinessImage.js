@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3, FiLoader, FiAlertCircle } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
+import { saveImageToHub } from '../services/assetService';
 import './BusinessImage.css';
 
 const BusinessImage = () => {
@@ -296,29 +297,25 @@ Return ONLY the JSON array, no other text.`
         setGeneratedImage(data.imageUrl);
         console.log('Image generated successfully:', data.imageUrl);
         
-        // Save to Asset Hub
+        // Auto-save to Asset Hub using service
         try {
-          const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
-          const newAsset = {
-            id: Date.now().toString(),
-            type: 'image',
+          saveImageToHub({
             name: `AI Generated - ${prompt.substring(0, 30)}${prompt.length > 30 ? '...' : ''}`,
             url: data.imageUrl,
             caption: prompt,
-            tags: [postType, aspectRatio].filter(Boolean),
-            createdAt: new Date().toISOString(),
+            tags: [postType, aspectRatio, brandLinked ? 'brand' : 'generic'].filter(Boolean),
             source: 'BusinessImage',
             metadata: {
               aspectRatio,
               postType,
               heading,
               subheading,
-              cta
+              cta,
+              brandLinked,
+              businessName: businessInfo?.businessName || null
             }
-          };
-          existingAssets.unshift(newAsset);
-          localStorage.setItem('assetHub', JSON.stringify(existingAssets));
-          console.log('Asset saved to Asset Hub');
+          });
+          console.log('✅ Image auto-saved to Asset Hub');
         } catch (saveError) {
           console.error('Failed to save to Asset Hub:', saveError);
         }

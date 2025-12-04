@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX, FiFilm, FiAlertCircle, FiVolume2 } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
+import { saveVideoToHub, saveImageToHub } from '../services/assetService';
 import './BusinessTrending.css';
 
 const BusinessTrending = () => {
@@ -279,23 +280,17 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         
         setGeneratedResult(result);
         
-        // Save to Asset Hub
+        // Auto-save to Asset Hub using service
         try {
-          const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
-          const assetToSave = {
-            id: result.id,
-            type: 'video',
+          saveVideoToHub({
             name: result.name,
             url: data.videoUrl,
-            thumbnail: null,
             caption: postTopic.substring(0, 100),
-            createdAt: result.createdAt,
             tags: [contentType, 'voiceover', 'trending'],
+            source: 'BusinessTrending',
             metadata: result.metadata
-          };
-          existingAssets.unshift(assetToSave);
-          localStorage.setItem('assetHub', JSON.stringify(existingAssets));
-          console.log('✅ Saved to Asset Hub:', assetToSave.name);
+          });
+          console.log('✅ Auto-saved to Asset Hub');
         } catch (saveError) {
           console.error('Failed to save to Asset Hub:', saveError);
         }
@@ -440,25 +435,31 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
       
       setGeneratedResult(result);
       
-      // Save to Asset Hub
+      // Auto-save to Asset Hub using service
       try {
-        const existingAssets = JSON.parse(localStorage.getItem('assetHub') || '[]');
-        // Asset Hub expects type: 'video' or 'image' and a valid URL
         const isVideoAsset = composedVideoUrl || (backgroundType_used !== 'ai-images' && backgroundUrl);
-        const assetToSave = {
-          id: result.id,
-          type: isVideoAsset ? 'video' : 'image', // Asset Hub recognizes: 'video', 'image', 'carousel'
-          name: result.name,
-          url: composedVideoUrl || backgroundUrl || voiceoverData.audioUrl,
-          thumbnail: null, // Let Asset Hub generate thumbnail from video element
-          caption: result.script?.substring(0, 100) + '...',
-          createdAt: result.createdAt,
-          tags: [contentType, 'voiceover', backgroundType_used],
-          metadata: result.metadata
-        };
-        existingAssets.unshift(assetToSave);
-        localStorage.setItem('assetHub', JSON.stringify(existingAssets));
-        console.log('✅ Saved to Asset Hub:', assetToSave.name);
+        const assetUrl = composedVideoUrl || backgroundUrl || voiceoverData.audioUrl;
+        
+        if (isVideoAsset) {
+          saveVideoToHub({
+            name: result.name,
+            url: assetUrl,
+            caption: result.script?.substring(0, 100) + '...',
+            tags: [contentType, 'voiceover', backgroundType_used],
+            source: 'BusinessTrending',
+            metadata: result.metadata
+          });
+        } else {
+          saveImageToHub({
+            name: result.name,
+            url: assetUrl,
+            caption: result.script?.substring(0, 100) + '...',
+            tags: [contentType, 'voiceover', backgroundType_used],
+            source: 'BusinessTrending',
+            metadata: result.metadata
+          });
+        }
+        console.log('✅ Auto-saved to Asset Hub');
       } catch (saveError) {
         console.error('Failed to save to Asset Hub:', saveError);
       }
