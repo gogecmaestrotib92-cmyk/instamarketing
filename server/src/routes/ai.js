@@ -4552,7 +4552,7 @@ try {
  */
 router.post('/fetch-website', async (req, res) => {
   try {
-    const { url } = req.body;
+    const { url, deep = true } = req.body;
 
     if (!url) {
       return res.status(400).json({ error: 'Website URL is required' });
@@ -4562,9 +4562,12 @@ router.post('/fetch-website', async (req, res) => {
       return res.status(503).json({ error: 'Website scraper service not available' });
     }
 
-    console.log(`🌐 Fetching website data: ${url}`);
+    console.log(`🌐 Fetching website data: ${url} (deep: ${deep})`);
 
-    const result = await websiteScraperService.scrapeWebsite(url);
+    // Use deep scraping to get more images from sub-pages
+    const result = deep && websiteScraperService.scrapeWebsiteDeep
+      ? await websiteScraperService.scrapeWebsiteDeep(url, true)
+      : await websiteScraperService.scrapeWebsite(url);
 
     if (!result.success) {
       return res.status(500).json({ error: result.error || 'Failed to fetch website' });
