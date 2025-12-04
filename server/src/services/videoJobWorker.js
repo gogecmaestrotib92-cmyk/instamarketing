@@ -446,20 +446,62 @@ async function renderVideo(job) {
     });
   }
   
-  // Create subtitle clips
-  for (const phrase of phrases) {
-    subtitleClips.push({
-      asset: {
-        type: 'html',
-        html: `<div style="font-family: 'Montserrat', sans-serif; font-size: 48px; font-weight: 800; color: white; text-shadow: 3px 3px 6px rgba(0,0,0,0.8); text-align: center; padding: 20px;">${phrase.text}</div>`,
-        width: 1080,
-        height: 200
-      },
-      start: phrase.start,
-      length: phrase.end - phrase.start + 0.1,
-      position: 'bottom',
-      offset: { y: 0.15 }
+  // Create KARAOKE style subtitle clips - highlight current word in yellow
+  // We need word-level timing from job.subtitles
+  const wordTimings = job.subtitles; // Each has: { text, start, end }
+  
+  // Group words into display groups (3-4 words shown at a time)
+  const WORDS_PER_GROUP = 4;
+  const wordGroups = [];
+  
+  for (let i = 0; i < wordTimings.length; i += WORDS_PER_GROUP) {
+    const groupWords = wordTimings.slice(i, i + WORDS_PER_GROUP);
+    wordGroups.push({
+      words: groupWords,
+      start: groupWords[0].start,
+      end: groupWords[groupWords.length - 1].end
     });
+  }
+  
+  // For each word group, create clips that highlight each word in sequence
+  for (const group of wordGroups) {
+    for (let wordIdx = 0; wordIdx < group.words.length; wordIdx++) {
+      const currentWord = group.words[wordIdx];
+      
+      // Build HTML with current word highlighted in yellow
+      const htmlWords = group.words.map((w, idx) => {
+        if (idx === wordIdx) {
+          // Current word - YELLOW with glow
+          return `<span style="color: #FFD700; text-shadow: 0 0 20px #FFD700, 0 0 30px #FFA500;">${w.text}</span>`;
+        } else if (idx < wordIdx) {
+          // Already spoken - white
+          return `<span style="color: white;">${w.text}</span>`;
+        } else {
+          // Not yet spoken - dimmed white
+          return `<span style="color: rgba(255,255,255,0.7);">${w.text}</span>`;
+        }
+      }).join(' ');
+      
+      const html = `<div style="font-family: 'Montserrat', sans-serif; font-size: 52px; font-weight: 900; text-align: center; padding: 20px; text-shadow: 3px 3px 8px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5);">${htmlWords}</div>`;
+      
+      // Calculate duration for this word highlight
+      const wordStart = currentWord.start;
+      const wordEnd = currentWord.end;
+      const duration = Math.max(wordEnd - wordStart, 0.1);
+      
+      subtitleClips.push({
+        asset: {
+          type: 'html',
+          html: html,
+          width: 1080,
+          height: 250
+        },
+        start: wordStart,
+        length: duration,
+        position: 'bottom',
+        offset: { y: 0.12 }
+      });
+    }
   }
   
   // Shotstack timeline
