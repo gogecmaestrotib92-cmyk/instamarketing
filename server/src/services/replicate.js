@@ -333,6 +333,7 @@ class ReplicateService {
 
   /**
    * Generate image from text prompt using Flux Schnell (fast, high quality)
+   * Optionally uses reference image for style guidance via IP-Adapter
    * @param {string} prompt - Text description of the image
    * @param {object} options - Generation options
    */
@@ -342,28 +343,52 @@ class ReplicateService {
         aspectRatio = '1:1', 
         numOutputs = 1,
         outputFormat = 'webp',
-        outputQuality = 90 
+        outputQuality = 90,
+        referenceImage = null
       } = options;
       
-      console.log('🖼️ Starting Flux Schnell image generation...');
+      console.log('🖼️ Starting Flux image generation...');
       console.log('Prompt:', prompt);
       console.log('Aspect Ratio:', aspectRatio);
-
-      // Flux Schnell - Fast, high quality text-to-image
-      const prediction = await this.replicate.predictions.create({
-        model: 'black-forest-labs/flux-schnell',
-        input: {
-          prompt: prompt,
-          aspect_ratio: aspectRatio,
-          num_outputs: numOutputs,
-          output_format: outputFormat,
-          output_quality: outputQuality,
-          go_fast: true,
-          megapixels: '1'
-        }
-      });
-
-      console.log('📝 Image prediction created:', prediction.id);
+      
+      let prediction;
+      
+      if (referenceImage) {
+        console.log('📸 Using reference image for style guidance:', referenceImage);
+        
+        // Use Flux Dev with IP-Adapter for image-guided generation
+        prediction = await this.replicate.predictions.create({
+          model: 'xlabs-ai/flux-dev-realism',
+          input: {
+            prompt: prompt,
+            image: referenceImage,
+            strength: 0.65, // Balance between reference and prompt (0.65 = good blend)
+            num_outputs: numOutputs,
+            output_format: outputFormat,
+            output_quality: outputQuality,
+            guidance: 3.5,
+            num_inference_steps: 28
+          }
+        });
+        
+        console.log('📝 IP-Adapter guided prediction created:', prediction.id);
+      } else {
+        // Standard Flux Schnell - Fast, high quality text-to-image
+        prediction = await this.replicate.predictions.create({
+          model: 'black-forest-labs/flux-schnell',
+          input: {
+            prompt: prompt,
+            aspect_ratio: aspectRatio,
+            num_outputs: numOutputs,
+            output_format: outputFormat,
+            output_quality: outputQuality,
+            go_fast: true,
+            megapixels: '1'
+          }
+        });
+        
+        console.log('📝 Image prediction created:', prediction.id);
+      }
       
       // Wait for completion
       const result = await this.waitForPrediction(prediction.id);
@@ -382,7 +407,7 @@ class ReplicateService {
       }
 
     } catch (error) {
-      console.error('Flux Schnell image generation error:', error.message);
+      console.error('Flux image generation error:', error.message);
       return this.handleError(error);
     }
   }

@@ -44,6 +44,7 @@ const BusinessImage = () => {
   const [heading, setHeading] = useState('');
   const [subheading, setSubheading] = useState('');
   const [cta, setCta] = useState('');
+  const [selectedReferenceImage, setSelectedReferenceImage] = useState(null);
   
   // Generation state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -247,6 +248,11 @@ Return ONLY the JSON array, no other text.`
       if (cta) enhancedPrompt += ` and button text "${cta}"`;
     }
     
+    // Add reference image context if selected
+    if (selectedReferenceImage) {
+      enhancedPrompt += '. Match the visual style, color palette, and professional aesthetic from the reference brand imagery';
+    }
+    
     // Add quality modifiers
     enhancedPrompt += '. High quality, professional photography, sharp details, vibrant colors, Instagram-ready, commercial grade';
     
@@ -263,17 +269,25 @@ Return ONLY the JSON array, no other text.`
       
       console.log('Generating image with prompt:', optimizedPrompt);
       console.log('Aspect ratio:', aspectRatio);
+      console.log('Reference image:', selectedReferenceImage);
+
+      const requestBody = {
+        prompt: optimizedPrompt,
+        aspectRatio: aspectRatio,
+        numOutputs: 1,
+        outputFormat: 'webp',
+        outputQuality: 95
+      };
+
+      // Add reference image if selected
+      if (selectedReferenceImage) {
+        requestBody.referenceImage = selectedReferenceImage;
+      }
 
       const response = await fetch('/api/ai/image/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: optimizedPrompt,
-          aspectRatio: aspectRatio,
-          numOutputs: 1,
-          outputFormat: 'webp',
-          outputQuality: 95
-        })
+        body: JSON.stringify(requestBody)
       });
 
       const data = await response.json();
@@ -647,6 +661,50 @@ Example: A premium skincare product bottle on white marble, soft natural lightin
                     />
                   </div>
                 </div>
+
+                {/* Reference Image from Website */}
+                {businessInfo?.brandImages?.length > 0 && (
+                  <div className="reference-images-section">
+                    <h3><FiImage /> Reference Image (Optional)</h3>
+                    <p className="content-hint">Select a photo from your website to inspire the AI</p>
+                    
+                    <div className="reference-images-grid">
+                      {businessInfo.brandImages.map((img, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`reference-image-card ${selectedReferenceImage === img.url ? 'selected' : ''}`}
+                          onClick={() => setSelectedReferenceImage(
+                            selectedReferenceImage === img.url ? null : img.url
+                          )}
+                        >
+                          <img 
+                            src={img.url} 
+                            alt={`Reference ${idx + 1}`}
+                            onError={(e) => e.target.style.display = 'none'}
+                          />
+                          {selectedReferenceImage === img.url && (
+                            <div className="selected-badge">
+                              <FiCheckCircle />
+                            </div>
+                          )}
+                          <span className="image-source">{img.source}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {selectedReferenceImage && (
+                      <div className="selected-reference-info">
+                        <FiCheckCircle /> Using reference image for style inspiration
+                        <button 
+                          className="clear-reference"
+                          onClick={() => setSelectedReferenceImage(null)}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Error Message */}

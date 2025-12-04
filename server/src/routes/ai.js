@@ -630,11 +630,12 @@ router.get('/video/models', (req, res) => {
 
 /**
  * Generate image from text prompt using Flux Schnell
+ * Optionally uses reference image for style guidance
  * POST /api/ai/image/generate
  */
 router.post('/image/generate', async (req, res) => {
   try {
-    const { prompt, aspectRatio = '1:1', numOutputs = 1, outputFormat = 'webp', outputQuality = 90 } = req.body;
+    const { prompt, aspectRatio = '1:1', numOutputs = 1, outputFormat = 'webp', outputQuality = 90, referenceImage } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -643,12 +644,16 @@ router.post('/image/generate', async (req, res) => {
     console.log('🖼️ Generating image with Flux Schnell...');
     console.log('Prompt:', prompt);
     console.log('Aspect Ratio:', aspectRatio);
+    if (referenceImage) {
+      console.log('Reference Image:', referenceImage);
+    }
 
     const result = await replicateService.textToImage(prompt, {
       aspectRatio,
       numOutputs,
       outputFormat,
-      outputQuality
+      outputQuality,
+      referenceImage
     });
 
     if (!result.success) {
