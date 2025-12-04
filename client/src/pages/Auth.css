@@ -222,10 +222,11 @@
   font-weight: 800;
   margin-bottom: 32px;
   line-height: 1.2;
-  background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #e879f9 50%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  text-shadow: 0 0 60px rgba(139, 92, 246, 0.3);
 }
 
 .auth-features ul {
