@@ -227,7 +227,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
     try {
       // Use enhanced voiceover-video endpoint for full pipeline
       if (backgroundType === 'stock-video') {
-        setGenerationStep('Generating script, voiceover & finding videos...');
+        setGenerationStep('Creating your video... (selecting clips, generating voiceover)');
         console.log('🎬 Using enhanced voiceover-video endpoint');
         
         const response = await fetch('/api/ai/voiceover-video/generate', {
