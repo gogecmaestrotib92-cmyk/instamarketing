@@ -3246,25 +3246,42 @@ router.post('/voiceover-video/generate', async (req, res) => {
     }
     console.log('   ✅ Script generated:', scriptResult.script.substring(0, 100) + '...');
 
-    // STEP 2: Generate voiceover (try ElevenLabs first, fallback to Google TTS)
-    console.log('\n🎤 Step 2: Generating voiceover...');
+    // STEP 2: Generate voiceover WITH TIMESTAMPS (try ElevenLabs first, fallback to Google TTS)
+    console.log('\n🎤 Step 2: Generating voiceover with timestamps...');
     let voiceResult = null;
     let ttsProvider = 'google';
+    let wordTimestamps = null; // EXACT word timings from ElevenLabs
 
     if (elevenlabsService && elevenlabsService.isAvailable()) {
       try {
-        // Use specific voiceId if provided, otherwise use style preset
-        if (voiceId) {
-          voiceResult = await elevenlabsService.textToSpeech(scriptResult.script, { voiceId });
+        // Use timestamps API for EXACT word timing synchronization
+        if (typeof elevenlabsService.textToSpeechWithTimestamps === 'function') {
+          console.log('   🎯 Using ElevenLabs timestamps API for EXACT timing...');
+          voiceResult = await elevenlabsService.textToSpeechWithTimestamps(scriptResult.script, { voiceId: voiceId || undefined });
+          
+          if (voiceResult.success && voiceResult.wordTimings && voiceResult.wordTimings.length > 0) {
+            ttsProvider = 'elevenlabs';
+            // Use the pre-parsed word timings from the ElevenLabs service
+            wordTimestamps = voiceResult.wordTimings;
+            console.log(`   ✅ ElevenLabs voiceover with ${wordTimestamps.length} EXACT word timestamps`);
+          } else if (voiceResult.success) {
+            ttsProvider = 'elevenlabs';
+            console.log('   ✅ ElevenLabs voiceover generated (timestamps parsing failed)');
+          }
         } else {
-          voiceResult = await elevenlabsService.generateVoiceover(scriptResult.script, voiceStyle);
-        }
-        if (voiceResult.success) {
-          ttsProvider = 'elevenlabs';
-          console.log('   ✅ ElevenLabs voiceover generated');
+          // Fallback to regular TTS without timestamps
+          if (voiceId) {
+            voiceResult = await elevenlabsService.textToSpeech(scriptResult.script, { voiceId });
+          } else {
+            voiceResult = await elevenlabsService.generateVoiceover(scriptResult.script, voiceStyle);
+          }
+          if (voiceResult.success) {
+            ttsProvider = 'elevenlabs';
+            console.log('   ✅ ElevenLabs voiceover generated (no timestamps)');
+          }
         }
       } catch (e) {
-        console.log('   ⚠️ ElevenLabs failed, falling back to Google TTS');
+        console.log('   ⚠️ ElevenLabs failed, falling back to Google TTS:', e.message);
       }
     }
 
@@ -3280,12 +3297,28 @@ router.post('/voiceover-video/generate', async (req, res) => {
     console.log('\n📝 Step 3: Generating subtitles...');
     let subtitles = [];
     let scenes = [];
-    let estimatedDuration = duration;
+    let estimatedDuration = voiceResult.duration || duration; // Use actual audio duration if available
 
-    console.log('\n📝 Step 3: Generating subtitles...');
-    console.log(`   Subtitle generator available: ${!!subtitleGenerator}`);
-    
-    if (subtitleGenerator) {
+    // PRIORITY 1: Use EXACT word timestamps from ElevenLabs (if available)
+    if (wordTimestamps && wordTimestamps.length > 0) {
+      console.log(`   🎯 Using EXACT word timestamps from ElevenLabs (${wordTimestamps.length} words)`);
+      subtitles = generateSubtitlesFromTimestamps(wordTimestamps, maxWordsPerSubtitle || 3);
+      
+      // Use the exact duration from word timestamps
+      const lastWord = wordTimestamps[wordTimestamps.length - 1];
+      estimatedDuration = lastWord.end + 0.5; // Add small buffer for safety
+      console.log(`   ✅ Generated ${subtitles.length} subtitle segments with EXACT timing (${estimatedDuration.toFixed(2)}s)`);
+      
+      // Log first few subtitle timings for debugging
+      if (subtitles.length > 0) {
+        console.log('   📊 Sample subtitle timings:');
+        subtitles.slice(0, 3).forEach((s, i) => {
+          console.log(`      ${i+1}. "${s.text}" [${s.start.toFixed(2)}s - ${s.end.toFixed(2)}s]`);
+        });
+      }
+    } else if (subtitleGenerator) {
+      // FALLBACK: Use WPM estimation (less accurate)
+      console.log(`   📝 Falling back to WPM estimation (no timestamps available)`);
       try {
         // Generate sentence-level captions for readability
         const captionResult = subtitleGenerator.generateSentenceCaptions(
@@ -3303,30 +3336,35 @@ router.post('/voiceover-video/generate', async (req, res) => {
         subtitles = createBasicSubtitles(scriptResult.script, duration);
         console.log(`   ✅ Created ${subtitles.length} basic subtitles as fallback`);
       }
+    } else {
+      // LAST FALLBACK: Basic subtitle splitting
+      subtitles = createBasicSubtitles(scriptResult.script, duration);
+      console.log(`   ✅ Created ${subtitles.length} basic subtitles`);
+    }
 
-      // Generate scene breakpoints from script
-      if (useSceneVideos) {
-        // PRIORITY 1: Use AI-generated scene descriptions if available
-        if (aiGeneratedScenes && aiGeneratedScenes.length > 0) {
-          console.log(`   🎯 Using AI-generated scene descriptions (${aiGeneratedScenes.length} scenes)`);
-          
-          // Safety mapping for abstract terms that AI might still return
-          const abstractToConcreteMap = {
-            'consistency': 'person gym workout daily',
-            'discipline': 'athlete training hard',
-            'motivation': 'person working out sunrise',
-            'success': 'person celebrating achievement',
-            'results': 'fit person showing muscles',
-            'mindset': 'person meditating focus',
-            'focus': 'person concentrated working',
-            'key': 'person unlocking success',
-            'secret': 'person revealing tip',
-            'tip': 'person giving advice',
-            'tips': 'person explaining teaching'
-          };
-          
-          const sceneDuration = estimatedDuration / aiGeneratedScenes.length;
-          let currentTime = 0;
+    // Generate scene breakpoints from script (independent of subtitle method)
+    if (useSceneVideos) {
+      // PRIORITY 1: Use AI-generated scene descriptions if available
+      if (aiGeneratedScenes && aiGeneratedScenes.length > 0) {
+        console.log(`   🎯 Using AI-generated scene descriptions (${aiGeneratedScenes.length} scenes)`);
+        
+        // Safety mapping for abstract terms that AI might still return
+        const abstractToConcreteMap = {
+          'consistency': 'person gym workout daily',
+          'discipline': 'athlete training hard',
+          'motivation': 'person working out sunrise',
+          'success': 'person celebrating achievement',
+          'results': 'fit person showing muscles',
+          'mindset': 'person meditating focus',
+          'focus': 'person concentrated working',
+          'key': 'person unlocking success',
+          'secret': 'person revealing tip',
+          'tip': 'person giving advice',
+          'tips': 'person explaining teaching'
+        };
+        
+        const sceneDuration = estimatedDuration / aiGeneratedScenes.length;
+        let currentTime = 0;
           
           for (let i = 0; i < aiGeneratedScenes.length; i++) {
             const aiScene = aiGeneratedScenes[i];
@@ -3608,13 +3646,8 @@ router.post('/voiceover-video/generate', async (req, res) => {
           currentTime += sceneDuration;
         }
         console.log(`   ✅ Identified ${scenes.length} scenes for video matching`);
-        } // Close the else block for AI scene fallback
-      }
-    } else {
-      console.log('   ⚠️ Subtitle generator not available, creating basic subtitles');
-      subtitles = createBasicSubtitles(scriptResult.script, duration);
-      console.log(`   ✅ Created ${subtitles.length} basic subtitles`);
-    }
+      } // Close the else block for AI scene fallback
+    } // Close useSceneVideos
 
     // STEP 4: Get stock videos for scenes
     console.log('\n🎥 Step 4: Finding stock videos...');
@@ -4053,6 +4086,80 @@ function getFallbackVideoKeywords(topic, numScenes) {
  * @param {number} duration - Target duration in seconds
  * @returns {Array} - Array of subtitle objects with text, start, end
  */
+/**
+ * Convert ElevenLabs character-level timestamps to word timestamps
+ * This enables EXACT subtitle timing based on actual speech
+ */
+function convertCharTimestampsToWords(text, characters, startTimes, endTimes) {
+  const words = [];
+  let currentWord = '';
+  let wordStart = null;
+  let wordEnd = null;
+  
+  for (let i = 0; i < characters.length; i++) {
+    const char = characters[i];
+    const startTime = startTimes[i];
+    const endTime = endTimes[i];
+    
+    if (char === ' ' || char === '\n' || char === '\t') {
+      // End of word
+      if (currentWord.length > 0 && wordStart !== null) {
+        words.push({
+          word: currentWord,
+          start: wordStart,
+          end: wordEnd
+        });
+      }
+      currentWord = '';
+      wordStart = null;
+      wordEnd = null;
+    } else {
+      // Part of a word
+      if (wordStart === null) {
+        wordStart = startTime;
+      }
+      currentWord += char;
+      wordEnd = endTime;
+    }
+  }
+  
+  // Don't forget the last word
+  if (currentWord.length > 0 && wordStart !== null) {
+    words.push({
+      word: currentWord,
+      start: wordStart,
+      end: wordEnd
+    });
+  }
+  
+  return words;
+}
+
+/**
+ * Generate subtitles from EXACT word timestamps (ElevenLabs timestamps API)
+ * Groups words into readable chunks with REAL timing
+ */
+function generateSubtitlesFromTimestamps(wordTimestamps, maxWordsPerChunk = 3) {
+  const subtitles = [];
+  
+  for (let i = 0; i < wordTimestamps.length; i += maxWordsPerChunk) {
+    const chunk = wordTimestamps.slice(i, i + maxWordsPerChunk);
+    if (chunk.length === 0) continue;
+    
+    const text = chunk.map(w => w.word).join(' ');
+    const start = chunk[0].start;
+    const end = chunk[chunk.length - 1].end;
+    
+    subtitles.push({
+      text: text,
+      start: parseFloat(start.toFixed(3)),
+      end: parseFloat(end.toFixed(3))
+    });
+  }
+  
+  return subtitles;
+}
+
 function createBasicSubtitles(script, duration = 15) {
   const sentences = script.match(/[^.!?]+[.!?]+/g) || [script];
   const totalWords = script.split(' ').filter(w => w.length > 0).length;

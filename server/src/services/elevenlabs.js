@@ -251,7 +251,7 @@ class ElevenLabsService {
         success: true,
         audioUrl: cloudUrl || localPath,
         localPath: localPath,
-        duration: null, // ElevenLabs doesn't return duration
+        duration: null, // ElevenLabs doesn't return duration in basic endpoint
         voiceId: voiceId,
         model: modelId
       };
@@ -260,6 +260,169 @@ class ElevenLabsService {
       console.error('ElevenLabs TTS error:', error.message);
       return { success: false, error: error.message };
     }
+  }
+
+  /**
+   * Text to Speech WITH TIMESTAMPS - Returns exact word timings!
+   * Uses ElevenLabs streaming endpoint with timing data
+   * @param {string} text - Text to convert
+   * @param {object} options - TTS options including voiceId
+   * @returns {Promise<object>} - Result with audio URL AND word timestamps
+   */
+  async textToSpeechWithTimestamps(text, options = {}) {
+    if (!this.initialized) {
+      return { success: false, error: 'ElevenLabs API key not configured' };
+    }
+
+    if (!text || text.trim().length === 0) {
+      return { success: false, error: 'Text is required' };
+    }
+
+    try {
+      const voiceId = options.voiceId || '21m00Tcm4TlvDq8ikWAM';
+      const modelId = options.modelId || 'eleven_multilingual_v2';
+      
+      const voiceSettings = {
+        stability: options.stability || 0.5,
+        similarity_boost: options.similarityBoost || 0.75,
+        style: options.style || 0.5,
+        use_speaker_boost: options.speakerBoost !== false
+      };
+
+      console.log(`🎤 ElevenLabs TTS with Timestamps: Converting ${text.length} chars`);
+
+      // Use the streaming endpoint with timestamps
+      const response = await fetch(`${this.baseUrl}/text-to-speech/${voiceId}/with-timestamps`, {
+        method: 'POST',
+        headers: {
+          'xi-api-key': this.apiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: modelId,
+          voice_settings: voiceSettings
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log(`⚠️ Timestamps endpoint failed (${response.status}), falling back to basic TTS`);
+        // Fallback to regular TTS
+        return this.textToSpeech(text, options);
+      }
+
+      const data = await response.json();
+      
+      // Extract audio (base64) and timestamps
+      const audioBase64 = data.audio_base64;
+      const alignment = data.alignment; // Contains character-level timing
+      
+      if (!audioBase64) {
+        console.log('⚠️ No audio in response, falling back to basic TTS');
+        return this.textToSpeech(text, options);
+      }
+
+      // Convert base64 to buffer and save
+      const audioBuffer = Buffer.from(audioBase64, 'base64');
+      const timestamp = Date.now();
+      const filename = `elevenlabs_ts_${timestamp}.mp3`;
+      const localPath = path.join(this.outputDir, filename);
+      fs.writeFileSync(localPath, audioBuffer);
+
+      // Parse timestamps into word-level timings
+      const wordTimings = this.parseAlignmentToWords(text, alignment);
+      const audioDuration = wordTimings.length > 0 ? wordTimings[wordTimings.length - 1].end : null;
+
+      console.log(`🎤 Got ${wordTimings.length} word timings, duration: ${audioDuration?.toFixed(2)}s`);
+
+      // Upload to Cloudinary
+      let cloudUrl = null;
+      if (uploadToCloudinary) {
+        try {
+          const uploadResult = await uploadToCloudinary(localPath, {
+            resource_type: 'video',
+            folder: 'instamarketing/voiceovers'
+          });
+          if (uploadResult.success) {
+            cloudUrl = uploadResult.url;
+            try { fs.unlinkSync(localPath); } catch (e) {}
+          }
+        } catch (e) {
+          console.log('Cloudinary upload failed:', e.message);
+        }
+      }
+
+      return {
+        success: true,
+        audioUrl: cloudUrl || localPath,
+        localPath: localPath,
+        duration: audioDuration,
+        voiceId: voiceId,
+        model: modelId,
+        wordTimings: wordTimings, // EXACT word-level timestamps!
+        hasTimestamps: true
+      };
+
+    } catch (error) {
+      console.error('ElevenLabs TTS with timestamps error:', error.message);
+      // Fallback to basic TTS
+      return this.textToSpeech(text, options);
+    }
+  }
+
+  /**
+   * Parse ElevenLabs alignment data into word-level timings
+   */
+  parseAlignmentToWords(text, alignment) {
+    if (!alignment || !alignment.characters || !alignment.character_start_times_seconds) {
+      return [];
+    }
+
+    const chars = alignment.characters;
+    const charStarts = alignment.character_start_times_seconds;
+    const charEnds = alignment.character_end_times_seconds || [];
+
+    const words = [];
+    let currentWord = '';
+    let wordStart = null;
+    let wordEnd = 0;
+
+    for (let i = 0; i < chars.length; i++) {
+      const char = chars[i];
+      const start = charStarts[i];
+      const end = charEnds[i] || (charStarts[i + 1] || start + 0.1);
+
+      if (char === ' ' || char === '\n') {
+        // End of word
+        if (currentWord.trim()) {
+          words.push({
+            word: currentWord.trim(),
+            start: wordStart,
+            end: wordEnd
+          });
+        }
+        currentWord = '';
+        wordStart = null;
+      } else {
+        if (wordStart === null) {
+          wordStart = start;
+        }
+        currentWord += char;
+        wordEnd = end;
+      }
+    }
+
+    // Don't forget the last word
+    if (currentWord.trim()) {
+      words.push({
+        word: currentWord.trim(),
+        start: wordStart,
+        end: wordEnd
+      });
+    }
+
+    return words;
   }
 
   /**
