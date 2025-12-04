@@ -3823,41 +3823,59 @@ router.post('/voiceover-video/generate', async (req, res) => {
           // IMPORTANT: Download from Pexels ourselves then upload to Cloudinary
           // Pexels blocks third-party downloads (403)
           let videoUrl = video.url;
+          const originalUrl = videoUrl;
           
-          if (cloudinaryUpload && videoUrl.includes('pexels.com')) {
+          console.log(`   📥 Single video mode - Original URL: ${videoUrl}`);
+          console.log(`   📥 cloudinaryUpload available: ${!!cloudinaryUpload}`);
+          console.log(`   📥 Is Pexels URL: ${videoUrl.includes('pexels.com')}`);
+          
+          if (videoUrl.includes('pexels.com')) {
+            console.log('   📥 ATTEMPTING PEXELS DOWNLOAD...');
             try {
-              console.log('   📥 Downloading video from Pexels...');
               const videoResponse = await fetch(videoUrl, {
                 headers: {
-                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                   'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8',
-                  'Referer': 'https://www.pexels.com/'
+                  'Referer': 'https://www.pexels.com/',
+                  'Origin': 'https://www.pexels.com'
                 }
               });
               
+              console.log(`   📥 Pexels response: ${videoResponse.status} ${videoResponse.statusText}`);
+              
               if (videoResponse.ok) {
                 const videoBuffer = await videoResponse.buffer();
-                console.log(`   📤 Uploading to Cloudinary (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)...`);
+                console.log(`   📤 Downloaded ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB, uploading to Cloudinary...`);
                 
-                const uploadResult = await cloudinaryUpload(videoBuffer, {
-                  folder: 'instamarketing/videos',
-                  resource_type: 'video',
-                  format: 'mp4'
-                });
-                
-                if (uploadResult.success) {
-                  videoUrl = uploadResult.url;
-                  console.log(`   ✅ Video uploaded: ${videoUrl.substring(0, 60)}...`);
+                if (cloudinaryUpload) {
+                  const uploadResult = await cloudinaryUpload(videoBuffer, {
+                    folder: 'instamarketing/videos',
+                    resource_type: 'video',
+                    format: 'mp4'
+                  });
+                  
+                  console.log(`   📤 Cloudinary result: ${JSON.stringify(uploadResult).substring(0, 200)}`);
+                  
+                  if (uploadResult.success && uploadResult.url) {
+                    videoUrl = uploadResult.url;
+                    console.log(`   ✅ SUCCESS! New URL: ${videoUrl}`);
+                  } else {
+                    console.log(`   ❌ Cloudinary upload failed: ${uploadResult.error || 'No URL returned'}`);
+                  }
                 } else {
-                  console.log(`   ⚠️ Cloudinary upload failed: ${uploadResult.error}`);
+                  console.log(`   ❌ cloudinaryUpload function is NULL!`);
                 }
               } else {
-                console.log(`   ⚠️ Pexels download failed: ${videoResponse.status}`);
+                console.log(`   ❌ Pexels download failed: ${videoResponse.status}`);
               }
             } catch (uploadErr) {
-              console.log(`   ⚠️ Video processing error: ${uploadErr.message}`);
+              console.log(`   ❌ Exception during download/upload: ${uploadErr.message}`);
+              console.log(`   ❌ Stack: ${uploadErr.stack}`);
             }
           }
+          
+          console.log(`   🎬 FINAL VIDEO URL FOR SHOTSTACK: ${videoUrl}`);
+          console.log(`   🎬 URL changed: ${videoUrl !== originalUrl}`);
 
           console.log(`   🎬 Creating single video render...`);
           console.log(`   Video URL: ${videoUrl}`);
