@@ -3741,34 +3741,16 @@ router.post('/voiceover-video/generate', async (req, res) => {
       try {
         if (sceneVideos.length > 1) {
           // Multi-clip composition with scene switching
-          const clips = [];
-          for (const sceneVideo of sceneVideos) {
-            // Upload video to Cloudinary
-            let videoUrl = sceneVideo.url;
-            if (cloudinaryUpload && (videoUrl.includes('pexels.com') || videoUrl.includes('pixabay.com'))) {
-              try {
-                console.log(`   📤 Uploading scene video ${clips.length + 1}...`);
-                const videoResponse = await fetch(videoUrl);
-                const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-                const uploadResult = await cloudinaryUpload(videoBuffer, {
-                  folder: 'instamarketing/scenes',
-                  resource_type: 'video'
-                });
-                if (uploadResult.success) {
-                  videoUrl = uploadResult.url;
-                }
-              } catch (e) {
-                console.log(`   ⚠️ Scene video upload failed: ${e.message}`);
-              }
-            }
-            
-            clips.push({
-              url: videoUrl,
+          // OPTIMIZATION: Use Pexels URLs directly - they're persistent, no need for Cloudinary upload
+          const clips = sceneVideos.map((sceneVideo, idx) => {
+            console.log(`   ⚡ Using scene video ${idx + 1} URL directly (no upload)`);
+            return {
+              url: sceneVideo.url, // Pexels URLs are persistent
               duration: sceneVideo.duration || 10,
               useDuration: sceneVideo.useDuration || sceneVideo.playbackDuration,
-              startAt: 0 // Start from beginning of each clip
-            });
-          }
+              startAt: 0
+            };
+          });
 
           console.log(`   🎬 Creating multi-clip render with ${clips.length} clips...`);
           console.log(`   📊 Target duration from audio: ${estimatedDuration}s`);
@@ -3796,26 +3778,9 @@ router.post('/voiceover-video/generate', async (req, res) => {
         } else if (backgroundVideo || sceneVideos.length === 1) {
           // Single video composition with looping
           const video = sceneVideos[0] || backgroundVideo;
+          // OPTIMIZATION: Use Pexels URLs directly - they're persistent
           let videoUrl = video.url;
-          
-          // Upload video to Cloudinary
-          if (cloudinaryUpload && (videoUrl.includes('pexels.com') || videoUrl.includes('pixabay.com'))) {
-            try {
-              console.log('   📤 Uploading video to Cloudinary...');
-              const videoResponse = await fetch(videoUrl);
-              const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-              const uploadResult = await cloudinaryUpload(videoBuffer, {
-                folder: 'instamarketing/composed',
-                resource_type: 'video'
-              });
-              if (uploadResult.success) {
-                videoUrl = uploadResult.url;
-                console.log('   ✅ Video uploaded to Cloudinary');
-              }
-            } catch (e) {
-              console.log(`   ⚠️ Video upload failed: ${e.message}`);
-            }
-          }
+          console.log('   ⚡ Using video URL directly (no Cloudinary upload needed)');
 
           console.log(`   🎬 Creating single video render...`);
           console.log(`   Video URL: ${videoUrl}`);
