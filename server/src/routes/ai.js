@@ -693,10 +693,24 @@ const INDUSTRY_VISUAL_STYLES = {
  * Uses OpenAI to add professional photography terms and visual details
  */
 async function enhanceImagePrompt(basePrompt, options = {}) {
-  const { industry, postType, brandColors, style } = options;
+  const { industry, postType, brandColors, style, businessContext } = options;
   
   // Get industry-specific visual guidance
   const industryStyle = INDUSTRY_VISUAL_STYLES[industry] || INDUSTRY_VISUAL_STYLES['default'];
+  
+  // Build business context string
+  let businessContextStr = '';
+  if (businessContext) {
+    const parts = [];
+    if (businessContext.businessName) parts.push(`Business Name: ${businessContext.businessName}`);
+    if (businessContext.description) parts.push(`Business Description: ${businessContext.description.substring(0, 200)}`);
+    if (businessContext.targetAudience) parts.push(`Target Audience: ${businessContext.targetAudience.substring(0, 150)}`);
+    if (businessContext.brandVoice) parts.push(`Brand Voice: ${businessContext.brandVoice}`);
+    if (businessContext.products) parts.push(`Products/Services: ${businessContext.products}`);
+    if (parts.length > 0) {
+      businessContextStr = `\n\nBUSINESS CONTEXT (IMPORTANT - the image MUST reflect this brand):\n${parts.join('\n')}`;
+    }
+  }
   
   try {
     const OpenAI = require('openai');
@@ -706,7 +720,7 @@ async function enhanceImagePrompt(basePrompt, options = {}) {
 
 Take this basic prompt and enhance it with specific, concrete visual details that will produce a high-quality, professional image.
 
-BASIC PROMPT: "${basePrompt}"
+BASIC PROMPT: "${basePrompt}"${businessContextStr}
 
 CONTEXT:
 - Industry: ${industry || 'general business'}
@@ -721,16 +735,17 @@ INDUSTRY-SPECIFIC VISUAL GUIDANCE:
 - Colors: ${industryStyle.colors}
 
 RULES FOR ENHANCED PROMPT:
-1. Incorporate the industry-specific guidance above naturally
-2. Add specific lighting terms that match the industry
-3. Add camera/lens details (shallow depth of field, 85mm portrait, wide angle, macro, etc.)
-4. Add composition terms that work for the content
-5. Add texture/material details when relevant
-6. Be SPECIFIC and CONCRETE - describe exactly what should be visible
-7. Include the brand colors if specified: ${brandColors || 'use industry-appropriate colors'}
-8. Add quality modifiers: 8k, ultra detailed, professional photography, commercial quality
-9. Keep total length under 200 words
-10. NEVER include any text, words, letters, numbers, or logos in the image description
+1. THE IMAGE MUST DIRECTLY RELATE TO THE BUSINESS CONTEXT - if it's a bakery, show baked goods; if it's a gym, show fitness content
+2. Incorporate the industry-specific guidance above naturally
+3. Add specific lighting terms that match the industry
+4. Add camera/lens details (shallow depth of field, 85mm portrait, wide angle, macro, etc.)
+5. Add composition terms that work for the content
+6. Add texture/material details when relevant
+7. Be SPECIFIC and CONCRETE - describe exactly what should be visible that represents THIS business
+8. Include the brand colors if specified: ${brandColors || 'use industry-appropriate colors'}
+9. Add quality modifiers: 8k, ultra detailed, professional photography, commercial quality
+10. Keep total length under 200 words
+11. NEVER include any text, words, letters, numbers, or logos in the image description
 
 Return ONLY the enhanced prompt, nothing else.`;
 
@@ -759,7 +774,7 @@ Return ONLY the enhanced prompt, nothing else.`;
  */
 router.post('/image/generate', async (req, res) => {
   try {
-    const { prompt, aspectRatio = '1:1', numOutputs = 1, outputFormat = 'webp', outputQuality = 90, referenceImage, enhancePrompt = true, industry, postType, brandColors, style } = req.body;
+    const { prompt, aspectRatio = '1:1', numOutputs = 1, outputFormat = 'webp', outputQuality = 90, referenceImage, enhancePrompt = true, industry, postType, brandColors, style, businessContext } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -769,7 +784,7 @@ router.post('/image/generate', async (req, res) => {
     let finalPrompt = prompt;
     if (enhancePrompt) {
       console.log('🧠 Enhancing prompt with AI...');
-      finalPrompt = await enhanceImagePrompt(prompt, { industry, postType, brandColors, style });
+      finalPrompt = await enhanceImagePrompt(prompt, { industry, postType, brandColors, style, businessContext });
     }
 
     console.log('🖼️ Generating image with Flux Schnell...');

@@ -291,7 +291,15 @@ Return ONLY the JSON array, no other text.`
         style: postType === 'promotional' ? 'commercial advertising' : 
                postType === 'product' ? 'product photography' :
                postType === 'lifestyle' ? 'lifestyle photography' :
-               postType === 'quote' ? 'inspirational graphic' : 'professional'
+               postType === 'quote' ? 'inspirational graphic' : 'professional',
+        // Pass full business context for better AI prompt generation
+        businessContext: brandLinked && hasBusinessInfo ? {
+          businessName: businessInfo.businessName || null,
+          description: businessInfo.description || null,
+          targetAudience: businessInfo.targetAudience || null,
+          brandVoice: businessInfo.brandVoice || null,
+          products: businessInfo.products?.map(p => p.name).join(', ') || null
+        } : null
       };
 
       // Add reference image if selected
