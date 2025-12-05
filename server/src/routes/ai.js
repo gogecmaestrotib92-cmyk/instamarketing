@@ -4252,49 +4252,35 @@ router.post('/stock-video/search', async (req, res) => {
   }
 });
 
-// Pexels API key for photo search
+// API keys for photo search
 const PEXELS_HARDCODED_KEY = '9kV0qJ9k1b1Ou9BTGXFDPyFrqjU4oqGsuJ0tbzor5r2O942zz6WMyIyl';
+const PIXABAY_HARDCODED_KEY = '47862547-de8e8b6e2aa350418b7d93b09';
 const getPexelsKey = () => process.env.PEXELS_API_KEY || PEXELS_HARDCODED_KEY;
+const getPixabayKey = () => process.env.PIXABAY_API_KEY || PIXABAY_HARDCODED_KEY;
 
 /**
- * Search stock photos from Pexels
- * GET /api/ai/stock/search
+ * Search Pexels for photos
  */
-router.get('/stock/search', async (req, res) => {
+async function searchPexelsPhotos(query, perPage = 8) {
+  const PEXELS_API_KEY = getPexelsKey();
+  if (!PEXELS_API_KEY) return [];
+
   try {
-    const { query, type = 'photos', perPage = 8 } = req.query;
-
-    if (!query) {
-      return res.status(400).json({ error: 'Search query is required' });
-    }
-
-    const PEXELS_API_KEY = getPexelsKey();
-    if (!PEXELS_API_KEY) {
-      return res.status(500).json({ error: 'Pexels API key not configured' });
-    }
-
-    console.log(`🖼️ Stock photo search: "${query}" (${perPage} results)`);
-
     const url = new URL('https://api.pexels.com/v1/search');
     url.searchParams.set('query', query);
     url.searchParams.set('per_page', perPage);
-    url.searchParams.set('orientation', 'square'); // Good for memes
+    url.searchParams.set('orientation', 'square');
 
     const response = await fetch(url.toString(), {
-      headers: {
-        'Authorization': PEXELS_API_KEY
-      }
+      headers: { 'Authorization': PEXELS_API_KEY }
     });
 
-    if (!response.ok) {
-      throw new Error(`Pexels API error: ${response.status}`);
-    }
+    if (!response.ok) return [];
 
     const data = await response.json();
-
-    // Transform Pexels response to simpler format
-    const results = (data.photos || []).map(photo => ({
-      id: photo.id,
+    return (data.photos || []).map(photo => ({
+      id: `pexels-${photo.id}`,
+      source: 'pexels',
       width: photo.width,
       height: photo.height,
       url: photo.url,
@@ -4311,13 +4297,101 @@ router.get('/stock/search', async (req, res) => {
         tiny: photo.src.tiny
       }
     }));
+  } catch (error) {
+    console.error('Pexels photo search error:', error.message);
+    return [];
+  }
+}
 
-    console.log(`   Found ${results.length} photos`);
+/**
+ * Search Pixabay for photos
+ */
+async function searchPixabayPhotos(query, perPage = 8) {
+  const PIXABAY_API_KEY = getPixabayKey();
+  if (!PIXABAY_API_KEY) return [];
+
+  try {
+    const url = new URL('https://pixabay.com/api/');
+    url.searchParams.set('key', PIXABAY_API_KEY);
+    url.searchParams.set('q', query);
+    url.searchParams.set('per_page', perPage);
+    url.searchParams.set('image_type', 'photo');
+    url.searchParams.set('safesearch', 'true');
+
+    const response = await fetch(url.toString());
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return (data.hits || []).map(photo => ({
+      id: `pixabay-${photo.id}`,
+      source: 'pixabay',
+      width: photo.imageWidth,
+      height: photo.imageHeight,
+      url: photo.pageURL,
+      photographer: photo.user,
+      alt: photo.tags || query,
+      src: {
+        original: photo.largeImageURL,
+        large: photo.largeImageURL,
+        large2x: photo.largeImageURL,
+        medium: photo.webformatURL,
+        small: photo.previewURL,
+        portrait: photo.largeImageURL,
+        landscape: photo.largeImageURL,
+        tiny: photo.previewURL
+      }
+    }));
+  } catch (error) {
+    console.error('Pixabay photo search error:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Search stock photos from Pexels AND Pixabay
+ * GET /api/ai/stock/search
+ */
+router.get('/stock/search', async (req, res) => {
+  try {
+    const { query, type = 'photos', perPage = 8 } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    console.log(`🖼️ Stock photo search: "${query}" (${perPage} results from each source)`);
+
+    // Search both APIs in parallel
+    const [pexelsPhotos, pixabayPhotos] = await Promise.all([
+      searchPexelsPhotos(query, Math.ceil(perPage / 2)),
+      searchPixabayPhotos(query, Math.ceil(perPage / 2))
+    ]);
+
+    console.log(`   Pexels: ${pexelsPhotos.length} photos`);
+    console.log(`   Pixabay: ${pixabayPhotos.length} photos`);
+
+    // Combine and interleave results for variety
+    const combined = [];
+    const maxLen = Math.max(pexelsPhotos.length, pixabayPhotos.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (i < pexelsPhotos.length) combined.push(pexelsPhotos[i]);
+      if (i < pixabayPhotos.length) combined.push(pixabayPhotos[i]);
+    }
+
+    // Limit to requested perPage
+    const results = combined.slice(0, parseInt(perPage));
+
+    console.log(`   Total: ${results.length} photos returned`);
 
     res.json({
       success: true,
       results,
-      total: data.total_results || results.length
+      total: results.length,
+      sources: {
+        pexels: pexelsPhotos.length,
+        pixabay: pixabayPhotos.length
+      }
     });
   } catch (error) {
     console.error('Stock photo search error:', error);
