@@ -18,7 +18,11 @@ import {
   FiUser,
   FiShoppingBag,
   FiBriefcase,
-  FiDatabase
+  FiDatabase,
+  FiLayers,
+  FiMessageSquare,
+  FiSmile,
+  FiEdit
 } from 'react-icons/fi';
 import { FaInstagram } from 'react-icons/fa';
 import './Layout.css';
@@ -151,7 +155,12 @@ const Layout = () => {
         // Business - single page with cards
         { path: '/app/create/business', icon: FiBriefcase, label: 'Business', description: 'Trending, Video, Ad Creatives' },
         // E-Commerce - single page with cards
-        { path: '/app/create/ecommerce', icon: FiShoppingBag, label: 'E-Commerce', description: 'Product creatives, videos & more' }
+        { path: '/app/create/ecommerce', icon: FiShoppingBag, label: 'E-Commerce', description: 'Product creatives, videos & more' },
+        // New content types
+        { path: '/app/create/carousel', icon: FiLayers, label: 'Carousel', description: 'Multi-slide carousel posts' },
+        { path: '/app/create/quotes', icon: FiMessageSquare, label: 'Quotes', description: 'Inspirational quote graphics' },
+        { path: '/app/create/memes', icon: FiSmile, label: 'Memes', description: 'Viral meme content' },
+        { path: '/app/create/manual-post', icon: FiEdit, label: 'Manual Post', description: 'Create custom posts' }
       ]
     },
     { path: '/app/autopilot', icon: FiCpu, label: 'AI Auto-Pilot', badge: 'NEW', emphasized: 'secondary' },
