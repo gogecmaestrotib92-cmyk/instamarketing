@@ -3092,6 +3092,175 @@ Return ONLY a JSON array of strings. No markdown, no explanations.`;
 });
 
 /**
+ * Generate Carousel Content
+ * POST /api/ai/generate-carousel
+ * 
+ * Creates structured carousel slides with title, content, and optional tips
+ */
+router.post('/generate-carousel', async (req, res) => {
+  try {
+    const { topic, niche = 'General', slideCount = 5, tone = 'professional' } = req.body;
+    
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+    
+    console.log('🎠 Generating carousel for:', { topic, niche, slideCount, tone });
+    
+    // Tone descriptions for the prompt
+    const toneDescriptions = {
+      professional: 'professional, authoritative, and polished',
+      casual: 'friendly, conversational, and relatable',
+      inspiring: 'motivational, uplifting, and empowering',
+      educational: 'informative, clear, and instructive',
+      humorous: 'witty, fun, and entertaining',
+      bold: 'direct, confident, and attention-grabbing'
+    };
+    
+    const toneStyle = toneDescriptions[tone] || toneDescriptions.professional;
+    
+    const prompt = `Create an Instagram carousel post about: "${topic}"
+Niche/Industry: ${niche}
+Number of slides: ${slideCount}
+Tone: ${toneStyle}
+
+Generate a structured carousel with exactly ${slideCount} slides. Each slide should have:
+1. slideNumber (1, 2, 3, etc.)
+2. title - A short, impactful headline (max 8 words)
+3. content - The main text for the slide (2-3 sentences, max 50 words)
+4. tip (optional) - A quick actionable tip if relevant
+
+STRUCTURE GUIDELINES:
+- Slide 1: Hook/Intro - Grab attention with a compelling question or statement
+- Middle slides: Main content - Each covers one key point, tip, or insight
+- Last slide: CTA - Call to action (follow, save, share, comment, etc.)
+
+Also generate:
+- A caption for the post (2-3 sentences + emojis)
+- 10-15 relevant hashtags
+
+Return ONLY valid JSON in this exact format:
+{
+  "slides": [
+    {"slideNumber": 1, "title": "Hook Title", "content": "Engaging intro content..."},
+    {"slideNumber": 2, "title": "Point One", "content": "First key point...", "tip": "Quick tip here"},
+    ...
+  ],
+  "caption": "Your engaging caption here... ✨",
+  "hashtags": ["#hashtag1", "#hashtag2", ...]
+}`;
+
+    let result = null;
+    
+    if (openaiService) {
+      try {
+        const response = await openaiService.chat([
+          { role: 'system', content: 'You are an expert Instagram content creator specializing in carousel posts. Return only valid JSON, no markdown.' },
+          { role: 'user', content: prompt }
+        ]);
+        
+        if (response.success && response.content) {
+          // Extract JSON from response
+          let jsonStr = response.content;
+          
+          // Remove markdown code blocks if present
+          jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          
+          // Try to find JSON object
+          const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            jsonStr = jsonMatch[0];
+          }
+          
+          result = JSON.parse(jsonStr);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse carousel response:', parseError);
+      }
+    }
+    
+    // Fallback if AI fails
+    if (!result || !result.slides) {
+      result = generateFallbackCarousel(topic, slideCount, tone);
+    }
+    
+    // Ensure proper format
+    const slides = result.slides || [];
+    const caption = result.caption || `Check out these tips about ${topic}! 👆`;
+    const hashtags = result.hashtags || generateDefaultHashtags(topic, niche);
+    
+    console.log('✅ Carousel generated with', slides.length, 'slides');
+    
+    res.json({
+      success: true,
+      slides,
+      caption,
+      hashtags
+    });
+  } catch (error) {
+    console.error('Carousel generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fallback carousel generator
+function generateFallbackCarousel(topic, slideCount, tone) {
+  const slides = [];
+  
+  // Slide 1: Hook
+  slides.push({
+    slideNumber: 1,
+    title: `${slideCount} Things About ${topic.split(' ').slice(0, 3).join(' ')}`,
+    content: `Ready to level up your knowledge? Swipe through to discover key insights about ${topic}.`
+  });
+  
+  // Middle slides
+  for (let i = 2; i < slideCount; i++) {
+    slides.push({
+      slideNumber: i,
+      title: `Tip #${i - 1}`,
+      content: `This is an important point about ${topic}. Understanding this will help you succeed.`,
+      tip: 'Apply this today!'
+    });
+  }
+  
+  // Last slide: CTA
+  slides.push({
+    slideNumber: slideCount,
+    title: 'Save This Post!',
+    content: 'Found this helpful? Save it for later and follow for more tips like this! 🙌'
+  });
+  
+  return {
+    slides,
+    caption: `Everything you need to know about ${topic}! Which tip resonated with you the most? Let me know in the comments! 👇`,
+    hashtags: generateDefaultHashtags(topic, 'General')
+  };
+}
+
+// Default hashtags generator
+function generateDefaultHashtags(topic, niche) {
+  const topicWords = topic.toLowerCase().split(' ').filter(w => w.length > 3).slice(0, 3);
+  const baseHashtags = [
+    '#tips',
+    '#advice',
+    '#instagood',
+    '#carousel',
+    '#infographic',
+    '#education',
+    '#knowledge',
+    '#lifestyle',
+    '#growth',
+    '#success'
+  ];
+  
+  const topicHashtags = topicWords.map(w => `#${w.replace(/[^a-z0-9]/g, '')}`);
+  const nicheHashtag = niche ? `#${niche.toLowerCase().replace(/[^a-z0-9]/g, '')}` : '';
+  
+  return [...topicHashtags, nicheHashtag, ...baseHashtags].filter(Boolean).slice(0, 15);
+}
+
+/**
  * Start Auto-Pilot V2
  * POST /api/ai/autopilot/v2/start
  */

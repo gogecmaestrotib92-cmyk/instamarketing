@@ -94,6 +94,27 @@ export const saveImageToHub = ({ name, url, caption, tags = [], source, metadata
 };
 
 /**
+ * Save a carousel to the Asset Hub
+ * Saves carousel slides content (text-based)
+ */
+export const saveCarouselToHub = ({ slides, caption, hashtags, topic, niche, tone }) => {
+  return saveAssetToHub({
+    type: 'carousel',
+    name: topic || 'Generated Carousel',
+    url: null, // No URL for text-based carousel
+    caption: caption || '',
+    tags: hashtags || [],
+    source: 'CarouselCreate',
+    metadata: {
+      slides,
+      slideCount: slides?.length || 0,
+      niche,
+      tone
+    }
+  });
+};
+
+/**
  * Get all assets from the Asset Hub
  * @param {string} [type] - Optional filter by type
  * @returns {array} Array of assets
@@ -133,6 +154,7 @@ const assetService = {
   saveAssetToHub,
   saveVideoToHub,
   saveImageToHub,
+  saveCarouselToHub,
   getAssetsFromHub,
   deleteAssetFromHub
 };

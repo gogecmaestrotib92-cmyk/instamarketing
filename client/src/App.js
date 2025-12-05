@@ -32,6 +32,7 @@ import BusinessVideo from './pages/BusinessVideo';
 import BusinessTrending from './pages/BusinessTrending';
 import BusinessHub from './pages/BusinessHub';
 import EcommerceCreate from './pages/EcommerceCreate';
+import CarouselCreate from './pages/CarouselCreate';
 
 // SEO Landing Pages
 import {
@@ -206,7 +207,7 @@ function AppRoutes() {
         <Route path="create/ecommerce/product-photoshoot" element={<ComingSoon title="Product Photo Shoot" description="Product with AI backgrounds" />} />
 
         {/* New Content Types */}
-        <Route path="create/carousel" element={<ComingSoon title="Carousel" description="Multi-slide carousel posts" />} />
+        <Route path="create/carousel" element={<CarouselCreate />} />
         <Route path="create/quotes" element={<ComingSoon title="Quotes" description="Inspirational quote graphics" />} />
         <Route path="create/memes" element={<ComingSoon title="Memes" description="Viral meme content" />} />
         <Route path="create/manual-post" element={<ComingSoon title="Manual Post" description="Create custom posts" />} />
