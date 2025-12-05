@@ -13,7 +13,9 @@ import {
   FiX,
   FiCheck,
   FiLink,
-  FiSend
+  FiSend,
+  FiCopy,
+  FiEdit2
 } from 'react-icons/fi';
 import './AssetHub.css';
 
@@ -25,6 +27,9 @@ const AssetHub = () => {
   const [previewAsset, setPreviewAsset] = useState(null);
   const [selectedAssets, setSelectedAssets] = useState([]);
   const [sortBy, setSortBy] = useState('newest');
+  const [captionCopied, setCaptionCopied] = useState(false);
+  const [editingCaption, setEditingCaption] = useState(false);
+  const [editedCaption, setEditedCaption] = useState('');
 
   // Load assets from localStorage (in production, would be from API)
   useEffect(() => {
@@ -410,30 +415,154 @@ const AssetHub = () => {
 
         {/* Preview Modal */}
         {previewAsset && (
-          <div className="preview-modal" onClick={() => setPreviewAsset(null)}>
+          <div className="preview-modal" onClick={() => { setPreviewAsset(null); setEditingCaption(false); }}>
             <div className="preview-content" onClick={(e) => e.stopPropagation()}>
-              <button className="preview-close" onClick={() => setPreviewAsset(null)}>
+              <button className="preview-close" onClick={() => { setPreviewAsset(null); setEditingCaption(false); }}>
                 <FiX />
               </button>
               
-              {previewAsset.type === 'video' ? (
-                <video src={previewAsset.url} controls autoPlay />
-              ) : previewAsset.type === 'carousel' ? (
-                <div className="preview-carousel">
-                  {previewAsset.images?.map((img, i) => (
-                    <img key={i} src={img} alt="" />
-                  ))}
-                </div>
-              ) : (
-                <img src={previewAsset.url} alt={previewAsset.name} />
-              )}
+              <div className="preview-media">
+                {previewAsset.type === 'video' ? (
+                  <video src={previewAsset.url} controls autoPlay />
+                ) : previewAsset.type === 'carousel' ? (
+                  <div className="preview-carousel">
+                    {previewAsset.images?.map((img, i) => (
+                      <img key={i} src={img} alt="" />
+                    ))}
+                  </div>
+                ) : (
+                  <img src={previewAsset.url} alt={previewAsset.name} />
+                )}
+              </div>
               
-              <div className="preview-info">
-                <h3>{previewAsset.name || 'Untitled'}</h3>
-                {previewAsset.caption && <p>{previewAsset.caption}</p>}
-                <div className="preview-meta">
-                  <span><FiCalendar /> {formatDate(previewAsset.createdAt)}</span>
-                  <span>{previewAsset.type}</span>
+              <div className="preview-sidebar">
+                {/* Title & Meta */}
+                <div className="preview-header">
+                  <h3>{previewAsset.name || 'Untitled'}</h3>
+                  <div className="preview-meta">
+                    <span><FiCalendar /> {formatDate(previewAsset.createdAt)}</span>
+                    <span className="asset-type">{getTypeIcon(previewAsset.type)} {previewAsset.type}</span>
+                  </div>
+                </div>
+                
+                {/* Caption/Description Section */}
+                <div className="preview-caption-section">
+                  <div className="caption-header">
+                    <h4>📝 Instagram Caption</h4>
+                    <div className="caption-actions">
+                      <button 
+                        className={`btn-copy-caption ${captionCopied ? 'copied' : ''}`}
+                        onClick={() => {
+                          const caption = previewAsset.caption || previewAsset.description || '';
+                          navigator.clipboard.writeText(caption).then(() => {
+                            setCaptionCopied(true);
+                            setTimeout(() => setCaptionCopied(false), 2000);
+                          });
+                        }}
+                      >
+                        <FiCopy />
+                        {captionCopied ? 'Copied!' : 'Copy'}
+                      </button>
+                      <button 
+                        className="btn-edit-caption"
+                        onClick={() => {
+                          setEditingCaption(!editingCaption);
+                          setEditedCaption(previewAsset.caption || previewAsset.description || '');
+                        }}
+                      >
+                        <FiEdit2 />
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {editingCaption ? (
+                    <div className="caption-edit-area">
+                      <textarea
+                        value={editedCaption}
+                        onChange={(e) => setEditedCaption(e.target.value)}
+                        placeholder="Add a caption for Instagram..."
+                        rows={6}
+                      />
+                      <div className="caption-edit-actions">
+                        <button 
+                          className="btn-cancel"
+                          onClick={() => setEditingCaption(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          className="btn-save-caption"
+                          onClick={() => {
+                            // Update the asset caption
+                            const updatedAssets = assets.map(a => 
+                              a.id === previewAsset.id 
+                                ? { ...a, caption: editedCaption }
+                                : a
+                            );
+                            setAssets(updatedAssets);
+                            localStorage.setItem('assetHub', JSON.stringify(updatedAssets));
+                            setPreviewAsset({ ...previewAsset, caption: editedCaption });
+                            setEditingCaption(false);
+                          }}
+                        >
+                          <FiCheck /> Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="caption-display">
+                      {previewAsset.caption || previewAsset.description ? (
+                        <p>{previewAsset.caption || previewAsset.description}</p>
+                      ) : (
+                        <p className="no-caption">No caption added yet. Click Edit to add one.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Hashtags Section */}
+                {previewAsset.hashtags && previewAsset.hashtags.length > 0 && (
+                  <div className="preview-hashtags-section">
+                    <h4>#️⃣ Hashtags</h4>
+                    <div className="hashtags-list">
+                      {previewAsset.hashtags.map((tag, i) => (
+                        <span key={i} className="hashtag">#{tag}</span>
+                      ))}
+                    </div>
+                    <button 
+                      className="btn-copy-hashtags"
+                      onClick={() => {
+                        const hashtagsText = previewAsset.hashtags.map(t => `#${t}`).join(' ');
+                        navigator.clipboard.writeText(hashtagsText);
+                        alert('Hashtags copied!');
+                      }}
+                    >
+                      <FiCopy /> Copy Hashtags
+                    </button>
+                  </div>
+                )}
+                
+                {/* Quick Actions */}
+                <div className="preview-actions">
+                  <button 
+                    className="btn-preview-action primary"
+                    onClick={() => handlePublish(previewAsset)}
+                  >
+                    <FiSend /> Publish to Instagram
+                  </button>
+                  <button 
+                    className="btn-preview-action"
+                    onClick={() => handleDownload(previewAsset)}
+                  >
+                    <FiDownload /> Download
+                  </button>
+                  <button 
+                    className="btn-preview-action"
+                    onClick={() => handleShareLink(previewAsset)}
+                  >
+                    <FiLink /> Copy Link
+                  </button>
                 </div>
               </div>
             </div>
