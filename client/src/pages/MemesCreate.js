@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { FiArrowLeft, FiDownload, FiCopy, FiSave, FiTrash2, FiRefreshCw, FiUpload, FiEdit2, FiImage, FiHash, FiFileText, FiZap } from 'react-icons/fi';
+import { FiArrowLeft, FiDownload, FiCopy, FiSave, FiTrash2, FiRefreshCw, FiUpload, FiEdit2, FiImage, FiHash, FiFileText, FiZap, FiSearch, FiX } from 'react-icons/fi';
+import api from '../services/api';
 import './MemesCreate.css';
 
 // Default meme backgrounds
@@ -37,6 +38,9 @@ function MemesCreate() {
   const [savedDrafts, setSavedDrafts] = useState([]);
   const [showDrafts, setShowDrafts] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [isSearchingImages, setIsSearchingImages] = useState(false);
+  const [suggestedImages, setSuggestedImages] = useState([]);
+  const [showImagePicker, setShowImagePicker] = useState(false);
   
   // Refs
   const fileInputRef = useRef(null);
@@ -94,6 +98,49 @@ function MemesCreate() {
     } finally {
       setIsGenerating(false);
     }
+  };
+  
+  // Search for images based on AI suggestion
+  const searchForSuggestedImage = async (suggestion) => {
+    setIsSearchingImages(true);
+    setSuggestedImages([]);
+    
+    try {
+      // Extract key terms from suggestion for better search
+      const searchQuery = suggestion
+        .replace(/^(A |An |The )/i, '')
+        .replace(/\./g, '')
+        .trim();
+      
+      const response = await api.get('/stock/search', {
+        params: {
+          query: searchQuery,
+          type: 'photos',
+          perPage: 8
+        }
+      });
+      
+      if (response.data.results && response.data.results.length > 0) {
+        setSuggestedImages(response.data.results);
+        setShowImagePicker(true);
+        showNotification(`Found ${response.data.results.length} matching images! 🖼️`);
+      } else {
+        showNotification('No images found. Try uploading your own!', 'error');
+      }
+    } catch (error) {
+      console.error('Image search error:', error);
+      showNotification('Failed to search for images', 'error');
+    } finally {
+      setIsSearchingImages(false);
+    }
+  };
+  
+  // Select image from suggestions
+  const selectSuggestedImage = (imageUrl) => {
+    setCustomImage(imageUrl);
+    setSelectedBackground(null);
+    setShowImagePicker(false);
+    showNotification('Image applied! 🎨');
   };
   
   // Handle custom image upload
@@ -463,6 +510,17 @@ function MemesCreate() {
             <div className="form-section template-suggestion">
               <h3><FiImage /> AI Suggestion</h3>
               <p>{templateSuggestion}</p>
+              <button
+                className="find-image-btn"
+                onClick={() => searchForSuggestedImage(templateSuggestion)}
+                disabled={isSearchingImages}
+              >
+                {isSearchingImages ? (
+                  <><FiRefreshCw className="spinning" /> Searching...</>
+                ) : (
+                  <><FiSearch /> Find Matching Image</>
+                )}
+              </button>
             </div>
           )}
           
@@ -609,6 +667,36 @@ function MemesCreate() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+      
+      {/* Image Picker Modal */}
+      {showImagePicker && (
+        <div className="image-picker-overlay" onClick={() => setShowImagePicker(false)}>
+          <div className="image-picker-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="image-picker-header">
+              <h3>Choose an Image</h3>
+              <button className="close-btn" onClick={() => setShowImagePicker(false)}>
+                <FiX />
+              </button>
+            </div>
+            <p className="image-picker-hint">Click an image to use it as your meme background</p>
+            <div className="image-picker-grid">
+              {suggestedImages.map((image, index) => (
+                <div
+                  key={index}
+                  className="image-picker-item"
+                  onClick={() => selectSuggestedImage(image.src?.large || image.src?.medium || image.url)}
+                >
+                  <img 
+                    src={image.src?.medium || image.src?.small || image.url} 
+                    alt={image.alt || `Suggested image ${index + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="image-picker-credit">Images from Pexels</p>
           </div>
         </div>
       )}
