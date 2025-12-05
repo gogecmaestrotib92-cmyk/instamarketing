@@ -191,10 +191,6 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="video-edit" element={<VideoEdit />} />
         
-        {/* Create New */}
-        <Route path="create/virtual-actor" element={<ComingSoon title="Virtual Actor" description="UGC for storytelling and ads" />} />
-        <Route path="create/virtual-actor-ecomm" element={<ComingSoon title="Virtual Actor E-COMM" description="E-commerce UGC content" />} />
-        
         {/* Business - main page with cards */}
         <Route path="create/business" element={<BusinessCreate />} />
         <Route path="create/business/trending" element={<BusinessTrending />} />

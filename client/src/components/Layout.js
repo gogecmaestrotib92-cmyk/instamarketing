@@ -148,9 +148,6 @@ const Layout = () => {
       key: 'create-new',
       emphasized: 'primary',
       children: [
-        // Virtual Actor
-        { path: '/app/create/virtual-actor', icon: FiUser, label: 'Virtual Actor', description: 'UGC for storytelling and ads' },
-        { path: '/app/create/virtual-actor-ecomm', icon: FiShoppingBag, label: 'Virtual Actor E-COMM', description: 'E-commerce UGC content' },
         // Business - single page with cards
         { path: '/app/create/business', icon: FiBriefcase, label: 'Business', description: 'Trending, Video, Ad Creatives' },
         // E-Commerce - single page with cards
