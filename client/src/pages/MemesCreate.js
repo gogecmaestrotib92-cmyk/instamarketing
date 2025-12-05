@@ -106,11 +106,35 @@ function MemesCreate() {
     setSuggestedImages([]);
     
     try {
-      // Extract key terms from suggestion for better search
-      const searchQuery = suggestion
-        .replace(/^(A |An |The )/i, '')
-        .replace(/\./g, '')
-        .trim();
+      // Extract key visual keywords from suggestion for better stock photo search
+      // Remove filler words and keep only meaningful visual terms
+      const stopWords = ['a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+        'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should',
+        'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought', 'used',
+        'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into',
+        'through', 'during', 'before', 'after', 'above', 'below', 'between',
+        'and', 'but', 'or', 'nor', 'so', 'yet', 'both', 'either', 'neither',
+        'that', 'which', 'who', 'whom', 'whose', 'this', 'these', 'those',
+        'what', 'whatever', 'when', 'where', 'how', 'why', 'whether',
+        'very', 'really', 'quite', 'rather', 'too', 'also', 'just', 'only',
+        'even', 'still', 'already', 'almost', 'about', 'like', 'looking'];
+      
+      // Clean and extract keywords from suggestion
+      const suggestionKeywords = suggestion
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !stopWords.includes(word))
+        .slice(0, 4) // Take up to 4 keywords
+        .join(' ');
+      
+      // Combine topic with suggestion keywords for best results
+      // Topic is most important, then key visual elements from suggestion
+      const searchQuery = topic.trim() 
+        ? `${topic.trim()} ${suggestionKeywords}`.trim()
+        : suggestionKeywords || suggestion.slice(0, 50);
+      
+      console.log('🔍 Meme image search query:', searchQuery);
       
       const response = await api.get('/ai/stock/search', {
         params: {
