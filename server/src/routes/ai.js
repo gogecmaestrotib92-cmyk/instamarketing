@@ -4252,6 +4252,79 @@ router.post('/stock-video/search', async (req, res) => {
   }
 });
 
+// Pexels API key for photo search
+const PEXELS_HARDCODED_KEY = '9kV0qJ9k1b1Ou9BTGXFDPyFrqjU4oqGsuJ0tbzor5r2O942zz6WMyIyl';
+const getPexelsKey = () => process.env.PEXELS_API_KEY || PEXELS_HARDCODED_KEY;
+
+/**
+ * Search stock photos from Pexels
+ * GET /api/ai/stock/search
+ */
+router.get('/stock/search', async (req, res) => {
+  try {
+    const { query, type = 'photos', perPage = 8 } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    const PEXELS_API_KEY = getPexelsKey();
+    if (!PEXELS_API_KEY) {
+      return res.status(500).json({ error: 'Pexels API key not configured' });
+    }
+
+    console.log(`🖼️ Stock photo search: "${query}" (${perPage} results)`);
+
+    const url = new URL('https://api.pexels.com/v1/search');
+    url.searchParams.set('query', query);
+    url.searchParams.set('per_page', perPage);
+    url.searchParams.set('orientation', 'square'); // Good for memes
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        'Authorization': PEXELS_API_KEY
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Pexels API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Transform Pexels response to simpler format
+    const results = (data.photos || []).map(photo => ({
+      id: photo.id,
+      width: photo.width,
+      height: photo.height,
+      url: photo.url,
+      photographer: photo.photographer,
+      alt: photo.alt || query,
+      src: {
+        original: photo.src.original,
+        large: photo.src.large,
+        large2x: photo.src.large2x,
+        medium: photo.src.medium,
+        small: photo.src.small,
+        portrait: photo.src.portrait,
+        landscape: photo.src.landscape,
+        tiny: photo.src.tiny
+      }
+    }));
+
+    console.log(`   Found ${results.length} photos`);
+
+    res.json({
+      success: true,
+      results,
+      total: data.total_results || results.length
+    });
+  } catch (error) {
+    console.error('Stock photo search error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 /**
  * Get a random stock video for a topic
  * POST /api/ai/stock-video/random

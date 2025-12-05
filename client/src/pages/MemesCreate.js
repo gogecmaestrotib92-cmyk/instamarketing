@@ -112,7 +112,7 @@ function MemesCreate() {
         .replace(/\./g, '')
         .trim();
       
-      const response = await api.get('/stock/search', {
+      const response = await api.get('/ai/stock/search', {
         params: {
           query: searchQuery,
           type: 'photos',
