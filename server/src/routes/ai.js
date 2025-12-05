@@ -3261,6 +3261,284 @@ function generateDefaultHashtags(topic, niche) {
 }
 
 /**
+ * Generate Quote Content
+ * POST /api/ai/generate-quote
+ * 
+ * Creates an inspirational or themed quote with optional author attribution
+ */
+router.post('/generate-quote', async (req, res) => {
+  try {
+    const { topic, niche = 'General', tone = 'inspiring', quoteStyle = 'one-liner' } = req.body;
+    
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+    
+    console.log('💬 Generating quote for:', { topic, niche, tone, quoteStyle });
+    
+    // Tone descriptions
+    const toneDescriptions = {
+      inspiring: 'motivational, uplifting, and empowering',
+      professional: 'authoritative, wise, and polished',
+      casual: 'friendly, relatable, and conversational',
+      humorous: 'witty, clever, and entertaining',
+      philosophical: 'deep, thought-provoking, and reflective',
+      bold: 'direct, powerful, and attention-grabbing'
+    };
+    
+    // Quote style instructions
+    const styleInstructions = {
+      'one-liner': 'Create a single powerful statement that makes an impact.',
+      'two-part': 'Create a quote with two connected parts, like "First part. Second part that builds on it."',
+      'question-answer': 'Create a rhetorical question followed by a powerful answer.',
+      'story-quote': 'Create a mini-narrative quote that tells a quick story or uses metaphor.'
+    };
+    
+    const toneStyle = toneDescriptions[tone] || toneDescriptions.inspiring;
+    const styleGuide = styleInstructions[quoteStyle] || styleInstructions['one-liner'];
+    
+    const prompt = `Create an Instagram quote post about: "${topic}"
+Niche/Industry: ${niche}
+Tone: ${toneStyle}
+Style: ${quoteStyle} - ${styleGuide}
+
+Generate a quote that is:
+- Memorable and shareable
+- Relevant to the topic and niche
+- Formatted for social media (not too long)
+- Original and authentic-sounding
+
+Also suggest:
+- An author attribution (can be "Unknown", a created persona, or leave empty for the user)
+- A background style suggestion (gradient colors that match the mood)
+- A short caption for the post
+- 5-8 relevant hashtags
+
+Return ONLY valid JSON in this exact format:
+{
+  "quote": "The quote text here...",
+  "author": "Author Name or empty string",
+  "backgroundSuggestion": "sunset gradient with warm oranges and purples",
+  "caption": "Short caption for the post ✨",
+  "hashtags": ["#quote", "#motivation", ...]
+}`;
+
+    let result = null;
+    
+    if (openaiService) {
+      try {
+        const response = await openaiService.chat([
+          { role: 'system', content: 'You are an expert at crafting memorable, shareable quotes for Instagram. Return only valid JSON, no markdown.' },
+          { role: 'user', content: prompt }
+        ]);
+        
+        if (response.success && response.content) {
+          // Extract JSON from response
+          let jsonStr = response.content;
+          
+          // Remove markdown code blocks if present
+          jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          
+          // Try to find JSON object
+          const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            jsonStr = jsonMatch[0];
+          }
+          
+          result = JSON.parse(jsonStr);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse quote response:', parseError);
+      }
+    }
+    
+    // Fallback if AI fails
+    if (!result || !result.quote) {
+      result = generateFallbackQuote(topic, tone);
+    }
+    
+    console.log('✅ Quote generated:', result.quote?.substring(0, 50) + '...');
+    
+    res.json({
+      success: true,
+      quote: result.quote,
+      author: result.author || '',
+      backgroundSuggestion: result.backgroundSuggestion || 'gradient with soft blues and purples',
+      caption: result.caption || `${result.quote?.substring(0, 50)}... ✨`,
+      hashtags: result.hashtags || ['#quotes', '#motivation', '#inspiration', '#mindset', '#success']
+    });
+  } catch (error) {
+    console.error('Quote generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fallback quote generator
+function generateFallbackQuote(topic, tone) {
+  const fallbackQuotes = {
+    inspiring: [
+      { quote: `Every step you take towards ${topic} is a step towards becoming who you're meant to be.`, author: '' },
+      { quote: `The journey of mastering ${topic} begins with a single moment of courage.`, author: '' }
+    ],
+    professional: [
+      { quote: `Excellence in ${topic} isn't a destination—it's a continuous commitment to growth.`, author: '' },
+      { quote: `In the world of ${topic}, those who adapt fastest lead the way.`, author: '' }
+    ],
+    humorous: [
+      { quote: `They said I couldn't master ${topic}. I said, "Watch me... after this coffee."`, author: '' },
+      { quote: `Behind every success in ${topic} is someone who said "I'll figure it out."`, author: '' }
+    ]
+  };
+  
+  const quotes = fallbackQuotes[tone] || fallbackQuotes.inspiring;
+  const selected = quotes[Math.floor(Math.random() * quotes.length)];
+  
+  return {
+    quote: selected.quote,
+    author: selected.author,
+    backgroundSuggestion: 'elegant gradient with deep purples and soft pinks',
+    caption: `Words to live by. 💫 What's your favorite quote about ${topic}?`,
+    hashtags: ['#quotes', '#motivation', '#inspiration', '#mindset', '#dailyquotes', '#wisdom']
+  };
+}
+
+/**
+ * Generate Meme Content
+ * POST /api/ai/generate-meme
+ * 
+ * Creates meme text (top and bottom) for classic meme format
+ */
+router.post('/generate-meme', async (req, res) => {
+  try {
+    const { topic, niche = 'General', humorStyle = 'relatable', memeFormat = 'classic' } = req.body;
+    
+    if (!topic) {
+      return res.status(400).json({ error: 'Topic is required' });
+    }
+    
+    console.log('😂 Generating meme for:', { topic, niche, humorStyle, memeFormat });
+    
+    // Humor style descriptions
+    const humorDescriptions = {
+      relatable: 'everyday situations people can relate to, using "When you..." or "Me when..." format',
+      sarcastic: 'dry, ironic humor with a twist of sarcasm',
+      absurd: 'random, unexpected, and silly humor that catches people off guard',
+      wholesome: 'positive, feel-good humor that makes people smile',
+      dark: 'edgy but not offensive humor with unexpected punchlines',
+      corporate: 'workplace and business humor that professionals can relate to'
+    };
+    
+    const humorGuide = humorDescriptions[humorStyle] || humorDescriptions.relatable;
+    
+    const prompt = `Create a meme about: "${topic}"
+Niche/Industry: ${niche}
+Humor Style: ${humorStyle} - ${humorGuide}
+
+Generate meme text that:
+- Is SHORT and punchy (max 10 words per line)
+- Works in classic top text / bottom text format
+- Is funny and shareable
+- Doesn't require specific knowledge to understand
+- Uses common meme language patterns
+
+The format should follow classic meme structure:
+- Top text: Setup or context
+- Bottom text: Punchline or twist
+
+Also provide:
+- A suggested meme template or image description
+- A caption for the post
+- 5-8 relevant hashtags
+
+Return ONLY valid JSON in this exact format:
+{
+  "topText": "SHORT TOP TEXT HERE",
+  "bottomText": "PUNCHY BOTTOM TEXT",
+  "templateSuggestion": "Description of what kind of image would work well",
+  "caption": "Funny caption for the post 😂",
+  "hashtags": ["#meme", "#funny", ...]
+}`;
+
+    let result = null;
+    
+    if (openaiService) {
+      try {
+        const response = await openaiService.chat([
+          { role: 'system', content: 'You are a meme lord expert at creating viral, shareable memes. Keep text SHORT and punchy. Return only valid JSON, no markdown.' },
+          { role: 'user', content: prompt }
+        ]);
+        
+        if (response.success && response.content) {
+          // Extract JSON from response
+          let jsonStr = response.content;
+          
+          // Remove markdown code blocks if present
+          jsonStr = jsonStr.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+          
+          // Try to find JSON object
+          const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            jsonStr = jsonMatch[0];
+          }
+          
+          result = JSON.parse(jsonStr);
+        }
+      } catch (parseError) {
+        console.error('Failed to parse meme response:', parseError);
+      }
+    }
+    
+    // Fallback if AI fails
+    if (!result || !result.topText) {
+      result = generateFallbackMeme(topic, humorStyle);
+    }
+    
+    console.log('✅ Meme generated:', result.topText, '/', result.bottomText);
+    
+    res.json({
+      success: true,
+      topText: result.topText,
+      bottomText: result.bottomText,
+      templateSuggestion: result.templateSuggestion || 'A reaction image that matches the emotion',
+      caption: result.caption || `Tag someone who needs to see this 😂`,
+      hashtags: result.hashtags || ['#meme', '#funny', '#relatable', '#humor', '#lol']
+    });
+  } catch (error) {
+    console.error('Meme generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Fallback meme generator
+function generateFallbackMeme(topic, humorStyle) {
+  const fallbackMemes = {
+    relatable: [
+      { topText: `ME TRYING TO UNDERSTAND ${topic.toUpperCase()}`, bottomText: 'MY BRAIN: NOPE' },
+      { topText: `WHEN SOMEONE MENTIONS ${topic.toUpperCase()}`, bottomText: 'AND I ACTUALLY KNOW WHAT THEY\'RE TALKING ABOUT' }
+    ],
+    sarcastic: [
+      { topText: `OH YOU KNOW ABOUT ${topic.toUpperCase()}?`, bottomText: 'PLEASE, TELL ME MORE' },
+      { topText: `${topic.toUpperCase()} EXPERT`, bottomText: 'AFTER WATCHING ONE YOUTUBE VIDEO' }
+    ],
+    wholesome: [
+      { topText: `FINALLY GETTING ${topic.toUpperCase()}`, bottomText: 'BEST FEELING EVER' },
+      { topText: `WHEN ${topic.toUpperCase()} GOES RIGHT`, bottomText: 'PURE JOY' }
+    ]
+  };
+  
+  const memes = fallbackMemes[humorStyle] || fallbackMemes.relatable;
+  const selected = memes[Math.floor(Math.random() * memes.length)];
+  
+  return {
+    topText: selected.topText,
+    bottomText: selected.bottomText,
+    templateSuggestion: 'Use a popular reaction meme template',
+    caption: `Who else? 😂 Tag a friend!`,
+    hashtags: ['#meme', '#funny', '#relatable', '#humor', '#lol', '#memesdaily']
+  };
+}
+
+/**
  * Start Auto-Pilot V2
  * POST /api/ai/autopilot/v2/start
  */

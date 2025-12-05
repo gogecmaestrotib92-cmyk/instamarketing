@@ -115,6 +115,48 @@ export const saveCarouselToHub = ({ slides, caption, hashtags, topic, niche, ton
 };
 
 /**
+ * Save a Quote to the Asset Hub
+ */
+export const saveQuoteToHub = ({ quote, author, caption, hashtags, topic, niche, tone, backgroundId }) => {
+  return saveAssetToHub({
+    type: 'quote',
+    name: topic || 'Generated Quote',
+    url: null, // No URL for text-based quote
+    caption: caption || '',
+    tags: hashtags || [],
+    source: 'QuotesCreate',
+    metadata: {
+      quote,
+      author,
+      niche,
+      tone,
+      backgroundId
+    }
+  });
+};
+
+/**
+ * Save a Meme to the Asset Hub
+ */
+export const saveMemeToHub = ({ topText, bottomText, caption, hashtags, topic, niche, humorStyle, backgroundId, customImage }) => {
+  return saveAssetToHub({
+    type: 'meme',
+    name: topic || 'Generated Meme',
+    url: customImage || null,
+    caption: caption || '',
+    tags: hashtags || [],
+    source: 'MemesCreate',
+    metadata: {
+      topText,
+      bottomText,
+      niche,
+      humorStyle,
+      backgroundId
+    }
+  });
+};
+
+/**
  * Get all assets from the Asset Hub
  * @param {string} [type] - Optional filter by type
  * @returns {array} Array of assets
@@ -155,6 +197,8 @@ const assetService = {
   saveVideoToHub,
   saveImageToHub,
   saveCarouselToHub,
+  saveQuoteToHub,
+  saveMemeToHub,
   getAssetsFromHub,
   deleteAssetFromHub
 };
