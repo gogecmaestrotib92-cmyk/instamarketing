@@ -453,9 +453,9 @@ body.sidebar-open {
   color: #9b8ec4;
 }
 
-/* Memes - Warm yellow (fun/humor) */
+/* Memes - Bright yellow (fun/humor) */
 .nav-item[href="/app/create/memes"] .nav-icon {
-  color: #d4b85e;
+  color: #e6b800;
 }
 
 /* Manual Post - Soft green (edit/write) */
