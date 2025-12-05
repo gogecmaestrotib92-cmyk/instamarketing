@@ -6,25 +6,27 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 16px;
   backdrop-filter: blur(4px);
+  overflow: auto;
 }
 
 .preview-modal {
   background: var(--bg-secondary, #1e1e2e);
   border-radius: 16px;
-  max-width: 900px;
+  max-width: 800px;
   width: 100%;
-  max-height: 90vh;
+  max-height: calc(100vh - 32px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  margin: auto;
 }
 
 /* Header */
@@ -92,8 +94,8 @@
 
 /* Phone Frame */
 .preview-phone-frame {
-  flex: 0 0 350px;
-  padding: 24px;
+  flex: 0 0 300px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -102,19 +104,19 @@
 }
 
 .phone-notch {
-  width: 120px;
-  height: 28px;
+  width: 100px;
+  height: 24px;
   background: #000;
-  border-radius: 0 0 16px 16px;
-  margin-bottom: -14px;
+  border-radius: 0 0 14px 14px;
+  margin-bottom: -12px;
   z-index: 1;
 }
 
 .phone-screen {
-  width: 280px;
-  height: 500px;
+  width: 240px;
+  height: 420px;
   background: #000;
-  border-radius: 32px;
+  border-radius: 28px;
   border: 3px solid #333;
   overflow: hidden;
   position: relative;
@@ -501,7 +503,11 @@
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .preview-modal {
+    max-width: 95vw;
+  }
+  
   .preview-modal-content {
     flex-direction: column;
   }
@@ -512,11 +518,44 @@
   }
 
   .phone-screen {
-    width: 240px;
-    height: 420px;
+    width: 200px;
+    height: 350px;
+  }
+  
+  .phone-notch {
+    width: 80px;
+    height: 20px;
   }
 
   .preview-sidebar {
     padding: 16px;
+    max-height: 300px;
+  }
+  
+  .preview-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-modal-overlay {
+    padding: 8px;
+  }
+  
+  .preview-modal {
+    max-height: calc(100vh - 16px);
+  }
+  
+  .phone-screen {
+    width: 180px;
+    height: 320px;
+  }
+  
+  .preview-modal-header {
+    padding: 12px 16px;
+  }
+  
+  .preview-modal-header h2 {
+    font-size: 14px;
   }
 }
