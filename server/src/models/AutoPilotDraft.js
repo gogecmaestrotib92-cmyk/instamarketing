@@ -26,8 +26,7 @@ const CaptionSchema = new mongoose.Schema({
 
 const AutoPilotDraftSchema = new mongoose.Schema({
   user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    type: String,  // Changed from ObjectId to String to support anonymous/demo users
     required: true
   },
   

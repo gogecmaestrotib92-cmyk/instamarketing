@@ -3544,7 +3544,7 @@ async function generateSingleImagePreview(topic, brandDetails) {
         aspectRatio: '1:1'
       });
       if (result.success) {
-        imageUrl = result.url;
+        imageUrl = result.imageUrl;
       }
     } catch (e) {
       console.log('Image generation failed:', e.message);
@@ -3606,7 +3606,7 @@ async function generateCarouselPreview(topic, brandDetails) {
           aspectRatio: '4:5' // 4:5 ratio for Instagram
         });
         if (result.success) {
-          imageUrl = result.url;
+          imageUrl = result.imageUrl;
         }
       } catch (e) {
         console.log(`Slide ${i + 1} generation failed:`, e.message);
