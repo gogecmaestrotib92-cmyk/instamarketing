@@ -455,6 +455,28 @@ function MemesCreate() {
             </div>
           )}
           
+          {/* AI Image Suggestion - Moved BEFORE Background */}
+          {templateSuggestion && (
+            <div className="form-section ai-suggestion-card">
+              <div className="ai-suggestion-header">
+                <span className="ai-badge">✨ AI</span>
+                <h3>Suggested Image</h3>
+              </div>
+              <p className="ai-suggestion-text">"{templateSuggestion}"</p>
+              <button
+                className="find-image-btn"
+                onClick={() => searchForSuggestedImage(templateSuggestion)}
+                disabled={isSearchingImages}
+              >
+                {isSearchingImages ? (
+                  <><FiRefreshCw className="spinning" /> Searching...</>
+                ) : (
+                  <><FiSearch /> Find Matching Image</>
+                )}
+              </button>
+            </div>
+          )}
+          
           {/* Background Selection */}
           <div className="form-section">
             <h3><FiImage /> Background</h3>
@@ -504,25 +526,6 @@ function MemesCreate() {
               ))}
             </div>
           </div>
-          
-          {/* Template Suggestion */}
-          {templateSuggestion && (
-            <div className="form-section template-suggestion">
-              <h3><FiImage /> AI Suggestion</h3>
-              <p>{templateSuggestion}</p>
-              <button
-                className="find-image-btn"
-                onClick={() => searchForSuggestedImage(templateSuggestion)}
-                disabled={isSearchingImages}
-              >
-                {isSearchingImages ? (
-                  <><FiRefreshCw className="spinning" /> Searching...</>
-                ) : (
-                  <><FiSearch /> Find Matching Image</>
-                )}
-              </button>
-            </div>
-          )}
           
           {/* Actions */}
           <div className="form-section actions-section">
