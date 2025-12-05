@@ -419,6 +419,87 @@ body.sidebar-open {
 }
 
 /* ================================================
+   ICON COLORS BY SECTION
+   Subtle, contextual colors for nav icons
+   ================================================ */
+
+/* Dashboard - Soft blue (home/overview) */
+.nav-item[href="/app/dashboard"] .nav-icon {
+  color: #6b8cae;
+}
+
+/* Create New parent - Accent purple */
+.nav-item-parent .nav-icon {
+  color: #8b7ec8;
+}
+
+/* Business - Professional blue */
+.nav-item[href="/app/create/business"] .nav-icon {
+  color: #5b8dc9;
+}
+
+/* E-Commerce - Warm orange (shopping) */
+.nav-item[href="/app/create/ecommerce"] .nav-icon {
+  color: #d4915e;
+}
+
+/* Carousel - Teal/cyan (layers) */
+.nav-item[href="/app/create/carousel"] .nav-icon {
+  color: #5bb5b5;
+}
+
+/* Quotes - Soft purple (inspiration) */
+.nav-item[href="/app/create/quotes"] .nav-icon {
+  color: #9b8ec4;
+}
+
+/* Memes - Warm yellow (fun/humor) */
+.nav-item[href="/app/create/memes"] .nav-icon {
+  color: #d4b85e;
+}
+
+/* Manual Post - Soft green (edit/write) */
+.nav-item[href="/app/create/manual-post"] .nav-icon {
+  color: #6bae7c;
+}
+
+/* AI Auto-Pilot - Vibrant purple (AI/tech) */
+.nav-item[href="/app/autopilot"] .nav-icon {
+  color: #9775d4;
+}
+
+/* Asset Hub - Amber/folder */
+.nav-item[href="/app/asset-hub"] .nav-icon {
+  color: #c9a05b;
+}
+
+/* Business Hub - Deep blue (data) */
+.nav-item[href="/app/business-hub"] .nav-icon {
+  color: #5b7fc9;
+}
+
+/* Content Calendar - Soft red/coral */
+.nav-item[href="/app/calendar"] .nav-icon {
+  color: #c97878;
+}
+
+/* Settings - Neutral gray */
+.nav-item[href="/app/settings"] .nav-icon {
+  color: #8b9099;
+}
+
+/* Keep colored icons on hover (slightly brighter) */
+.nav-item:hover .nav-icon {
+  filter: brightness(1.15);
+}
+
+/* Active state should use accent color */
+.nav-item.active .nav-icon,
+.nav-child-item.active .nav-icon {
+  color: var(--accent-primary) !important;
+}
+
+/* ================================================
    SIDEBAR FOOTER
    ================================================ */
 .sidebar-footer {
