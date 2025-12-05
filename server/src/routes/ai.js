@@ -3197,6 +3197,558 @@ router.post('/autopilot/v2/stop', (req, res) => {
   });
 });
 
+// ==================== Auto-Pilot Preview/Draft Routes ====================
+
+// Import AutoPilotDraft model
+let AutoPilotDraft = null;
+try {
+  AutoPilotDraft = require('../models/AutoPilotDraft');
+  console.log('✅ AutoPilotDraft model loaded');
+} catch (e) {
+  console.log('AutoPilotDraft model not available:', e.message);
+}
+
+/**
+ * Generate preview content for Auto-Pilot (without posting)
+ * POST /api/ai/autopilot/v2/generate-preview
+ */
+router.post('/autopilot/v2/generate-preview', async (req, res) => {
+  try {
+    const { topic, contentType, brandDetails, userId } = req.body;
+    
+    if (!topic || !contentType) {
+      return res.status(400).json({ error: 'Topic and contentType are required' });
+    }
+    
+    console.log('🎨 Generating preview for:', { topic, contentType });
+    
+    // Create draft record
+    const draft = new AutoPilotDraft({
+      user: userId || 'anonymous',
+      contentType: contentType,
+      topic: topic,
+      brandDetails: brandDetails || {},
+      status: 'generating'
+    });
+    await draft.save();
+    
+    // Generate content based on type
+    let generatedContent = null;
+    const startTime = Date.now();
+    
+    try {
+      switch (contentType) {
+        case 'single_image':
+          generatedContent = await generateSingleImagePreview(topic, brandDetails);
+          break;
+        case 'carousel':
+          generatedContent = await generateCarouselPreview(topic, brandDetails);
+          break;
+        case 'reel':
+        case 'voiceover_video':
+          generatedContent = await generateVideoPreview(topic, contentType, brandDetails);
+          break;
+        default:
+          throw new Error('Unknown content type: ' + contentType);
+      }
+      
+      // Update draft with generated content
+      draft.media = generatedContent.media || [];
+      draft.caption = {
+        text: generatedContent.caption || '',
+        hashtags: generatedContent.hashtags || [],
+        callToAction: brandDetails?.callToAction || ''
+      };
+      draft.preview = {
+        thumbnailUrl: generatedContent.thumbnail,
+        lowResVideoUrl: generatedContent.lowResVideo,
+        generatedAt: new Date()
+      };
+      draft.generationMetadata = {
+        processingTime: Date.now() - startTime,
+        prompt: generatedContent.prompt
+      };
+      draft.status = 'pending_review';
+      await draft.save();
+      
+      console.log('✅ Preview generated successfully:', draft._id);
+      
+      res.json({
+        success: true,
+        draft: draft
+      });
+    } catch (genError) {
+      draft.status = 'failed';
+      draft.generationMetadata = {
+        processingTime: Date.now() - startTime,
+        error: genError.message
+      };
+      await draft.save();
+      throw genError;
+    }
+  } catch (error) {
+    console.error('Preview generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get all drafts for user
+ * GET /api/ai/autopilot/v2/drafts
+ */
+router.get('/autopilot/v2/drafts', async (req, res) => {
+  try {
+    const { userId, status, limit = 50 } = req.query;
+    
+    const query = {};
+    if (userId) query.user = userId;
+    if (status) query.status = status;
+    
+    const drafts = await AutoPilotDraft.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+    
+    res.json({
+      success: true,
+      drafts
+    });
+  } catch (error) {
+    console.error('Get drafts error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get single draft by ID
+ * GET /api/ai/autopilot/v2/drafts/:id
+ */
+router.get('/autopilot/v2/drafts/:id', async (req, res) => {
+  try {
+    const draft = await AutoPilotDraft.findById(req.params.id);
+    
+    if (!draft) {
+      return res.status(404).json({ error: 'Draft not found' });
+    }
+    
+    res.json({
+      success: true,
+      draft
+    });
+  } catch (error) {
+    console.error('Get draft error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Approve draft and optionally schedule
+ * POST /api/ai/autopilot/v2/drafts/:id/approve
+ */
+router.post('/autopilot/v2/drafts/:id/approve', async (req, res) => {
+  try {
+    const { scheduledFor } = req.body;
+    const draft = await AutoPilotDraft.findById(req.params.id);
+    
+    if (!draft) {
+      return res.status(404).json({ error: 'Draft not found' });
+    }
+    
+    if (draft.status !== 'pending_review') {
+      return res.status(400).json({ error: 'Draft is not pending review' });
+    }
+    
+    // For videos, trigger HD render if needed
+    if ((draft.contentType === 'reel' || draft.contentType === 'voiceover_video') && 
+        draft.preview?.lowResVideoUrl && !draft.media?.[0]?.url) {
+      // TODO: Trigger HD video render
+      console.log('🎬 Triggering HD render for approved video');
+    }
+    
+    draft.status = scheduledFor ? 'scheduled' : 'approved';
+    draft.scheduledFor = scheduledFor ? new Date(scheduledFor) : null;
+    await draft.save();
+    
+    console.log('✅ Draft approved:', draft._id, scheduledFor ? `(scheduled for ${scheduledFor})` : '');
+    
+    res.json({
+      success: true,
+      draft
+    });
+  } catch (error) {
+    console.error('Approve draft error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Reject draft
+ * POST /api/ai/autopilot/v2/drafts/:id/reject
+ */
+router.post('/autopilot/v2/drafts/:id/reject', async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const draft = await AutoPilotDraft.findById(req.params.id);
+    
+    if (!draft) {
+      return res.status(404).json({ error: 'Draft not found' });
+    }
+    
+    draft.status = 'rejected';
+    draft.rejectionReason = reason || '';
+    await draft.save();
+    
+    console.log('❌ Draft rejected:', draft._id);
+    
+    res.json({
+      success: true,
+      draft
+    });
+  } catch (error) {
+    console.error('Reject draft error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Regenerate draft content
+ * POST /api/ai/autopilot/v2/drafts/:id/regenerate
+ */
+router.post('/autopilot/v2/drafts/:id/regenerate', async (req, res) => {
+  try {
+    const { adjustments } = req.body; // Optional user feedback
+    const draft = await AutoPilotDraft.findById(req.params.id);
+    
+    if (!draft) {
+      return res.status(404).json({ error: 'Draft not found' });
+    }
+    
+    if (!draft.canRegenerate()) {
+      return res.status(400).json({ 
+        error: 'Maximum regenerations reached',
+        count: draft.regenerationCount,
+        max: draft.maxRegenerations
+      });
+    }
+    
+    console.log('🔄 Regenerating draft:', draft._id);
+    
+    // Update status
+    draft.status = 'generating';
+    draft.regenerationCount += 1;
+    await draft.save();
+    
+    // Regenerate content
+    const startTime = Date.now();
+    let generatedContent = null;
+    
+    try {
+      // Use adjusted topic if provided
+      const topic = adjustments?.topic || draft.topic;
+      
+      switch (draft.contentType) {
+        case 'single_image':
+          generatedContent = await generateSingleImagePreview(topic, draft.brandDetails);
+          break;
+        case 'carousel':
+          generatedContent = await generateCarouselPreview(topic, draft.brandDetails);
+          break;
+        case 'reel':
+        case 'voiceover_video':
+          generatedContent = await generateVideoPreview(topic, draft.contentType, draft.brandDetails);
+          break;
+      }
+      
+      // Update with new content
+      draft.media = generatedContent.media || [];
+      draft.caption = {
+        text: generatedContent.caption || '',
+        hashtags: generatedContent.hashtags || [],
+        callToAction: draft.brandDetails?.callToAction || ''
+      };
+      draft.preview = {
+        thumbnailUrl: generatedContent.thumbnail,
+        lowResVideoUrl: generatedContent.lowResVideo,
+        generatedAt: new Date()
+      };
+      draft.generationMetadata = {
+        processingTime: Date.now() - startTime,
+        prompt: generatedContent.prompt
+      };
+      draft.status = 'pending_review';
+      await draft.save();
+      
+      console.log('✅ Draft regenerated successfully:', draft._id);
+      
+      res.json({
+        success: true,
+        draft
+      });
+    } catch (genError) {
+      draft.status = 'failed';
+      await draft.save();
+      throw genError;
+    }
+  } catch (error) {
+    console.error('Regenerate draft error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Delete draft
+ * DELETE /api/ai/autopilot/v2/drafts/:id
+ */
+router.delete('/autopilot/v2/drafts/:id', async (req, res) => {
+  try {
+    const draft = await AutoPilotDraft.findByIdAndDelete(req.params.id);
+    
+    if (!draft) {
+      return res.status(404).json({ error: 'Draft not found' });
+    }
+    
+    console.log('🗑️ Draft deleted:', req.params.id);
+    
+    res.json({
+      success: true,
+      message: 'Draft deleted'
+    });
+  } catch (error) {
+    console.error('Delete draft error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== Preview Generation Helper Functions ====================
+
+/**
+ * Generate single image preview
+ */
+async function generateSingleImagePreview(topic, brandDetails) {
+  console.log('🖼️ Generating single image preview for:', topic);
+  
+  // Generate caption first
+  const captionResult = await openaiService.generateCaption(topic, {
+    tone: brandDetails?.brandTone || 'professional',
+    includeEmojis: true,
+    includeHashtags: true
+  });
+  
+  // Generate image prompt
+  const imagePrompt = await enhanceImagePromptForPreview(topic, brandDetails);
+  
+  // Generate image using Replicate
+  let imageUrl = null;
+  if (replicateService) {
+    try {
+      const result = await replicateService.textToImage(imagePrompt, {
+        aspectRatio: '1:1'
+      });
+      if (result.success) {
+        imageUrl = result.url;
+      }
+    } catch (e) {
+      console.log('Image generation failed:', e.message);
+    }
+  }
+  
+  // Fallback placeholder if generation failed
+  if (!imageUrl) {
+    imageUrl = `https://via.placeholder.com/1080x1080.png?text=${encodeURIComponent(topic.substring(0, 30))}`;
+  }
+  
+  return {
+    media: [{
+      url: imageUrl,
+      type: 'image',
+      width: 1080,
+      height: 1080,
+      order: 0
+    }],
+    caption: captionResult.caption || topic,
+    hashtags: captionResult.hashtags || [],
+    thumbnail: imageUrl,
+    prompt: imagePrompt
+  };
+}
+
+/**
+ * Generate carousel preview (multiple images)
+ */
+async function generateCarouselPreview(topic, brandDetails) {
+  console.log('📚 Generating carousel preview for:', topic);
+  
+  // Generate slides content
+  const slidesResult = await openaiService.generateCarouselSlides(topic, {
+    slideCount: 5,
+    brandVoice: brandDetails?.brandTone || 'professional'
+  });
+  
+  const slides = slidesResult.slides || [
+    { title: topic, content: 'Slide 1' },
+    { title: 'Key Point', content: 'Slide 2' },
+    { title: 'Tips', content: 'Slide 3' },
+    { title: 'Summary', content: 'Slide 4' },
+    { title: 'Follow for more!', content: 'Slide 5' }
+  ];
+  
+  // Generate images for each slide
+  const media = [];
+  for (let i = 0; i < slides.length; i++) {
+    const slidePrompt = await enhanceImagePromptForPreview(
+      `${slides[i].title}: ${slides[i].content}`,
+      brandDetails
+    );
+    
+    let imageUrl = null;
+    if (replicateService) {
+      try {
+        const result = await replicateService.textToImage(slidePrompt, {
+          aspectRatio: '4:5' // 4:5 ratio for Instagram
+        });
+        if (result.success) {
+          imageUrl = result.url;
+        }
+      } catch (e) {
+        console.log(`Slide ${i + 1} generation failed:`, e.message);
+      }
+    }
+    
+    if (!imageUrl) {
+      imageUrl = `https://via.placeholder.com/1080x1350.png?text=${encodeURIComponent(slides[i].title.substring(0, 20))}`;
+    }
+    
+    media.push({
+      url: imageUrl,
+      type: 'image',
+      width: 1080,
+      height: 1350,
+      order: i
+    });
+  }
+  
+  // Generate caption
+  const captionResult = await openaiService.generateCaption(topic, {
+    tone: brandDetails?.brandTone || 'professional',
+    includeEmojis: true,
+    includeHashtags: true
+  });
+  
+  return {
+    media,
+    caption: captionResult.caption || topic,
+    hashtags: captionResult.hashtags || [],
+    thumbnail: media[0]?.url,
+    prompt: `Carousel: ${topic}`,
+    slides
+  };
+}
+
+/**
+ * Generate video preview (low-res for quick preview)
+ */
+async function generateVideoPreview(topic, contentType, brandDetails) {
+  console.log('🎬 Generating video preview for:', topic, contentType);
+  
+  // Generate script
+  const scriptResult = await openaiService.generateReelScript(`${topic}`, 15);
+  const script = scriptResult.script || `Here's what you need to know about ${topic}`;
+  
+  // Generate caption
+  const captionResult = await openaiService.generateCaption(topic, {
+    tone: brandDetails?.brandTone || 'professional',
+    includeEmojis: true,
+    includeHashtags: true
+  });
+  
+  // For voiceover videos, generate voiceover
+  let voiceoverUrl = null;
+  if (contentType === 'voiceover_video') {
+    try {
+      if (elevenlabsService && elevenlabsService.isAvailable()) {
+        const voiceResult = await elevenlabsService.generateSpeech(script);
+        if (voiceResult.success) {
+          voiceoverUrl = voiceResult.audioUrl;
+        }
+      } else if (googleTTSService) {
+        const voiceResult = await googleTTSService.synthesize(script);
+        if (voiceResult.audioContent) {
+          // Upload to cloud storage
+          if (cloudinaryUpload) {
+            const uploaded = await cloudinaryUpload(
+              Buffer.from(voiceResult.audioContent, 'base64'),
+              'audio/mp3',
+              { folder: 'autopilot/audio' }
+            );
+            voiceoverUrl = uploaded.url;
+          }
+        }
+      }
+    } catch (e) {
+      console.log('Voiceover generation failed:', e.message);
+    }
+  }
+  
+  // Generate low-res preview video or thumbnail
+  let lowResVideoUrl = null;
+  let thumbnailUrl = null;
+  
+  // Try to get a stock video for preview
+  if (stockVideoService) {
+    try {
+      const video = await stockVideoService.getRandomStockVideo(topic, 'tips');
+      if (video) {
+        // Use the stock video as preview (already optimized)
+        lowResVideoUrl = video.videoUrl;
+        thumbnailUrl = video.thumbnailUrl || video.previewUrl;
+      }
+    } catch (e) {
+      console.log('Stock video fetch failed:', e.message);
+    }
+  }
+  
+  // Fallback thumbnail
+  if (!thumbnailUrl) {
+    thumbnailUrl = `https://via.placeholder.com/1080x1920.png?text=${encodeURIComponent('Video: ' + topic.substring(0, 20))}`;
+  }
+  
+  return {
+    media: lowResVideoUrl ? [{
+      url: lowResVideoUrl,
+      thumbnail: thumbnailUrl,
+      type: 'video',
+      width: 1080,
+      height: 1920,
+      order: 0
+    }] : [],
+    caption: captionResult.caption || topic,
+    hashtags: captionResult.hashtags || [],
+    thumbnail: thumbnailUrl,
+    lowResVideo: lowResVideoUrl,
+    prompt: script,
+    voiceoverUrl
+  };
+}
+
+/**
+ * Enhanced image prompt for preview generation
+ */
+async function enhanceImagePromptForPreview(topic, brandDetails) {
+  const industry = brandDetails?.industry || 'default';
+  
+  // Get industry-specific styles
+  const styles = INDUSTRY_VISUAL_STYLES[industry] || INDUSTRY_VISUAL_STYLES.default;
+  
+  const basePrompt = `Professional Instagram post image: ${topic}`;
+  const styleAdditions = [
+    styles.lighting,
+    styles.composition,
+    styles.style,
+    'high quality, 4K, detailed'
+  ].join(', ');
+  
+  return `${basePrompt}. ${styleAdditions}`;
+}
+
 // ==================== Stock Video Routes ====================
 
 // Import stock video service

@@ -16,15 +16,25 @@ import {
   FiZap,
   FiTarget,
   FiSettings,
-  FiPlus
+  FiPlus,
+  FiEye,
+  FiList
 } from 'react-icons/fi';
 import api from '../services/api';
+import AutoPilotPreviewModal from '../components/AutoPilotPreviewModal';
 import './AutoPilotNew.css';
 
 const AutoPilotNew = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isGeneratingTopics, setIsGeneratingTopics] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+  const [previewDraft, setPreviewDraft] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [drafts, setDrafts] = useState([]);
+  const [showDrafts, setShowDrafts] = useState(false);
   
   // Step 1: Topics
   const [topics, setTopics] = useState(['', '', '', '', '', '', '', '', '']);
@@ -263,6 +273,124 @@ const AutoPilotNew = () => {
     setIsStarting(false);
   };
 
+  // Generate preview for a single topic
+  const generatePreview = async () => {
+    setIsGeneratingPreview(true);
+    try {
+      // Pick a random topic and content type
+      const validTopics = topics.filter(t => t.trim());
+      const randomTopic = validTopics[Math.floor(Math.random() * validTopics.length)];
+      
+      // Get active content types
+      const activeTypes = [];
+      if (postTypes.singleImage) activeTypes.push('single_image');
+      if (postTypes.carousel) activeTypes.push('carousel');
+      if (postTypes.videos) activeTypes.push('reel');
+      if (postTypes.voiceoverVideos) activeTypes.push('voiceover_video');
+      
+      const randomType = activeTypes[Math.floor(Math.random() * activeTypes.length)];
+      
+      console.log('Generating preview for:', randomTopic, randomType);
+      
+      const response = await api.post('/ai/autopilot/v2/generate-preview', {
+        topic: randomTopic,
+        contentType: randomType,
+        brandDetails,
+        userId: localStorage.getItem('userId') || 'demo'
+      });
+      
+      if (response.data.success) {
+        setPreviewDraft(response.data.draft);
+        setShowPreviewModal(true);
+      }
+    } catch (error) {
+      console.error('Failed to generate preview:', error);
+      alert('Failed to generate preview: ' + (error.response?.data?.message || error.message));
+    }
+    setIsGeneratingPreview(false);
+  };
+
+  // Fetch existing drafts
+  const fetchDrafts = async () => {
+    try {
+      const response = await api.get('/ai/autopilot/v2/drafts', {
+        params: {
+          userId: localStorage.getItem('userId') || 'demo',
+          status: 'pending_review',
+          limit: 20
+        }
+      });
+      if (response.data.success) {
+        setDrafts(response.data.drafts);
+      }
+    } catch (error) {
+      console.error('Failed to fetch drafts:', error);
+    }
+  };
+
+  // Handle draft approval
+  const handleApproveDraft = async (draftId, scheduledFor = null) => {
+    setIsApproving(true);
+    try {
+      const response = await api.post(`/ai/autopilot/v2/drafts/${draftId}/approve`, {
+        scheduledFor
+      });
+      
+      if (response.data.success) {
+        alert(scheduledFor 
+          ? '📅 Content scheduled successfully!' 
+          : '✅ Content approved and will be posted!'
+        );
+        setShowPreviewModal(false);
+        setPreviewDraft(null);
+        fetchDrafts();
+      }
+    } catch (error) {
+      console.error('Failed to approve draft:', error);
+      alert('Failed to approve: ' + (error.response?.data?.message || error.message));
+    }
+    setIsApproving(false);
+  };
+
+  // Handle draft regeneration
+  const handleRegenerateDraft = async (draftId) => {
+    setIsRegenerating(true);
+    try {
+      const response = await api.post(`/ai/autopilot/v2/drafts/${draftId}/regenerate`);
+      
+      if (response.data.success) {
+        setPreviewDraft(response.data.draft);
+      }
+    } catch (error) {
+      console.error('Failed to regenerate draft:', error);
+      if (error.response?.status === 400) {
+        alert('Maximum regenerations reached. Please create a new preview.');
+      } else {
+        alert('Failed to regenerate: ' + (error.response?.data?.message || error.message));
+      }
+    }
+    setIsRegenerating(false);
+  };
+
+  // Handle draft rejection
+  const handleRejectDraft = async (draftId) => {
+    try {
+      await api.post(`/ai/autopilot/v2/drafts/${draftId}/reject`, {
+        reason: 'User rejected'
+      });
+      setShowPreviewModal(false);
+      setPreviewDraft(null);
+      fetchDrafts();
+    } catch (error) {
+      console.error('Failed to reject draft:', error);
+    }
+  };
+
+  // Fetch drafts on mount
+  useEffect(() => {
+    fetchDrafts();
+  }, []);
+
   return (
     <div className="autopilot-new-page">
       <div className="autopilot-new-container">
@@ -275,7 +403,48 @@ const AutoPilotNew = () => {
             </h1>
             <p>Set up your automated content creation and posting</p>
           </div>
+          {drafts.length > 0 && (
+            <button 
+              className="btn-drafts"
+              onClick={() => setShowDrafts(!showDrafts)}
+            >
+              <FiList />
+              {drafts.length} Pending Drafts
+            </button>
+          )}
         </header>
+
+        {/* Pending Drafts Panel */}
+        {showDrafts && drafts.length > 0 && (
+          <div className="drafts-panel">
+            <h3>Pending Drafts</h3>
+            <div className="drafts-list">
+              {drafts.map((draft) => (
+                <div 
+                  key={draft._id} 
+                  className="draft-item"
+                  onClick={() => {
+                    setPreviewDraft(draft);
+                    setShowPreviewModal(true);
+                  }}
+                >
+                  <div className="draft-preview">
+                    {draft.preview?.thumbnailUrl ? (
+                      <img src={draft.preview.thumbnailUrl} alt="Preview" />
+                    ) : (
+                      <FiImage />
+                    )}
+                  </div>
+                  <div className="draft-info">
+                    <span className="draft-type">{draft.contentType?.replace(/_/g, ' ')}</span>
+                    <span className="draft-topic">{draft.topic}</span>
+                  </div>
+                  <FiEye className="view-icon" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="progress-steps">
@@ -639,8 +808,35 @@ const AutoPilotNew = () => {
                   </div>
                 </div>
 
-                {/* Start Button */}
+                {/* Preview & Start Buttons */}
                 <div className="start-section">
+                  {/* Generate Preview Button */}
+                  <button 
+                    className="btn-generate-preview"
+                    onClick={generatePreview}
+                    disabled={isGeneratingPreview}
+                  >
+                    {isGeneratingPreview ? (
+                      <>
+                        <FiRefreshCw className="spin" />
+                        Generating Preview...
+                      </>
+                    ) : (
+                      <>
+                        <FiEye />
+                        Generate Preview First
+                      </>
+                    )}
+                  </button>
+                  <p className="preview-hint">
+                    Preview and approve content before enabling auto-posting
+                  </p>
+
+                  <div className="divider-with-text">
+                    <span>or</span>
+                  </div>
+
+                  {/* Start Auto Posting Button */}
                   <button 
                     className="btn-start-posting"
                     onClick={startAutoPosting}
@@ -654,12 +850,12 @@ const AutoPilotNew = () => {
                     ) : (
                       <>
                         <FiPlay />
-                        Start Auto Posting
+                        Start Auto Posting (Skip Preview)
                       </>
                     )}
                   </button>
                   <p className="start-hint">
-                    AI will create and schedule content automatically based on your settings
+                    AI will create and post content automatically without preview
                   </p>
                 </div>
               </div>
@@ -691,6 +887,21 @@ const AutoPilotNew = () => {
           )}
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <AutoPilotPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => {
+          setShowPreviewModal(false);
+          setPreviewDraft(null);
+        }}
+        draft={previewDraft}
+        onApprove={handleApproveDraft}
+        onRegenerate={handleRegenerateDraft}
+        onReject={handleRejectDraft}
+        isApproving={isApproving}
+        isRegenerating={isRegenerating}
+      />
     </div>
   );
 };
