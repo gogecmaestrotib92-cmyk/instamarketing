@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3, FiLoader } from 'react-icons/fi';
+import { FiImage, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiDownload, FiCopy, FiCheckCircle, FiTarget, FiStar, FiRepeat, FiSquare, FiSmartphone, FiMonitor, FiEdit3, FiLoader, FiBriefcase, FiCheck, FiEdit2, FiLink } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { saveImageToHub } from '../services/assetService';
 import './BusinessImage.css';
@@ -19,6 +19,7 @@ const BusinessImage = () => {
   // Business Info from Business Hub
   const [businessInfo, setBusinessInfo] = useState(null);
   const [brandLinked, setBrandLinked] = useState(true);
+  const [connectedBrand, setConnectedBrand] = useState(null);
   
   // Load business info on mount
   useEffect(() => {
@@ -29,6 +30,10 @@ const BusinessImage = () => {
       // Only enable brand linked if there's meaningful data
       const hasData = parsed.businessName || parsed.description || parsed.industry;
       setBrandLinked(hasData);
+      // Auto-connect brand if data exists
+      if (hasData) {
+        setConnectedBrand(parsed);
+      }
     } else {
       setBrandLinked(false);
     }
@@ -525,6 +530,100 @@ Example: A premium skincare product bottle on white marble, soft natural lightin
               </div>
 
               <div className="settings-card">
+                {/* Connect Your Brand Section */}
+                <div className="setting-group">
+                  <h3>Connect Your Brand</h3>
+                  
+                  {connectedBrand ? (
+                    <div className="connected-brand-card">
+                      <div className="brand-connected-header">
+                        <div className="brand-icon">
+                          <FiBriefcase />
+                        </div>
+                        <div className="brand-info">
+                          <span className="brand-name">{connectedBrand.businessName}</span>
+                          {connectedBrand.industry && (
+                            <span className="brand-industry">{connectedBrand.industry}</span>
+                          )}
+                        </div>
+                        <div className="brand-status connected">
+                          <FiCheck /> Connected
+                        </div>
+                      </div>
+                      
+                      {connectedBrand.description && (
+                        <p className="brand-description">{connectedBrand.description.substring(0, 150)}...</p>
+                      )}
+                      
+                      <div className="brand-details-row">
+                        {connectedBrand.brandVoice && (
+                          <span className="brand-tag">🎯 {connectedBrand.brandVoice}</span>
+                        )}
+                        {connectedBrand.targetAudience && (
+                          <span className="brand-tag">👥 {connectedBrand.targetAudience.substring(0, 30)}</span>
+                        )}
+                      </div>
+                      
+                      <div className="brand-actions">
+                        <button 
+                          className="btn-edit-brand"
+                          onClick={() => navigate('/app/business-hub')}
+                        >
+                          <FiEdit2 /> Edit Brand Details
+                        </button>
+                        <button 
+                          className="btn-disconnect"
+                          onClick={() => {
+                            setConnectedBrand(null);
+                            setBrandLinked(false);
+                          }}
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="no-brand-connected">
+                      <div className="no-brand-icon">
+                        <FiLink />
+                      </div>
+                      <h4>No Brand Connected</h4>
+                      <p>Connect your brand to use your business details for AI-generated images</p>
+                      
+                      <div className="brand-connect-actions">
+                        <button 
+                          className="btn-connect-brand"
+                          onClick={() => {
+                            const businessInfoData = localStorage.getItem('businessInfo');
+                            if (businessInfoData) {
+                              const parsed = JSON.parse(businessInfoData);
+                              if (parsed.businessName) {
+                                setConnectedBrand(parsed);
+                                setBusinessInfo(parsed);
+                                setBrandLinked(true);
+                              } else {
+                                alert('Please set up your brand in Business Hub first');
+                                navigate('/app/business-hub');
+                              }
+                            } else {
+                              alert('No brand found. Please set up your brand in Business Hub first.');
+                              navigate('/app/business-hub');
+                            }
+                          }}
+                        >
+                          <FiBriefcase /> Connect Existing Brand
+                        </button>
+                        <button 
+                          className="btn-setup-brand"
+                          onClick={() => navigate('/app/business-hub')}
+                        >
+                          <FiEdit2 /> Set Up Brand
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Post Type */}
                 <div className="setting-group">
                   <h3>Post Type</h3>
