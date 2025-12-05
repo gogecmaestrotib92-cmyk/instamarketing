@@ -15,7 +15,6 @@ import {
   FiFolder,
   FiCalendar,
   FiPlusCircle,
-  FiUser,
   FiShoppingBag,
   FiBriefcase,
   FiDatabase,
