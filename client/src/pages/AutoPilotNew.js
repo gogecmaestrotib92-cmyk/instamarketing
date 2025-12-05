@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FiCpu,
   FiClock,
@@ -18,13 +19,17 @@ import {
   FiSettings,
   FiPlus,
   FiEye,
-  FiList
+  FiList,
+  FiLink,
+  FiExternalLink,
+  FiBriefcase
 } from 'react-icons/fi';
 import api from '../services/api';
 import AutoPilotPreviewModal from '../components/AutoPilotPreviewModal';
 import './AutoPilotNew.css';
 
 const AutoPilotNew = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isGeneratingTopics, setIsGeneratingTopics] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -50,14 +55,16 @@ const AutoPilotNew = () => {
     carousel: false
   });
   
-  // Step 3: Brand Details
+  // Connected Brand from BusinessHub
+  const [connectedBrand, setConnectedBrand] = useState(null);
   const [brandDetails, setBrandDetails] = useState({
     brandName: '',
     brandDescription: '',
     targetAudience: '',
     brandTone: 'professional',
     callToAction: '',
-    hashtags: ''
+    hashtags: '',
+    industry: ''
   });
 
   // Available time slots
@@ -78,6 +85,24 @@ const AutoPilotNew = () => {
         if (data.timeSlots) setTimeSlots(data.timeSlots);
         if (data.postTypes) setPostTypes(data.postTypes);
         if (data.brandDetails) setBrandDetails(data.brandDetails);
+      }
+      
+      // Auto-connect brand from BusinessHub if available
+      const businessInfo = localStorage.getItem('businessInfo');
+      if (businessInfo) {
+        const parsed = JSON.parse(businessInfo);
+        if (parsed.businessName) {
+          setConnectedBrand(parsed);
+          // Map to brandDetails format
+          setBrandDetails(prev => ({
+            ...prev,
+            brandName: parsed.businessName || prev.brandName,
+            brandDescription: parsed.description || prev.brandDescription,
+            targetAudience: parsed.targetAudience || prev.targetAudience,
+            brandTone: parsed.brandVoice || prev.brandTone,
+            industry: parsed.industry || prev.industry
+          }));
+        }
       }
     } catch (e) {
       console.log('Failed to load saved settings');
@@ -243,9 +268,11 @@ const AutoPilotNew = () => {
       case 1:
         return filledTopicsCount >= 9;
       case 2:
+        // Brand connection is recommended but not required
         return timeSlots.length > 0 && Object.values(postTypes).some(v => v);
       case 3:
-        return brandDetails.brandName.trim() !== '';
+        // Review step - always valid if we got here
+        return true;
       default:
         return true;
     }
@@ -652,53 +679,119 @@ const AutoPilotNew = () => {
                 </div>
               </div>
 
-              {/* Brand Details */}
+              {/* Brand Connection */}
               <div className="setting-section">
-                <h3>Brand Details</h3>
+                <h3>Connect Your Brand</h3>
+                
+                {connectedBrand ? (
+                  <div className="connected-brand-card">
+                    <div className="brand-connected-header">
+                      <div className="brand-icon">
+                        <FiBriefcase />
+                      </div>
+                      <div className="brand-info">
+                        <span className="brand-name">{connectedBrand.businessName}</span>
+                        {connectedBrand.industry && (
+                          <span className="brand-industry">{connectedBrand.industry}</span>
+                        )}
+                      </div>
+                      <div className="brand-status connected">
+                        <FiCheck /> Connected
+                      </div>
+                    </div>
+                    
+                    {connectedBrand.description && (
+                      <p className="brand-description">{connectedBrand.description.substring(0, 150)}...</p>
+                    )}
+                    
+                    <div className="brand-details-row">
+                      {connectedBrand.brandVoice && (
+                        <span className="brand-tag">🎯 {connectedBrand.brandVoice}</span>
+                      )}
+                      {connectedBrand.targetAudience && (
+                        <span className="brand-tag">👥 {connectedBrand.targetAudience.substring(0, 30)}</span>
+                      )}
+                    </div>
+                    
+                    <div className="brand-actions">
+                      <button 
+                        className="btn-edit-brand"
+                        onClick={() => navigate('/app/business-hub')}
+                      >
+                        <FiEdit2 /> Edit Brand Details
+                      </button>
+                      <button 
+                        className="btn-disconnect"
+                        onClick={() => {
+                          setConnectedBrand(null);
+                          setBrandDetails({
+                            brandName: '',
+                            brandDescription: '',
+                            targetAudience: '',
+                            brandTone: 'professional',
+                            callToAction: '',
+                            hashtags: '',
+                            industry: ''
+                          });
+                        }}
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="no-brand-connected">
+                    <div className="no-brand-icon">
+                      <FiLink />
+                    </div>
+                    <h4>No Brand Connected</h4>
+                    <p>Connect your brand to use your business details for AI-generated content</p>
+                    
+                    <div className="brand-connect-actions">
+                      <button 
+                        className="btn-connect-brand"
+                        onClick={() => {
+                          const businessInfo = localStorage.getItem('businessInfo');
+                          if (businessInfo) {
+                            const parsed = JSON.parse(businessInfo);
+                            if (parsed.businessName) {
+                              setConnectedBrand(parsed);
+                              setBrandDetails(prev => ({
+                                ...prev,
+                                brandName: parsed.businessName || '',
+                                brandDescription: parsed.description || '',
+                                targetAudience: parsed.targetAudience || '',
+                                brandTone: parsed.brandVoice || 'professional',
+                                industry: parsed.industry || ''
+                              }));
+                            } else {
+                              alert('Please set up your brand in Business Hub first');
+                              navigate('/app/business-hub');
+                            }
+                          } else {
+                            alert('Please set up your brand in Business Hub first');
+                            navigate('/app/business-hub');
+                          }
+                        }}
+                      >
+                        <FiLink /> Connect Existing Brand
+                      </button>
+                      <button 
+                        className="btn-setup-brand"
+                        onClick={() => navigate('/app/business-hub')}
+                      >
+                        <FiExternalLink /> Set Up Brand in Business Hub
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Optional: CTA & Hashtags */}
+              <div className="setting-section optional-section">
+                <h3>Optional Settings</h3>
                 <div className="brand-form">
                   <div className="form-row">
-                    <div className="form-group">
-                      <label>Brand/Business Name <span className="required">*</span></label>
-                      <input
-                        type="text"
-                        value={brandDetails.brandName}
-                        onChange={(e) => setBrandDetails({...brandDetails, brandName: e.target.value})}
-                        placeholder="Your brand name"
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Brand Tone</label>
-                      <select
-                        value={brandDetails.brandTone}
-                        onChange={(e) => setBrandDetails({...brandDetails, brandTone: e.target.value})}
-                      >
-                        <option value="professional">Professional</option>
-                        <option value="casual">Casual & Friendly</option>
-                        <option value="humorous">Humorous</option>
-                        <option value="inspirational">Inspirational</option>
-                        <option value="educational">Educational</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Brand Description</label>
-                    <textarea
-                      value={brandDetails.brandDescription}
-                      onChange={(e) => setBrandDetails({...brandDetails, brandDescription: e.target.value})}
-                      placeholder="Brief description of your brand/product..."
-                      rows={2}
-                    />
-                  </div>
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Target Audience</label>
-                      <input
-                        type="text"
-                        value={brandDetails.targetAudience}
-                        onChange={(e) => setBrandDetails({...brandDetails, targetAudience: e.target.value})}
-                        placeholder="e.g., entrepreneurs, fitness enthusiasts..."
-                      />
-                    </div>
                     <div className="form-group">
                       <label>Call to Action</label>
                       <input
@@ -708,15 +801,15 @@ const AutoPilotNew = () => {
                         placeholder="e.g., Follow for more tips!"
                       />
                     </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Default Hashtags</label>
-                    <input
-                      type="text"
-                      value={brandDetails.hashtags}
-                      onChange={(e) => setBrandDetails({...brandDetails, hashtags: e.target.value})}
-                      placeholder="#yourbrand #marketing #tips"
-                    />
+                    <div className="form-group">
+                      <label>Default Hashtags</label>
+                      <input
+                        type="text"
+                        value={brandDetails.hashtags}
+                        onChange={(e) => setBrandDetails({...brandDetails, hashtags: e.target.value})}
+                        placeholder="#yourbrand #marketing #tips"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
