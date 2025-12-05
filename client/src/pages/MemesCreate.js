@@ -723,7 +723,16 @@ function MemesCreate() {
                 </div>
               ))}
             </div>
-            <p className="image-picker-credit">Images from Pexels</p>
+            <div className="image-picker-footer">
+              <p className="image-picker-credit">Images from Pexels & Pixabay</p>
+              <button 
+                className="regenerate-btn"
+                onClick={() => searchForSuggestedImage(templateSuggestion)}
+                disabled={isSearchingImages}
+              >
+                {isSearchingImages ? '🔄 Searching...' : '🔄 Find Different Images'}
+              </button>
+            </div>
           </div>
         </div>
       )}
