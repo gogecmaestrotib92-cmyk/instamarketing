@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   FiLayers,
   FiArrowLeft,
-  FiArrowRight,
   FiRefreshCw,
-  FiDownload,
   FiCopy,
   FiCheck,
   FiZap,
@@ -135,13 +133,6 @@ const CarouselCreate = () => {
     } catch (err) {
       console.error('Copy failed:', err);
     }
-  };
-
-  // Edit slide content
-  const updateSlideContent = (index, field, value) => {
-    const newSlides = [...slides];
-    newSlides[index] = { ...newSlides[index], [field]: value };
-    setSlides(newSlides);
   };
 
   // Save to Asset Hub

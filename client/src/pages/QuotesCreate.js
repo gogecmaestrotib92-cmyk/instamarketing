@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   FiMessageSquare,
@@ -62,7 +62,7 @@ const QuotesCreate = () => {
   ];
 
   // Background gradients
-  const gradients = [
+  const gradients = useMemo(() => [
     { id: 0, colors: ['#667eea', '#764ba2'], name: 'Purple Dream' },
     { id: 1, colors: ['#f093fb', '#f5576c'], name: 'Pink Sunset' },
     { id: 2, colors: ['#4facfe', '#00f2fe'], name: 'Ocean Blue' },
@@ -71,7 +71,7 @@ const QuotesCreate = () => {
     { id: 5, colors: ['#a18cd1', '#fbc2eb'], name: 'Soft Lavender' },
     { id: 6, colors: ['#232526', '#414345'], name: 'Dark Minimal' },
     { id: 7, colors: ['#ee9ca7', '#ffdde1'], name: 'Rose Gold' }
-  ];
+  ], []);
 
   // Generate quote
   const generateQuote = async () => {
