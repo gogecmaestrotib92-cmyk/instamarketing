@@ -1,6 +1,55 @@
 // Vercel Serverless API Handler with AI Integration
 
+// MongoDB connection for persistent job storage
+const mongoose = require('mongoose');
+let isDbConnected = false;
+
+async function connectDB() {
+  if (isDbConnected) return;
+  if (!process.env.MONGODB_URI) {
+    console.log('No MONGODB_URI - using in-memory fallback');
+    return;
+  }
+  try {
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        bufferCommands: false,
+        maxPoolSize: 1
+      });
+    }
+    isDbConnected = true;
+    console.log('✅ MongoDB connected for Vercel');
+  } catch (err) {
+    console.error('MongoDB connection error:', err.message);
+  }
+}
+
+// Premium Job Schema (inline for Vercel)
+const premiumJobSchema = new mongoose.Schema({
+  jobId: { type: String, required: true, unique: true },
+  status: { type: String, default: 'pending' },
+  progress: { type: Number, default: 0 },
+  statusMessage: { type: String, default: 'Starting...' },
+  videoUrl: String,
+  audioUrl: String,
+  voiceoverScript: String,
+  error: String,
+  input: mongoose.Schema.Types.Mixed,
+  createdAt: { type: Date, default: Date.now },
+  completedAt: Date
+});
+
+let PremiumJob;
+try {
+  PremiumJob = mongoose.model('PremiumJob');
+} catch {
+  PremiumJob = mongoose.model('PremiumJob', premiumJobSchema);
+}
+
 module.exports = async (req, res) => {
+  // Connect to DB first
+  await connectDB();
+  
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -381,7 +430,7 @@ module.exports = async (req, res) => {
       global.premiumJobs = {};
     }
 
-    // Start Premium AI Video Job
+    // Start Premium AI Video Job (with MongoDB persistence)
     if (url === '/api/ai/video/start-premium' && req.method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const { 
@@ -407,8 +456,8 @@ module.exports = async (req, res) => {
       
       console.log(`\n🎬 [${jobId}] Starting Premium AI Video Job`);
 
-      global.premiumJobs[jobId] = {
-        id: jobId,
+      const jobData = {
+        jobId: jobId,
         status: 'pending',
         progress: 0,
         statusMessage: 'Starting...',
@@ -416,13 +465,26 @@ module.exports = async (req, res) => {
         input: { prompt, businessName, industry, contentPurpose, aspectRatio, voice, includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize }
       };
 
+      // Save to MongoDB if available, otherwise use in-memory
+      if (isDbConnected && PremiumJob) {
+        try {
+          await PremiumJob.create(jobData);
+          console.log(`[${jobId}] ✅ Job saved to MongoDB`);
+        } catch (dbErr) {
+          console.error(`[${jobId}] MongoDB save failed:`, dbErr.message);
+          // Fallback to in-memory
+          if (!global.premiumJobs) global.premiumJobs = {};
+          global.premiumJobs[jobId] = jobData;
+        }
+      } else {
+        if (!global.premiumJobs) global.premiumJobs = {};
+        global.premiumJobs[jobId] = jobData;
+      }
+
       // Start processing in background (fire and forget)
       processPremiumJobVercel(jobId).catch(err => {
         console.error(`[${jobId}] Background process error:`, err.message);
-        if (global.premiumJobs[jobId]) {
-          global.premiumJobs[jobId].status = 'failed';
-          global.premiumJobs[jobId].error = err.message;
-        }
+        updatePremiumJobStatus(jobId, { status: 'failed', error: err.message });
       });
 
       // Return immediately
@@ -434,7 +496,7 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Poll Premium Job Status
+    // Poll Premium Job Status (from MongoDB or in-memory)
     if (url === '/api/ai/video/premium-job-status' && req.method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const { jobId } = body || {};
@@ -443,10 +505,23 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'jobId is required' });
       }
 
-      const job = global.premiumJobs?.[jobId];
+      // Try MongoDB first, then in-memory
+      let job = null;
+      if (isDbConnected && PremiumJob) {
+        try {
+          job = await PremiumJob.findOne({ jobId }).lean();
+        } catch (dbErr) {
+          console.error('MongoDB query error:', dbErr.message);
+        }
+      }
+      
+      // Fallback to in-memory
+      if (!job && global.premiumJobs) {
+        job = global.premiumJobs[jobId];
+      }
       
       if (!job) {
-        return res.status(404).json({ error: 'Job not found. It may have expired or been processed on a different server instance.' });
+        return res.status(404).json({ error: 'Job not found. Please try again or start a new generation.' });
       }
 
       return res.status(200).json({
@@ -671,12 +746,56 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
 };
 
 /**
+ * Helper to update premium job status in MongoDB or in-memory
+ */
+async function updatePremiumJobStatus(jobId, updates) {
+  // Update in-memory
+  if (global.premiumJobs && global.premiumJobs[jobId]) {
+    Object.assign(global.premiumJobs[jobId], updates);
+  }
+  
+  // Update in MongoDB
+  if (isDbConnected && PremiumJob) {
+    try {
+      await PremiumJob.updateOne({ jobId }, { $set: updates });
+    } catch (err) {
+      console.error(`[${jobId}] MongoDB update failed:`, err.message);
+    }
+  }
+}
+
+/**
+ * Helper to get job from MongoDB or in-memory
+ */
+async function getPremiumJob(jobId) {
+  // Try MongoDB first
+  if (isDbConnected && PremiumJob) {
+    try {
+      const job = await PremiumJob.findOne({ jobId }).lean();
+      if (job) return job;
+    } catch (err) {
+      console.error(`[${jobId}] MongoDB query failed:`, err.message);
+    }
+  }
+  
+  // Fallback to in-memory
+  if (global.premiumJobs && global.premiumJobs[jobId]) {
+    return global.premiumJobs[jobId];
+  }
+  
+  return null;
+}
+
+/**
  * Process Premium AI Video Job in Background (Vercel)
  * This runs async after the response is sent
  */
 async function processPremiumJobVercel(jobId) {
-  const job = global.premiumJobs[jobId];
-  if (!job) return;
+  const job = await getPremiumJob(jobId);
+  if (!job) {
+    console.error(`[${jobId}] Job not found for processing`);
+    return;
+  }
 
   const { prompt, businessName, industry, contentPurpose, aspectRatio, voice, includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize } = job.input;
 
@@ -691,9 +810,11 @@ async function processPremiumJobVercel(jobId) {
     // ============================================
     // STEP 1: GPT scene breakdown
     // ============================================
-    job.status = 'generating_script';
-    job.progress = 5;
-    job.statusMessage = '📝 Creating script and scenes...';
+    await updatePremiumJobStatus(jobId, {
+      status: 'generating_script',
+      progress: 5,
+      statusMessage: '📝 Creating script and scenes...'
+    });
 
     const sceneBreakdownResponse = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -771,14 +892,18 @@ Output valid JSON only.`
     }
 
     console.log(`[${jobId}] ✅ Script ready: ${sceneBreakdown.scenes.length} scenes`);
-    job.progress = 10;
-    job.voiceoverScript = sceneBreakdown.voiceoverScript;
+    await updatePremiumJobStatus(jobId, {
+      progress: 10,
+      voiceoverScript: sceneBreakdown.voiceoverScript
+    });
 
     // ============================================
     // STEP 2: Generate voiceover with ElevenLabs
     // ============================================
-    job.statusMessage = '🎙️ Generating voiceover...';
-    job.progress = 15;
+    await updatePremiumJobStatus(jobId, {
+      statusMessage: '🎙️ Generating voiceover...',
+      progress: 15
+    });
 
     const elevenVoiceId = voice || '21m00Tcm4TlvDq8ikWAM'; // Rachel
     const elevenResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${elevenVoiceId}`, {
@@ -816,7 +941,10 @@ Output valid JSON only.`
 
     job.audioUrl = audioUpload.secure_url;
     console.log(`[${jobId}] ✅ Voiceover ready`);
-    job.progress = 20;
+    await updatePremiumJobStatus(jobId, {
+      audioUrl: audioUpload.secure_url,
+      progress: 20
+    });
 
     // ============================================
     // STEP 3: Generate FLUX images
@@ -825,8 +953,10 @@ Output valid JSON only.`
     
     for (let i = 0; i < sceneBreakdown.scenes.length; i++) {
       const scene = sceneBreakdown.scenes[i];
-      job.statusMessage = `🖼️ Creating image ${i + 1}/${sceneBreakdown.scenes.length}...`;
-      job.progress = 20 + (i * 10);
+      await updatePremiumJobStatus(jobId, {
+        statusMessage: `🖼️ Creating image ${i + 1}/${sceneBreakdown.scenes.length}...`,
+        progress: 20 + (i * 10)
+      });
 
       const fluxOutput = await replicate.run(
         "black-forest-labs/flux-schnell",
@@ -854,7 +984,7 @@ Output valid JSON only.`
       throw new Error('No images generated');
     }
 
-    job.progress = 50;
+    await updatePremiumJobStatus(jobId, { progress: 50 });
 
     // ============================================
     // STEP 4: Animate with Kling (Brand-Aware Motion)
@@ -863,8 +993,10 @@ Output valid JSON only.`
     
     for (let i = 0; i < scenesWithImages.length; i++) {
       const scene = scenesWithImages[i];
-      job.statusMessage = `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s)`;
-      job.progress = 50 + (i * 12);
+      await updatePremiumJobStatus(jobId, {
+        statusMessage: `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s)`,
+        progress: 50 + (i * 12)
+      });
 
       // Build product-aware motion prompt for Kling
       // Include: what the product IS, how it's being USED, and the motion
@@ -937,13 +1069,15 @@ Output valid JSON only.`
       throw new Error('No scenes animated');
     }
 
-    job.progress = 85;
+    await updatePremiumJobStatus(jobId, { progress: 85 });
 
     // ============================================
     // STEP 5: Compose with Shotstack
     // ============================================
-    job.statusMessage = '🎥 Composing final video...';
-    job.progress = 90;
+    await updatePremiumJobStatus(jobId, {
+      statusMessage: '🎥 Composing final video...',
+      progress: 90
+    });
 
     // Build subtitles
     const subtitles = [];
@@ -1039,7 +1173,7 @@ Output valid JSON only.`
     let finalVideoUrl = null;
     for (let attempt = 0; attempt < 60; attempt++) {
       await new Promise(r => setTimeout(r, 5000));
-      job.progress = 90 + Math.min(9, attempt);
+      await updatePremiumJobStatus(jobId, { progress: 90 + Math.min(9, attempt) });
       
       const statusRes = await fetch(`https://api.shotstack.io/v1/render/${renderId}`, {
         headers: { 'x-api-key': process.env.SHOTSTACK_API_KEY }
@@ -1067,18 +1201,21 @@ Output valid JSON only.`
     // ============================================
     // DONE!
     // ============================================
-    job.status = 'done';
-    job.progress = 100;
-    job.statusMessage = '✅ Video ready!';
-    job.videoUrl = finalVideoUrl;
-    job.completedAt = new Date();
+    await updatePremiumJobStatus(jobId, {
+      status: 'done',
+      progress: 100,
+      statusMessage: '✅ Video ready!',
+      videoUrl: finalVideoUrl
+    });
 
     console.log(`[${jobId}] 🎉 Premium video complete: ${finalVideoUrl}`);
 
   } catch (error) {
     console.error(`[${jobId}] ❌ Failed:`, error.message);
-    job.status = 'failed';
-    job.error = error.message;
-    job.statusMessage = `❌ Failed: ${error.message}`;
+    await updatePremiumJobStatus(jobId, {
+      status: 'failed',
+      error: error.message,
+      statusMessage: `❌ Failed: ${error.message}`
+    });
   }
 }
