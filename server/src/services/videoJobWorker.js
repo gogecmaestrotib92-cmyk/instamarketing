@@ -332,10 +332,37 @@ async function findVideosForScenes(job) {
     return useFallbackVideos(job);
   }
   
+  // ========== NEW: Use AI to generate better search queries ==========
+  try {
+    const { generateSmartSearchQueries } = require('./stockVideoService');
+    
+    console.log(`[Job ${job._id}] 🧠 Generating AI-optimized search queries...`);
+    await updateJobStatus(job, 'finding_videos', 32, 'AI optimizing search queries...');
+    
+    const context = {
+      topic: job.topic,
+      industry: job.businessInfo?.industry,
+      businessName: job.businessInfo?.businessName
+    };
+    
+    const enhancedScenes = await generateSmartSearchQueries(job.scenes, context);
+    
+    // Update scenes with AI-generated search queries
+    job.scenes = enhancedScenes;
+    await job.save();
+    
+    console.log(`[Job ${job._id}] ✅ AI search queries generated`);
+  } catch (aiErr) {
+    console.log(`[Job ${job._id}] ⚠️ AI query generation skipped:`, aiErr.message);
+  }
+  // ========== END NEW ==========
+  
   // Search Pexels for each scene and upload to Cloudinary
   for (let i = 0; i < job.scenes.length; i++) {
     const scene = job.scenes[i];
-    let searchQuery = scene.visual || job.topic;
+    
+    // Use AI-generated query if available, otherwise fallback to original
+    let searchQuery = scene.stockSearchQuery || scene.visual || job.topic;
     
     // Clean up search query - extract key words
     searchQuery = searchQuery
@@ -343,7 +370,7 @@ async function findVideosForScenes(job) {
       .replace(/[^a-z0-9\s]/g, '') // Remove special chars
       .split(' ')
       .filter(w => w.length > 2) // Remove short words
-      .slice(0, 3) // Max 3 words
+      .slice(0, 4) // Max 4 words (increased from 3)
       .join(' ');
     
     try {
@@ -353,10 +380,10 @@ async function findVideosForScenes(job) {
       
       // Try multiple search strategies
       const searchStrategies = [
-        searchQuery,                                    // Original query
-        searchQuery.split(' ')[0],                      // First word only
+        searchQuery,                                    // AI-optimized query (or original)
+        scene.visual?.split(' ').slice(0, 2).join(' '),// Original visual first 2 words
         job.topic.split(' ').slice(0, 2).join(' ')     // Topic first 2 words
-      ];
+      ].filter(Boolean);
       
       for (const query of searchStrategies) {
         if (videos.length >= 3) break;

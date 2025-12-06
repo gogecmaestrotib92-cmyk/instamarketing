@@ -9,6 +9,8 @@
  * - Pixabay: https://pixabay.com/api/docs/#api_search_videos
  */
 
+const OpenAI = require('openai');
+
 // Read API keys at runtime (not module load time) for Vercel compatibility
 // Fallback to hardcoded key if env variable not set
 const PEXELS_HARDCODED_KEY = '9kV0qJ9k1b1Ou9BTGXFDPyFrqjU4oqGsuJ0tbzor5r2O942zz6WMyIyl';
@@ -544,6 +546,98 @@ function improveSearchTerm(term) {
   return 'abstract motion background';
 }
 
+/**
+ * AI-Powered Search Query Generator
+ * Uses GPT to convert scene descriptions/topics into optimal stock video search terms
+ * 
+ * @param {Array} scenes - Array of scene objects with visual/text fields
+ * @param {Object} context - Optional context like industry, brandVoice, etc.
+ * @returns {Promise<Array>} - Scenes with improved stockSearchQuery field
+ */
+async function generateSmartSearchQueries(scenes, context = {}) {
+  if (!scenes || scenes.length === 0) return scenes;
+  
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    console.log('⚠️ OpenAI key not available - using basic search terms');
+    return scenes.map(s => ({ ...s, stockSearchQuery: s.visual || 'abstract background' }));
+  }
+
+  try {
+    const openai = new OpenAI({ apiKey: openaiKey });
+    
+    // Build scene descriptions for the prompt
+    const sceneDescriptions = scenes.map((s, i) => 
+      `Scene ${i + 1}: Visual="${s.visual || 'none'}", Voiceover="${(s.text || '').substring(0, 80)}"`
+    ).join('\n');
+    
+    const industryHint = context.industry ? `Industry: ${context.industry}` : '';
+    const brandHint = context.businessName ? `Brand: ${context.businessName}` : '';
+    
+    const prompt = `You are a stock video search expert. Convert these scene descriptions into optimal Pexels/stock video search queries.
+
+${industryHint}
+${brandHint}
+Topic: ${context.topic || 'general content'}
+
+SCENES:
+${sceneDescriptions}
+
+RULES for search queries:
+1. Use 2-4 simple, concrete words that exist in stock libraries
+2. Prefer action words: "woman running", "coffee pouring", "hands typing"
+3. Avoid abstract concepts: instead of "success" use "celebration confetti" or "trophy winner"
+4. Avoid brand-specific terms that won't exist in stock libraries
+5. Think cinematically: what would a video editor search for?
+6. For business content: "office meeting", "laptop working", "handshake deal"
+7. For fitness: "gym workout", "running outdoor", "yoga stretching"
+8. For food: "cooking kitchen", "food plating", "chef preparing"
+
+Return ONLY a JSON array of search queries in the same order as scenes:
+["query1", "query2", "query3", ...]`;
+
+    console.log('🧠 Generating smart search queries with AI...');
+    
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 500
+    });
+    
+    const content = response.choices[0].message.content.trim();
+    
+    // Parse the JSON array
+    let queries = [];
+    try {
+      // Handle potential markdown code blocks
+      const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      queries = JSON.parse(jsonStr);
+    } catch (parseErr) {
+      console.log('⚠️ Failed to parse AI response, using fallback');
+      return scenes.map(s => ({ ...s, stockSearchQuery: s.visual || 'abstract background' }));
+    }
+    
+    // Apply queries to scenes
+    const enhancedScenes = scenes.map((scene, i) => ({
+      ...scene,
+      stockSearchQuery: queries[i] || scene.visual || 'cinematic background',
+      originalVisual: scene.visual
+    }));
+    
+    console.log('✅ Smart search queries generated:');
+    enhancedScenes.forEach((s, i) => {
+      console.log(`   Scene ${i + 1}: "${s.originalVisual}" → "${s.stockSearchQuery}"`);
+    });
+    
+    return enhancedScenes;
+    
+  } catch (error) {
+    console.error('❌ AI search query generation failed:', error.message);
+    return scenes.map(s => ({ ...s, stockSearchQuery: s.visual || 'abstract background' }));
+  }
+}
+
 module.exports = {
   searchPexelsVideos,
   searchPixabayVideos,
@@ -556,6 +650,7 @@ module.exports = {
   improveSearchTerm,
   smartImproveSearchTerm,
   getRelatedSearchTerm,
+  generateSmartSearchQueries,
   VIDEO_CATEGORIES,
   CURATED_BACKGROUNDS,
   CONCEPT_TO_VIDEO_MAP
