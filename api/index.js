@@ -1215,13 +1215,13 @@ Return JSON array with classification for each image by index:
 
       if (scene.imageType === 'lifestyle') {
         // LIFESTYLE IMAGE: Has people - animate the person naturally
-        fullMotionPrompt = `The person in the image continues their natural interaction with "${actualProductName}". ${motionPrompt}. Smooth realistic movement, maintain the person's appearance and the product exactly as shown. Commercial quality.`;
-        cfgScale = 0.4; // Moderate - allow natural person movement but keep product
+        fullMotionPrompt = `The person in the image continues their natural interaction with "${actualProductName}". ${motionPrompt}. Smooth realistic movement, maintain the person's appearance and the product exactly as shown. PRESERVE EXACT PRODUCT COLORS - do not change any colors. Commercial quality.`;
+        cfgScale = 0.35; // Moderate - allow natural person movement but keep product colors
         
       } else if (scene.imageType === 'product') {
         // PRODUCT SHOT: Clean product image - very subtle animation, preserve product exactly
-        fullMotionPrompt = `Keep this exact "${actualProductName}" product perfectly visible and unchanged. Very subtle animation: gentle lighting shift, soft camera zoom or rotate around product. Professional product showcase, do NOT alter product design or packaging.`;
-        cfgScale = 0.25; // Very low - preserve product appearance strictly
+        fullMotionPrompt = `Keep this exact "${actualProductName}" product perfectly visible and unchanged. PRESERVE EXACT COLORS - do not change any colors of the product. Very subtle animation: gentle lighting shift, soft camera zoom or rotate around product. Professional product showcase, do NOT alter product design, packaging, or colors.`;
+        cfgScale = 0.2; // Very low - preserve product appearance and colors strictly
         
       } else {
         // GENERATED IMAGE: Full motion prompt with product context
@@ -1237,7 +1237,7 @@ Return JSON array with classification for each image by index:
         input: {
           image: scene.imageUrl,
           prompt: fullMotionPrompt,
-          negative_prompt: "blur, distortion, low quality, shaky, amateur, text, watermark, change product, different product, wrong product, morph product, alter design",
+          negative_prompt: "blur, distortion, low quality, shaky, amateur, text, watermark, change product, different product, wrong product, morph product, alter design, change color, wrong color, different color, color shift",
           cfg_scale: cfgScale,
           seed: -1
         }
@@ -1315,33 +1315,44 @@ Return JSON array with classification for each image by index:
       }
     };
 
-    // Add logo if provided
+    // Add logo if provided - with proper positioning offset
     if (logoUrl) {
+      // Map position to Shotstack format with safe margins
+      const positionMap = {
+        'topRight': { position: 'topRight', offset: { x: -0.03, y: 0.03 } },
+        'topLeft': { position: 'topLeft', offset: { x: 0.03, y: 0.03 } },
+        'bottomRight': { position: 'bottomRight', offset: { x: -0.03, y: -0.12 } }, // Above subtitles
+        'bottomLeft': { position: 'bottomLeft', offset: { x: 0.03, y: -0.12 } }
+      };
+      const logoPos = positionMap[logoPosition] || positionMap['topRight'];
+      
       const logoClip = {
         asset: { type: 'image', src: logoUrl },
         start: 0,
         length: animatedScenes.length * 5,
-        position: logoPosition,
-        scale: logoSize
+        position: logoPos.position,
+        offset: logoPos.offset,
+        scale: Math.min(logoSize, 0.15), // Cap logo size to prevent overflow
+        opacity: 0.9 // Slight transparency for professional look
       };
       timeline.tracks.unshift({ clips: [logoClip] });
     }
 
-    // Add subtitles track
+    // Add subtitles track - positioned safely within frame
     if (subtitles.length > 0) {
       const subClips = subtitles.map(sub => ({
         asset: {
           type: 'title',
           text: sub.text.toUpperCase(),
           style: 'chunk',
-          size: 'medium',
+          size: 'small', // Smaller to fit better
           color: '#ffffff',
-          background: '#000000aa'
+          background: '#000000cc' // More opaque for readability
         },
         start: sub.start,
         length: sub.end - sub.start,
         position: 'bottom',
-        offset: { y: 0.1 }
+        offset: { y: -0.08 } // Move UP from bottom edge to stay in frame
       }));
       timeline.tracks.push({ clips: subClips });
     }

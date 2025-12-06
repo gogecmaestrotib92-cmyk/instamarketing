@@ -1122,15 +1122,16 @@ Output valid JSON only.`
         motionPrompt = industryMotions[industry] || 'Person interacts with product naturally, genuine satisfaction';
       }
 
-      // Build comprehensive Kling prompt with FULL product context
+      // Build comprehensive Kling prompt with FULL product context + COLOR PRESERVATION
       // This tells Kling WHAT the product is and HOW to show it being used
-      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Professional commercial quality, smooth natural movement.`;
+      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. PRESERVE EXACT PRODUCT COLORS - do not change any colors. Professional commercial quality, smooth natural movement.`;
 
       console.log(`[${jobId}] Scene ${i + 1} Kling prompt: ${fullMotionPrompt.substring(0, 100)}...`);
 
       const videoResult = await replicateService.imageToVideo(scene.imageUrl, fullMotionPrompt, {
         duration: 5,
-        aspectRatio: aspectRatio
+        aspectRatio: aspectRatio,
+        negativePrompt: 'blur, distortion, low quality, shaky, amateur, text, watermark, change color, wrong color, different color, color shift, change product'
       });
 
       if (videoResult.success && videoResult.videoUrl) {

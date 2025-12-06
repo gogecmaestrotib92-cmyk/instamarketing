@@ -706,14 +706,14 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
             type: 'title',
             text: formattedText,
             style: 'chunk', // Bold viral style
-            size: 'medium', // Medium - visible but fits
+            size: 'small', // Smaller to fit better in frame
             color: '#ffffff',
-            background: '#000000aa'
+            background: '#000000cc' // More opaque for readability
           },
           start: subtitle.start,
           length: Math.max(0.1, subtitle.end - subtitle.start),
           position: 'bottom', // Bottom center
-          offset: { x: 0, y: 0.1 }, // 10% up from bottom
+          offset: { x: 0, y: -0.08 }, // Move UP from bottom edge (negative = up)
           transition: index === 0 ? { in: 'fade' } : (index === validSubtitles.length - 1 ? { out: 'fade' } : undefined)
         };
       });
@@ -758,15 +758,19 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
   // Add logo overlay track (on top of everything)
   if (logoUrl) {
     // Map position string to offset values for 9:16 vertical video
+    // Values adjusted to keep logo within safe margins
     const positionMap = {
-      topLeft: { x: -0.38, y: 0.42 },
-      topRight: { x: 0.38, y: 0.42 },
-      bottomLeft: { x: -0.38, y: -0.35 },
-      bottomRight: { x: 0.38, y: -0.35 },
+      topLeft: { x: -0.35, y: 0.40 },
+      topRight: { x: 0.35, y: 0.40 },
+      bottomLeft: { x: -0.35, y: -0.20 }, // Higher to avoid subtitles
+      bottomRight: { x: 0.35, y: -0.20 }, // Higher to avoid subtitles
       center: { x: 0, y: 0 }
     };
     
     const offset = positionMap[logoPosition] || positionMap.topRight;
+    
+    // Cap logo size to prevent overflow
+    const safeLogoSize = Math.min(logoSize, 0.15);
     
     const logoClip = {
       asset: {
@@ -776,7 +780,7 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
       start: 0,
       length: totalDuration,
       fit: 'none',
-      scale: logoSize,
+      scale: safeLogoSize,
       position: 'center',
       offset: offset,
       opacity: 0.9,
@@ -788,7 +792,7 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
     
     // Insert logo track at the beginning (TOP layer)
     tracks.unshift({ clips: [logoClip] });
-    console.log(`   🏷️ Added logo overlay at ${logoPosition} (${logoSize * 100}% size)`);
+    console.log(`   🏷️ Added logo overlay at ${logoPosition} (${safeLogoSize * 100}% size)`);
   }
 
   // Build soundtrack
