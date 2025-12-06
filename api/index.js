@@ -2,6 +2,7 @@
 
 // MongoDB connection for persistent job storage
 const mongoose = require('mongoose');
+const fetch = require('node-fetch');
 let isDbConnected = false;
 
 async function connectDB() {
@@ -759,8 +760,10 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
     // ElevenLabs status check
     if (url === '/api/ai/elevenlabs/status' && req.method === 'GET') {
       const apiKey = process.env.ELEVENLABS_API_KEY;
+      console.log('🎙️ ElevenLabs status check - API key exists:', !!apiKey);
       
       if (!apiKey) {
+        console.log('❌ ELEVENLABS_API_KEY not found in environment');
         return res.status(200).json({ 
           available: false, 
           message: 'ElevenLabs API key not configured' 
@@ -773,8 +776,11 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
           headers: { 'xi-api-key': apiKey }
         });
         
+        console.log('🎙️ ElevenLabs API response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('✅ ElevenLabs available - tier:', data.tier);
           return res.status(200).json({
             available: true,
             subscription: {
@@ -785,12 +791,15 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
             }
           });
         } else {
+          const errorText = await response.text();
+          console.log('❌ ElevenLabs API error:', response.status, errorText);
           return res.status(200).json({ 
             available: false, 
             message: 'Invalid API key or subscription issue' 
           });
         }
       } catch (err) {
+        console.error('❌ ElevenLabs fetch error:', err.message);
         return res.status(200).json({ 
           available: false, 
           message: err.message 
