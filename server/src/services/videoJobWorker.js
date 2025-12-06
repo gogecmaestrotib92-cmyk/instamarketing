@@ -374,11 +374,14 @@ async function findVideosForScenes(job) {
       .join(' ');
     
     try {
-      console.log(`[Job ${job._id}] Scene ${i}: Searching Pexels for "${searchQuery}"`);
+      console.log(`[Job ${job._id}] Scene ${i}: Searching Pexels + Pixabay for "${searchQuery}"`);
+      
+      // Import combined search function
+      const { searchStockVideos } = require('./stockVideoService');
       
       let videos = [];
       
-      // Try multiple search strategies
+      // Try multiple search strategies using BOTH Pexels AND Pixabay
       const searchStrategies = [
         searchQuery,                                    // AI-optimized query (or original)
         scene.visual?.split(' ').slice(0, 2).join(' '),// Original visual first 2 words
@@ -389,51 +392,73 @@ async function findVideosForScenes(job) {
         if (videos.length >= 3) break;
         
         try {
-          const searchResponse = await axios.get(
-            `https://api.pexels.com/videos/search`,
-            {
-              params: {
-                query: query,
-                orientation: 'portrait',
-                size: 'medium',
-                per_page: 5
-              },
-              headers: {
-                'Authorization': PEXELS_API_KEY
-              },
-              timeout: 10000
-            }
-          );
+          // Use combined search that queries BOTH Pexels and Pixabay in parallel
+          const combinedResults = await searchStockVideos(query, {
+            orientation: 'portrait',
+            perPage: 8,
+            minDuration: 3,
+            maxDuration: 30
+          });
           
-          if (searchResponse.data.videos && searchResponse.data.videos.length > 0) {
-            videos = searchResponse.data.videos;
-            console.log(`[Job ${job._id}] Scene ${i}: Found ${videos.length} videos for "${query}"`);
+          if (combinedResults && combinedResults.length > 0) {
+            videos = combinedResults;
+            console.log(`[Job ${job._id}] Scene ${i}: Found ${videos.length} videos (Pexels+Pixabay) for "${query}"`);
             break;
           }
         } catch (searchErr) {
-          console.log(`[Job ${job._id}] Scene ${i}: Search failed for "${query}"`);
+          console.log(`[Job ${job._id}] Scene ${i}: Combined search failed for "${query}": ${searchErr.message}`);
         }
       }
       
       if (videos.length === 0) {
-        throw new Error('No Pexels videos found');
+        throw new Error('No stock videos found from Pexels or Pixabay');
       }
       
-      // Pick a random video from top results (for variety)
-      const randomIndex = Math.floor(Math.random() * Math.min(videos.length, 3));
-      const selectedVideo = videos[randomIndex];
+      // SMART RANKING: Score videos by quality factors for portrait/mobile format
+      const scoredVideos = videos.map(video => {
+        let score = 0;
+        
+        // 1. ASPECT RATIO - Portrait videos score highest (9:16 ideal for Reels/TikTok)
+        const aspectRatio = video.height / video.width;
+        if (aspectRatio >= 1.7) score += 50;        // True portrait (9:16 = 1.78)
+        else if (aspectRatio >= 1.3) score += 30;   // Tall video (4:3 portrait)
+        else if (aspectRatio >= 0.9) score += 10;   // Square-ish
+        else score -= 20;                            // Landscape (penalize)
+        
+        // 2. RESOLUTION - Higher is better but cap at 1080p (larger = slower)
+        const pixels = video.width * video.height;
+        if (pixels >= 1920 * 1080) score += 25;     // Full HD+
+        else if (pixels >= 1280 * 720) score += 20; // HD
+        else if (pixels >= 854 * 480) score += 10;  // SD
+        else score += 5;                             // Low res
+        
+        // 3. DURATION - Prefer 5-15 seconds (ideal for scenes)
+        const duration = video.duration || 10;
+        if (duration >= 5 && duration <= 15) score += 20;      // Ideal
+        else if (duration >= 3 && duration <= 20) score += 10; // Acceptable
+        else score += 0;                                        // Too short/long
+        
+        // 4. SOURCE PREFERENCE - Pexels often has better quality
+        if (video.source === 'pexels') score += 5;
+        
+        return { ...video, score };
+      });
       
-      // Find HD video file (prefer portrait)
-      const videoFile = selectedVideo.video_files.find(f => 
-        f.quality === 'hd' && f.height > f.width
-      ) || selectedVideo.video_files.find(f => 
-        f.quality === 'hd'
-      ) || selectedVideo.video_files[0];
+      // Sort by score (highest first)
+      scoredVideos.sort((a, b) => b.score - a.score);
       
-      console.log(`[Job ${job._id}] Scene ${i}: Downloading Pexels ${videoFile.width}x${videoFile.height}`);
+      // Pick from top 3 with slight randomness (for variety across scenes)
+      const topVideos = scoredVideos.slice(0, 3);
+      const selectedVideo = topVideos[Math.floor(Math.random() * topVideos.length)];
+      
+      // Get the video URL and download
+      const videoUrl = selectedVideo.url || selectedVideo.videoUrl;
+      const source = selectedVideo.source || 'stock';
+      
+      console.log(`[Job ${job._id}] Scene ${i}: Selected from ${source} (score: ${selectedVideo.score}) - ${selectedVideo.width}x${selectedVideo.height}, ${selectedVideo.duration}s`);
       
       // Download video
-      const videoResponse = await axios.get(videoFile.link, {
+      const videoResponse = await axios.get(videoUrl, {
         responseType: 'arraybuffer',
         timeout: 30000
       });
@@ -458,44 +483,34 @@ async function findVideosForScenes(job) {
       });
       
       job.scenes[i].videoUrl = cloudinaryUrl;
-      job.scenes[i].source = 'pexels';
-      console.log(`[Job ${job._id}] Scene ${i}: Uploaded Pexels video to ${cloudinaryUrl}`);
+      job.scenes[i].source = source; // Use actual source (pexels or pixabay)
+      console.log(`[Job ${job._id}] Scene ${i}: Uploaded ${source} video to ${cloudinaryUrl}`);
       
     } catch (error) {
-      console.error(`[Job ${job._id}] Scene ${i} Pexels failed: ${error.message}`);
+      console.error(`[Job ${job._id}] Scene ${i} Stock search failed: ${error.message}`);
       
-      // FALLBACK 1: Try Pixabay
-      console.log(`[Job ${job._id}] Scene ${i}: Trying Pixabay...`);
-      const pixabayResult = await searchPixabayVideo(scene, job, i);
+      // FALLBACK: Try Kling AI (stock video already searched both Pexels and Pixabay)
+      console.log(`[Job ${job._id}] Scene ${i}: Stock search failed, trying Kling AI...`);
+      await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
+        `Generating AI video for scene ${i + 1}...`);
       
-      if (pixabayResult.success) {
-        job.scenes[i].videoUrl = pixabayResult.videoUrl;
-        job.scenes[i].source = 'pixabay';
-        console.log(`[Job ${job._id}] Scene ${i}: Pixabay video found and uploaded`);
-      } else {
-        // FALLBACK 2: Try Kling AI
-        console.log(`[Job ${job._id}] Scene ${i}: Pixabay failed, trying Kling AI...`);
-        await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
-          `Generating AI video for scene ${i + 1}...`);
-        
-        try {
-          const klingResult = await generateVideoWithKling(scene, job._id, i);
-          if (klingResult.success) {
-            job.scenes[i].videoUrl = klingResult.videoUrl;
-            job.scenes[i].source = 'kling-ai';
-            job.scenes[i].aiGenerated = true;
-            console.log(`[Job ${job._id}] Scene ${i}: Kling AI video generated successfully`);
-          } else {
-            throw new Error(klingResult.error || 'Kling generation failed');
-          }
-        } catch (klingError) {
-          console.error(`[Job ${job._id}] Scene ${i} Kling failed: ${klingError.message}, using curated fallback`);
-          // Final fallback: Use curated videos
-          const fallbackVideos = CURATED_VIDEOS.fitness;
-          const fallback = fallbackVideos[i % fallbackVideos.length];
-          job.scenes[i].videoUrl = fallback.url;
-          job.scenes[i].source = 'curated';
+      try {
+        const klingResult = await generateVideoWithKling(scene, job._id, i);
+        if (klingResult.success) {
+          job.scenes[i].videoUrl = klingResult.videoUrl;
+          job.scenes[i].source = 'kling-ai';
+          job.scenes[i].aiGenerated = true;
+          console.log(`[Job ${job._id}] Scene ${i}: Kling AI video generated successfully`);
+        } else {
+          throw new Error(klingResult.error || 'Kling generation failed');
         }
+      } catch (klingError) {
+        console.error(`[Job ${job._id}] Scene ${i} Kling failed: ${klingError.message}, using curated fallback`);
+        // Final fallback: Use curated videos
+        const fallbackVideos = CURATED_VIDEOS.fitness;
+        const fallback = fallbackVideos[i % fallbackVideos.length];
+        job.scenes[i].videoUrl = fallback.url;
+        job.scenes[i].source = 'curated';
       }
     }
     
