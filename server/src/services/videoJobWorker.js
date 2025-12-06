@@ -122,6 +122,77 @@ const INDUSTRY_VIDEO_STYLES = {
 };
 
 /**
+ * Generate motion prompt for image-to-video generation
+ * Creates prompts that describe how to animate a product/brand image
+ */
+async function generateImageMotionPrompt(scene, options = {}) {
+  const { industry, productName, businessName, brandVoice, isIntro, isOutro } = options;
+  
+  // Get industry-specific motion guidance
+  const industryMotion = {
+    'E-Commerce / Retail': 'product slowly rotating, subtle zoom, packaging reveal',
+    'Food & Beverage': 'steam rising, ingredients falling, pour shot, appetizing reveal',
+    'Fashion & Beauty': 'fabric flowing, makeup shimmer, beauty reveal, glamour motion',
+    'Health & Fitness': 'dynamic energy, powerful movement, transformation reveal',
+    'Technology': 'sleek rotation, screen glow, interface animation, tech reveal',
+    'Real Estate': 'camera dolly through, room reveal, cinematic walkthrough',
+    'Travel & Hospitality': 'panoramic sweep, destination reveal, welcoming motion',
+    'Professional Services': 'professional approach, trust-building reveal, expert presence'
+  };
+  
+  const motionStyle = industryMotion[industry] || 'smooth reveal, professional motion, elegant presentation';
+  
+  try {
+    const openai = getOpenAI();
+    
+    const prompt = `You are an expert at creating motion prompts for AI image-to-video generators.
+
+Given a product/brand image, create a SHORT motion prompt (max 50 words) describing ONLY the motion/animation.
+
+SCENE CONTEXT: ${scene.text || scene.visual}
+BRAND: ${businessName || 'Unknown'}
+PRODUCT: ${productName || 'product'}
+INDUSTRY: ${industry || 'general'}
+BRAND VOICE: ${brandVoice || 'professional'}
+IS INTRO SCENE: ${isIntro}
+IS OUTRO SCENE: ${isOutro}
+INDUSTRY MOTION STYLE: ${motionStyle}
+
+RULES:
+1. Describe MOTION only - how the image should move/animate
+2. Keep the product/subject as the hero - centered and prominent
+3. Use professional camera movements (dolly, zoom, pan, rotate)
+4. Add subtle effects (light rays, particles, reflections)
+5. If INTRO: dramatic reveal, building anticipation
+6. If OUTRO: satisfying conclusion, logo hold, call-to-action feel
+7. NO text descriptions, only motion
+8. Max 50 words
+
+Return ONLY the motion prompt, nothing else.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 100
+    });
+
+    return response.choices[0].message.content.trim();
+    
+  } catch (error) {
+    console.error('Motion prompt generation failed, using fallback:', error.message);
+    
+    // Fallback motion prompts
+    if (isIntro) {
+      return `Dramatic zoom out reveal, ${motionStyle}, cinematic lighting sweep, premium feel`;
+    } else if (isOutro) {
+      return `Slow zoom in, subtle glow effect, ${motionStyle}, professional hold`;
+    }
+    return `Smooth 360 rotation, ${motionStyle}, subtle lighting animation, product showcase`;
+  }
+}
+
+/**
  * Enhance a video scene prompt with AI for better generation accuracy
  * Uses OpenAI to add specific cinematography and visual details
  */
@@ -528,6 +599,7 @@ async function findVideosForScenes(job) {
  * Uses Replicate webhooks - starts all predictions and returns immediately
  * Webhook will update scenes as they complete
  * NOW WITH AI-ENHANCED PROMPTS for better accuracy
+ * NOW WITH IMAGE-TO-VIDEO for brand images (product photos, logos)
  */
 async function findVideosForProductScenes(job) {
   console.log(`[Job ${job._id}] 🎬 Starting ASYNC AI video generation for product video`);
@@ -538,9 +610,19 @@ async function findVideosForProductScenes(job) {
   const brandVoice = job.businessInfo?.brandVoice || 'professional';
   const description = job.businessInfo?.description || '';
   const brandImages = job.businessInfo?.brandImages || [];
+  const brandColors = job.businessInfo?.brandColors || [];
   
   console.log(`[Job ${job._id}] Business: ${businessName}, Industry: ${industry}, Product: ${productName}`);
-  console.log(`[Job ${job._id}] Brand Voice: ${brandVoice}, Description: ${description.substring(0, 50)}...`);
+  console.log(`[Job ${job._id}] Brand Voice: ${brandVoice}, Brand Images: ${brandImages.length}`);
+  console.log(`[Job ${job._id}] Brand Colors: ${brandColors.join(', ')}`);
+  
+  // Strategy: Use brand images for key scenes (product showcase, intro, outro)
+  // Use AI text-to-video for dynamic/action scenes
+  const hasBrandImages = brandImages.length > 0;
+  
+  if (hasBrandImages) {
+    console.log(`[Job ${job._id}] 🖼️ Using IMAGE-TO-VIDEO for brand content (${brandImages.length} images available)`);
+  }
   
   // Determine webhook URL based on environment
   const baseUrl = process.env.VERCEL_URL 
@@ -554,46 +636,94 @@ async function findVideosForProductScenes(job) {
   for (let i = 0; i < job.scenes.length; i++) {
     const scene = job.scenes[i];
     await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
-      `Enhancing prompt for scene ${i + 1}/${job.scenes.length}...`);
+      `Processing scene ${i + 1}/${job.scenes.length}...`);
     
     try {
-      // Build base prompt from scene
-      const basePrompt = `${scene.visual || scene.text}. ${scene.text}`;
+      // STRATEGY: Decide between image-to-video vs text-to-video
+      // Use brand images for: intro (0), product showcase (middle), outro (last)
+      const isKeyScene = (i === 0) || (i === job.scenes.length - 1) || 
+                         scene.text?.toLowerCase().includes('product') ||
+                         scene.text?.toLowerCase().includes('introducing') ||
+                         scene.visual?.toLowerCase().includes('product');
       
-      // Use AI to enhance the prompt with cinematography details
-      console.log(`[Job ${job._id}] Scene ${i}: Enhancing prompt with AI...`);
-      const enhancedPrompt = await enhanceVideoPrompt(basePrompt, {
-        industry,
-        businessName,
-        productName,
-        brandVoice,
-        sceneContext: `Scene ${i + 1} of ${job.scenes.length} for a ${job.targetDuration}s promotional video`,
-        duration: scene.duration || 5
-      });
+      const shouldUseImage = hasBrandImages && isKeyScene;
       
-      console.log(`[Job ${job._id}] Scene ${i}: Enhanced prompt ready (${enhancedPrompt.length} chars)`);
-      
-      // Start async Kling generation with enhanced prompt
-      await updateJobStatus(job, 'finding_videos', 30 + Math.floor((i / job.scenes.length) * 15), 
-        `Starting AI generation for scene ${i + 1}/${job.scenes.length}...`);
-      
-      const result = await replicateService.startAsyncKlingVideo(enhancedPrompt, webhookUrl, {
-        duration: scene.duration || 5,
-        aspectRatio: job.aspectRatio || '9:16'
-      });
-      
-      if (result.success) {
-        // Save prediction ID for webhook to find
-        job.scenes[i].replicatePredictionId = result.predictionId;
-        job.scenes[i].replicateStatus = 'pending';
-        job.scenes[i].enhancedPrompt = enhancedPrompt; // Store for debugging
-        console.log(`[Job ${job._id}] Scene ${i}: ✅ Kling prediction started: ${result.predictionId}`);
+      if (shouldUseImage) {
+        // === IMAGE-TO-VIDEO: Animate brand/product image ===
+        const imageIndex = i % brandImages.length; // Cycle through available images
+        const imageUrl = brandImages[imageIndex];
+        
+        console.log(`[Job ${job._id}] Scene ${i}: 🖼️ Using IMAGE-TO-VIDEO with brand image`);
+        
+        // Create motion prompt that describes how to animate the product
+        const motionPrompt = await generateImageMotionPrompt(scene, {
+          industry,
+          productName,
+          businessName,
+          brandVoice,
+          isIntro: i === 0,
+          isOutro: i === job.scenes.length - 1
+        });
+        
+        console.log(`[Job ${job._id}] Scene ${i}: Motion prompt: "${motionPrompt.substring(0, 80)}..."`);
+        
+        // Start image-to-video generation with webhook
+        const result = await replicateService.startImageToVideo(imageUrl, motionPrompt, {
+          duration: scene.duration || 5,
+          aspectRatio: job.aspectRatio || '9:16',
+          webhookUrl: webhookUrl
+        });
+        
+        if (result.success) {
+          job.scenes[i].replicatePredictionId = result.predictionId;
+          job.scenes[i].replicateStatus = 'pending';
+          job.scenes[i].sourceImage = imageUrl;
+          job.scenes[i].motionPrompt = motionPrompt;
+          job.scenes[i].generationType = 'image-to-video';
+          console.log(`[Job ${job._id}] Scene ${i}: ✅ Image-to-video started: ${result.predictionId}`);
+        } else {
+          throw new Error('Image-to-video failed, falling back to text-to-video');
+        }
+        
       } else {
-        console.log(`[Job ${job._id}] Scene ${i}: Kling start failed, using stock video fallback`);
-        // Fallback to stock videos - use brand-relevant search
-        const stockResult = await findStockVideoFallback(scene, job, i, { businessName, industry, productName });
-        job.scenes[i].videoUrl = stockResult.videoUrl;
-        job.scenes[i].source = stockResult.source;
+        // === TEXT-TO-VIDEO: Generate from enhanced prompt ===
+        const basePrompt = `${scene.visual || scene.text}. ${scene.text}`;
+        
+        // Add brand colors to the prompt if available
+        let colorContext = '';
+        if (brandColors.length > 0) {
+          colorContext = ` Use color palette: ${brandColors.join(', ')}.`;
+        }
+        
+        console.log(`[Job ${job._id}] Scene ${i}: 🎬 Using TEXT-TO-VIDEO`);
+        const enhancedPrompt = await enhanceVideoPrompt(basePrompt + colorContext, {
+          industry,
+          businessName,
+          productName,
+          brandVoice,
+          sceneContext: `Scene ${i + 1} of ${job.scenes.length} for a ${job.targetDuration}s promotional video`,
+          duration: scene.duration || 5
+        });
+        
+        console.log(`[Job ${job._id}] Scene ${i}: Enhanced prompt ready (${enhancedPrompt.length} chars)`);
+        
+        const result = await replicateService.startAsyncKlingVideo(enhancedPrompt, webhookUrl, {
+          duration: scene.duration || 5,
+          aspectRatio: job.aspectRatio || '9:16'
+        });
+        
+        if (result.success) {
+          job.scenes[i].replicatePredictionId = result.predictionId;
+          job.scenes[i].replicateStatus = 'pending';
+          job.scenes[i].enhancedPrompt = enhancedPrompt;
+          job.scenes[i].generationType = 'text-to-video';
+          console.log(`[Job ${job._id}] Scene ${i}: ✅ Text-to-video started: ${result.predictionId}`);
+        } else {
+          console.log(`[Job ${job._id}] Scene ${i}: Kling start failed, using stock video fallback`);
+          const stockResult = await findStockVideoFallback(scene, job, i, { businessName, industry, productName });
+          job.scenes[i].videoUrl = stockResult.videoUrl;
+          job.scenes[i].source = stockResult.source;
+        }
       }
       
     } catch (error) {
@@ -612,7 +742,7 @@ async function findVideosForProductScenes(job) {
   const pendingScenes = job.scenes.filter(s => s.replicateStatus === 'pending');
   
   if (pendingScenes.length > 0) {
-    console.log(`[Job ${job._id}] ${pendingScenes.length} scenes waiting for Kling AI (async)`);
+    console.log(`[Job ${job._id}] ${pendingScenes.length} scenes waiting for AI (async)`);
     job.status = 'waiting_for_ai';
     job.statusMessage = `Generating ${pendingScenes.length} AI videos... (5-10 min)`;
     await job.save();

@@ -243,25 +243,36 @@ class ReplicateService {
 
   /**
    * Start async image-to-video generation using Kling v2.1
+   * With webhook support for async completion notification
    */
   async startImageToVideo(imageUrl, motionPrompt = '', options = {}) {
     try {
-      const { duration = 10, aspectRatio = '9:16' } = options;
+      const { duration = 10, aspectRatio = '9:16', webhookUrl } = options;
       console.log('🎬 Starting async image-to-video generation (Kling v2.1)...');
       console.log('Image URL:', imageUrl);
+      console.log('Motion Prompt:', motionPrompt);
       console.log('Duration:', duration, 'Aspect Ratio:', aspectRatio);
+      if (webhookUrl) console.log('Webhook:', webhookUrl);
 
-      const prediction = await this.replicate.predictions.create({
+      const predictionConfig = {
         model: 'kwaivgi/kling-v2.1',
         input: {
           prompt: motionPrompt || 'Animate this image with natural motion',
           start_image: imageUrl,
-          duration: duration,
+          duration: parseInt(duration) >= 10 ? 10 : 5,
           aspect_ratio: aspectRatio
         }
-      });
+      };
+      
+      // Add webhook if provided
+      if (webhookUrl) {
+        predictionConfig.webhook = webhookUrl;
+        predictionConfig.webhook_events_filter = ['completed'];
+      }
 
-      console.log('📝 Prediction created:', prediction.id, 'Status:', prediction.status);
+      const prediction = await this.replicate.predictions.create(predictionConfig);
+
+      console.log('📝 Image-to-video prediction created:', prediction.id, 'Status:', prediction.status);
 
       return {
         success: true,
