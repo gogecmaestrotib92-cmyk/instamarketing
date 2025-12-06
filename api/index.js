@@ -1215,12 +1215,10 @@ Return JSON array with classification for each image by index:
 
       if (scene.imageType === 'lifestyle') {
         // LIFESTYLE IMAGE: Has people - animate the person naturally
-        // Determine WHERE product is applied based on industry/product type
-        const isBeauty = industry?.toLowerCase().includes('beauty') || industry?.toLowerCase().includes('cosmetic') || industry?.toLowerCase().includes('skincare');
-        const isFashion = industry?.toLowerCase().includes('fashion') || industry?.toLowerCase().includes('apparel');
-        const bodyPartHint = isBeauty ? 'on face/cheeks (NOT nose)' : isFashion ? 'wearing the item' : '';
+        // Let the product images and description guide WHERE product is applied
+        // Don't assume - some products go on nose (breathing strips), face, body, etc.
         
-        fullMotionPrompt = `The person in the image continues their natural interaction with "${actualProductName}"${bodyPartHint ? ` ${bodyPartHint}` : ''}. ${motionPrompt}. Smooth realistic movement, maintain the person's appearance and the product EXACTLY as shown - same shape, same design, same packaging. PRESERVE EXACT PRODUCT COLORS AND SHAPE - do not change any colors or form. Commercial quality.`;
+        fullMotionPrompt = `The person in the image continues their natural interaction with "${actualProductName}". ${motionPrompt}. Smooth realistic movement, maintain the person's appearance and the product EXACTLY as shown - same shape, same design, same packaging, same placement on body. PRESERVE EXACT PRODUCT COLORS AND SHAPE - do not change any colors or form. Commercial quality.`;
         cfgScale = 0.3; // Lower CFG to preserve product better
         
       } else if (scene.imageType === 'product') {

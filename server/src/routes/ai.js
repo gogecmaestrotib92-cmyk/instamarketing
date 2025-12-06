@@ -1122,14 +1122,12 @@ Output valid JSON only.`
         motionPrompt = industryMotions[industry] || 'Person interacts with product naturally, genuine satisfaction';
       }
 
-      // Determine WHERE product is applied based on industry/product type (for beauty - NOT on nose!)
-      const isBeauty = industry?.toLowerCase().includes('beauty') || industry?.toLowerCase().includes('cosmetic') || industry?.toLowerCase().includes('skincare');
-      const isFashion = industry?.toLowerCase().includes('fashion') || industry?.toLowerCase().includes('apparel');
-      const bodyPartHint = isBeauty ? 'Apply on face/cheeks (NOT nose).' : isFashion ? 'Person wears the item.' : '';
+      // Let the product images and description guide WHERE product is applied
+      // Don't assume body placement - some products go on nose (breathing strips), face, hands, etc.
 
       // Build comprehensive Kling prompt with FULL product context + COLOR & SHAPE PRESERVATION
       // This tells Kling WHAT the product is and HOW to show it being used
-      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}${bodyPartHint ? `${bodyPartHint} ` : ''}MOTION: ${motionPrompt}. PRESERVE EXACT PRODUCT SHAPE, FORM, AND COLORS - do not change anything about product appearance. Professional commercial quality, smooth natural movement.`;
+      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Keep product in SAME position on body as shown in image. PRESERVE EXACT PRODUCT SHAPE, FORM, AND COLORS - do not change anything about product appearance. Professional commercial quality, smooth natural movement.`;
 
       console.log(`[${jobId}] Scene ${i + 1} Kling prompt: ${fullMotionPrompt.substring(0, 100)}...`);
 
