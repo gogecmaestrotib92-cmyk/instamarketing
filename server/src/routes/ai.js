@@ -1750,13 +1750,17 @@ async function enhanceImagePrompt(basePrompt, options = {}) {
   
   // Build business context string
   let businessContextStr = '';
+  let productName = '';
   if (businessContext) {
     const parts = [];
     if (businessContext.businessName) parts.push(`Business Name: ${businessContext.businessName}`);
     if (businessContext.description) parts.push(`Business Description: ${businessContext.description.substring(0, 200)}`);
     if (businessContext.targetAudience) parts.push(`Target Audience: ${businessContext.targetAudience.substring(0, 150)}`);
     if (businessContext.brandVoice) parts.push(`Brand Voice: ${businessContext.brandVoice}`);
-    if (businessContext.products) parts.push(`Products/Services: ${businessContext.products}`);
+    if (businessContext.products) {
+      parts.push(`Products/Services: ${businessContext.products}`);
+      productName = businessContext.products;
+    }
     if (parts.length > 0) {
       businessContextStr = `\n\nBUSINESS CONTEXT (IMPORTANT - the image MUST reflect this brand):\n${parts.join('\n')}`;
     }
@@ -1768,7 +1772,7 @@ async function enhanceImagePrompt(basePrompt, options = {}) {
     
     const enhanceRequest = `You are an expert at writing prompts for AI image generators like Flux and Midjourney.
 
-Take this basic prompt and enhance it with specific, concrete visual details that will produce a high-quality, professional image.
+Take this basic prompt and enhance it with specific, concrete visual details that will produce a high-quality, professional image that SHOWS THE PRODUCT/SERVICE BEING USED.
 
 BASIC PROMPT: "${basePrompt}"${businessContextStr}
 
@@ -1784,14 +1788,24 @@ INDUSTRY-SPECIFIC VISUAL GUIDANCE:
 - Style: ${industryStyle.style}
 - Colors: ${industryStyle.colors}
 
+**CRITICAL - SHOW PRODUCT IN USE**:
+The image MUST show the product/service being USED by a real person when applicable:
+- If it's food/drink → person eating/drinking it, enjoying the taste, appetizing presentation
+- If it's fitness/health product → person actively using it during workout or wellness routine
+- If it's skincare/beauty → person applying it to face/skin, showing the glowing result
+- If it's tech device → hands interacting with it, person engaged with the screen
+- If it's clothing/fashion → person wearing it confidently, styled outfit
+- If it's a physical product → person holding, using, or interacting with it naturally
+${productName ? `- For "${productName}" → show someone USING or benefiting from it` : ''}
+
 RULES FOR ENHANCED PROMPT:
-1. THE IMAGE MUST DIRECTLY RELATE TO THE BUSINESS CONTEXT - if it's a bakery, show baked goods; if it's a gym, show fitness content
-2. Incorporate the industry-specific guidance above naturally
-3. Add specific lighting terms that match the industry
-4. Add camera/lens details (shallow depth of field, 85mm portrait, wide angle, macro, etc.)
-5. Add composition terms that work for the content
+1. THE IMAGE MUST SHOW A PERSON USING/INTERACTING WITH THE PRODUCT when it's a physical product
+2. Describe the person: approximate age, ethnicity diversity, genuine expression
+3. Include the actual product VISIBLE in the frame
+4. Add specific lighting terms that match the industry
+5. Add camera/lens details (shallow depth of field, 85mm portrait, wide angle, macro, etc.)
 6. Add texture/material details when relevant
-7. Be SPECIFIC and CONCRETE - describe exactly what should be visible that represents THIS business
+7. Be SPECIFIC and CONCRETE - describe exactly what should be visible
 8. Include the brand colors if specified: ${brandColors || 'use industry-appropriate colors'}
 9. Add quality modifiers: 8k, ultra detailed, professional photography, commercial quality
 10. Keep total length under 200 words

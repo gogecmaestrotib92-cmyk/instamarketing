@@ -206,7 +206,7 @@ async function generateSceneImagePrompt(scene, options = {}) {
     const openai = getOpenAI();
     
     const prompt = `You are an expert at creating prompts for AI image generation (FLUX model).
-Convert this video scene into a detailed visual image description for a SINGLE FRAME.
+Convert this video scene into a detailed visual image description that SHOWS THE PRODUCT/SERVICE BEING USED.
 
 SCENE TEXT: "${scene.text}"
 SCENE VISUAL: "${scene.visual || scene.text}"
@@ -223,15 +223,26 @@ INDUSTRY VISUAL STYLE:
 - Composition: ${industryStyle.composition}
 - Mood: ${industryStyle.mood}
 
+**CRITICAL - SHOW PRODUCT IN USE**:
+At least one scene MUST show the product/service being USED by a real person:
+- If it's food/drink → person eating/drinking it, enjoying the taste
+- If it's fitness product → person actively using it during workout
+- If it's skincare/beauty → person applying it, showing the result
+- If it's tech device → hands interacting with it, person using it
+- If it's clothing → person wearing it confidently
+- If it's a service → person receiving/benefiting from the service
+${productName ? `- For "${productName}" → show someone USING or INTERACTING with it` : ''}
+
 RULES FOR IMAGE PROMPT:
-1. Describe a SINGLE compelling frame/moment from this scene
-2. Focus on VISUAL elements: setting, lighting, colors, composition
-3. Be specific about camera angle (close-up, wide, overhead, etc.)
-4. Include materials, textures, and atmospheric details
-5. Make it ${aspectRatio === '9:16' ? 'vertical/portrait oriented' : aspectRatio === '16:9' ? 'horizontal/landscape' : 'square'}
-6. Keep under 120 words, visually rich
-7. NO text, logos, or words in the image
-8. Professional, high-quality, suitable for brand content
+1. Describe a person USING/INTERACTING with the product when relevant
+2. Include the actual product visibly in the scene
+3. Focus on VISUAL elements: setting, lighting, colors, composition
+4. Describe the person: approximate age, expression, action
+5. Be specific about camera angle (close-up, wide, overhead, etc.)
+6. Make it ${aspectRatio === '9:16' ? 'vertical/portrait oriented' : aspectRatio === '16:9' ? 'horizontal/landscape' : 'square'}
+7. Keep under 120 words, visually rich
+8. NO text, logos, or words in the image
+9. Professional, commercial-quality aesthetic
 
 Return ONLY the image prompt, nothing else.`;
 
@@ -318,9 +329,26 @@ async function startSmartSceneVideo(scene, job, sceneIndex, webhookUrl) {
       console.log(`[Job ${job._id}] Scene ${sceneIndex}: Cloudinary upload failed, using Replicate URL`);
     }
     
-    // Step 4: Create motion prompt for animation
+    // Step 4: Create product-aware motion prompt for animation
     const industryStyle = INDUSTRY_VIDEO_STYLES[industry] || INDUSTRY_VIDEO_STYLES['default'];
-    const motionPrompt = `${industryStyle.cameraMovement}. Smooth professional motion, ${industryStyle.mood}. Subtle atmospheric animation.`;
+    
+    // Build motion prompt that includes product context
+    const productContext = productName ? `Person interacts with ${productName}, ` : '';
+    const industryMotion = {
+      'E-Commerce / Retail': 'customer examining product closely, satisfied expression',
+      'Food & Beverage': 'person enjoying the food/drink, savoring the moment',
+      'Fashion & Beauty': 'person wearing/applying product confidently',
+      'Health & Fitness': 'athlete using the product, feeling the benefit',
+      'Technology': 'hands smoothly interacting with device',
+      'Real Estate': 'person walking through space appreciatively',
+      'Travel & Hospitality': 'traveler experiencing destination with wonder',
+      'Professional Services': 'professional interaction, trust conveyed'
+    };
+    
+    const actionMotion = industryMotion[industry] || 'natural product interaction';
+    const motionPrompt = `${productContext}${actionMotion}. ${industryStyle.cameraMovement}. Smooth professional motion, ${industryStyle.mood}. Commercial quality.`;
+    
+    console.log(`[Job ${job._id}] Scene ${sceneIndex}: Motion prompt: ${motionPrompt.substring(0, 80)}...`);
     
     console.log(`[Job ${job._id}] Scene ${sceneIndex}: Animating with Kling v2.1...`);
     
