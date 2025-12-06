@@ -898,23 +898,17 @@ Remember:
     
     if (!audioUrl) {
       // Use Google TTS as fallback or default
-      audioResult = await googleTTSService.generateSpeech(sceneBreakdown.voiceoverScript, {
+      audioResult = await googleTTSService.textToSpeech(sceneBreakdown.voiceoverScript, {
         languageCode: 'en-US',
         voiceName: voice || 'en-US-Neural2-J',
         speakingRate: 0.95
       });
       
-      if (audioResult.success) {
-        const audioUpload = await cloudinaryService.uploadBufferToCloudinary(
-          audioResult.audioBuffer,
-          `premium-voiceover-${Date.now()}.mp3`,
-          'video',
-          'premium-audio'
-        );
-        audioUrl = audioUpload.secure_url;
+      if (audioResult.success && audioResult.audioUrl) {
+        audioUrl = audioResult.audioUrl;
         console.log('✅ Google TTS voiceover generated:', audioUrl);
       } else {
-        throw new Error('Failed to generate voiceover');
+        throw new Error('Failed to generate voiceover: ' + (audioResult.error || 'Unknown error'));
       }
     }
 
