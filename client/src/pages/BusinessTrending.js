@@ -726,6 +726,11 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         }
         
         console.log('✅ AI Video generated:', videoData.videoUrl);
+        console.log('🖼️ Base image (FLUX):', videoData.imageUrl);
+        console.log('📝 Image prompt used:', videoData.imagePrompt);
+        console.log('🎬 Motion prompt:', videoData.motionPrompt);
+        console.log('🔧 Pipeline:', videoData.pipeline);
+        console.log('📊 Debug info:', videoData.debug);
         
         // Build result - AI video + voiceover (no composition for now)
         const purpose = contentPurposes.find(p => p.id === contentPurpose);

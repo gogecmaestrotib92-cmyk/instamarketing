@@ -542,12 +542,13 @@ router.post('/elevenlabs/full-voiceover', async (req, res) => {
  * Smart video generation: Image-first pipeline for better visual control
  * POST /api/ai/video/generate-smart
  * 
- * 1. Uses GPT to convert business context into a visual image prompt
- * 2. Generates a high-quality image with FLUX
- * 3. Animates the image with Kling v2.1 for realistic motion
+ * Pipeline:
+ * 1. GPT converts business context → detailed visual image prompt
+ * 2. FLUX Schnell generates HD image from that prompt
+ * 3. Kling v2.1 animates the FLUX image with motion
  * 
  * This produces much better results than text-to-video because:
- * - FLUX is excellent at understanding business/brand concepts
+ * - FLUX excels at understanding business/brand concepts
  * - Kling v2.1 excels at animating existing images
  * - You get control over the base visual before animation
  */
@@ -567,62 +568,87 @@ router.post('/video/generate-smart', async (req, res) => {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
-    console.log('🎨 Smart video generation request');
-    console.log('Business context:', prompt);
-    console.log('Business:', businessName, 'Industry:', industry);
-    console.log('Purpose:', contentPurpose, 'Aspect:', aspectRatio);
+    console.log('\n========================================');
+    console.log('🎨 SMART VIDEO GENERATION - START');
+    console.log('========================================');
+    console.log('📋 INPUT:');
+    console.log('  - Prompt:', prompt.substring(0, 100) + '...');
+    console.log('  - Business:', businessName || 'not specified');
+    console.log('  - Industry:', industry || 'not specified');
+    console.log('  - Purpose:', contentPurpose || 'general');
+    console.log('  - Aspect:', aspectRatio);
+    console.log('  - Duration:', duration);
 
-    // Step 1: Convert business context to visual image prompt with GPT
+    // ============================================
+    // STEP 1: Convert business context to visual image prompt with GPT
+    // ============================================
+    console.log('\n🔹 STEP 1: GPT Prompt Optimization');
+    
     const imagePromptResponse = await openaiService.chat([
       {
         role: 'system',
         content: `You are an expert at creating prompts for AI image generation (FLUX model).
 Convert business/content descriptions into detailed visual scene descriptions.
 
-Guidelines:
-- Focus on VISUAL elements: setting, lighting, colors, composition, mood
+CRITICAL RULES:
+- Focus ONLY on VISUAL elements: setting, lighting, colors, composition, mood
 - Be specific about style: professional, cinematic, modern, elegant, etc.
-- Include camera angle hints: wide shot, close-up, overhead, etc.
+- Include camera angle: wide shot, close-up, overhead, etc.
 - Describe lighting: soft natural light, dramatic shadows, golden hour, etc.
 - Mention textures and materials when relevant
 - Keep it under 150 words but visually rich
-- NO text/words in the image - focus purely on visuals
-- Make it suitable for a ${aspectRatio === '9:16' ? 'vertical/portrait' : aspectRatio === '16:9' ? 'horizontal/landscape' : 'square'} composition`
+- ABSOLUTELY NO text/words/logos in the image - pure visuals only
+- DO NOT describe products or brand elements unless specifically mentioned
+- Make it suitable for a ${aspectRatio === '9:16' ? 'vertical/portrait' : aspectRatio === '16:9' ? 'horizontal/landscape' : 'square'} composition
+- Think like a movie director describing a scene`
       },
       {
         role: 'user',
-        content: `Create an image prompt for:
-Topic: ${prompt}
-${businessName ? `Business: ${businessName}` : ''}
-${industry ? `Industry: ${industry}` : ''}
-${contentPurpose ? `Content type: ${contentPurpose}` : ''}
+        content: `Create a visual image prompt for this content:
 
-Generate a detailed visual prompt that captures this concept.`
+TOPIC/SCRIPT: ${prompt}
+${businessName ? `BRAND: ${businessName}` : ''}
+${industry ? `INDUSTRY: ${industry}` : ''}
+${contentPurpose ? `CONTENT TYPE: ${contentPurpose}` : ''}
+
+Generate a detailed visual scene description that would work as a video background for this content. Focus on atmosphere, setting, and mood - NOT on showing specific products or brand logos.`
       }
     ], { model: 'gpt-4o-mini', maxTokens: 200 });
 
     if (!imagePromptResponse.success) {
+      console.log('❌ GPT prompt optimization FAILED:', imagePromptResponse.error);
       throw new Error('Failed to generate image prompt: ' + imagePromptResponse.error);
     }
 
     const imagePrompt = imagePromptResponse.content.trim();
-    console.log('📝 Generated image prompt:', imagePrompt);
+    console.log('✅ GPT generated prompt:', imagePrompt);
 
-    // Step 2: Generate image with FLUX
-    console.log('🖼️ Generating base image with FLUX...');
+    // ============================================
+    // STEP 2: Generate image with FLUX Schnell
+    // ============================================
+    console.log('\n🔹 STEP 2: FLUX Image Generation');
+    console.log('  Model: flux-schnell (text-to-image)');
+    console.log('  Prompt:', imagePrompt.substring(0, 80) + '...');
+    
     const imageResult = await replicateService.textToImage(imagePrompt, {
       aspectRatio: aspectRatio,
       outputFormat: 'webp',
       outputQuality: 95
+      // NOTE: No referenceImage - this should generate a NEW image from text only
     });
 
     if (!imageResult.success) {
+      console.log('❌ FLUX generation FAILED:', imageResult.error);
       throw new Error('Failed to generate image: ' + imageResult.error);
     }
 
-    console.log('✅ Image generated:', imageResult.imageUrl);
+    console.log('✅ FLUX image generated:', imageResult.imageUrl);
 
-    // Step 3: Upload image to Cloudinary (Replicate URLs expire)
+    // ============================================
+    // STEP 3: Upload image to Cloudinary (Replicate URLs expire)
+    // ============================================
+    console.log('\n🔹 STEP 3: Cloudinary Upload');
+    
     let permanentImageUrl = imageResult.imageUrl;
     if (cloudinaryService) {
       try {
@@ -634,15 +660,19 @@ Generate a detailed visual prompt that captures this concept.`
         );
         if (uploadResult.url) {
           permanentImageUrl = uploadResult.url;
-          console.log('☁️ Image uploaded to Cloudinary:', permanentImageUrl);
+          console.log('✅ Uploaded to Cloudinary:', permanentImageUrl);
         }
       } catch (uploadErr) {
-        console.log('Cloudinary upload failed, using Replicate URL:', uploadErr.message);
+        console.log('⚠️ Cloudinary upload failed, using Replicate URL:', uploadErr.message);
       }
+    } else {
+      console.log('⚠️ Cloudinary not available, using Replicate URL');
     }
 
-    // Step 4: Animate with Kling v2.1
-    console.log('🎬 Animating image with Kling v2.1...');
+    // ============================================
+    // STEP 4: Animate with Kling v2.1
+    // ============================================
+    console.log('\n🔹 STEP 4: Kling v2.1 Animation');
     
     // Create motion prompt based on content and style
     let motionPrompt = '';
@@ -676,16 +706,24 @@ Generate a detailed visual prompt that captures this concept.`
         motionPrompt = 'Professional smooth motion, elegant camera movement, high quality animation';
     }
 
+    console.log('  Image URL:', permanentImageUrl);
+    console.log('  Motion prompt:', motionPrompt);
+    console.log('  Duration:', duration);
+
     const videoResult = await replicateService.imageToVideo(permanentImageUrl, motionPrompt, {
       duration: parseInt(duration) >= 10 ? 10 : 5,
       aspectRatio: aspectRatio
     });
 
     if (!videoResult.success) {
+      console.log('❌ Kling animation FAILED:', videoResult.error);
       throw new Error('Failed to animate image: ' + videoResult.error);
     }
 
-    console.log('✅ Smart video generation complete!');
+    console.log('✅ Kling video generated:', videoResult.videoUrl);
+    console.log('\n========================================');
+    console.log('🎉 SMART VIDEO GENERATION - COMPLETE');
+    console.log('========================================\n');
 
     res.json({
       success: true,
@@ -693,11 +731,23 @@ Generate a detailed visual prompt that captures this concept.`
       imageUrl: permanentImageUrl,
       imagePrompt: imagePrompt,
       motionPrompt: motionPrompt,
-      pipeline: 'image-first',
-      steps: ['prompt-optimization', 'flux-image', 'kling-animation']
+      pipeline: 'smart-flux-kling',
+      steps: ['gpt-prompt-optimization', 'flux-schnell-image', 'kling-v2.1-animation'],
+      debug: {
+        fluxModel: 'flux-schnell',
+        klingModel: 'kling-v2.1',
+        inputPromptLength: prompt.length,
+        generatedImagePromptLength: imagePrompt.length
+      }
     });
 
   } catch (error) {
+    console.log('\n❌ SMART VIDEO ERROR:', error.message);
+    console.log('Stack:', error.stack);
+    console.error('Smart video generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
     console.error('Smart video generation error:', error);
     res.status(500).json({ error: error.message });
   }
