@@ -876,51 +876,28 @@ Remember:
     
     let audioUrl;
     
-    // Try ElevenLabs first (works on Vercel, high quality)
+    // Use ElevenLabs for voiceover (high quality)
     try {
-      console.log('   Trying ElevenLabs...');
-      const elevenResult = await elevenlabsService.generateSpeech(sceneBreakdown.voiceoverScript, {
+      console.log('   Generating voiceover with ElevenLabs...');
+      const elevenResult = await elevenlabsService.textToSpeech(sceneBreakdown.voiceoverScript, {
         voiceId: voice || '21m00Tcm4TlvDq8ikWAM', // Rachel as default
-        stability: 0.6,
-        similarity: 0.8
+        stability: 0.5,
+        similarityBoost: 0.75
       });
       
-      if (elevenResult.success && elevenResult.audioBuffer) {
-        // Upload to Cloudinary
-        const audioUpload = await cloudinaryService.uploadBufferToCloudinary(
-          elevenResult.audioBuffer,
-          `premium-voiceover-${Date.now()}.mp3`,
-          'video',
-          'premium-audio'
-        );
-        audioUrl = audioUpload.secure_url;
+      if (elevenResult.success && elevenResult.audioUrl) {
+        audioUrl = elevenResult.audioUrl;
         console.log('✅ ElevenLabs voiceover generated:', audioUrl);
+      } else {
+        throw new Error(elevenResult.error || 'ElevenLabs returned no audio URL');
       }
     } catch (elevenErr) {
-      console.log('⚠️ ElevenLabs failed:', elevenErr.message);
-    }
-    
-    // Fallback to Google TTS if ElevenLabs failed
-    if (!audioUrl) {
-      try {
-        console.log('   Trying Google TTS fallback...');
-        const googleResult = await googleTTSService.textToSpeech(sceneBreakdown.voiceoverScript, {
-          languageCode: 'en-US',
-          voiceName: 'en-US-Neural2-J',
-          speakingRate: 0.95
-        });
-        
-        if (googleResult.success && googleResult.audioUrl) {
-          audioUrl = googleResult.audioUrl;
-          console.log('✅ Google TTS voiceover generated:', audioUrl);
-        }
-      } catch (googleErr) {
-        console.log('⚠️ Google TTS failed:', googleErr.message);
-      }
+      console.log('❌ ElevenLabs failed:', elevenErr.message);
+      throw new Error('Failed to generate voiceover: ' + elevenErr.message);
     }
     
     if (!audioUrl) {
-      throw new Error('Failed to generate voiceover - both ElevenLabs and Google TTS failed');
+      throw new Error('Failed to generate voiceover - no audio URL returned');
     }
 
     // Calculate expected audio duration (rough estimate: 150 words per minute)
