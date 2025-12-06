@@ -1459,15 +1459,16 @@ Very subtle animation only: gentle lighting shift or soft camera movement around
 
       console.log(`[${jobId}] Scene ${i + 1} (${scene.imageType}): CFG=${cfgScale}, color=${productColor || 'unknown'}, ${fullMotionPrompt.substring(0, 80)}...`);
 
-      // Use Kling v2.1 for image-to-video
+      // Use Kling v2.1 for image-to-video (correct model name and parameters)
       const prediction = await replicate.predictions.create({
-        model: "kwaivgi/kling-v2.1-5s-i2v",
+        model: "kwaivgi/kling-v2.1",
         input: {
-          image: scene.imageUrl,
           prompt: fullMotionPrompt,
+          start_image: scene.imageUrl,
+          duration: 5,
+          aspect_ratio: aspectRatio || '9:16',
           negative_prompt: negativePrompt,
-          cfg_scale: cfgScale,
-          seed: -1
+          cfg_scale: cfgScale
         }
       });
 
