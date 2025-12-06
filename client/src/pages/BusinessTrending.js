@@ -427,48 +427,60 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
   const buildAIVideoPrompt = () => {
     const product = getSelectedProductDetails();
     
-    let prompt = '';
+    // Start with the actual topic/script content
+    let prompt = postTopic ? `${postTopic}. ` : '';
     
-    // Base scene description based on content purpose
+    // Add business context
+    if (businessInfo?.businessName) {
+      prompt += `For ${businessInfo.businessName}. `;
+    }
+    
+    // Add product context if available
+    if (product?.name) {
+      prompt += `Featuring ${product.name}. `;
+    }
+    
+    // Add scene style based on content purpose
     switch (contentPurpose) {
       case 'tips':
-        prompt = `Professional educational scene, modern office or studio setting, clean aesthetic`;
+        prompt += `Educational style, clean modern setting, professional atmosphere. `;
         break;
       case 'behind-scenes':
-        prompt = `Behind the scenes footage, workspace, creative process, authentic feel`;
+        prompt += `Behind the scenes style, workspace view, authentic creative process. `;
         break;
       case 'product-feature':
-        prompt = `Product showcase, elegant presentation, ${product?.name || 'product'} in focus, premium quality`;
+        prompt += `Product showcase style, elegant presentation, premium quality visuals. `;
         break;
       case 'customer-story':
-        prompt = `Happy customer testimonial scene, positive atmosphere, success story`;
+        prompt += `Testimonial style, positive happy atmosphere, success story mood. `;
         break;
       case 'industry-news':
-        prompt = `News-style scene, professional setting, informative atmosphere`;
+        prompt += `News style, professional informative setting. `;
         break;
       case 'motivation':
-        prompt = `Inspirational scene, uplifting visuals, motivational atmosphere, cinematic`;
+        prompt += `Inspirational style, uplifting visuals, motivational cinematic feel. `;
         break;
       default:
-        prompt = `Professional brand content, modern aesthetic`;
+        prompt += `Professional brand content style. `;
     }
     
     // Add industry context
     if (businessInfo?.industry) {
-      prompt += `, ${businessInfo.industry} industry`;
+      prompt += `${businessInfo.industry} industry setting. `;
     }
     
     // Add brand colors if available
     if (businessInfo?.brandColors?.length > 0) {
-      prompt += `, color scheme: ${businessInfo.brandColors.join(' and ')}`;
+      prompt += `Color palette: ${businessInfo.brandColors.join(', ')}. `;
     }
     
     // Quality modifiers
-    prompt += `, cinematic quality, smooth motion, professional lighting, 4K quality`;
+    prompt += `Cinematic quality, smooth motion, professional lighting, high resolution. `;
     
-    // No text in video
-    prompt += `, no text or logos in the video`;
+    // No text in video (AI video generators struggle with text)
+    prompt += `No text, no logos, no watermarks in the video.`;
     
+    console.log('📝 Built AI video prompt:', prompt);
     return prompt;
   };
 

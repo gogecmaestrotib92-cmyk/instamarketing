@@ -541,26 +541,34 @@ router.post('/elevenlabs/full-voiceover', async (req, res) => {
 /**
  * Generate video from text (synchronous - waits for completion)
  * POST /api/ai/video/generate
- * Uses Luma Ray Flash 2 - high quality, fast, supports 9:16 vertical
+ * Uses Kling v1.6 by default - better prompt adherence and quality
  */
 router.post('/video/generate', async (req, res) => {
   try {
-    const { prompt, duration, aspectRatio, numFrames, fps, steps } = req.body;
+    const { prompt, duration, aspectRatio, model } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
     console.log('🎬 Video generation request:', prompt);
-    console.log('Duration:', duration || 9, 'Aspect Ratio:', aspectRatio || '9:16');
+    console.log('Duration:', duration || 5, 'Aspect Ratio:', aspectRatio || '9:16');
+    console.log('Model:', model || 'kling (default)');
 
-    const result = await replicateService.textToVideo(prompt, {
-      duration: duration || 9,
-      aspectRatio: aspectRatio || '9:16',
-      numFrames: numFrames || 16,
-      fps: fps || 8,
-      steps: steps || 25
-    });
+    // Use Kling for better prompt adherence, or Luma if explicitly requested
+    let result;
+    if (model === 'luma') {
+      result = await replicateService.textToVideo(prompt, {
+        duration: duration || 9,
+        aspectRatio: aspectRatio || '9:16'
+      });
+    } else {
+      // Default: Kling v1.6 - better quality and more accurate to prompts
+      result = await replicateService.generateVideoWithKling(prompt, {
+        duration: duration || 5,
+        aspectRatio: aspectRatio || '9:16'
+      });
+    }
 
     if (!result.success) {
       return res.status(500).json({ error: result.error, requiresPayment: result.requiresPayment });
