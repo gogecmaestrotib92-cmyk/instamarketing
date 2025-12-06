@@ -644,7 +644,10 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
     videoVolume = 0,
     musicVolume = 1,
     fps = 25,
-    targetDuration = null // Sync video clips to this duration (audio duration)
+    targetDuration = null, // Sync video clips to this duration (audio duration)
+    logoUrl = null, // Logo image URL to overlay
+    logoPosition = 'topRight', // topLeft, topRight, bottomLeft, bottomRight
+    logoSize = 0.12 // Logo size as percentage of video (0.12 = 12%)
   } = options;
 
   // Calculate total duration from clips OR use target duration from audio
@@ -751,6 +754,42 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
 
   tracks.push({ clips: videoClips });
   console.log(`   📊 Added ${videoClips.length} video clips to timeline`);
+
+  // Add logo overlay track (on top of everything)
+  if (logoUrl) {
+    // Map position string to offset values for 9:16 vertical video
+    const positionMap = {
+      topLeft: { x: -0.38, y: 0.42 },
+      topRight: { x: 0.38, y: 0.42 },
+      bottomLeft: { x: -0.38, y: -0.35 },
+      bottomRight: { x: 0.38, y: -0.35 },
+      center: { x: 0, y: 0 }
+    };
+    
+    const offset = positionMap[logoPosition] || positionMap.topRight;
+    
+    const logoClip = {
+      asset: {
+        type: 'image',
+        src: logoUrl
+      },
+      start: 0,
+      length: totalDuration,
+      fit: 'none',
+      scale: logoSize,
+      position: 'center',
+      offset: offset,
+      opacity: 0.9,
+      transition: {
+        in: 'fade',
+        out: 'fade'
+      }
+    };
+    
+    // Insert logo track at the beginning (TOP layer)
+    tracks.unshift({ clips: [logoClip] });
+    console.log(`   🏷️ Added logo overlay at ${logoPosition} (${logoSize * 100}% size)`);
+  }
 
   // Build soundtrack
   let soundtrack = null;

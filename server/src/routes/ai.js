@@ -773,7 +773,10 @@ router.post('/video/generate-premium', async (req, res) => {
       voice,            // ElevenLabs voice or Google voice
       voiceProvider = 'google', // 'elevenlabs' or 'google'
       includeSubtitles = true,
-      subtitleStyle = 'modern'
+      subtitleStyle = 'modern',
+      logoUrl = null,   // Brand logo URL to overlay
+      logoPosition = 'topRight', // topLeft, topRight, bottomLeft, bottomRight
+      logoSize = 0.12   // Logo size (12% of video)
     } = req.body;
 
     if (!prompt) {
@@ -788,6 +791,7 @@ router.post('/video/generate-premium', async (req, res) => {
     console.log('  - Business:', businessName || 'not specified');
     console.log('  - Industry:', industry || 'not specified');
     console.log('  - Purpose:', contentPurpose || 'general');
+    console.log('  - Logo:', logoUrl ? 'yes' : 'no');
     console.log('  - Aspect:', aspectRatio);
     console.log('  - Voice:', voice, '(', voiceProvider, ')');
 
@@ -1092,7 +1096,7 @@ Remember:
       console.log(`   Generated ${subtitles.length} subtitle segments`);
     }
 
-    // Submit render job
+    // Submit render job with logo overlay if provided
     const renderResult = await shotstackClient.createMultiClipRender(
       clips,
       audioUrl,
@@ -1101,7 +1105,10 @@ Remember:
         aspectRatio: aspectRatio,
         resolution: 'hd',
         fps: 30,
-        subtitleStyle: subtitleStyle
+        subtitleStyle: subtitleStyle,
+        logoUrl: logoUrl,
+        logoPosition: logoPosition,
+        logoSize: logoSize
       }
     );
 

@@ -818,6 +818,10 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         const videoPrompt = buildAIVideoPrompt();
         console.log('📝 Premium video topic:', videoPrompt);
         
+        // Get logo from brand images (first image is typically the logo)
+        const brandLogo = businessInfo?.brandImages?.[0]?.url || null;
+        console.log('🏷️ Brand logo:', brandLogo ? 'found' : 'not set');
+        
         // Step 1: Start the premium pipeline (voiceover + multi-scene generation + composition)
         setGenerationStep('🎨 Generating scenes & voiceover... (2-3 minutes)');
         
@@ -831,9 +835,12 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             contentPurpose: contentPurpose,
             aspectRatio: aspectRatio,
             voice: getVoiceId(),
-            voiceProvider: 'google', // Use Google TTS for reliability
+            voiceProvider: 'elevenlabs', // Use ElevenLabs for quality
             includeSubtitles: true,
-            subtitleStyle: selectedTemplate || 'modern'
+            subtitleStyle: selectedTemplate || 'modern',
+            logoUrl: brandLogo,
+            logoPosition: 'topRight',
+            logoSize: 0.12
           })
         });
         
