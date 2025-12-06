@@ -862,6 +862,167 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
       }
     }
 
+    // ElevenLabs Full Voiceover (script generation + TTS)
+    if (url === '/api/ai/elevenlabs/full-voiceover' && req.method === 'POST') {
+      const apiKey = process.env.ELEVENLABS_API_KEY;
+      const openaiKey = process.env.OPENAI_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(400).json({ error: 'ElevenLabs API key not configured' });
+      }
+      
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const { topic, duration = 15, voiceId = '21m00Tcm4TlvDq8ikWAM', voiceStyle = 'engaging' } = body || {};
+      
+      if (!topic) {
+        return res.status(400).json({ error: 'Topic is required' });
+      }
+      
+      try {
+        // Step 1: Generate script with OpenAI
+        const OpenAI = require('openai');
+        const openai = new OpenAI({ apiKey: openaiKey });
+        
+        const scriptResponse = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an expert Instagram content writer. Create a voiceover script for a ${duration} second video.
+              
+Rules:
+- Write for spoken word (conversational, not written style)
+- ${duration} seconds = approximately ${Math.round(duration * 2.5)} words
+- Start with a hook that grabs attention
+- Be ${voiceStyle} in tone
+- End with a call to action
+- NO stage directions, NO emojis, NO hashtags
+- Just the spoken text, nothing else
+
+Output ONLY the script text, nothing else.`
+            },
+            { role: 'user', content: `Create a voiceover script about: ${topic}` }
+          ],
+          max_tokens: 300,
+          temperature: 0.8
+        });
+        
+        const script = scriptResponse.choices[0].message.content.trim();
+        console.log('📝 Generated script:', script.substring(0, 100) + '...');
+        
+        // Step 2: Generate audio with ElevenLabs
+        const elevenResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: script,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+          })
+        });
+        
+        if (!elevenResponse.ok) {
+          const errorText = await elevenResponse.text();
+          console.error('ElevenLabs TTS failed:', errorText);
+          throw new Error('ElevenLabs TTS failed');
+        }
+        
+        // Upload audio to Cloudinary
+        const audioBuffer = await elevenResponse.buffer();
+        const cloudinary = require('cloudinary').v2;
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET
+        });
+        
+        const audioUpload = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            { resource_type: 'video', folder: 'voiceovers', public_id: `vo-${Date.now()}` },
+            (err, result) => err ? reject(err) : resolve(result)
+          ).end(audioBuffer);
+        });
+        
+        console.log('✅ ElevenLabs voiceover uploaded:', audioUpload.secure_url);
+        
+        return res.status(200).json({
+          success: true,
+          script: script,
+          audioUrl: audioUpload.secure_url,
+          duration: audioUpload.duration || duration,
+          voiceId: voiceId
+        });
+        
+      } catch (err) {
+        console.error('ElevenLabs full-voiceover error:', err);
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
+    // ElevenLabs TTS (text to speech only, no script generation)
+    if (url === '/api/ai/elevenlabs/tts' && req.method === 'POST') {
+      const apiKey = process.env.ELEVENLABS_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(400).json({ error: 'ElevenLabs API key not configured' });
+      }
+      
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const { text, voiceId = '21m00Tcm4TlvDq8ikWAM' } = body || {};
+      
+      if (!text) {
+        return res.status(400).json({ error: 'Text is required' });
+      }
+      
+      try {
+        const elevenResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+          method: 'POST',
+          headers: {
+            'xi-api-key': apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            text: text,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+          })
+        });
+        
+        if (!elevenResponse.ok) {
+          throw new Error('ElevenLabs TTS failed');
+        }
+        
+        // Upload to Cloudinary
+        const audioBuffer = await elevenResponse.buffer();
+        const cloudinary = require('cloudinary').v2;
+        cloudinary.config({
+          cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+          api_key: process.env.CLOUDINARY_API_KEY,
+          api_secret: process.env.CLOUDINARY_API_SECRET
+        });
+        
+        const audioUpload = await new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
+            { resource_type: 'video', folder: 'voiceovers', public_id: `tts-${Date.now()}` },
+            (err, result) => err ? reject(err) : resolve(result)
+          ).end(audioBuffer);
+        });
+        
+        return res.status(200).json({
+          success: true,
+          audioUrl: audioUpload.secure_url,
+          duration: audioUpload.duration
+        });
+        
+      } catch (err) {
+        console.error('ElevenLabs TTS error:', err);
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
     // ==================== MEDIA UPLOAD (Cloudinary) ====================
     
     // Image upload endpoint for brand images
