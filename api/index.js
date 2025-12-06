@@ -704,37 +704,44 @@ async function processPremiumJobVercel(jobId) {
 
 Your task:
 1. Create a compelling voiceover script (15-25 seconds when spoken)
-2. Break it into exactly 3 visual scenes that showcase the brand/product
+2. Break it into exactly 3 visual scenes that SHOW THE PRODUCT BEING USED
 
-CRITICAL - Each scene needs TWO prompts:
-- visualPrompt: For AI IMAGE generation (FLUX) - describe the STATIC image
-- motionPrompt: For AI VIDEO animation (Kling) - describe HOW the image should MOVE
+CRITICAL - Each scene needs these fields:
+- visualPrompt: For AI IMAGE generation - describe the STATIC image with PRODUCT VISIBLE
+- motionPrompt: For AI VIDEO animation - describe movement INCLUDING PRODUCT INTERACTION
+- productAction: Specifically how the product appears/is used in this scene
+
+**MOST IMPORTANT**: At least ONE scene MUST show a person USING the product:
+- If it's a nasal strip → show person applying it to their nose, then breathing freely
+- If it's food → show person eating/drinking it with enjoyment
+- If it's clothing → show person putting it on or wearing it confidently
+- If it's tech → show hands using the device, screen interactions
+- If it's skincare → show applying to face, the transformation
 
 VISUAL PROMPT RULES:
-- Describe setting, lighting, colors, composition, mood
-- Include product/brand elements naturally in the scene
-- Be specific: "professional studio lighting", "warm golden hour", "sleek modern aesthetic"
-- NO text/words/logos in the image itself
-- Make it look like a premium advertisement
+- ALWAYS include the actual product in at least 2 scenes
+- Show the product being USED by a person, not just displayed
+- Describe the person: age, gender, ethnicity for diversity, expression
+- Professional lighting, commercial quality aesthetic
+- NO text/words/logos
 
 MOTION PROMPT RULES:
-- Describe camera movement: "slow dolly forward", "gentle pan left", "smooth zoom in"
-- Describe subject motion: "steam rising", "fabric flowing", "product rotating"
-- Keep it subtle and professional - avoid jerky or extreme movements
-- Match the brand mood: luxury = slow elegant, fitness = dynamic energy
+- Describe BOTH camera movement AND product/person movement
+- "Person applies [product] to [body part], satisfied expression, gentle camera zoom"
+- "Hand reaches for [product], picks it up, brings to face, smooth motion"
+- Show the product ACTION happening in the animation
 
 OUTPUT FORMAT (JSON only):
 {
-  "voiceoverScript": "The narration that sells the product/brand...",
+  "voiceoverScript": "The narration...",
+  "productDescription": "Brief description of what the product is and how it's used",
   "scenes": [
     { 
       "sceneNumber": 1, 
-      "visualPrompt": "Static image description...", 
-      "motionPrompt": "How this scene animates - camera and subject movement...",
-      "sceneContext": "What this scene represents for the brand"
-    },
-    { "sceneNumber": 2, "visualPrompt": "...", "motionPrompt": "...", "sceneContext": "..." },
-    { "sceneNumber": 3, "visualPrompt": "...", "motionPrompt": "...", "sceneContext": "..." }
+      "visualPrompt": "Image with product visible...", 
+      "motionPrompt": "Movement including product interaction...",
+      "productAction": "How the product is shown/used in this scene"
+    }
   ]
 }`
         },
@@ -742,12 +749,12 @@ OUTPUT FORMAT (JSON only):
           role: 'user',
           content: `Create a premium brand video for:
 
-TOPIC/PRODUCT: ${prompt}
-${businessName ? `BRAND NAME: ${businessName}` : ''}
+PRODUCT: ${prompt}
+${businessName ? `BRAND: ${businessName}` : ''}
 ${industry ? `INDUSTRY: ${industry}` : ''}
 ${contentPurpose ? `PURPOSE: ${contentPurpose}` : ''}
 
-Make the visuals and motion feel like a high-end brand commercial. Each scene should naturally showcase the product/service while telling a compelling story.
+IMPORTANT: Show the actual product being USED by people in the scenes. Don't just show abstract lifestyle shots - show the product in action!
 
 Output valid JSON only.`
         }
@@ -859,29 +866,32 @@ Output valid JSON only.`
       job.statusMessage = `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s)`;
       job.progress = 50 + (i * 12);
 
-      // Build brand-aware motion prompt
-      // Use GPT-generated motionPrompt if available, otherwise create contextual one
+      // Build product-aware motion prompt for Kling
+      // Include: what the product IS, how it's being USED, and the motion
+      
+      // Get product description from GPT's analysis
+      const productDesc = sceneBreakdown.productDescription || prompt;
+      const productAction = scene.productAction || '';
       let motionPrompt = scene.motionPrompt || '';
       
       if (!motionPrompt) {
-        // Fallback: create brand-contextual motion based on industry
+        // Fallback based on industry
         const industryMotions = {
-          'E-Commerce': 'Slow elegant product rotation, soft lighting shift, professional showcase motion',
-          'Food & Beverage': 'Gentle steam rising, appetizing reveal, warm inviting camera movement',
-          'Fashion & Beauty': 'Smooth fabric flow, glamorous lighting sweep, elegant model movement',
-          'Health & Fitness': 'Dynamic energy burst, powerful athletic motion, motivational camera push',
-          'Technology': 'Sleek device rotation, futuristic glow pulse, modern reveal transition',
-          'Real Estate': 'Smooth walkthrough motion, grand reveal, cinematic space exploration',
-          'Travel': 'Panoramic sweep, wanderlust reveal, breathtaking vista motion',
-          'Professional Services': 'Confident professional presence, trust-building subtle motion'
+          'E-Commerce': 'Person interacts with product, examining it closely, satisfied expression',
+          'Food & Beverage': 'Person enjoys the food/drink, savoring moment, gentle smile',
+          'Fashion & Beauty': 'Person applies/wears the product confidently, admiring result',
+          'Health & Fitness': 'Person uses the product, feeling the benefit, energized expression',
+          'Technology': 'Hands interact with device smoothly, intuitive usage demonstration',
+          'Real Estate': 'Person walks through space appreciatively, discovering features',
+          'Travel': 'Person experiences destination, wonder and joy in expression',
+          'Professional Services': 'Professional interaction, trust and confidence conveyed'
         };
-        
-        motionPrompt = industryMotions[industry] || 'Smooth professional camera movement, elegant subtle motion, premium commercial feel';
+        motionPrompt = industryMotions[industry] || 'Person interacts with product naturally, genuine satisfaction';
       }
 
-      // Add brand context to motion prompt
-      const brandContext = businessName ? `, showcasing ${businessName} brand quality` : '';
-      const fullMotionPrompt = `${motionPrompt}${brandContext}. High-end commercial production quality.`;
+      // Build comprehensive Kling prompt with FULL product context
+      // This tells Kling WHAT the product is and HOW to show it being used
+      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Professional commercial quality, smooth natural movement.`;
 
       console.log(`[${jobId}] Scene ${i + 1} motion: ${fullMotionPrompt.substring(0, 80)}...`);
 
