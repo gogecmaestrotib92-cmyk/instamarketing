@@ -1,11 +1,35 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const openaiService = require('../services/openai');
 const googleTTSService = require('../services/googleTTS');
 const elevenlabsService = require('../services/elevenlabs');
 const replicateService = require('../services/replicate');
 const videoComposerService = require('../services/videoComposer');
 const fetch = require('node-fetch');
+
+// Premium Job Schema for MongoDB persistence (matches api/index.js)
+let PremiumJob;
+try {
+  PremiumJob = mongoose.model('PremiumJob');
+} catch {
+  const premiumJobSchema = new mongoose.Schema({
+    jobId: { type: String, required: true, unique: true },
+    userId: { type: String, index: true },
+    status: { type: String, default: 'pending' },
+    progress: { type: Number, default: 0 },
+    statusMessage: { type: String, default: 'Starting...' },
+    videoUrl: String,
+    audioUrl: String,
+    voiceoverScript: String,
+    error: String,
+    input: mongoose.Schema.Types.Mixed,
+    savedToAssetHub: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now },
+    completedAt: Date
+  });
+  PremiumJob = mongoose.model('PremiumJob', premiumJobSchema);
+}
 
 // Import Cloudinary for uploading assets before Shotstack
 let cloudinaryUpload = null;
@@ -769,7 +793,12 @@ router.post('/video/start-premium', async (req, res) => {
       subtitleStyle = 'modern',
       logoUrl = null,
       logoPosition = 'topRight',
-      logoSize = 0.12
+      logoSize = 0.12,
+      // NEW: Brand/product images for accurate product representation
+      brandImages = [],
+      productImages = [],
+      productName = '',
+      productDescription = ''
     } = req.body;
 
     if (!prompt) {
@@ -781,21 +810,37 @@ router.post('/video/start-premium', async (req, res) => {
     
     console.log(`\n🎬 [${jobId}] Starting Premium AI Video Job`);
     console.log(`   Topic: ${prompt.substring(0, 50)}...`);
+    console.log(`   Brand images: ${brandImages.length}, Product images: ${productImages.length}`);
 
-    // Store job state in memory (for Vercel, we'll use a simple in-memory store)
-    // In production, this should be Redis or MongoDB
+    // Store job state in memory
     if (!global.premiumJobs) {
       global.premiumJobs = {};
     }
 
-    global.premiumJobs[jobId] = {
-      id: jobId,
+    const jobData = {
+      jobId: jobId,
       status: 'pending',
       progress: 0,
       statusMessage: 'Starting...',
       createdAt: new Date(),
-      input: { prompt, businessName, industry, contentPurpose, aspectRatio, voice, includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize }
+      input: { 
+        prompt, businessName, industry, contentPurpose, aspectRatio, voice, 
+        includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize,
+        brandImages, productImages, productName, productDescription
+      }
     };
+
+    global.premiumJobs[jobId] = jobData;
+
+    // Also save to MongoDB for cross-instance persistence
+    if (mongoose.connection.readyState === 1 && PremiumJob) {
+      try {
+        await PremiumJob.create(jobData);
+        console.log(`[${jobId}] ✅ Job saved to MongoDB`);
+      } catch (dbErr) {
+        console.warn(`[${jobId}] MongoDB save failed (continuing with in-memory):`, dbErr.message);
+      }
+    }
 
     // Start processing in background
     processPremiumJob(jobId).catch(err => {
@@ -803,6 +848,10 @@ router.post('/video/start-premium', async (req, res) => {
       if (global.premiumJobs[jobId]) {
         global.premiumJobs[jobId].status = 'failed';
         global.premiumJobs[jobId].error = err.message;
+      }
+      // Also update MongoDB
+      if (mongoose.connection.readyState === 1 && PremiumJob) {
+        PremiumJob.findOneAndUpdate({ jobId }, { status: 'failed', error: err.message }).catch(() => {});
       }
     });
 
@@ -832,15 +881,35 @@ router.post('/video/premium-job-status', async (req, res) => {
       return res.status(400).json({ error: 'jobId is required' });
     }
 
-    const job = global.premiumJobs?.[jobId];
+    // Try MongoDB first (for Vercel cross-instance persistence)
+    let job = null;
+    if (mongoose.connection.readyState === 1 && PremiumJob) {
+      try {
+        job = await PremiumJob.findOne({ jobId }).lean();
+        if (job) {
+          console.log(`[${jobId}] Found job in MongoDB: ${job.status}`);
+        }
+      } catch (dbErr) {
+        console.warn('MongoDB query error:', dbErr.message);
+      }
+    }
+    
+    // Fallback to in-memory
+    if (!job && global.premiumJobs?.[jobId]) {
+      job = global.premiumJobs[jobId];
+      console.log(`[${jobId}] Found job in memory: ${job.status}`);
+    }
     
     if (!job) {
-      return res.status(404).json({ error: 'Job not found' });
+      return res.status(404).json({ 
+        error: 'Job not found',
+        status: 'not_found'
+      });
     }
 
     res.json({
       success: true,
-      jobId: job.id,
+      jobId: job.jobId || jobId,
       status: job.status,
       progress: job.progress,
       statusMessage: job.statusMessage,
@@ -855,6 +924,22 @@ router.post('/video/premium-job-status', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+/**
+ * Helper: Update premium job status in both memory and MongoDB
+ */
+async function updatePremiumJobStatus(jobId, updates) {
+  // Update in-memory
+  if (global.premiumJobs?.[jobId]) {
+    Object.assign(global.premiumJobs[jobId], updates);
+  }
+  // Update MongoDB (fire-and-forget for performance)
+  if (mongoose.connection.readyState === 1 && PremiumJob) {
+    PremiumJob.findOneAndUpdate({ jobId }, updates).catch(err => {
+      console.warn(`[${jobId}] MongoDB update failed:`, err.message);
+    });
+  }
+}
 
 /**
  * Process premium job in background
