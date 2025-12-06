@@ -49,7 +49,7 @@ const EcommerceCreate = () => {
     <div className="ecommerce-create-page">
       <div className="ecommerce-create-container">
         <div className="page-header">
-          <h1>E-Commerce Content</h1>
+          <h1>E-Commerce Content <span style={{ fontSize: '0.5em', color: '#f59e0b', fontWeight: 'normal', marginLeft: '8px' }}>Coming Soon</span></h1>
           <p>Create stunning visuals for your products</p>
         </div>
 
