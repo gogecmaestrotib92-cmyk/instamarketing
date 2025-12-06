@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FiArrowLeft, 
@@ -17,10 +17,12 @@ import {
   FiImage,
   FiZap,
   FiDownload,
+  FiUpload,
   FiLoader,
   FiCheck,
   FiX
 } from 'react-icons/fi';
+import api from '../services/api';
 import './BusinessHub.css';
 
 const BusinessHub = () => {
@@ -277,6 +279,65 @@ const BusinessHub = () => {
       ...prev,
       brandImages: (prev.brandImages || []).filter(img => img.url !== url)
     }));
+  };
+
+  // Ref for file input
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Handle custom image upload
+  const handleImageUpload = async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+
+    try {
+      const uploadedImages = [];
+
+      for (const file of files) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          console.warn(`Skipping non-image file: ${file.name}`);
+          continue;
+        }
+
+        // Create FormData for upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'brand-images');
+
+        // Upload to Cloudinary via our API
+        const response = await api.post('/media/upload/image', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        if (response.data.success && response.data.url) {
+          uploadedImages.push({
+            url: response.data.url,
+            addedAt: new Date().toISOString(),
+            source: 'uploaded',
+            fileName: file.name
+          });
+        }
+      }
+
+      if (uploadedImages.length > 0) {
+        setBusinessInfo(prev => ({
+          ...prev,
+          brandImages: [...(prev.brandImages || []), ...uploadedImages]
+        }));
+      }
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploading(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   // Calculate profile completeness
@@ -724,14 +785,34 @@ const BusinessHub = () => {
                   <FiImage /> Brand Images
                 </label>
                 <p className="field-hint">
-                  Images from your website for creating ads. 
+                  Images for creating brand content. Upload your own or fetch from website.
+                </p>
+                
+                {/* Upload and Fetch buttons */}
+                <div className="brand-image-actions">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    multiple
+                    style={{ display: 'none' }}
+                  />
                   <button 
-                    className="fetch-link" 
+                    className="upload-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? <FiLoader className="spin" /> : <FiUpload />}
+                    {isUploading ? 'Uploading...' : 'Upload Images'}
+                  </button>
+                  <button 
+                    className="fetch-btn" 
                     onClick={() => setActiveTab('fetch')}
                   >
-                    Fetch from website →
+                    <FiDownload /> Fetch from Website
                   </button>
-                </p>
+                </div>
                 
                 {businessInfo.brandImages?.length > 0 ? (
                   <div className="brand-images-grid">
@@ -756,9 +837,7 @@ const BusinessHub = () => {
                   <div className="empty-images">
                     <FiImage />
                     <p>No brand images saved</p>
-                    <button onClick={() => setActiveTab('fetch')}>
-                      <FiDownload /> Fetch from Website
-                    </button>
+                    <span className="empty-hint">Upload product photos or fetch images from your website</span>
                   </div>
                 )}
               </div>

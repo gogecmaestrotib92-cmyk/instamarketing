@@ -1080,6 +1080,62 @@
   text-decoration: underline;
 }
 
+/* Brand Image Actions */
+.brand-image-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.brand-image-actions .upload-btn,
+.brand-image-actions .fetch-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.brand-image-actions .upload-btn {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  border: none;
+}
+
+.brand-image-actions .upload-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.brand-image-actions .upload-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.brand-image-actions .fetch-btn {
+  background: var(--surface-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.brand-image-actions .fetch-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary-color);
+}
+
+.brand-image-actions .spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .brand-images-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -1158,9 +1214,16 @@
 }
 
 .empty-images p {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
-  margin: 0 0 12px 0;
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.empty-images .empty-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 0;
 }
 
 .empty-images button {

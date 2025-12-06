@@ -3,6 +3,22 @@ const fs = require('fs');
 const path = require('path');
 const { auth } = require('../middleware/auth');
 const upload = require('../services/upload');
+const multer = require('multer');
+
+// Cloudinary for cloud uploads
+let cloudinaryService = null;
+try {
+  cloudinaryService = require('../services/cloudinary');
+  console.log('✅ Cloudinary loaded for media routes');
+} catch (e) {
+  console.log('Cloudinary not available for media routes:', e.message);
+}
+
+// Memory storage for Cloudinary uploads
+const memoryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 const router = express.Router();
 
@@ -90,6 +106,57 @@ router.delete('/:filename', auth, async (req, res) => {
   } catch (error) {
     console.error('Delete media error:', error);
     res.status(500).json({ error: 'Failed to delete file' });
+  }
+});
+
+/**
+ * Upload image to Cloudinary
+ * POST /api/upload/image
+ * Used by BusinessHub for brand image uploads
+ */
+router.post('/upload/image', memoryUpload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    if (!cloudinaryService) {
+      return res.status(503).json({ success: false, error: 'Cloudinary not configured' });
+    }
+
+    // Get folder from request or use default
+    const folder = req.body.folder || 'brand-images';
+
+    console.log(`📤 Uploading image to Cloudinary: ${req.file.originalname} (${req.file.size} bytes)`);
+
+    const result = await cloudinaryService.uploadBufferToCloudinary(req.file.buffer, {
+      folder: `instamarketing/${folder}`,
+      resource_type: 'image',
+      transformation: [
+        { quality: 'auto:good' },
+        { fetch_format: 'auto' }
+      ]
+    });
+
+    if (!result.success) {
+      throw new Error(result.error || 'Upload failed');
+    }
+
+    console.log(`✅ Image uploaded: ${result.url}`);
+
+    res.json({
+      success: true,
+      url: result.url,
+      publicId: result.publicId,
+      width: result.width,
+      height: result.height,
+      format: result.format,
+      bytes: result.bytes
+    });
+
+  } catch (error) {
+    console.error('Image upload error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
