@@ -426,7 +426,6 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
   // Build AI video prompt from brand context
   const buildAIVideoPrompt = () => {
     const product = getSelectedProductDetails();
-    const purpose = contentPurposes.find(p => p.id === contentPurpose);
     
     let prompt = '';
     
@@ -458,16 +457,6 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
     if (businessInfo?.industry) {
       prompt += `, ${businessInfo.industry} industry`;
     }
-    
-    // Add visual mood
-    const moodDescriptions = {
-      'premium': 'luxury elegant sophisticated',
-      'minimal': 'clean minimalist simple',
-      'vibrant': 'colorful bold energetic',
-      'warm': 'cozy inviting warm tones',
-      'professional': 'corporate business trustworthy',
-      'playful': 'fun youthful casual'
-    };
     
     // Add brand colors if available
     if (businessInfo?.brandColors?.length > 0) {
