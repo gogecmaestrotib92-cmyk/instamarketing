@@ -1671,6 +1671,28 @@
   font-size: 10px;
 }
 
+.premium-badge {
+  color: #8b5cf6;
+  font-size: 10px;
+  margin-left: 2px;
+}
+
+.bg-pill.premium {
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.05);
+}
+
+.bg-pill.premium:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.bg-pill.premium.active {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.15);
+  color: #8b5cf6;
+}
+
 /* ===== Content Summary ===== */
 .content-summary {
   background: var(--bg-primary);

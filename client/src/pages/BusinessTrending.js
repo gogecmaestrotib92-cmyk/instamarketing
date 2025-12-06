@@ -1483,13 +1483,14 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
                     {backgroundTypes.map(bg => (
                       <button
                         key={bg.id}
-                        className={`bg-pill ${backgroundType === bg.id ? 'active' : ''}`}
+                        className={`bg-pill ${backgroundType === bg.id ? 'active' : ''} ${bg.premium ? 'premium' : ''}`}
                         onClick={() => setBackgroundType(bg.id)}
                         title={bg.description}
                       >
                         <bg.icon />
                         <span>{bg.label}</span>
                         {bg.recommended && <span className="rec-badge">★</span>}
+                        {bg.premium && <span className="premium-badge">✨</span>}
                       </button>
                     ))}
                   </div>
