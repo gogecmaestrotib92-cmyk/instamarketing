@@ -202,7 +202,8 @@ const BusinessTrending = () => {
   // Background types
   const backgroundTypes = [
     { id: 'stock-video', label: 'Stock Videos', icon: FiFilm, description: 'Auto-matched clips', recommended: true },
-    { id: 'ai-video', label: 'AI Video', icon: FiZap, description: 'AI-generated scenes', premium: true },
+    { id: 'ai-video', label: 'AI Video', icon: FiZap, description: 'Single AI scene (5s)' },
+    { id: 'premium-ai', label: 'Premium AI', icon: FiZap, description: 'Multi-scene + voice', premium: true },
     { id: 'ai-images', label: 'AI Background', icon: FiImage, description: 'AI-generated visuals' },
   ];
 
@@ -809,6 +810,132 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         return;
       }
       
+      // PREMIUM AI Multi-Scene Video Generation
+      if (backgroundType === 'premium-ai') {
+        setGenerationStep('🎬 Starting Premium AI Video... (3-5 minutes)');
+        console.log('🎬 Starting Premium AI multi-scene video generation');
+        
+        const videoPrompt = buildAIVideoPrompt();
+        console.log('📝 Premium video topic:', videoPrompt);
+        
+        // Step 1: Start the premium pipeline (voiceover + multi-scene generation + composition)
+        setGenerationStep('🎨 Generating scenes & voiceover... (2-3 minutes)');
+        
+        const premiumResponse = await fetch('/api/ai/video/generate-premium', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: videoPrompt,
+            businessName: businessInfo?.businessName,
+            industry: businessInfo?.industry,
+            contentPurpose: contentPurpose,
+            aspectRatio: aspectRatio,
+            voice: getVoiceId(),
+            voiceProvider: 'google', // Use Google TTS for reliability
+            includeSubtitles: true,
+            subtitleStyle: selectedTemplate || 'modern'
+          })
+        });
+        
+        const premiumData = await premiumResponse.json();
+        
+        if (!premiumResponse.ok || premiumData.error) {
+          throw new Error(premiumData.error || 'Failed to start premium video generation');
+        }
+        
+        console.log('✅ Premium video rendering started:', premiumData.jobId);
+        console.log('📊 Details:', premiumData.details);
+        
+        // Step 2: Poll for render completion
+        setGenerationStep('🎥 Composing final video... (1-2 minutes)');
+        
+        const jobId = premiumData.jobId;
+        let attempts = 0;
+        const maxAttempts = 120; // 10 minutes max
+        let finalVideoUrl = null;
+        
+        while (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+          attempts++;
+          
+          const statusResponse = await fetch('/api/ai/video/premium-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jobId })
+          });
+          
+          const statusData = await statusResponse.json();
+          
+          if (statusData.status === 'complete' && statusData.videoUrl) {
+            finalVideoUrl = statusData.videoUrl;
+            console.log('✅ Premium video complete:', finalVideoUrl);
+            break;
+          } else if (statusData.status === 'failed') {
+            throw new Error('Video composition failed');
+          }
+          
+          // Update progress
+          const progress = statusData.progress || Math.min(95, attempts * 2);
+          setGenerationStep(`🎥 Composing final video... ${progress}%`);
+        }
+        
+        if (!finalVideoUrl) {
+          throw new Error('Video rendering timed out');
+        }
+        
+        // Build result
+        const purpose = contentPurposes.find(p => p.id === contentPurpose);
+        const product = getSelectedProductDetails();
+        
+        const result = {
+          id: Date.now().toString(),
+          type: 'premium-ai-video',
+          name: `${purpose?.label || 'Content'} - ${product?.name || businessInfo?.businessName || 'Premium AI Video'}`,
+          script: 'Premium AI Video with voiceover + subtitles',
+          audioUrl: premiumData.details?.audioUrl,
+          backgroundUrl: finalVideoUrl,
+          composedVideoUrl: finalVideoUrl,
+          backgroundType: 'premium-ai',
+          template: selectedTemplate,
+          aspectRatio: aspectRatio,
+          contentType: contentPurpose,
+          ttsProvider: 'AI',
+          createdAt: new Date().toISOString(),
+          metadata: {
+            postTopic,
+            contentPurpose,
+            template: selectedTemplate,
+            aspectRatio,
+            backgroundType: 'premium-ai',
+            scenes: premiumData.details?.scenes,
+            pipeline: 'premium-multi-scene',
+            businessName: businessInfo?.businessName,
+            productName: product?.name
+          },
+          instructions: '🎬 Premium AI video ready! Includes voiceover + subtitles. Download and share directly!'
+        };
+        
+        setGeneratedResult(result);
+        
+        // Auto-save to Asset Hub
+        try {
+          saveVideoToHub({
+            name: result.name,
+            url: finalVideoUrl,
+            caption: `Premium AI: ${postTopic.substring(0, 80)}`,
+            tags: [contentPurpose, 'premium-ai', 'multi-scene', 'composed', businessInfo?.industry].filter(Boolean),
+            source: 'BusinessTrending-Premium',
+            metadata: result.metadata
+          });
+          console.log('✅ Premium AI Video auto-saved to Asset Hub');
+        } catch (saveError) {
+          console.error('Failed to save to Asset Hub:', saveError);
+        }
+        
+        setGenerationStep('');
+        return;
+      }
+
       // AI background image fallback
       setGenerationStep('Generating AI voiceover...');
       
