@@ -967,50 +967,176 @@ Output valid JSON only.`
     });
 
     // ============================================
+    // STEP 2.5: Classify brand images with GPT Vision
+    // Determine which images are: product shots, logo, lifestyle/people using product
+    // ============================================
+    let classifiedImages = {
+      productShots: [],    // Clean product photos
+      lifestyleShots: [],  // People using the product
+      logoImages: [],      // Brand logos
+      otherImages: []      // Everything else
+    };
+
+    if (availableProductImages.length > 0) {
+      await updatePremiumJobStatus(jobId, {
+        statusMessage: '🔍 Analyzing your brand images...',
+        progress: 22
+      });
+
+      try {
+        // Use GPT-4 Vision to classify each image
+        const classificationPrompt = `Analyze these ${availableProductImages.length} brand images and classify each one.
+
+For each image, determine if it's:
+1. "product" - A clean product shot showing just the product
+2. "lifestyle" - Shows people using/interacting with the product  
+3. "logo" - A brand logo or brand name image
+4. "other" - Something else (background, graphics, etc.)
+
+Product being advertised: ${prompt}
+${productName ? `Product name: ${productName}` : ''}
+${productDescription ? `Product description: ${productDescription}` : ''}
+
+Return JSON array with classification for each image by index:
+[{"index": 0, "type": "product", "description": "product bottle on white background"}, ...]`;
+
+        const visionMessages = [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: classificationPrompt },
+              ...availableProductImages.slice(0, 6).map(url => ({
+                type: 'image_url',
+                image_url: { url, detail: 'low' }
+              }))
+            ]
+          }
+        ];
+
+        const visionResponse = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: visionMessages,
+          max_tokens: 500
+        });
+
+        const classificationResult = visionResponse.choices[0].message.content;
+        const jsonMatch = classificationResult.match(/\[[\s\S]*\]/);
+        
+        if (jsonMatch) {
+          const classifications = JSON.parse(jsonMatch[0]);
+          console.log(`[${jobId}] 📊 Image classifications:`, classifications);
+
+          classifications.forEach(({ index, type, description }) => {
+            if (index < availableProductImages.length) {
+              const imgData = { url: availableProductImages[index], description };
+              switch (type) {
+                case 'product': classifiedImages.productShots.push(imgData); break;
+                case 'lifestyle': classifiedImages.lifestyleShots.push(imgData); break;
+                case 'logo': classifiedImages.logoImages.push(imgData); break;
+                default: classifiedImages.otherImages.push(imgData);
+              }
+            }
+          });
+        }
+
+        console.log(`[${jobId}] ✅ Classified: ${classifiedImages.productShots.length} product, ${classifiedImages.lifestyleShots.length} lifestyle, ${classifiedImages.logoImages.length} logo`);
+
+      } catch (classifyErr) {
+        console.warn(`[${jobId}] ⚠️ Image classification failed, using all as product shots:`, classifyErr.message);
+        // Fallback: treat all as product shots
+        classifiedImages.productShots = availableProductImages.map(url => ({ url, description: 'product image' }));
+      }
+    }
+
+    // ============================================
     // STEP 3: Prepare scene images
-    // USE ACTUAL PRODUCT IMAGES when available for accurate branding
-    // Only generate with FLUX if no product images provided
+    // SMART MATCHING: Use the RIGHT image type for each scene
     // ============================================
     const scenesWithImages = [];
-    const hasProductImages = availableProductImages.length > 0;
+    const hasClassifiedImages = classifiedImages.productShots.length > 0 || classifiedImages.lifestyleShots.length > 0;
     
-    console.log(`[${jobId}] 🖼️ Image strategy: ${hasProductImages ? 'Using ACTUAL product images' : 'Generating with FLUX'}`);
+    console.log(`[${jobId}] 🖼️ Image strategy: ${hasClassifiedImages ? 'Using CLASSIFIED product images' : 'Generating with FLUX'}`);
+    
+    // Track which images we've used to avoid repetition
+    let usedProductIdx = 0;
+    let usedLifestyleIdx = 0;
     
     for (let i = 0; i < sceneBreakdown.scenes.length; i++) {
       const scene = sceneBreakdown.scenes[i];
       await updatePremiumJobStatus(jobId, {
-        statusMessage: hasProductImages 
-          ? `🖼️ Preparing scene ${i + 1}/${sceneBreakdown.scenes.length} with your product...`
+        statusMessage: hasClassifiedImages 
+          ? `🖼️ Matching image for scene ${i + 1}/${sceneBreakdown.scenes.length}...`
           : `🖼️ Creating image ${i + 1}/${sceneBreakdown.scenes.length}...`,
-        progress: 20 + (i * 10)
+        progress: 25 + (i * 8)
       });
 
       let imageUrl = null;
+      let imageType = 'generated';
 
-      if (hasProductImages) {
-        // USE ACTUAL PRODUCT IMAGE - cycle through available images
-        const productImageUrl = availableProductImages[i % availableProductImages.length];
-        console.log(`[${jobId}] Scene ${i + 1}: Using actual product image`);
+      if (hasClassifiedImages) {
+        // SMART SELECTION: Pick the RIGHT image type based on scene content
+        const sceneText = `${scene.visualPrompt} ${scene.productAction} ${scene.motionPrompt}`.toLowerCase();
         
-        // Upload to Cloudinary for consistent handling (or use directly if already Cloudinary)
-        if (productImageUrl.includes('cloudinary')) {
-          imageUrl = productImageUrl;
-        } else {
-          try {
-            const imgUpload = await cloudinary.uploader.upload(productImageUrl, {
-              folder: 'premium-scenes',
-              public_id: `${jobId}-img-${i}`
-            });
-            imageUrl = imgUpload.secure_url;
-          } catch (uploadErr) {
-            console.warn(`[${jobId}] Failed to upload product image, falling back to FLUX`);
-            // Fall through to FLUX generation
+        // Determine what type of image this scene needs
+        const needsLifestyle = sceneText.includes('person') || 
+                              sceneText.includes('using') || 
+                              sceneText.includes('applying') ||
+                              sceneText.includes('holding') ||
+                              sceneText.includes('enjoying') ||
+                              sceneText.includes('wearing');
+        
+        const needsProductShot = sceneText.includes('close-up') || 
+                                 sceneText.includes('product shot') ||
+                                 sceneText.includes('display') ||
+                                 sceneText.includes('showcase') ||
+                                 sceneText.includes('packaging');
+
+        let selectedImage = null;
+
+        if (needsLifestyle && classifiedImages.lifestyleShots.length > 0) {
+          // Use lifestyle/people image
+          selectedImage = classifiedImages.lifestyleShots[usedLifestyleIdx % classifiedImages.lifestyleShots.length];
+          usedLifestyleIdx++;
+          imageType = 'lifestyle';
+          console.log(`[${jobId}] Scene ${i + 1}: Using LIFESTYLE image (${selectedImage.description})`);
+        } else if (classifiedImages.productShots.length > 0) {
+          // Use clean product shot
+          selectedImage = classifiedImages.productShots[usedProductIdx % classifiedImages.productShots.length];
+          usedProductIdx++;
+          imageType = 'product';
+          console.log(`[${jobId}] Scene ${i + 1}: Using PRODUCT image (${selectedImage.description})`);
+        } else if (classifiedImages.lifestyleShots.length > 0) {
+          // Fallback to lifestyle if no product shots
+          selectedImage = classifiedImages.lifestyleShots[usedLifestyleIdx % classifiedImages.lifestyleShots.length];
+          usedLifestyleIdx++;
+          imageType = 'lifestyle';
+          console.log(`[${jobId}] Scene ${i + 1}: Fallback to LIFESTYLE image`);
+        }
+
+        if (selectedImage) {
+          const productImageUrl = selectedImage.url;
+          
+          // Upload to Cloudinary for consistent handling (or use directly if already Cloudinary)
+          if (productImageUrl.includes('cloudinary')) {
+            imageUrl = productImageUrl;
+          } else {
+            try {
+              const imgUpload = await cloudinary.uploader.upload(productImageUrl, {
+                folder: 'premium-scenes',
+                public_id: `${jobId}-img-${i}`
+              });
+              imageUrl = imgUpload.secure_url;
+            } catch (uploadErr) {
+              console.warn(`[${jobId}] Failed to upload product image, falling back to FLUX`);
+              // Fall through to FLUX generation
+            }
           }
         }
       }
 
       // Fallback: Generate with FLUX if no product image or upload failed
       if (!imageUrl) {
+        imageType = 'generated';
         const fluxOutput = await replicate.run(
           "black-forest-labs/flux-schnell",
           {
@@ -1032,8 +1158,13 @@ Output valid JSON only.`
       }
 
       if (imageUrl) {
-        scenesWithImages.push({ ...scene, imageUrl, usedProductImage: hasProductImages });
-        console.log(`[${jobId}] ✅ Scene ${i + 1} image ready (${hasProductImages ? 'product' : 'generated'})`);
+        scenesWithImages.push({ 
+          ...scene, 
+          imageUrl, 
+          imageType, // 'product', 'lifestyle', or 'generated'
+          usedProductImage: imageType !== 'generated' 
+        });
+        console.log(`[${jobId}] ✅ Scene ${i + 1} image ready (${imageType})`);
       }
     }
 
@@ -1056,7 +1187,7 @@ Output valid JSON only.`
       });
 
       // Build product-aware motion prompt for Kling
-      // When using ACTUAL product images, focus on subtle animation that preserves the product
+      // Tailor animation based on image TYPE (product shot vs lifestyle vs generated)
       
       const productDesc = productDescription || sceneBreakdown.productDescription || prompt;
       const actualProductName = productName || businessName || 'the product';
@@ -1078,17 +1209,27 @@ Output valid JSON only.`
         motionPrompt = industryMotions[industry] || 'Person interacts with product naturally, genuine satisfaction';
       }
 
-      // Different prompts for actual product images vs generated images
+      // Different prompts based on IMAGE TYPE
       let fullMotionPrompt;
-      if (scene.usedProductImage) {
-        // ACTUAL PRODUCT IMAGE: Focus on subtle animation that PRESERVES the exact product appearance
-        fullMotionPrompt = `Keep the exact product "${actualProductName}" visible and unchanged. Subtle professional animation: ${motionPrompt}. Gentle camera movement, product stays in focus, commercial quality. Do NOT alter or replace the product design.`;
+      let cfgScale = 0.5;
+
+      if (scene.imageType === 'lifestyle') {
+        // LIFESTYLE IMAGE: Has people - animate the person naturally
+        fullMotionPrompt = `The person in the image continues their natural interaction with "${actualProductName}". ${motionPrompt}. Smooth realistic movement, maintain the person's appearance and the product exactly as shown. Commercial quality.`;
+        cfgScale = 0.4; // Moderate - allow natural person movement but keep product
+        
+      } else if (scene.imageType === 'product') {
+        // PRODUCT SHOT: Clean product image - very subtle animation, preserve product exactly
+        fullMotionPrompt = `Keep this exact "${actualProductName}" product perfectly visible and unchanged. Very subtle animation: gentle lighting shift, soft camera zoom or rotate around product. Professional product showcase, do NOT alter product design or packaging.`;
+        cfgScale = 0.25; // Very low - preserve product appearance strictly
+        
       } else {
         // GENERATED IMAGE: Full motion prompt with product context
         fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Professional commercial quality, smooth natural movement.`;
+        cfgScale = 0.5; // Normal for generated images
       }
 
-      console.log(`[${jobId}] Scene ${i + 1} (${scene.usedProductImage ? 'PRODUCT IMG' : 'generated'}): ${fullMotionPrompt.substring(0, 80)}...`);
+      console.log(`[${jobId}] Scene ${i + 1} (${scene.imageType}): CFG=${cfgScale}, ${fullMotionPrompt.substring(0, 60)}...`);
 
       // Use Kling v2.1 for image-to-video
       const prediction = await replicate.predictions.create({
@@ -1096,8 +1237,8 @@ Output valid JSON only.`
         input: {
           image: scene.imageUrl,
           prompt: fullMotionPrompt,
-          negative_prompt: "blur, distortion, low quality, shaky, amateur, text, watermark, change product, different product, wrong product",
-          cfg_scale: scene.usedProductImage ? 0.3 : 0.5, // Lower CFG for product images = less hallucination
+          negative_prompt: "blur, distortion, low quality, shaky, amateur, text, watermark, change product, different product, wrong product, morph product, alter design",
+          cfg_scale: cfgScale,
           seed: -1
         }
       });
