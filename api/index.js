@@ -812,7 +812,7 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
       const apiKey = process.env.ELEVENLABS_API_KEY;
       
       if (!apiKey) {
-        return res.status(200).json({ voices: [] });
+        return res.status(200).json({ success: true, voices: [] });
       }
       
       try {
@@ -831,29 +831,34 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
               id: v.voice_id,
               name: v.name,
               preview_url: v.preview_url,
+              previewUrl: v.preview_url,
               labels: v.labels,
-              category: v.category
+              category: v.category,
+              style: v.labels?.description || 'conversational',
+              description: v.labels?.description || `${v.labels?.gender || ''} ${v.labels?.accent || ''} voice`.trim(),
+              emoji: v.labels?.gender === 'female' ? '👩' : '👨'
             }));
           
-          return res.status(200).json({ voices });
+          return res.status(200).json({ success: true, voices });
         } else {
           // Return default voices as fallback
           return res.status(200).json({ 
+            success: true,
             voices: [
-              { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', labels: { accent: 'american', gender: 'female' } },
-              { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', labels: { accent: 'american', gender: 'female' } },
-              { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', labels: { accent: 'american', gender: 'female' } },
-              { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', labels: { accent: 'american', gender: 'male' } },
-              { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', labels: { accent: 'american', gender: 'female' } },
-              { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', labels: { accent: 'american', gender: 'male' } },
-              { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', labels: { accent: 'american', gender: 'male' } },
-              { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', labels: { accent: 'american', gender: 'male' } }
+              { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', style: 'conversational', emoji: '👩', description: 'Warm female voice', labels: { accent: 'american', gender: 'female' } },
+              { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', style: 'energetic', emoji: '👩', description: 'Energetic female voice', labels: { accent: 'american', gender: 'female' } },
+              { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', style: 'soft', emoji: '👩', description: 'Soft female voice', labels: { accent: 'american', gender: 'female' } },
+              { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', style: 'professional', emoji: '👨', description: 'Professional male voice', labels: { accent: 'american', gender: 'male' } },
+              { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', style: 'youthful', emoji: '👧', description: 'Youthful female voice', labels: { accent: 'american', gender: 'female' } },
+              { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', style: 'dynamic', emoji: '👨', description: 'Dynamic male voice', labels: { accent: 'american', gender: 'male' } },
+              { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', style: 'narrator', emoji: '👨', description: 'Narrator male voice', labels: { accent: 'american', gender: 'male' } },
+              { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', style: 'deep', emoji: '👨', description: 'Deep male voice', labels: { accent: 'american', gender: 'male' } }
             ]
           });
         }
       } catch (err) {
         console.error('ElevenLabs voices error:', err);
-        return res.status(200).json({ voices: [] });
+        return res.status(200).json({ success: true, voices: [] });
       }
     }
 
