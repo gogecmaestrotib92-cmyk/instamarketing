@@ -40,6 +40,12 @@ const BusinessImage = () => {
       const hasData = parsed.businessName || parsed.description || parsed.industry;
       if (hasData) {
         setConnectedBrand(parsed);
+        // Debug: Log brand images
+        console.log('🖼️ BusinessImage: Loaded brand info', {
+          businessName: parsed.businessName,
+          brandImages: parsed.brandImages,
+          brandImagesCount: parsed.brandImages?.length || 0
+        });
         // Auto-select first product if available
         if (parsed.products && parsed.products.length > 0) {
           setSelectedProduct(parsed.products[0]);
@@ -573,10 +579,10 @@ const BusinessImage = () => {
                 </div>
 
                 {/* Reference Image from Brand */}
-                {connectedBrand?.brandImages?.length > 0 && (
-                  <div className="setting-group">
-                    <h3>🖼️ Reference Style (Optional)</h3>
-                    <p className="setting-description">Use a brand image as style reference</p>
+                <div className="setting-group">
+                  <h3>🖼️ Reference Style (Optional)</h3>
+                  <p className="setting-description">Use a brand image as style reference</p>
+                  {connectedBrand?.brandImages?.length > 0 ? (
                     <div className="reference-images-row">
                       <div 
                         className={`reference-image-option ${!selectedReferenceImage ? 'selected' : ''}`}
@@ -584,18 +590,26 @@ const BusinessImage = () => {
                       >
                         <span>None</span>
                       </div>
-                      {connectedBrand.brandImages.slice(0, 4).map((img, idx) => (
-                        <div
-                          key={idx}
-                          className={`reference-image-option ${selectedReferenceImage === img ? 'selected' : ''}`}
-                          onClick={() => setSelectedReferenceImage(img)}
-                        >
-                          <img src={img} alt={`Reference ${idx + 1}`} />
-                        </div>
-                      ))}
+                      {connectedBrand.brandImages.slice(0, 4).map((img, idx) => {
+                        // Handle both object format {url: ...} and direct URL strings
+                        const imageUrl = typeof img === 'object' ? img.url : img;
+                        return (
+                          <div
+                            key={idx}
+                            className={`reference-image-option ${selectedReferenceImage === imageUrl ? 'selected' : ''}`}
+                            onClick={() => setSelectedReferenceImage(imageUrl)}
+                          >
+                            <img src={imageUrl} alt={`Reference ${idx + 1}`} />
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="no-brand-images-notice">
+                      <p>No brand images saved. <a href="/app/business-hub" style={{color: '#667eea'}}>Add images in Business Hub</a></p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="step-actions">

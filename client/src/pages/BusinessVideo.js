@@ -27,6 +27,15 @@ const BusinessVideo = () => {
   const [includeCharacters, setIncludeCharacters] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('9:16');
   
+  // ElevenLabs Voice Settings
+  const [selectedVoice, setSelectedVoice] = useState('Adam');
+  const [selectedVoiceId, setSelectedVoiceId] = useState('pNInz6obpgDQGcFmaJgB');
+  const [elevenLabsVoices, setElevenLabsVoices] = useState([]);
+  const [elevenLabsStatus, setElevenLabsStatus] = useState({ available: false });
+  const [voiceStyle, setVoiceStyle] = useState('narrator');
+  const [playingPreview, setPlayingPreview] = useState(null);
+  const [previewAudio, setPreviewAudio] = useState(null);
+  
   // Step 3: Review & Generate
   const [generatedScript, setGeneratedScript] = useState(null);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
@@ -46,7 +55,97 @@ const BusinessVideo = () => {
     } else {
       setHasBrand(false);
     }
+    
+    // Load ElevenLabs voices
+    loadElevenLabsVoices();
   }, []);
+  
+  // Load ElevenLabs voices and status
+  const loadElevenLabsVoices = async () => {
+    try {
+      const statusRes = await fetch('/api/ai/elevenlabs/status');
+      const statusData = await statusRes.json();
+      setElevenLabsStatus(statusData);
+      
+      const voicesRes = await fetch('/api/ai/elevenlabs/voices/recommended');
+      const voicesData = await voicesRes.json();
+      
+      if (voicesData.success && voicesData.voices) {
+        setElevenLabsVoices(voicesData.voices);
+        // Set default voice (Adam for video narration)
+        const defaultVoice = voicesData.voices.find(v => v.name === 'Adam') || voicesData.voices[0];
+        if (defaultVoice) {
+          setSelectedVoice(defaultVoice.name);
+          setSelectedVoiceId(defaultVoice.id);
+          setVoiceStyle(defaultVoice.style || 'narrator');
+        }
+      }
+    } catch (error) {
+      console.log('ElevenLabs not available:', error.message);
+    }
+  };
+  
+  // Play voice preview
+  const playVoicePreview = (voice) => {
+    if (previewAudio) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+    }
+    
+    if (voice.previewUrl) {
+      const audio = new Audio(voice.previewUrl);
+      setPreviewAudio(audio);
+      setPlayingPreview(voice.id);
+      
+      audio.play().catch(err => {
+        console.log('Preview play failed:', err);
+        setPlayingPreview(null);
+      });
+      
+      audio.onended = () => setPlayingPreview(null);
+    }
+  };
+  
+  // Stop voice preview
+  const stopVoicePreview = () => {
+    if (previewAudio) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+    }
+    setPlayingPreview(null);
+  };
+  
+  // Select a voice
+  const selectVoice = (voice) => {
+    setSelectedVoice(voice.name);
+    setSelectedVoiceId(voice.id);
+    if (voice.style) setVoiceStyle(voice.style);
+  };
+  
+  // Fallback voice options
+  const fallbackVoiceOptions = [
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', style: 'narrator', emoji: '👨', description: 'Deep, authoritative - perfect for narration', category: 'premade' },
+    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', style: 'conversational', emoji: '👩', description: 'Warm, friendly - ideal for social media', category: 'premade' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'professional', emoji: '👩‍💼', description: 'Clear, professional - great for business', category: 'premade' },
+    { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', style: 'luxury', emoji: '🎩', description: 'Deep, rich - great for luxury brands', category: 'premade' },
+    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', style: 'energetic', emoji: '🎤', description: 'Energetic - great for exciting content', category: 'premade' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', style: 'dynamic', emoji: '🧑', description: 'Dynamic - energetic and engaging', category: 'premade' },
+  ];
+  
+  // Voice styles
+  const voiceStyles = [
+    { id: 'narrator', label: 'Narrator', description: 'Documentary style' },
+    { id: 'professional', label: 'Professional', description: 'Clear, business-like' },
+    { id: 'energetic', label: 'Energetic', description: 'High energy, exciting' },
+    { id: 'conversational', label: 'Conversational', description: 'Natural, casual' },
+    { id: 'dramatic', label: 'Dramatic', description: 'Cinematic feel' },
+    { id: 'calm', label: 'Calm', description: 'Relaxed, soothing' },
+  ];
+  
+  // Get available voices
+  const getAvailableVoices = () => {
+    return elevenLabsVoices.length > 0 ? elevenLabsVoices : fallbackVoiceOptions;
+  };
   
   // Campaign types for brand video ads
   const campaignTypes = [
@@ -409,7 +508,8 @@ Make the script authentic to the brand voice and focused on the product/service.
         body: JSON.stringify({
           topic: fullScript,
           targetDuration: 30,
-          voiceId: 'pNInz6obpgDQGcFmaJgB', // Adam voice
+          voiceId: selectedVoiceId, // Use selected ElevenLabs voice
+          voiceStyle: voiceStyle,
           style: videoStyle,
           aspectRatio: aspectRatio,
           includeCharacters: includeCharacters,
@@ -830,6 +930,67 @@ Make the script authentic to the brand voice and focused on the product/service.
                 </div>
               </div>
 
+              {/* Voice Selection - ElevenLabs */}
+              <div className="settings-section elevenlabs-section">
+                <div className="section-header-row">
+                  <h3><FiMic /> AI Voiceover</h3>
+                  {elevenLabsStatus.available && (
+                    <span className="elevenlabs-badge">⚡ ElevenLabs Premium</span>
+                  )}
+                </div>
+                
+                {!elevenLabsStatus.available && (
+                  <div className="elevenlabs-warning">
+                    <FiAlertCircle />
+                    <span>ElevenLabs not configured - using fallback voices</span>
+                  </div>
+                )}
+                
+                <div className="voice-selection-grid">
+                  {getAvailableVoices().map(voice => (
+                    <div 
+                      key={voice.id}
+                      className={`voice-option ${selectedVoiceId === voice.id ? 'selected' : ''}`}
+                      onClick={() => selectVoice(voice)}
+                    >
+                      <div className="voice-option-header">
+                        <span className="voice-emoji">{voice.emoji || '🎙️'}</span>
+                        <h4>{voice.name}</h4>
+                      </div>
+                      <p className="voice-desc">{voice.description}</p>
+                      {voice.previewUrl && (
+                        <button 
+                          className={`voice-preview ${playingPreview === voice.id ? 'playing' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playingPreview === voice.id ? stopVoicePreview() : playVoicePreview(voice);
+                          }}
+                        >
+                          {playingPreview === voice.id ? '■ Stop' : '▶ Preview'}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Voice Style */}
+                <div className="voice-style-row">
+                  <label>Voice Style:</label>
+                  <div className="style-pills">
+                    {voiceStyles.map(style => (
+                      <button
+                        key={style.id}
+                        className={`style-pill ${voiceStyle === style.id ? 'active' : ''}`}
+                        onClick={() => setVoiceStyle(style.id)}
+                        title={style.description}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {/* Step Actions */}
               <div className="step-actions">
                 <button className="btn-back" onClick={handleBack}>
@@ -892,6 +1053,10 @@ Make the script authentic to the brand voice and focused on the product/service.
                   <div className="summary-item">
                     <span className="summary-label">Aspect Ratio</span>
                     <span className="summary-value">{aspectRatio}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Voice</span>
+                    <span className="summary-value">🎙️ {selectedVoice}</span>
                   </div>
                 </div>
               </div>

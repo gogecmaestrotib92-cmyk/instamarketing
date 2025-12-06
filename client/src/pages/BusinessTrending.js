@@ -25,6 +25,14 @@ const BusinessTrending = () => {
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [backgroundType, setBackgroundType] = useState('stock-video');
   const [selectedVoice, setSelectedVoice] = useState('Rachel');
+  const [selectedVoiceId, setSelectedVoiceId] = useState('21m00Tcm4TlvDq8ikWAM');
+  
+  // ElevenLabs state
+  const [elevenLabsVoices, setElevenLabsVoices] = useState([]);
+  const [elevenLabsStatus, setElevenLabsStatus] = useState({ available: false, subscription: null });
+  const [voiceStyle, setVoiceStyle] = useState('energetic');
+  const [playingPreview, setPlayingPreview] = useState(null);
+  const [previewAudio, setPreviewAudio] = useState(null);
   
   // Step 3: Generate
   const [postTopic, setPostTopic] = useState('');
@@ -41,7 +49,70 @@ const BusinessTrending = () => {
     } else {
       setHasBrand(false);
     }
+    
+    // Load ElevenLabs voices
+    loadElevenLabsVoices();
   }, []);
+  
+  // Load ElevenLabs voices and status
+  const loadElevenLabsVoices = async () => {
+    try {
+      // Check ElevenLabs status
+      const statusRes = await fetch('/api/ai/elevenlabs/status');
+      const statusData = await statusRes.json();
+      setElevenLabsStatus(statusData);
+      
+      // Load recommended voices
+      const voicesRes = await fetch('/api/ai/elevenlabs/voices/recommended');
+      const voicesData = await voicesRes.json();
+      
+      if (voicesData.success && voicesData.voices) {
+        setElevenLabsVoices(voicesData.voices);
+        // Set default voice if we have voices
+        if (voicesData.voices.length > 0) {
+          const defaultVoice = voicesData.voices.find(v => v.name === 'Rachel') || voicesData.voices[0];
+          setSelectedVoice(defaultVoice.name);
+          setSelectedVoiceId(defaultVoice.id);
+          setVoiceStyle(defaultVoice.style || 'conversational');
+        }
+      }
+    } catch (error) {
+      console.log('ElevenLabs not available:', error.message);
+    }
+  };
+  
+  // Play voice preview
+  const playVoicePreview = (voice) => {
+    // Stop any currently playing preview
+    if (previewAudio) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+    }
+    
+    if (voice.previewUrl) {
+      const audio = new Audio(voice.previewUrl);
+      setPreviewAudio(audio);
+      setPlayingPreview(voice.id);
+      
+      audio.play().catch(err => {
+        console.log('Preview play failed:', err);
+        setPlayingPreview(null);
+      });
+      
+      audio.onended = () => {
+        setPlayingPreview(null);
+      };
+    }
+  };
+  
+  // Stop voice preview
+  const stopVoicePreview = () => {
+    if (previewAudio) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+    }
+    setPlayingPreview(null);
+  };
   
   // Content purpose types for brand content
   const contentPurposes = [
@@ -134,26 +205,50 @@ const BusinessTrending = () => {
     { id: 'ai-images', label: 'AI Background', icon: FiImage, description: 'AI-generated visuals' },
   ];
 
-  // ElevenLabs voice options
-  const voiceOptions = [
-    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', style: 'conversational', emoji: '👩', description: 'Warm, friendly' },
-    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'professional', emoji: '👩‍💼', description: 'Professional' },
-    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', style: 'narrator', emoji: '👨', description: 'Authoritative' },
-    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', style: 'energetic', emoji: '🎤', description: 'Energetic' },
-    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', style: 'dynamic', emoji: '🧑', description: 'Dynamic' },
-    { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', style: 'luxury', emoji: '🎩', description: 'Deep, rich' },
+  // Fallback voice options (used when API is not available)
+  const fallbackVoiceOptions = [
+    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', style: 'conversational', emoji: '👩', description: 'Warm, friendly female voice - ideal for social media', category: 'premade' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'professional', emoji: '👩‍💼', description: 'Clear, professional female voice - great for business content', category: 'premade' },
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', style: 'narrator', emoji: '👨', description: 'Deep, authoritative male voice - perfect for narration', category: 'premade' },
+    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', style: 'energetic', emoji: '🎤', description: 'Energetic young female voice - great for exciting content', category: 'premade' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', style: 'dynamic', emoji: '🧑', description: 'Dynamic young male voice - energetic and engaging', category: 'premade' },
+    { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', style: 'luxury', emoji: '🎩', description: 'Deep, rich male voice - great for luxury brands', category: 'premade' },
+    { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', style: 'youthful', emoji: '👧', description: 'Youthful female voice - perfect for Gen Z content', category: 'premade' },
+    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', style: 'british', emoji: '🎭', description: 'British male voice - sophisticated and refined', category: 'premade' },
   ];
+  
+  // Voice styles for ElevenLabs
+  const voiceStyles = [
+    { id: 'energetic', label: 'Energetic', description: 'High energy, exciting' },
+    { id: 'conversational', label: 'Conversational', description: 'Natural, casual' },
+    { id: 'professional', label: 'Professional', description: 'Clear, business-like' },
+    { id: 'dramatic', label: 'Dramatic', description: 'Cinematic feel' },
+    { id: 'calm', label: 'Calm', description: 'Relaxed, soothing' },
+    { id: 'narrator', label: 'Narrator', description: 'Documentary style' },
+  ];
+  
+  // Get available voices (API or fallback)
+  const getAvailableVoices = () => {
+    return elevenLabsVoices.length > 0 ? elevenLabsVoices : fallbackVoiceOptions;
+  };
 
   // Voice style mapping based on selected voice
   const getVoiceStyle = () => {
-    const voice = voiceOptions.find(v => v.name === selectedVoice);
-    return voice?.style || 'energetic';
+    return voiceStyle || 'energetic';
   };
   
   // Get voice ID from name
   const getVoiceId = () => {
-    const voice = voiceOptions.find(v => v.name === selectedVoice);
-    return voice?.id || '21m00Tcm4TlvDq8ikWAM'; // Default to Rachel
+    return selectedVoiceId || '21m00Tcm4TlvDq8ikWAM'; // Default to Rachel
+  };
+  
+  // Select a voice
+  const selectVoice = (voice) => {
+    setSelectedVoice(voice.name);
+    setSelectedVoiceId(voice.id);
+    if (voice.style) {
+      setVoiceStyle(voice.style);
+    }
   };
   
   // Get selected product details
@@ -824,22 +919,97 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
                 <p>Choose your subtitle style, voice, and format</p>
               </div>
 
-              {/* Voice Selection */}
-              <div className="settings-section">
-                <h3><FiMic /> Voice</h3>
-                <div className="voice-grid">
-                  {voiceOptions.map(voice => (
+              {/* Voice Selection - Enhanced ElevenLabs */}
+              <div className="settings-section elevenlabs-section">
+                <div className="section-header">
+                  <h3><FiMic /> AI Voice</h3>
+                  {elevenLabsStatus.available && (
+                    <span className="elevenlabs-badge">
+                      ⚡ ElevenLabs Premium
+                    </span>
+                  )}
+                </div>
+                
+                {!elevenLabsStatus.available && (
+                  <div className="elevenlabs-warning">
+                    <FiAlertCircle />
+                    <span>ElevenLabs not configured - using fallback voices</span>
+                  </div>
+                )}
+                
+                {/* Voice Grid */}
+                <div className="voice-grid enhanced">
+                  {getAvailableVoices().map(voice => (
                     <div 
                       key={voice.id}
-                      className={`voice-card ${selectedVoice === voice.name ? 'selected' : ''}`}
-                      onClick={() => setSelectedVoice(voice.name)}
+                      className={`voice-card ${selectedVoiceId === voice.id ? 'selected' : ''}`}
+                      onClick={() => selectVoice(voice)}
                     >
-                      <span className="voice-emoji">{voice.emoji}</span>
-                      <h4>{voice.name}</h4>
-                      <p>{voice.description}</p>
+                      <div className="voice-card-header">
+                        <span className="voice-emoji">{voice.emoji || '🎙️'}</span>
+                        <h4>{voice.name}</h4>
+                        {voice.style && (
+                          <span className="voice-style-tag">{voice.style}</span>
+                        )}
+                      </div>
+                      <p className="voice-description">{voice.description}</p>
+                      {voice.previewUrl && (
+                        <button 
+                          className={`voice-preview-btn ${playingPreview === voice.id ? 'playing' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (playingPreview === voice.id) {
+                              stopVoicePreview();
+                            } else {
+                              playVoicePreview(voice);
+                            }
+                          }}
+                        >
+                          {playingPreview === voice.id ? (
+                            <>■ Stop</>
+                          ) : (
+                            <>▶ Preview</>
+                          )}
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
+                
+                {/* Voice Style Selection */}
+                <div className="voice-style-section">
+                  <h4>Voice Style</h4>
+                  <div className="voice-style-pills">
+                    {voiceStyles.map(style => (
+                      <button
+                        key={style.id}
+                        className={`style-pill ${voiceStyle === style.id ? 'active' : ''}`}
+                        onClick={() => setVoiceStyle(style.id)}
+                        title={style.description}
+                      >
+                        {style.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* ElevenLabs Usage Info */}
+                {elevenLabsStatus.subscription && (
+                  <div className="elevenlabs-usage">
+                    <span className="usage-label">Character Usage:</span>
+                    <div className="usage-bar">
+                      <div 
+                        className="usage-fill"
+                        style={{ 
+                          width: `${(elevenLabsStatus.subscription.characterCount / elevenLabsStatus.subscription.characterLimit) * 100}%` 
+                        }}
+                      />
+                    </div>
+                    <span className="usage-text">
+                      {elevenLabsStatus.subscription.characterCount?.toLocaleString()} / {elevenLabsStatus.subscription.characterLimit?.toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Subtitle Template */}

@@ -470,15 +470,26 @@ class ReplicateService {
       
       let prediction;
       
+      // Extract URL if referenceImage is an object (from BusinessHub format)
+      let referenceImageUrl = null;
       if (referenceImage) {
-        console.log('📸 Using reference image for style guidance:', referenceImage);
+        if (typeof referenceImage === 'string') {
+          referenceImageUrl = referenceImage;
+        } else if (typeof referenceImage === 'object' && referenceImage.url) {
+          referenceImageUrl = referenceImage.url;
+        }
+        console.log('📸 Reference image URL:', referenceImageUrl);
+      }
+      
+      if (referenceImageUrl) {
+        console.log('📸 Using reference image for style guidance');
         
         // Use Flux Pro with image prompt for style-guided generation
         prediction = await this.replicate.predictions.create({
           model: 'black-forest-labs/flux-1.1-pro',
           input: {
             prompt: prompt,
-            image_prompt: referenceImage,
+            image_prompt: referenceImageUrl,
             image_prompt_strength: 0.30, // Balanced style influence for brand consistency
             aspect_ratio: aspectRatio,
             output_format: outputFormat,

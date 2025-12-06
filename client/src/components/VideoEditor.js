@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { FiMusic, FiType, FiVolume2, FiDownload, FiPlay, FiPause } from 'react-icons/fi';
+import { FiMusic, FiType, FiVolume2, FiDownload, FiPlay, FiPause, FiMic, FiAlertCircle } from 'react-icons/fi';
 import './VideoEditor.css';
 
 const VideoEditor = ({ video, onSave, onBack }) => {
@@ -16,6 +16,16 @@ const VideoEditor = ({ video, onSave, onBack }) => {
   const [subtitles, setSubtitles] = useState([]);
   const [textOverlays, setTextOverlays] = useState([]);
   const [voiceover, setVoiceover] = useState(null);
+  
+  // ElevenLabs state
+  const [elevenLabsVoices, setElevenLabsVoices] = useState([]);
+  const [elevenLabsStatus, setElevenLabsStatus] = useState({ available: false });
+  const [selectedVoiceId, setSelectedVoiceId] = useState('21m00Tcm4TlvDq8ikWAM');
+  const [selectedVoiceName, setSelectedVoiceName] = useState('Rachel');
+  const [isGeneratingVoice, setIsGeneratingVoice] = useState(false);
+  const [generatedAudioUrl, setGeneratedAudioUrl] = useState(null);
+  const [playingPreview, setPlayingPreview] = useState(null);
+  const [previewAudio, setPreviewAudio] = useState(null);
 
   // Music library (sample tracks)
   const musicLibrary = [
@@ -25,6 +35,21 @@ const VideoEditor = ({ video, onSave, onBack }) => {
     { id: 4, name: 'Lo-Fi Beat', duration: '3:00', mood: 'calm' },
     { id: 5, name: 'Trending Pop', duration: '2:20', mood: 'trendy' },
   ];
+  
+  // Fallback voice options
+  const fallbackVoices = [
+    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', description: 'Warm, friendly', emoji: '👩' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', description: 'Professional', emoji: '👩‍💼' },
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', description: 'Authoritative', emoji: '👨' },
+    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', description: 'Energetic', emoji: '🎤' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', description: 'Dynamic', emoji: '🧑' },
+    { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', description: 'Deep, rich', emoji: '🎩' },
+  ];
+  
+  // Load ElevenLabs voices on mount
+  useEffect(() => {
+    loadElevenLabsVoices();
+  }, []);
 
   useEffect(() => {
     const videoEl = videoRef.current;
@@ -44,6 +69,80 @@ const VideoEditor = ({ video, onSave, onBack }) => {
       };
     }
   }, []);
+  
+  // Load ElevenLabs voices
+  const loadElevenLabsVoices = async () => {
+    try {
+      const statusRes = await fetch('/api/ai/elevenlabs/status');
+      const statusData = await statusRes.json();
+      setElevenLabsStatus(statusData);
+      
+      const voicesRes = await fetch('/api/ai/elevenlabs/voices/recommended');
+      const voicesData = await voicesRes.json();
+      
+      if (voicesData.success && voicesData.voices) {
+        setElevenLabsVoices(voicesData.voices);
+      }
+    } catch (error) {
+      console.log('ElevenLabs not available:', error.message);
+    }
+  };
+  
+  // Get available voices
+  const getAvailableVoices = () => {
+    return elevenLabsVoices.length > 0 ? elevenLabsVoices : fallbackVoices;
+  };
+  
+  // Play voice preview
+  const playVoicePreview = (voice) => {
+    if (previewAudio) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+    }
+    
+    if (voice.previewUrl) {
+      const audio = new Audio(voice.previewUrl);
+      setPreviewAudio(audio);
+      setPlayingPreview(voice.id);
+      audio.play().catch(() => setPlayingPreview(null));
+      audio.onended = () => setPlayingPreview(null);
+    }
+  };
+  
+  // Generate voiceover with ElevenLabs
+  const generateVoiceover = async () => {
+    if (!voiceover || !voiceover.trim()) {
+      toast.error('Please enter text for the voiceover');
+      return;
+    }
+    
+    setIsGeneratingVoice(true);
+    
+    try {
+      const response = await fetch('/api/ai/elevenlabs/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: voiceover,
+          voiceId: selectedVoiceId
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.audioUrl) {
+        setGeneratedAudioUrl(data.audioUrl);
+        toast.success('Voiceover generated!');
+      } else {
+        throw new Error(data.error || 'Failed to generate voiceover');
+      }
+    } catch (error) {
+      console.error('Voiceover generation error:', error);
+      toast.error(error.message || 'Failed to generate voiceover');
+    } finally {
+      setIsGeneratingVoice(false);
+    }
+  };
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -297,22 +396,90 @@ const VideoEditor = ({ video, onSave, onBack }) => {
           </div>
         )}
 
-        {/* Voiceover Panel */}
+        {/* Voiceover Panel - Enhanced with ElevenLabs */}
         {activePanel === 'voiceover' && (
-          <div className="tool-panel">
-            <h4>AI Voiceover</h4>
+          <div className="tool-panel voiceover-panel">
+            <div className="panel-header">
+              <h4><FiMic /> AI Voiceover</h4>
+              {elevenLabsStatus.available && (
+                <span className="elevenlabs-badge">⚡ ElevenLabs</span>
+              )}
+            </div>
+            
+            {!elevenLabsStatus.available && (
+              <div className="warning-notice">
+                <FiAlertCircle />
+                <span>ElevenLabs not configured</span>
+              </div>
+            )}
+            
+            {/* Voice Selection */}
+            <div className="voice-select-section">
+              <label>Select Voice:</label>
+              <div className="voice-options-row">
+                {getAvailableVoices().slice(0, 4).map(voice => (
+                  <button
+                    key={voice.id}
+                    className={`voice-chip ${selectedVoiceId === voice.id ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedVoiceId(voice.id);
+                      setSelectedVoiceName(voice.name);
+                    }}
+                    title={voice.description}
+                  >
+                    <span className="voice-emoji">{voice.emoji || '🎙️'}</span>
+                    <span>{voice.name}</span>
+                  </button>
+                ))}
+              </div>
+              
+              {/* Full voice dropdown for more options */}
+              <select 
+                className="voice-dropdown"
+                value={selectedVoiceId}
+                onChange={(e) => {
+                  const voice = getAvailableVoices().find(v => v.id === e.target.value);
+                  setSelectedVoiceId(e.target.value);
+                  setSelectedVoiceName(voice?.name || 'Voice');
+                }}
+              >
+                {getAvailableVoices().map(voice => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.name} - {voice.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Text Input */}
             <textarea 
               className="voiceover-text"
               placeholder="Enter text for AI voiceover..."
               value={voiceover || ''}
               onChange={(e) => setVoiceover(e.target.value)}
+              rows={4}
             />
+            
+            {/* Generate Button */}
             <button 
-              className="generate-voice-btn"
-              onClick={() => toast.info('AI voice generation coming soon')}
+              className={`generate-voice-btn ${isGeneratingVoice ? 'loading' : ''}`}
+              onClick={generateVoiceover}
+              disabled={isGeneratingVoice || !voiceover?.trim()}
             >
-              Generate Voice
+              {isGeneratingVoice ? (
+                <>Generating...</>
+              ) : (
+                <>🎙️ Generate with {selectedVoiceName}</>
+              )}
             </button>
+            
+            {/* Generated Audio Preview */}
+            {generatedAudioUrl && (
+              <div className="generated-audio">
+                <span>✅ Voiceover ready!</span>
+                <audio controls src={generatedAudioUrl} />
+              </div>
+            )}
           </div>
         )}
       </div>
