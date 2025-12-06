@@ -507,8 +507,10 @@ Format as JSON array:
   }
 ]
 
-Focus on trending formats, emotional hooks, and viral potential. Make them authentic to the brand.`,
-          systemPrompt: 'You are a viral content strategist for brands. Return ONLY valid JSON array, no markdown or extra text.'
+Focus on trending formats, emotional hooks, and viral potential. Make them authentic to the brand.
+
+IMPORTANT: Always respond in English regardless of business name or context.`,
+          systemPrompt: 'You are a viral content strategist for brands. Return ONLY valid JSON array, no markdown or extra text. Always respond in English.'
         })
       });
 
