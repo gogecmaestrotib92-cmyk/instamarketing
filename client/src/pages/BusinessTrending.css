@@ -769,6 +769,71 @@
   letter-spacing: 0.3px;
 }
 
+.ai-tag {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  letter-spacing: 0.3px;
+  animation: ai-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* AI Video Selected State */
+.option-card.selected[data-type="ai-video"] {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.08);
+}
+
+.option-card.selected[data-type="ai-video"] .option-icon {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+}
+
+/* AI Video Note */
+.ai-video-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.08));
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 10px;
+  font-size: 12px;
+  color: #a78bfa;
+}
+
+.ai-video-note .note-icon {
+  color: #8b5cf6;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Premium pill style */
+.bg-pill.premium {
+  position: relative;
+}
+
+.bg-pill.premium .ai-tag {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 8px;
+  padding: 2px 5px;
+}
+
+.bg-pill.premium.active {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.15);
+}
+
 .result-tip {
   padding: 12px 16px;
   background: rgba(251, 191, 36, 0.1);

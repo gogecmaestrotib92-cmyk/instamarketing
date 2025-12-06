@@ -41,6 +41,7 @@ function MemesCreate() {
   const [isSearchingImages, setIsSearchingImages] = useState(false);
   const [suggestedImages, setSuggestedImages] = useState([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [isGeneratingAIImage, setIsGeneratingAIImage] = useState(false);
   
   // Refs
   const fileInputRef = useRef(null);
@@ -165,6 +166,49 @@ function MemesCreate() {
     setSelectedBackground(null);
     setShowImagePicker(false);
     showNotification('Image applied! 🎨');
+  };
+  
+  // Generate AI image based on meme context
+  const generateAIImage = async () => {
+    if (!templateSuggestion && !topText && !bottomText) {
+      showNotification('Generate meme text first!', 'error');
+      return;
+    }
+    
+    setIsGeneratingAIImage(true);
+    
+    try {
+      // Build a rich prompt for meme-worthy image
+      const memeContext = `${topText || ''} ${bottomText || ''}`.trim();
+      const visualDescription = templateSuggestion || 'funny reaction face';
+      
+      const prompt = `Meme template image for humor: ${visualDescription}. 
+Context of the joke: "${memeContext}"
+Style: Expressive reaction, funny, exaggerated emotion, meme-worthy, centered subject, good for text overlay.
+IMPORTANT: No text, no words, no letters in the image. Clean background or simple scene.`;
+      
+      console.log('🎨 Generating AI meme image:', prompt);
+      
+      const response = await api.post('/ai/image/generate', {
+        prompt,
+        aspectRatio: '1:1',
+        enhancePrompt: true,
+        style: 'meme reaction image'
+      });
+      
+      if (response.data.success && response.data.imageUrl) {
+        setCustomImage(response.data.imageUrl);
+        setSelectedBackground(null);
+        showNotification('AI image generated! 🎨✨');
+      } else {
+        throw new Error(response.data.error || 'Failed to generate image');
+      }
+    } catch (error) {
+      console.error('AI image generation error:', error);
+      showNotification(error.response?.data?.error || error.message || 'Failed to generate AI image', 'error');
+    } finally {
+      setIsGeneratingAIImage(false);
+    }
   };
   
   // Handle custom image upload
@@ -487,17 +531,30 @@ function MemesCreate() {
                 <h3>Suggested Image</h3>
               </div>
               <p className="ai-suggestion-text">"{templateSuggestion}"</p>
-              <button
-                className="find-image-btn"
-                onClick={() => searchForSuggestedImage(templateSuggestion)}
-                disabled={isSearchingImages}
-              >
-                {isSearchingImages ? (
-                  <><FiRefreshCw className="spinning" /> Searching...</>
-                ) : (
-                  <><FiSearch /> Find Matching Image</>
-                )}
-              </button>
+              <div className="image-action-buttons">
+                <button
+                  className="generate-ai-image-btn"
+                  onClick={generateAIImage}
+                  disabled={isGeneratingAIImage || isSearchingImages}
+                >
+                  {isGeneratingAIImage ? (
+                    <><FiRefreshCw className="spinning" /> Generating...</>
+                  ) : (
+                    <><FiZap /> Generate AI Image</>
+                  )}
+                </button>
+                <button
+                  className="find-image-btn"
+                  onClick={() => searchForSuggestedImage(templateSuggestion)}
+                  disabled={isSearchingImages || isGeneratingAIImage}
+                >
+                  {isSearchingImages ? (
+                    <><FiRefreshCw className="spinning" /> Searching...</>
+                  ) : (
+                    <><FiSearch /> Find Stock Image</>
+                  )}
+                </button>
+              </div>
             </div>
           )}
           

@@ -541,18 +541,22 @@ router.post('/elevenlabs/full-voiceover', async (req, res) => {
 /**
  * Generate video from text (synchronous - waits for completion)
  * POST /api/ai/video/generate
+ * Uses Luma Ray Flash 2 - high quality, fast, supports 9:16 vertical
  */
 router.post('/video/generate', async (req, res) => {
   try {
-    const { prompt, numFrames, fps, steps } = req.body;
+    const { prompt, duration, aspectRatio, numFrames, fps, steps } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
     console.log('🎬 Video generation request:', prompt);
+    console.log('Duration:', duration || 9, 'Aspect Ratio:', aspectRatio || '9:16');
 
     const result = await replicateService.textToVideo(prompt, {
+      duration: duration || 9,
+      aspectRatio: aspectRatio || '9:16',
       numFrames: numFrames || 16,
       fps: fps || 8,
       steps: steps || 25
@@ -576,16 +580,19 @@ router.post('/video/generate', async (req, res) => {
 /**
  * Start async video generation (returns immediately)
  * POST /api/ai/video/start
+ * Uses Luma Ray Flash 2 - high quality, fast
  */
 router.post('/video/start', async (req, res) => {
   try {
-    const { prompt, numFrames, fps, steps } = req.body;
+    const { prompt, duration, aspectRatio, numFrames, fps, steps } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
     const result = await replicateService.startTextToVideo(prompt, {
+      duration: duration || 9,
+      aspectRatio: aspectRatio || '9:16',
       numFrames: numFrames || 16,
       fps: fps || 8,
       steps: steps || 25

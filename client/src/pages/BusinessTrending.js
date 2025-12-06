@@ -202,6 +202,7 @@ const BusinessTrending = () => {
   // Background types
   const backgroundTypes = [
     { id: 'stock-video', label: 'Stock Videos', icon: FiFilm, description: 'Auto-matched clips', recommended: true },
+    { id: 'ai-video', label: 'AI Video', icon: FiZap, description: 'AI-generated scenes', premium: true },
     { id: 'ai-images', label: 'AI Background', icon: FiImage, description: 'AI-generated visuals' },
   ];
 
@@ -422,6 +423,66 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
     setShowAdvice(false);
   };
 
+  // Build AI video prompt from brand context
+  const buildAIVideoPrompt = () => {
+    const product = getSelectedProductDetails();
+    const purpose = contentPurposes.find(p => p.id === contentPurpose);
+    
+    let prompt = '';
+    
+    // Base scene description based on content purpose
+    switch (contentPurpose) {
+      case 'tips':
+        prompt = `Professional educational scene, modern office or studio setting, clean aesthetic`;
+        break;
+      case 'behind-scenes':
+        prompt = `Behind the scenes footage, workspace, creative process, authentic feel`;
+        break;
+      case 'product-feature':
+        prompt = `Product showcase, elegant presentation, ${product?.name || 'product'} in focus, premium quality`;
+        break;
+      case 'customer-story':
+        prompt = `Happy customer testimonial scene, positive atmosphere, success story`;
+        break;
+      case 'industry-news':
+        prompt = `News-style scene, professional setting, informative atmosphere`;
+        break;
+      case 'motivation':
+        prompt = `Inspirational scene, uplifting visuals, motivational atmosphere, cinematic`;
+        break;
+      default:
+        prompt = `Professional brand content, modern aesthetic`;
+    }
+    
+    // Add industry context
+    if (businessInfo?.industry) {
+      prompt += `, ${businessInfo.industry} industry`;
+    }
+    
+    // Add visual mood
+    const moodDescriptions = {
+      'premium': 'luxury elegant sophisticated',
+      'minimal': 'clean minimalist simple',
+      'vibrant': 'colorful bold energetic',
+      'warm': 'cozy inviting warm tones',
+      'professional': 'corporate business trustworthy',
+      'playful': 'fun youthful casual'
+    };
+    
+    // Add brand colors if available
+    if (businessInfo?.brandColors?.length > 0) {
+      prompt += `, color scheme: ${businessInfo.brandColors.join(' and ')}`;
+    }
+    
+    // Quality modifiers
+    prompt += `, cinematic quality, smooth motion, professional lighting, 4K quality`;
+    
+    // No text in video
+    prompt += `, no text or logos in the video`;
+    
+    return prompt;
+  };
+
   const handleGenerate = async () => {
     if (!postTopic.trim()) return;
     
@@ -510,7 +571,133 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         return;
       }
       
-      // AI background fallback
+      // AI Video Generation with Replicate
+      if (backgroundType === 'ai-video') {
+        setGenerationStep('🎬 Generating AI video... (this may take 1-2 minutes)');
+        console.log('🎬 Starting AI video generation with Replicate');
+        
+        // Step 1: Generate voiceover first
+        setGenerationStep('🎙️ Generating AI voiceover...');
+        
+        let voiceoverData = null;
+        try {
+          const elevenLabsResponse = await fetch('/api/ai/elevenlabs/full-voiceover', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              topic: postTopic,
+              duration: 9, // Match Luma Ray video duration
+              voiceId: getVoiceId(),
+              voiceStyle: getVoiceStyle()
+            })
+          });
+          
+          const elevenLabsData = await elevenLabsResponse.json();
+          
+          if (elevenLabsResponse.ok && !elevenLabsData.error && elevenLabsData.audioUrl) {
+            voiceoverData = elevenLabsData;
+            console.log('✅ Voiceover generated:', voiceoverData.audioUrl);
+          }
+        } catch (elevenLabsError) {
+          console.warn('ElevenLabs failed:', elevenLabsError);
+        }
+        
+        if (!voiceoverData) {
+          // Fallback to Google TTS
+          const googleResponse = await fetch('/api/ai/full-voiceover', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              topic: postTopic,
+              duration: 9,
+              voiceStyle: getVoiceStyle()
+            })
+          });
+          
+          voiceoverData = await googleResponse.json();
+          
+          if (!googleResponse.ok || voiceoverData.error) {
+            throw new Error(voiceoverData.error || 'Failed to generate voiceover');
+          }
+        }
+        
+        // Step 2: Generate AI video with Replicate
+        setGenerationStep('🎥 Creating AI video scene... (60-90 seconds)');
+        
+        const videoPrompt = buildAIVideoPrompt();
+        console.log('🎬 AI Video prompt:', videoPrompt);
+        
+        const videoResponse = await fetch('/api/ai/video/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: videoPrompt,
+            duration: 9,
+            aspectRatio: aspectRatio
+          })
+        });
+        
+        const videoData = await videoResponse.json();
+        
+        if (!videoResponse.ok || videoData.error) {
+          throw new Error(videoData.error || 'Failed to generate AI video');
+        }
+        
+        console.log('✅ AI Video generated:', videoData.videoUrl);
+        
+        // Build result - AI video + voiceover (no composition for now)
+        const purpose = contentPurposes.find(p => p.id === contentPurpose);
+        const product = getSelectedProductDetails();
+        
+        const result = {
+          id: Date.now().toString(),
+          type: 'ai-video',
+          name: `${purpose?.label || 'Content'} - ${product?.name || businessInfo?.businessName || 'AI Video'}`,
+          script: voiceoverData.script,
+          audioUrl: voiceoverData.audioUrl,
+          backgroundUrl: videoData.videoUrl,
+          composedVideoUrl: null, // Separate video + audio for now
+          backgroundType: 'ai-video',
+          template: selectedTemplate,
+          aspectRatio: aspectRatio,
+          contentType: contentPurpose,
+          ttsProvider: 'ElevenLabs',
+          createdAt: new Date().toISOString(),
+          metadata: {
+            postTopic,
+            contentPurpose,
+            template: selectedTemplate,
+            aspectRatio,
+            backgroundType: 'ai-video',
+            aiVideoPrompt: videoPrompt,
+            businessName: businessInfo?.businessName,
+            productName: product?.name
+          },
+          instructions: '🎬 AI video generated! Download both files and combine in your editor, or use the video as a silent background.'
+        };
+        
+        setGeneratedResult(result);
+        
+        // Auto-save video to Asset Hub
+        try {
+          saveVideoToHub({
+            name: result.name,
+            url: videoData.videoUrl,
+            caption: `AI-generated: ${postTopic.substring(0, 80)}`,
+            tags: [contentPurpose, 'ai-video', 'brand-content', businessInfo?.industry].filter(Boolean),
+            source: 'BusinessTrending-AI',
+            metadata: result.metadata
+          });
+          console.log('✅ AI Video auto-saved to Asset Hub');
+        } catch (saveError) {
+          console.error('Failed to save to Asset Hub:', saveError);
+        }
+        
+        setGenerationStep('');
+        return;
+      }
+      
+      // AI background image fallback
       setGenerationStep('Generating AI voiceover...');
       
       let voiceoverData = null;
