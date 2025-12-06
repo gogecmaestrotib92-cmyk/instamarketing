@@ -139,17 +139,27 @@ function buildTimeline(videoUrl, audioUrl, subtitles = [], options = {}) {
         console.log(`   Text ${index + 1}: "${subtitle.text?.substring(0, 30)}..." at ${position}, offset: ${JSON.stringify(offset)}`);
 
         // VIRAL STYLE SUBTITLES - Bottom center, readable on 9:16
-        // MAX 3 words per line for viral look
+        // MAX 15 CHARACTERS per line to prevent overflow on mobile
         const words = subtitle.text.trim().split(/\s+/);
         let formattedText = subtitle.text.toUpperCase();
         
-        // Split into max 3 words per line for viral style
-        if (words.length > 3) {
+        // Split into short lines (max ~15 chars) for viral style that fits in frame
+        if (subtitle.text.length > 15) {
           const lines = [];
-          for (let w = 0; w < words.length; w += 3) {
-            lines.push(words.slice(w, w + 3).join(' ').toUpperCase());
+          let currentLine = '';
+          for (const word of words) {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            if (testLine.length > 15 && currentLine) {
+              lines.push(currentLine.toUpperCase());
+              currentLine = word;
+            } else {
+              currentLine = testLine;
+            }
           }
+          if (currentLine) lines.push(currentLine.toUpperCase());
           formattedText = lines.join('\n');
+        } else {
+          formattedText = subtitle.text.toUpperCase();
         }
         
         const clip = {
@@ -690,15 +700,27 @@ function buildMultiClipTimeline(clips, audioUrl, subtitles = [], options = {}) {
 
     if (validSubtitles.length > 0) {
       subtitleClips = validSubtitles.map((subtitle, index) => {
-        // VIRAL STYLE: Max 3 words per line
+        // VIRAL STYLE: Max 15 CHARACTERS per line to prevent overflow
         const words = subtitle.text.trim().split(/\s+/);
         let formattedText = subtitle.text.toUpperCase();
-        if (words.length > 3) {
+        
+        // Split into short lines (max ~15 chars) for viral style that fits in frame
+        if (subtitle.text.length > 15) {
           const lines = [];
-          for (let i = 0; i < words.length; i += 3) {
-            lines.push(words.slice(i, i + 3).join(' ').toUpperCase());
+          let currentLine = '';
+          for (const word of words) {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            if (testLine.length > 15 && currentLine) {
+              lines.push(currentLine.toUpperCase());
+              currentLine = word;
+            } else {
+              currentLine = testLine;
+            }
           }
+          if (currentLine) lines.push(currentLine.toUpperCase());
           formattedText = lines.join('\n');
+        } else {
+          formattedText = subtitle.text.toUpperCase();
         }
         
         return {

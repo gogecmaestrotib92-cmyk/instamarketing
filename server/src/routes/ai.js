@@ -1122,16 +1122,22 @@ Output valid JSON only.`
         motionPrompt = industryMotions[industry] || 'Person interacts with product naturally, genuine satisfaction';
       }
 
-      // Build comprehensive Kling prompt with FULL product context + COLOR PRESERVATION
+      // Determine WHERE product is applied based on industry/product type (for beauty - NOT on nose!)
+      const isBeauty = industry?.toLowerCase().includes('beauty') || industry?.toLowerCase().includes('cosmetic') || industry?.toLowerCase().includes('skincare');
+      const isFashion = industry?.toLowerCase().includes('fashion') || industry?.toLowerCase().includes('apparel');
+      const bodyPartHint = isBeauty ? 'Apply on face/cheeks (NOT nose).' : isFashion ? 'Person wears the item.' : '';
+
+      // Build comprehensive Kling prompt with FULL product context + COLOR & SHAPE PRESERVATION
       // This tells Kling WHAT the product is and HOW to show it being used
-      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. PRESERVE EXACT PRODUCT COLORS - do not change any colors. Professional commercial quality, smooth natural movement.`;
+      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}${bodyPartHint ? `${bodyPartHint} ` : ''}MOTION: ${motionPrompt}. PRESERVE EXACT PRODUCT SHAPE, FORM, AND COLORS - do not change anything about product appearance. Professional commercial quality, smooth natural movement.`;
 
       console.log(`[${jobId}] Scene ${i + 1} Kling prompt: ${fullMotionPrompt.substring(0, 100)}...`);
 
       const videoResult = await replicateService.imageToVideo(scene.imageUrl, fullMotionPrompt, {
         duration: 5,
         aspectRatio: aspectRatio,
-        negativePrompt: 'blur, distortion, low quality, shaky, amateur, text, watermark, change color, wrong color, different color, color shift, change product'
+        cfgScale: 0.25, // Lower CFG to preserve product shape and colors
+        negativePrompt: 'blur, distortion, low quality, shaky, amateur, text, watermark, change color, wrong color, different color, color shift, change product, wrong shape, morph, deform'
       });
 
       if (videoResult.success && videoResult.videoUrl) {

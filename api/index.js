@@ -1215,13 +1215,18 @@ Return JSON array with classification for each image by index:
 
       if (scene.imageType === 'lifestyle') {
         // LIFESTYLE IMAGE: Has people - animate the person naturally
-        fullMotionPrompt = `The person in the image continues their natural interaction with "${actualProductName}". ${motionPrompt}. Smooth realistic movement, maintain the person's appearance and the product exactly as shown. PRESERVE EXACT PRODUCT COLORS - do not change any colors. Commercial quality.`;
-        cfgScale = 0.35; // Moderate - allow natural person movement but keep product colors
+        // Determine WHERE product is applied based on industry/product type
+        const isBeauty = industry?.toLowerCase().includes('beauty') || industry?.toLowerCase().includes('cosmetic') || industry?.toLowerCase().includes('skincare');
+        const isFashion = industry?.toLowerCase().includes('fashion') || industry?.toLowerCase().includes('apparel');
+        const bodyPartHint = isBeauty ? 'on face/cheeks (NOT nose)' : isFashion ? 'wearing the item' : '';
+        
+        fullMotionPrompt = `The person in the image continues their natural interaction with "${actualProductName}"${bodyPartHint ? ` ${bodyPartHint}` : ''}. ${motionPrompt}. Smooth realistic movement, maintain the person's appearance and the product EXACTLY as shown - same shape, same design, same packaging. PRESERVE EXACT PRODUCT COLORS AND SHAPE - do not change any colors or form. Commercial quality.`;
+        cfgScale = 0.3; // Lower CFG to preserve product better
         
       } else if (scene.imageType === 'product') {
         // PRODUCT SHOT: Clean product image - very subtle animation, preserve product exactly
-        fullMotionPrompt = `Keep this exact "${actualProductName}" product perfectly visible and unchanged. PRESERVE EXACT COLORS - do not change any colors of the product. Very subtle animation: gentle lighting shift, soft camera zoom or rotate around product. Professional product showcase, do NOT alter product design, packaging, or colors.`;
-        cfgScale = 0.2; // Very low - preserve product appearance and colors strictly
+        fullMotionPrompt = `Keep this exact "${actualProductName}" product perfectly visible and unchanged. PRESERVE EXACT SHAPE, FORM, PACKAGING AND COLORS - do not change anything about the product appearance. Very subtle animation: gentle lighting shift, soft camera zoom or rotate around product. Professional product showcase, do NOT alter product design, shape, packaging, or colors.`;
+        cfgScale = 0.15; // Even lower CFG to preserve product shape and colors strictly
         
       } else {
         // GENERATED IMAGE: Full motion prompt with product context
@@ -1315,8 +1320,13 @@ Return JSON array with classification for each image by index:
       }
     };
 
-    // Add logo if provided - with proper positioning offset
-    if (logoUrl) {
+    // Add logo if provided - prefer classified logo from GPT Vision
+    const actualLogoUrl = classifiedImages.logoImages.length > 0 
+      ? classifiedImages.logoImages[0].url 
+      : logoUrl;
+    console.log(`[${jobId}] 🏷️ Logo: ${actualLogoUrl ? 'Using ' + (classifiedImages.logoImages.length > 0 ? 'CLASSIFIED' : 'provided') + ' logo' : 'No logo'}`);
+    
+    if (actualLogoUrl) {
       // Map position to Shotstack format with safe margins
       const positionMap = {
         'topRight': { position: 'topRight', offset: { x: -0.03, y: 0.03 } },
@@ -1327,7 +1337,7 @@ Return JSON array with classification for each image by index:
       const logoPos = positionMap[logoPosition] || positionMap['topRight'];
       
       const logoClip = {
-        asset: { type: 'image', src: logoUrl },
+        asset: { type: 'image', src: actualLogoUrl },
         start: 0,
         length: animatedScenes.length * 5,
         position: logoPos.position,
@@ -1339,21 +1349,44 @@ Return JSON array with classification for each image by index:
     }
 
     // Add subtitles track - positioned safely within frame
+    // Format text to max 15 chars per line to prevent overflow
     if (subtitles.length > 0) {
-      const subClips = subtitles.map(sub => ({
-        asset: {
-          type: 'title',
-          text: sub.text.toUpperCase(),
-          style: 'chunk',
-          size: 'small', // Smaller to fit better
-          color: '#ffffff',
-          background: '#000000cc' // More opaque for readability
-        },
-        start: sub.start,
-        length: sub.end - sub.start,
-        position: 'bottom',
-        offset: { y: -0.08 } // Move UP from bottom edge to stay in frame
-      }));
+      const subClips = subtitles.map(sub => {
+        // Split long text into short lines (max ~15 chars) for viral style
+        const words = sub.text.trim().split(/\s+/);
+        let formattedText = sub.text.toUpperCase();
+        
+        if (sub.text.length > 15) {
+          const lines = [];
+          let currentLine = '';
+          for (const word of words) {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            if (testLine.length > 15 && currentLine) {
+              lines.push(currentLine.toUpperCase());
+              currentLine = word;
+            } else {
+              currentLine = testLine;
+            }
+          }
+          if (currentLine) lines.push(currentLine.toUpperCase());
+          formattedText = lines.join('\n');
+        }
+        
+        return {
+          asset: {
+            type: 'title',
+            text: formattedText,
+            style: 'chunk',
+            size: 'small', // Smaller to fit better
+            color: '#ffffff',
+            background: '#000000cc' // More opaque for readability
+          },
+          start: sub.start,
+          length: sub.end - sub.start,
+          position: 'bottom',
+          offset: { y: -0.08 } // Move UP from bottom edge to stay in frame
+        };
+      });
       timeline.tracks.push({ clips: subClips });
     }
 
