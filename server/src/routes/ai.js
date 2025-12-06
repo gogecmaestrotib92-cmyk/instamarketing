@@ -870,46 +870,53 @@ Remember:
     // ============================================
     console.log('\n🔹 STEP 2: Generating Voiceover');
     
-    let audioResult;
     let audioUrl;
     
-    if (voiceProvider === 'elevenlabs' && voice) {
+    // Try ElevenLabs first (works on Vercel, high quality)
+    try {
+      console.log('   Trying ElevenLabs...');
+      const elevenResult = await elevenlabsService.generateSpeech(sceneBreakdown.voiceoverScript, {
+        voiceId: voice || '21m00Tcm4TlvDq8ikWAM', // Rachel as default
+        stability: 0.6,
+        similarity: 0.8
+      });
+      
+      if (elevenResult.success && elevenResult.audioBuffer) {
+        // Upload to Cloudinary
+        const audioUpload = await cloudinaryService.uploadBufferToCloudinary(
+          elevenResult.audioBuffer,
+          `premium-voiceover-${Date.now()}.mp3`,
+          'video',
+          'premium-audio'
+        );
+        audioUrl = audioUpload.secure_url;
+        console.log('✅ ElevenLabs voiceover generated:', audioUrl);
+      }
+    } catch (elevenErr) {
+      console.log('⚠️ ElevenLabs failed:', elevenErr.message);
+    }
+    
+    // Fallback to Google TTS if ElevenLabs failed
+    if (!audioUrl) {
       try {
-        audioResult = await elevenlabsService.generateSpeech(sceneBreakdown.voiceoverScript, {
-          voiceId: voice,
-          stability: 0.6,
-          similarity: 0.8
+        console.log('   Trying Google TTS fallback...');
+        const googleResult = await googleTTSService.textToSpeech(sceneBreakdown.voiceoverScript, {
+          languageCode: 'en-US',
+          voiceName: 'en-US-Neural2-J',
+          speakingRate: 0.95
         });
-        if (audioResult.success) {
-          // Upload to Cloudinary
-          const audioUpload = await cloudinaryService.uploadBufferToCloudinary(
-            audioResult.audioBuffer,
-            `premium-voiceover-${Date.now()}.mp3`,
-            'video',
-            'premium-audio'
-          );
-          audioUrl = audioUpload.secure_url;
-          console.log('✅ ElevenLabs voiceover generated:', audioUrl);
+        
+        if (googleResult.success && googleResult.audioUrl) {
+          audioUrl = googleResult.audioUrl;
+          console.log('✅ Google TTS voiceover generated:', audioUrl);
         }
-      } catch (elevenErr) {
-        console.log('⚠️ ElevenLabs failed, falling back to Google TTS:', elevenErr.message);
+      } catch (googleErr) {
+        console.log('⚠️ Google TTS failed:', googleErr.message);
       }
     }
     
     if (!audioUrl) {
-      // Use Google TTS as fallback or default
-      audioResult = await googleTTSService.textToSpeech(sceneBreakdown.voiceoverScript, {
-        languageCode: 'en-US',
-        voiceName: voice || 'en-US-Neural2-J',
-        speakingRate: 0.95
-      });
-      
-      if (audioResult.success && audioResult.audioUrl) {
-        audioUrl = audioResult.audioUrl;
-        console.log('✅ Google TTS voiceover generated:', audioUrl);
-      } else {
-        throw new Error('Failed to generate voiceover: ' + (audioResult.error || 'Unknown error'));
-      }
+      throw new Error('Failed to generate voiceover - both ElevenLabs and Google TTS failed');
     }
 
     // Calculate expected audio duration (rough estimate: 150 words per minute)
