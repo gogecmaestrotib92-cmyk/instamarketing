@@ -54,71 +54,72 @@ const BusinessTrending = () => {
     loadElevenLabsVoices();
     
     // Check for pending premium jobs and resume polling
-    checkPendingPremiumJobs();
-  }, []);
-  
-  // Check for and resume any pending premium jobs
-  const checkPendingPremiumJobs = async () => {
-    try {
-      const pendingJob = localStorage.getItem('pendingPremiumJob');
-      if (!pendingJob) return;
-      
-      const { jobId, startedAt, metadata } = JSON.parse(pendingJob);
-      console.log('🔄 Found pending premium job:', jobId);
-      
-      // Check if job is too old (more than 15 minutes)
-      const jobAge = Date.now() - new Date(startedAt).getTime();
-      if (jobAge > 15 * 60 * 1000) {
-        console.log('⏰ Pending job too old, removing');
-        localStorage.removeItem('pendingPremiumJob');
-        return;
-      }
-      
-      // Poll for status
-      const statusResponse = await fetch('/api/ai/video/premium-job-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId })
-      });
-      const statusData = await statusResponse.json();
-      
-      if (statusData.status === 'done' && statusData.videoUrl) {
-        console.log('✅ Pending premium job completed! Saving to Asset Hub...');
+    // Define inline to avoid ESLint dependency warning
+    const checkPendingJobs = async () => {
+      try {
+        const pendingJob = localStorage.getItem('pendingPremiumJob');
+        if (!pendingJob) return;
         
-        // Save to Asset Hub
-        saveVideoToHub({
-          name: metadata?.name || 'Premium AI Video',
-          url: statusData.videoUrl,
-          caption: metadata?.caption || 'Premium AI Generated Video',
-          tags: metadata?.tags || ['premium-ai', 'multi-scene'],
-          source: 'BusinessTrending-Premium',
-          metadata: { ...metadata, jobId, voiceoverScript: statusData.voiceoverScript }
+        const { jobId, startedAt, metadata } = JSON.parse(pendingJob);
+        console.log('🔄 Found pending premium job:', jobId);
+        
+        // Check if job is too old (more than 15 minutes)
+        const jobAge = Date.now() - new Date(startedAt).getTime();
+        if (jobAge > 15 * 60 * 1000) {
+          console.log('⏰ Pending job too old, removing');
+          localStorage.removeItem('pendingPremiumJob');
+          return;
+        }
+        
+        // Poll for status
+        const statusResponse = await fetch('/api/ai/video/premium-job-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId })
         });
+        const statusData = await statusResponse.json();
         
-        // Clear pending job
-        localStorage.removeItem('pendingPremiumJob');
-        console.log('✅ Auto-saved completed premium video to Asset Hub');
-        
-      } else if (statusData.status === 'failed') {
-        console.log('❌ Pending job failed:', statusData.error);
-        localStorage.removeItem('pendingPremiumJob');
-        
-      } else if (statusData.status && statusData.status !== 'not_found') {
-        // Still processing - show notification and set up polling
-        console.log('⏳ Premium job still processing:', statusData.statusMessage);
-        setGenerationStep(`🔄 Resuming: ${statusData.statusMessage || 'Processing...'}`);
-        setIsGenerating(true);
-        
-        // Resume polling
-        resumePremiumJobPolling(jobId, metadata);
-      } else {
-        // Job not found - clean up
-        localStorage.removeItem('pendingPremiumJob');
+        if (statusData.status === 'done' && statusData.videoUrl) {
+          console.log('✅ Pending premium job completed! Saving to Asset Hub...');
+          
+          // Save to Asset Hub
+          saveVideoToHub({
+            name: metadata?.name || 'Premium AI Video',
+            url: statusData.videoUrl,
+            caption: metadata?.caption || 'Premium AI Generated Video',
+            tags: metadata?.tags || ['premium-ai', 'multi-scene'],
+            source: 'BusinessTrending-Premium',
+            metadata: { ...metadata, jobId, voiceoverScript: statusData.voiceoverScript }
+          });
+          
+          // Clear pending job
+          localStorage.removeItem('pendingPremiumJob');
+          console.log('✅ Auto-saved completed premium video to Asset Hub');
+          
+        } else if (statusData.status === 'failed') {
+          console.log('❌ Pending job failed:', statusData.error);
+          localStorage.removeItem('pendingPremiumJob');
+          
+        } else if (statusData.status && statusData.status !== 'not_found') {
+          // Still processing - show notification and set up polling
+          console.log('⏳ Premium job still processing:', statusData.statusMessage);
+          setGenerationStep(`🔄 Resuming: ${statusData.statusMessage || 'Processing...'}`);
+          setIsGenerating(true);
+          
+          // Resume polling
+          resumePremiumJobPolling(jobId, metadata);
+        } else {
+          // Job not found - clean up
+          localStorage.removeItem('pendingPremiumJob');
+        }
+      } catch (err) {
+        console.warn('Failed to check pending premium jobs:', err.message);
       }
-    } catch (err) {
-      console.warn('Failed to check pending premium jobs:', err.message);
-    }
-  };
+    };
+    
+    checkPendingJobs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Resume polling for a pending premium job
   const resumePremiumJobPolling = async (jobId, metadata) => {
