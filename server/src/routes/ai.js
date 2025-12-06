@@ -757,10 +757,11 @@ Generate a detailed visual scene description that would work as a video backgrou
  * 1. GPT splits the script into 3-4 visual scenes
  * 2. FLUX Schnell generates an image for each scene
  * 3. Kling v2.1 animates each image into 5-second clips
- * 4. ElevenLabs/Google TTS generates voiceover
+ * 4. ElevenLabs generates voiceover
  * 5. Shotstack stitches all clips with voiceover + subtitles
  * 
- * This creates premium quality videos that match the full voiceover duration
+ * Due to Vercel timeout limits, this returns immediately with a jobId
+ * and processes in background. Poll /api/ai/video/premium-status for progress.
  */
 router.post('/video/generate-premium', async (req, res) => {
   try {
@@ -770,13 +771,12 @@ router.post('/video/generate-premium', async (req, res) => {
       industry,         // Industry for context
       contentPurpose,   // tips, product-feature, motivation, etc.
       aspectRatio = '9:16',
-      voice,            // ElevenLabs voice or Google voice
-      voiceProvider = 'google', // 'elevenlabs' or 'google'
+      voice,            // ElevenLabs voice ID
       includeSubtitles = true,
       subtitleStyle = 'modern',
       logoUrl = null,   // Brand logo URL to overlay
-      logoPosition = 'topRight', // topLeft, topRight, bottomLeft, bottomRight
-      logoSize = 0.12   // Logo size (12% of video)
+      logoPosition = 'topRight',
+      logoSize = 0.12
     } = req.body;
 
     if (!prompt) {
@@ -784,22 +784,12 @@ router.post('/video/generate-premium', async (req, res) => {
     }
 
     console.log('\n========================================');
-    console.log('🎬 PREMIUM MULTI-SCENE VIDEO - START');
+    console.log('🎬 PREMIUM VIDEO - STEP 1: SCRIPT & VOICEOVER');
     console.log('========================================');
-    console.log('📋 INPUT:');
-    console.log('  - Prompt:', prompt.substring(0, 100) + '...');
-    console.log('  - Business:', businessName || 'not specified');
-    console.log('  - Industry:', industry || 'not specified');
-    console.log('  - Purpose:', contentPurpose || 'general');
-    console.log('  - Logo:', logoUrl ? 'yes' : 'no');
-    console.log('  - Aspect:', aspectRatio);
-    console.log('  - Voice:', voice, '(', voiceProvider, ')');
 
     // ============================================
-    // STEP 1: GPT generates scene breakdown + voiceover script
+    // STEP 1: GPT generates scene breakdown + voiceover script (FAST - ~5s)
     // ============================================
-    console.log('\n🔹 STEP 1: GPT Scene Breakdown');
-    
     const sceneBreakdownResponse = await openaiService.chat([
       {
         role: 'system',
@@ -807,7 +797,7 @@ router.post('/video/generate-premium', async (req, res) => {
 
 Your task is to:
 1. Create a compelling voiceover script (15-25 seconds when spoken)
-2. Break it into exactly 3-4 visual scenes for video clips
+2. Break it into exactly 3 visual scenes for video clips
 
 CRITICAL RULES FOR VISUAL SCENES:
 - Each scene description is for AI IMAGE generation (FLUX model)
@@ -824,10 +814,18 @@ OUTPUT FORMAT (JSON):
     {
       "sceneNumber": 1,
       "visualPrompt": "Detailed FLUX image prompt for scene 1...",
-      "motionStyle": "subtle|dynamic|cinematic",
-      "duration": 5
+      "motionStyle": "subtle|dynamic|cinematic"
     },
-    ...
+    {
+      "sceneNumber": 2,
+      "visualPrompt": "Detailed FLUX image prompt for scene 2...",
+      "motionStyle": "subtle|dynamic|cinematic"
+    },
+    {
+      "sceneNumber": 3,
+      "visualPrompt": "Detailed FLUX image prompt for scene 3...",
+      "motionStyle": "subtle|dynamic|cinematic"
+    }
   ]
 }`
       },
@@ -842,7 +840,7 @@ ${contentPurpose ? `Content Type: ${contentPurpose}` : ''}
 
 Remember:
 - Voiceover should be engaging and professional (15-25 seconds)
-- Create 3-4 visually distinct scenes
+- Create exactly 3 visually distinct scenes
 - Each visual prompt should be rich and detailed for FLUX AI
 - Output valid JSON only`
       }
@@ -853,7 +851,6 @@ Remember:
 
     let sceneBreakdown;
     try {
-      // Extract JSON from response
       const jsonMatch = sceneBreakdownResponse.content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         sceneBreakdown = JSON.parse(jsonMatch[0]);
@@ -865,199 +862,217 @@ Remember:
       return res.status(500).json({ error: 'Failed to generate scene breakdown' });
     }
 
-    console.log('✅ Scene breakdown generated:');
-    console.log('   Voiceover length:', sceneBreakdown.voiceoverScript.length, 'chars');
-    console.log('   Scenes:', sceneBreakdown.scenes.length);
+    console.log('✅ Scene breakdown generated:', sceneBreakdown.scenes.length, 'scenes');
 
     // ============================================
-    // STEP 2: Generate voiceover audio
+    // STEP 2: Generate voiceover with ElevenLabs (FAST - ~10s)
     // ============================================
-    console.log('\n🔹 STEP 2: Generating Voiceover');
+    console.log('🔹 Generating voiceover...');
     
     let audioUrl;
-    
-    // Use ElevenLabs for voiceover (high quality)
     try {
-      console.log('   Generating voiceover with ElevenLabs...');
       const elevenResult = await elevenlabsService.textToSpeech(sceneBreakdown.voiceoverScript, {
-        voiceId: voice || '21m00Tcm4TlvDq8ikWAM', // Rachel as default
+        voiceId: voice || '21m00Tcm4TlvDq8ikWAM',
         stability: 0.5,
         similarityBoost: 0.75
       });
       
       if (elevenResult.success && elevenResult.audioUrl) {
         audioUrl = elevenResult.audioUrl;
-        console.log('✅ ElevenLabs voiceover generated:', audioUrl);
+        console.log('✅ Voiceover generated:', audioUrl);
       } else {
-        throw new Error(elevenResult.error || 'ElevenLabs returned no audio URL');
+        throw new Error(elevenResult.error || 'No audio URL');
       }
-    } catch (elevenErr) {
-      console.log('❌ ElevenLabs failed:', elevenErr.message);
-      throw new Error('Failed to generate voiceover: ' + elevenErr.message);
-    }
-    
-    if (!audioUrl) {
-      throw new Error('Failed to generate voiceover - no audio URL returned');
+    } catch (err) {
+      console.error('❌ Voiceover failed:', err.message);
+      return res.status(500).json({ error: 'Failed to generate voiceover: ' + err.message });
     }
 
-    // Calculate expected audio duration (rough estimate: 150 words per minute)
-    const wordCount = sceneBreakdown.voiceoverScript.split(/\s+/).length;
-    const estimatedAudioDuration = (wordCount / 150) * 60; // in seconds
-    console.log('   Estimated audio duration:', estimatedAudioDuration.toFixed(1), 'seconds');
-
-    // ============================================
-    // STEP 3: Generate FLUX images for each scene (parallel)
-    // ============================================
-    console.log('\n🔹 STEP 3: Generating FLUX Images');
-    
-    const imagePromises = sceneBreakdown.scenes.map(async (scene, index) => {
-      console.log(`   🖼️ Scene ${scene.sceneNumber}: Starting FLUX generation...`);
-      
-      try {
-        const imageResult = await replicateService.textToImage(scene.visualPrompt, {
-          aspectRatio: aspectRatio,
-          outputFormat: 'jpg'
-        });
-        
-        if (!imageResult.success) {
-          throw new Error(imageResult.error || 'FLUX generation failed');
-        }
-        
-        // Upload to Cloudinary
-        const imageUpload = await cloudinaryService.uploadFromUrl(
-          imageResult.imageUrl,
-          {
-            folder: 'premium-scenes',
-            public_id: `scene-${Date.now()}-${index}`
-          }
-        );
-        
-        if (!imageUpload.success) {
-          throw new Error(imageUpload.error || 'Cloudinary upload failed');
-        }
-        
-        console.log(`   ✅ Scene ${scene.sceneNumber}: FLUX image ready`);
-        
-        return {
-          ...scene,
-          imageUrl: imageUpload.url
-        };
-      } catch (err) {
-        console.error(`   ❌ Scene ${scene.sceneNumber} failed:`, err.message);
-        return {
-          ...scene,
-          error: err.message
-        };
+    // Return the job data for frontend to continue with scene generation
+    // Frontend will call individual endpoints for each FLUX image and Kling animation
+    const jobData = {
+      success: true,
+      status: 'script_ready',
+      voiceoverScript: sceneBreakdown.voiceoverScript,
+      audioUrl: audioUrl,
+      scenes: sceneBreakdown.scenes,
+      options: {
+        aspectRatio,
+        includeSubtitles,
+        subtitleStyle,
+        logoUrl,
+        logoPosition,
+        logoSize,
+        businessName,
+        industry
       }
+    };
+
+    console.log('✅ Step 1 complete - returning script + voiceover');
+    res.json(jobData);
+
+  } catch (error) {
+    console.error('❌ Premium video error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Generate a single FLUX image for a scene
+ * POST /api/ai/video/premium-scene-image
+ */
+router.post('/video/premium-scene-image', async (req, res) => {
+  try {
+    const { visualPrompt, aspectRatio = '9:16', sceneNumber } = req.body;
+
+    if (!visualPrompt) {
+      return res.status(400).json({ error: 'visualPrompt is required' });
+    }
+
+    console.log(`🖼️ Generating FLUX image for scene ${sceneNumber}...`);
+
+    const imageResult = await replicateService.textToImage(visualPrompt, {
+      aspectRatio: aspectRatio,
+      outputFormat: 'jpg'
     });
 
-    const scenesWithImages = await Promise.all(imagePromises);
-    
-    // Check if any scenes failed
-    const failedScenes = scenesWithImages.filter(s => s.error);
-    if (failedScenes.length === scenesWithImages.length) {
-      throw new Error('All scene images failed to generate');
+    if (!imageResult.success) {
+      throw new Error(imageResult.error || 'FLUX generation failed');
     }
 
-    console.log(`✅ FLUX images: ${scenesWithImages.length - failedScenes.length}/${scenesWithImages.length} successful`);
-
-    // ============================================
-    // STEP 4: Animate each image with Kling (sequential to avoid rate limits)
-    // ============================================
-    console.log('\n🔹 STEP 4: Animating Scenes with Kling v2.1');
-    
-    const animatedScenes = [];
-    
-    for (const scene of scenesWithImages) {
-      if (scene.error) {
-        console.log(`   ⏭️ Skipping scene ${scene.sceneNumber} (no image)`);
-        continue;
+    // Upload to Cloudinary for permanent URL
+    const imageUpload = await cloudinaryService.uploadFromUrl(
+      imageResult.imageUrl,
+      {
+        folder: 'premium-scenes',
+        public_id: `scene-${Date.now()}-${sceneNumber}`
       }
-      
-      console.log(`   🎬 Scene ${scene.sceneNumber}: Starting Kling animation...`);
-      
-      // Build motion prompt based on style
-      let motionPrompt;
-      switch (scene.motionStyle) {
-        case 'subtle':
-          motionPrompt = 'Gentle subtle motion, soft camera movement, peaceful atmosphere';
-          break;
-        case 'dynamic':
-          motionPrompt = 'Dynamic energetic motion, smooth camera movement, engaging visuals';
-          break;
-        case 'cinematic':
-          motionPrompt = 'Cinematic camera movement, professional film quality, dramatic lighting';
-          break;
-        default:
-          motionPrompt = 'Smooth professional motion, elegant camera movement, high quality';
+    );
+
+    if (!imageUpload.success) {
+      throw new Error(imageUpload.error || 'Cloudinary upload failed');
+    }
+
+    console.log(`✅ Scene ${sceneNumber} image ready:`, imageUpload.url);
+
+    res.json({
+      success: true,
+      sceneNumber,
+      imageUrl: imageUpload.url
+    });
+
+  } catch (error) {
+    console.error('❌ Scene image error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Animate a scene image with Kling
+ * POST /api/ai/video/premium-scene-animate
+ */
+router.post('/video/premium-scene-animate', async (req, res) => {
+  try {
+    const { imageUrl, motionStyle = 'cinematic', aspectRatio = '9:16', sceneNumber } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'imageUrl is required' });
+    }
+
+    console.log(`🎬 Animating scene ${sceneNumber} with Kling...`);
+
+    // Build motion prompt based on style
+    let motionPrompt;
+    switch (motionStyle) {
+      case 'subtle':
+        motionPrompt = 'Gentle subtle motion, soft camera movement, peaceful atmosphere';
+        break;
+      case 'dynamic':
+        motionPrompt = 'Dynamic energetic motion, smooth camera movement, engaging visuals';
+        break;
+      case 'cinematic':
+      default:
+        motionPrompt = 'Cinematic camera movement, professional film quality, dramatic lighting';
+    }
+
+    const videoResult = await replicateService.imageToVideo(imageUrl, motionPrompt, {
+      duration: 5,
+      aspectRatio: aspectRatio
+    });
+
+    if (!videoResult.success) {
+      throw new Error(videoResult.error || 'Kling animation failed');
+    }
+
+    // Upload to Cloudinary (Replicate URLs expire)
+    const videoUpload = await cloudinaryService.uploadFromUrl(
+      videoResult.videoUrl,
+      {
+        folder: 'premium-scenes',
+        public_id: `video-${Date.now()}-${sceneNumber}`,
+        resource_type: 'video'
       }
-      
-      try {
-        const videoResult = await replicateService.imageToVideo(scene.imageUrl, motionPrompt, {
-          duration: 5,
-          aspectRatio: aspectRatio
-        });
-        
-        if (!videoResult.success) {
-          console.log(`   ⚠️ Scene ${scene.sceneNumber} animation failed:`, videoResult.error);
-          continue;
-        }
-        
-        // Upload video to Cloudinary (Replicate URLs expire)
-        const videoUpload = await cloudinaryService.uploadFromUrl(
-          videoResult.videoUrl,
-          {
-            folder: 'premium-scenes',
-            public_id: `video-${Date.now()}-${scene.sceneNumber}`,
-            resource_type: 'video'
-          }
-        );
-        
-        if (!videoUpload.success) {
-          console.log(`   ⚠️ Scene ${scene.sceneNumber} cloudinary upload failed:`, videoUpload.error);
-          continue;
-        }
-        
-        console.log(`   ✅ Scene ${scene.sceneNumber}: Kling animation complete`);
-        
-        animatedScenes.push({
-          ...scene,
-          videoUrl: videoUpload.url,
-          duration: 5
-        });
-      } catch (err) {
-        console.error(`   ❌ Scene ${scene.sceneNumber} animation error:`, err.message);
-      }
+    );
+
+    if (!videoUpload.success) {
+      throw new Error(videoUpload.error || 'Video upload failed');
     }
 
-    if (animatedScenes.length === 0) {
-      throw new Error('No scenes were successfully animated');
+    console.log(`✅ Scene ${sceneNumber} animated:`, videoUpload.url);
+
+    res.json({
+      success: true,
+      sceneNumber,
+      videoUrl: videoUpload.url
+    });
+
+  } catch (error) {
+    console.error('❌ Scene animation error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Compose final premium video with Shotstack
+ * POST /api/ai/video/premium-compose
+ */
+router.post('/video/premium-compose', async (req, res) => {
+  try {
+    const { 
+      clips,           // Array of {url, duration: 5}
+      audioUrl,        // Voiceover URL
+      voiceoverScript, // For subtitle generation
+      options = {}
+    } = req.body;
+
+    const {
+      aspectRatio = '9:16',
+      includeSubtitles = true,
+      subtitleStyle = 'modern',
+      logoUrl = null,
+      logoPosition = 'topRight',
+      logoSize = 0.12
+    } = options;
+
+    if (!clips || clips.length === 0) {
+      return res.status(400).json({ error: 'clips array is required' });
     }
 
-    console.log(`✅ Animated scenes: ${animatedScenes.length}/${scenesWithImages.filter(s => !s.error).length}`);
-
-    // ============================================
-    // STEP 5: Compose final video with Shotstack
-    // ============================================
-    console.log('\n🔹 STEP 5: Composing Final Video with Shotstack');
-    
-    if (!shotstackClient) {
-      throw new Error('Shotstack not available for final composition');
+    if (!audioUrl) {
+      return res.status(400).json({ error: 'audioUrl is required' });
     }
 
-    // Prepare clips for Shotstack
-    const clips = animatedScenes.map(scene => ({
-      url: scene.videoUrl,
-      duration: scene.duration
-    }));
+    console.log('🎬 Composing premium video with Shotstack...');
+    console.log(`   Clips: ${clips.length}`);
+    console.log(`   Audio: ${audioUrl}`);
+    console.log(`   Logo: ${logoUrl ? 'yes' : 'no'}`);
 
-    // Generate subtitles if requested
+    // Generate subtitles from script
     let subtitles = [];
-    if (includeSubtitles) {
-      // Simple subtitle generation - split voiceover into chunks
-      const words = sceneBreakdown.voiceoverScript.split(/\s+/);
-      const wordsPerSubtitle = Math.ceil(words.length / (animatedScenes.length * 2));
-      const totalDuration = animatedScenes.length * 5;
+    if (includeSubtitles && voiceoverScript) {
+      const words = voiceoverScript.split(/\s+/);
+      const wordsPerSubtitle = Math.ceil(words.length / (clips.length * 2));
+      const totalDuration = clips.length * 5;
       const subtitleDuration = totalDuration / Math.ceil(words.length / wordsPerSubtitle);
       
       let currentTime = 0;
@@ -1070,56 +1085,45 @@ Remember:
         });
         currentTime += subtitleDuration;
       }
-      console.log(`   Generated ${subtitles.length} subtitle segments`);
+      console.log(`   Subtitles: ${subtitles.length} segments`);
     }
 
-    // Submit render job with logo overlay if provided
+    // Format clips for Shotstack
+    const formattedClips = clips.map(clip => ({
+      url: clip.url || clip.videoUrl,
+      duration: clip.duration || 5
+    }));
+
+    // Submit render job
     const renderResult = await shotstackClient.createMultiClipRender(
-      clips,
+      formattedClips,
       audioUrl,
       subtitles,
       {
-        aspectRatio: aspectRatio,
+        aspectRatio,
         resolution: 'hd',
         fps: 30,
-        subtitleStyle: subtitleStyle,
-        logoUrl: logoUrl,
-        logoPosition: logoPosition,
-        logoSize: logoSize
+        subtitleStyle,
+        logoUrl,
+        logoPosition,
+        logoSize
       }
     );
 
     if (!renderResult.success) {
-      throw new Error('Failed to start Shotstack render: ' + renderResult.error);
+      throw new Error('Shotstack render failed: ' + renderResult.error);
     }
 
-    console.log('✅ Shotstack render job submitted:', renderResult.jobId);
-    console.log('\n========================================');
-    console.log('🎉 PREMIUM VIDEO GENERATION - RENDER STARTED');
-    console.log('========================================\n');
+    console.log('✅ Shotstack job submitted:', renderResult.jobId);
 
-    // Return the job ID for polling
     res.json({
       success: true,
       status: 'rendering',
-      jobId: renderResult.jobId,
-      message: 'Premium video is being composed. Poll /api/ai/video/premium-status for progress.',
-      details: {
-        totalScenes: animatedScenes.length,
-        voiceoverLength: sceneBreakdown.voiceoverScript.length,
-        estimatedDuration: animatedScenes.length * 5,
-        audioUrl: audioUrl,
-        scenes: animatedScenes.map(s => ({
-          sceneNumber: s.sceneNumber,
-          imageUrl: s.imageUrl,
-          videoUrl: s.videoUrl
-        }))
-      }
+      jobId: renderResult.jobId
     });
 
   } catch (error) {
-    console.log('\n❌ PREMIUM VIDEO ERROR:', error.message);
-    console.log('Stack:', error.stack);
+    console.error('❌ Compose error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });

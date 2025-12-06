@@ -810,9 +810,8 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         return;
       }
       
-      // PREMIUM AI Multi-Scene Video Generation
+      // PREMIUM AI Multi-Scene Video Generation (multi-step to avoid timeout)
       if (backgroundType === 'premium-ai') {
-        setGenerationStep('🎬 Starting Premium AI Video... (3-5 minutes)');
         console.log('🎬 Starting Premium AI multi-scene video generation');
         
         const videoPrompt = buildAIVideoPrompt();
@@ -822,10 +821,12 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         const brandLogo = businessInfo?.brandImages?.[0]?.url || null;
         console.log('🏷️ Brand logo:', brandLogo ? 'found' : 'not set');
         
-        // Step 1: Start the premium pipeline (voiceover + multi-scene generation + composition)
-        setGenerationStep('🎨 Generating scenes & voiceover... (2-3 minutes)');
+        // ============================================
+        // STEP 1: Get script + voiceover (fast ~15s)
+        // ============================================
+        setGenerationStep('📝 Creating script & voiceover...');
         
-        const premiumResponse = await fetch('/api/ai/video/generate-premium', {
+        const scriptResponse = await fetch('/api/ai/video/generate-premium', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -835,7 +836,6 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             contentPurpose: contentPurpose,
             aspectRatio: aspectRatio,
             voice: getVoiceId(),
-            voiceProvider: 'elevenlabs', // Use ElevenLabs for quality
             includeSubtitles: true,
             subtitleStyle: selectedTemplate || 'modern',
             logoUrl: brandLogo,
@@ -844,31 +844,137 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
           })
         });
         
-        const premiumData = await premiumResponse.json();
+        const scriptData = await scriptResponse.json();
         
-        if (!premiumResponse.ok || premiumData.error) {
-          throw new Error(premiumData.error || 'Failed to start premium video generation');
+        if (!scriptResponse.ok || scriptData.error) {
+          throw new Error(scriptData.error || 'Failed to generate script');
         }
         
-        console.log('✅ Premium video rendering started:', premiumData.jobId);
-        console.log('📊 Details:', premiumData.details);
+        console.log('✅ Script + voiceover ready');
+        console.log('📊 Scenes:', scriptData.scenes.length);
+        console.log('🎙️ Audio:', scriptData.audioUrl);
         
-        // Step 2: Poll for render completion
-        setGenerationStep('🎥 Composing final video... (1-2 minutes)');
+        // ============================================
+        // STEP 2: Generate FLUX images for each scene
+        // ============================================
+        const scenesWithImages = [];
         
-        const jobId = premiumData.jobId;
+        for (let i = 0; i < scriptData.scenes.length; i++) {
+          const scene = scriptData.scenes[i];
+          setGenerationStep(`🖼️ Creating image ${i + 1}/${scriptData.scenes.length}...`);
+          
+          try {
+            const imageResponse = await fetch('/api/ai/video/premium-scene-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                visualPrompt: scene.visualPrompt,
+                aspectRatio: aspectRatio,
+                sceneNumber: scene.sceneNumber
+              })
+            });
+            
+            const imageData = await imageResponse.json();
+            
+            if (imageData.success && imageData.imageUrl) {
+              console.log(`✅ Scene ${scene.sceneNumber} image ready`);
+              scenesWithImages.push({
+                ...scene,
+                imageUrl: imageData.imageUrl
+              });
+            } else {
+              console.warn(`⚠️ Scene ${scene.sceneNumber} image failed`);
+            }
+          } catch (imgErr) {
+            console.error(`❌ Scene ${scene.sceneNumber} error:`, imgErr);
+          }
+        }
+        
+        if (scenesWithImages.length === 0) {
+          throw new Error('Failed to generate any scene images');
+        }
+        
+        // ============================================
+        // STEP 3: Animate each scene with Kling
+        // ============================================
+        const animatedScenes = [];
+        
+        for (let i = 0; i < scenesWithImages.length; i++) {
+          const scene = scenesWithImages[i];
+          setGenerationStep(`🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s each)`);
+          
+          try {
+            const animateResponse = await fetch('/api/ai/video/premium-scene-animate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                imageUrl: scene.imageUrl,
+                motionStyle: scene.motionStyle || 'cinematic',
+                aspectRatio: aspectRatio,
+                sceneNumber: scene.sceneNumber
+              })
+            });
+            
+            const animateData = await animateResponse.json();
+            
+            if (animateData.success && animateData.videoUrl) {
+              console.log(`✅ Scene ${scene.sceneNumber} animated`);
+              animatedScenes.push({
+                ...scene,
+                videoUrl: animateData.videoUrl,
+                duration: 5
+              });
+            } else {
+              console.warn(`⚠️ Scene ${scene.sceneNumber} animation failed`);
+            }
+          } catch (animErr) {
+            console.error(`❌ Scene ${scene.sceneNumber} animation error:`, animErr);
+          }
+        }
+        
+        if (animatedScenes.length === 0) {
+          throw new Error('Failed to animate any scenes');
+        }
+        
+        // ============================================
+        // STEP 4: Compose final video with Shotstack
+        // ============================================
+        setGenerationStep('🎥 Composing final video...');
+        
+        const composeResponse = await fetch('/api/ai/video/premium-compose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clips: animatedScenes.map(s => ({ url: s.videoUrl, duration: 5 })),
+            audioUrl: scriptData.audioUrl,
+            voiceoverScript: scriptData.voiceoverScript,
+            options: scriptData.options
+          })
+        });
+        
+        const composeData = await composeResponse.json();
+        
+        if (!composeData.success || !composeData.jobId) {
+          throw new Error(composeData.error || 'Failed to start video composition');
+        }
+        
+        console.log('✅ Shotstack render started:', composeData.jobId);
+        
+        // ============================================
+        // STEP 5: Poll for render completion
+        // ============================================
         let attempts = 0;
-        const maxAttempts = 120; // 10 minutes max
+        const maxAttempts = 60; // 5 minutes max
         let finalVideoUrl = null;
         
         while (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
+          await new Promise(resolve => setTimeout(resolve, 5000));
           attempts++;
           
           const statusResponse = await fetch('/api/ai/video/premium-status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jobId })
+            body: JSON.stringify({ jobId: composeData.jobId })
           });
           
           const statusData = await statusResponse.json();
@@ -881,9 +987,8 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             throw new Error('Video composition failed');
           }
           
-          // Update progress
-          const progress = statusData.progress || Math.min(95, attempts * 2);
-          setGenerationStep(`🎥 Composing final video... ${progress}%`);
+          const progress = statusData.progress || Math.min(95, attempts * 3);
+          setGenerationStep(`🎥 Rendering... ${progress}%`);
         }
         
         if (!finalVideoUrl) {
@@ -898,15 +1003,15 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
           id: Date.now().toString(),
           type: 'premium-ai-video',
           name: `${purpose?.label || 'Content'} - ${product?.name || businessInfo?.businessName || 'Premium AI Video'}`,
-          script: 'Premium AI Video with voiceover + subtitles',
-          audioUrl: premiumData.details?.audioUrl,
+          script: scriptData.voiceoverScript,
+          audioUrl: scriptData.audioUrl,
           backgroundUrl: finalVideoUrl,
           composedVideoUrl: finalVideoUrl,
           backgroundType: 'premium-ai',
           template: selectedTemplate,
           aspectRatio: aspectRatio,
           contentType: contentPurpose,
-          ttsProvider: 'AI',
+          ttsProvider: 'ElevenLabs',
           createdAt: new Date().toISOString(),
           metadata: {
             postTopic,
@@ -914,7 +1019,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             template: selectedTemplate,
             aspectRatio,
             backgroundType: 'premium-ai',
-            scenes: premiumData.details?.scenes,
+            scenes: animatedScenes,
             pipeline: 'premium-multi-scene',
             businessName: businessInfo?.businessName,
             productName: product?.name
