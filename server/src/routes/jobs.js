@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
       businessInfo.industry
     ));
     console.log(`[Jobs API] forceStockVideo: ${!!forceStockVideo}, calculated isProductVideo: ${isProductVideo}`);
-    console.log(`[Jobs API] isProductVideo: ${isProductVideo}, businessInfo:`, businessInfo ? 'present' : 'none');
+    console.log(`[Jobs API] forceStockVideo: ${!!forceStockVideo}, calculated isProductVideo: ${isProductVideo}`);
     
     // Normalize businessInfo - extract just URLs from brandImages if they are objects
     let normalizedBusinessInfo = null;
@@ -76,9 +76,19 @@ router.post('/', async (req, res) => {
         description: businessInfo.description || null,
         brandVoice: businessInfo.brandVoice || null,
         targetAudience: businessInfo.targetAudience || null,
-        brandColors: businessInfo.brandColors || []
+        brandColors: businessInfo.brandColors || [],
+        // NEW: Scene image assignments for specific scenes
+        sceneImageAssignments: businessInfo.sceneImageAssignments || null,
+        // NEW: Logo placement settings
+        logoSettings: businessInfo.logoSettings || { placement: 'corner', position: 'bottom-right' },
+        // NEW: Brand color overlay settings
+        colorOverlay: businessInfo.colorOverlay || { enabled: false, applyTo: [], intensity: 'medium' }
       };
+      
       console.log(`[Jobs API] Normalized business info: ${normalizedBusinessInfo.businessName}, ${normalizedBusinessInfo.industry}`);
+      if (normalizedBusinessInfo.sceneImageAssignments) {
+        console.log(`[Jobs API] Scene assignments:`, JSON.stringify(normalizedBusinessInfo.sceneImageAssignments));
+      }
     }
     
     // Create job in database

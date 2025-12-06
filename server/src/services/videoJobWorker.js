@@ -600,6 +600,7 @@ async function findVideosForScenes(job) {
  * Webhook will update scenes as they complete
  * NOW WITH AI-ENHANCED PROMPTS for better accuracy
  * NOW WITH IMAGE-TO-VIDEO for brand images (product photos, logos)
+ * NOW WITH USER-DEFINED SCENE IMAGE ASSIGNMENTS
  */
 async function findVideosForProductScenes(job) {
   console.log(`[Job ${job._id}] 🎬 Starting ASYNC AI video generation for product video`);
@@ -612,16 +613,26 @@ async function findVideosForProductScenes(job) {
   const brandImages = job.businessInfo?.brandImages || [];
   const brandColors = job.businessInfo?.brandColors || [];
   
+  // NEW: User-defined scene image assignments
+  const sceneAssignments = job.businessInfo?.sceneImageAssignments || {};
+  const logoSettings = job.businessInfo?.logoSettings || { placement: 'corner', position: 'bottom-right' };
+  const colorOverlay = job.businessInfo?.colorOverlay || { enabled: false };
+  
   console.log(`[Job ${job._id}] Business: ${businessName}, Industry: ${industry}, Product: ${productName}`);
   console.log(`[Job ${job._id}] Brand Voice: ${brandVoice}, Brand Images: ${brandImages.length}`);
   console.log(`[Job ${job._id}] Brand Colors: ${brandColors.join(', ')}`);
+  console.log(`[Job ${job._id}] Scene Assignments:`, JSON.stringify(sceneAssignments));
+  console.log(`[Job ${job._id}] Logo Settings:`, JSON.stringify(logoSettings));
   
-  // Strategy: Use brand images for key scenes (product showcase, intro, outro)
-  // Use AI text-to-video for dynamic/action scenes
+  // Determine which images to use for which scenes
   const hasBrandImages = brandImages.length > 0;
+  const hasSceneAssignments = sceneAssignments && (sceneAssignments.intro || sceneAssignments.product || sceneAssignments.outro);
   
-  if (hasBrandImages) {
-    console.log(`[Job ${job._id}] 🖼️ Using IMAGE-TO-VIDEO for brand content (${brandImages.length} images available)`);
+  if (hasBrandImages || hasSceneAssignments) {
+    console.log(`[Job ${job._id}] 🖼️ Using IMAGE-TO-VIDEO for brand content`);
+    if (hasSceneAssignments) {
+      console.log(`[Job ${job._id}] ✅ User-defined scene assignments found`);
+    }
   }
   
   // Determine webhook URL based on environment
@@ -639,21 +650,51 @@ async function findVideosForProductScenes(job) {
       `Processing scene ${i + 1}/${job.scenes.length}...`);
     
     try {
-      // STRATEGY: Decide between image-to-video vs text-to-video
-      // Use brand images for: intro (0), product showcase (middle), outro (last)
-      const isKeyScene = (i === 0) || (i === job.scenes.length - 1) || 
-                         scene.text?.toLowerCase().includes('product') ||
-                         scene.text?.toLowerCase().includes('introducing') ||
-                         scene.visual?.toLowerCase().includes('product');
+      // SMART SCENE-TO-IMAGE MATCHING
+      // Priority: 1) User-assigned images, 2) Auto-detect key scenes, 3) Text-to-video
       
-      const shouldUseImage = hasBrandImages && isKeyScene;
+      let assignedImage = null;
+      let sceneType = 'default';
       
-      if (shouldUseImage) {
-        // === IMAGE-TO-VIDEO: Animate brand/product image ===
-        const imageIndex = i % brandImages.length; // Cycle through available images
-        const imageUrl = brandImages[imageIndex];
+      // Check for user-defined scene assignments first
+      if (i === 0 && sceneAssignments.intro) {
+        assignedImage = sceneAssignments.intro;
+        sceneType = 'intro';
+        console.log(`[Job ${job._id}] Scene ${i}: Using USER-ASSIGNED intro image`);
+      } else if (i === job.scenes.length - 1 && sceneAssignments.outro) {
+        assignedImage = sceneAssignments.outro;
+        sceneType = 'outro';
+        console.log(`[Job ${job._id}] Scene ${i}: Using USER-ASSIGNED outro image`);
+      } else if (sceneAssignments.product && (
+        scene.text?.toLowerCase().includes('product') ||
+        scene.text?.toLowerCase().includes('introducing') ||
+        scene.visual?.toLowerCase().includes('product') ||
+        scene.visual?.toLowerCase().includes('showcase') ||
+        i === Math.floor(job.scenes.length / 2) // Middle scene
+      )) {
+        assignedImage = sceneAssignments.product;
+        sceneType = 'product';
+        console.log(`[Job ${job._id}] Scene ${i}: Using USER-ASSIGNED product image`);
+      }
+      
+      // Fallback to auto-assignment if no user assignment but we have brand images
+      if (!assignedImage && hasBrandImages) {
+        const isKeyScene = (i === 0) || (i === job.scenes.length - 1) || 
+                           scene.text?.toLowerCase().includes('product') ||
+                           scene.text?.toLowerCase().includes('introducing') ||
+                           scene.visual?.toLowerCase().includes('product');
         
-        console.log(`[Job ${job._id}] Scene ${i}: 🖼️ Using IMAGE-TO-VIDEO with brand image`);
+        if (isKeyScene) {
+          const imageIndex = i % brandImages.length;
+          assignedImage = brandImages[imageIndex];
+          sceneType = i === 0 ? 'intro' : (i === job.scenes.length - 1 ? 'outro' : 'product');
+          console.log(`[Job ${job._id}] Scene ${i}: AUTO-ASSIGNED brand image (${sceneType})`);
+        }
+      }
+      
+      if (assignedImage) {
+        // === IMAGE-TO-VIDEO: Animate brand/product image ===
+        console.log(`[Job ${job._id}] Scene ${i}: 🖼️ Using IMAGE-TO-VIDEO (${sceneType})`);
         
         // Create motion prompt that describes how to animate the product
         const motionPrompt = await generateImageMotionPrompt(scene, {
@@ -661,14 +702,14 @@ async function findVideosForProductScenes(job) {
           productName,
           businessName,
           brandVoice,
-          isIntro: i === 0,
-          isOutro: i === job.scenes.length - 1
+          isIntro: sceneType === 'intro',
+          isOutro: sceneType === 'outro'
         });
         
         console.log(`[Job ${job._id}] Scene ${i}: Motion prompt: "${motionPrompt.substring(0, 80)}..."`);
         
         // Start image-to-video generation with webhook
-        const result = await replicateService.startImageToVideo(imageUrl, motionPrompt, {
+        const result = await replicateService.startImageToVideo(assignedImage, motionPrompt, {
           duration: scene.duration || 5,
           aspectRatio: job.aspectRatio || '9:16',
           webhookUrl: webhookUrl
@@ -677,7 +718,7 @@ async function findVideosForProductScenes(job) {
         if (result.success) {
           job.scenes[i].replicatePredictionId = result.predictionId;
           job.scenes[i].replicateStatus = 'pending';
-          job.scenes[i].sourceImage = imageUrl;
+          job.scenes[i].sourceImage = assignedImage;
           job.scenes[i].motionPrompt = motionPrompt;
           job.scenes[i].generationType = 'image-to-video';
           console.log(`[Job ${job._id}] Scene ${i}: ✅ Image-to-video started: ${result.predictionId}`);
@@ -1231,6 +1272,77 @@ async function renderVideo(job) {
       { clips: videoClips }     // Bottom layer: video
     ]
   };
+  
+  // NEW: Add logo overlay track if configured
+  const logoSettings = job.businessInfo?.logoSettings;
+  const brandImages = job.businessInfo?.brandImages || [];
+  
+  if (logoSettings?.placement && logoSettings.placement !== 'none' && brandImages.length > 0) {
+    const logoUrl = brandImages[0]; // Use first brand image as logo
+    const logoClips = [];
+    
+    if (logoSettings.placement === 'corner') {
+      // Corner watermark throughout video
+      const position = logoSettings.position || 'bottom-right';
+      const positionMap = {
+        'top-left': { x: -0.4, y: 0.4 },
+        'top-right': { x: 0.4, y: 0.4 },
+        'bottom-left': { x: -0.4, y: -0.4 },
+        'bottom-right': { x: 0.4, y: -0.4 }
+      };
+      const pos = positionMap[position] || positionMap['bottom-right'];
+      
+      logoClips.push({
+        asset: {
+          type: 'image',
+          src: logoUrl
+        },
+        start: 0,
+        length: audioDuration,
+        position: 'center',
+        offset: pos,
+        scale: 0.15,
+        opacity: 0.7
+      });
+      
+      console.log(`[Job ${job._id}] Adding corner logo watermark at ${position}`);
+      
+    } else if (logoSettings.placement === 'intro-outro') {
+      // Full logo at start (first 2 seconds) and end (last 2 seconds)
+      logoClips.push({
+        asset: {
+          type: 'image',
+          src: logoUrl
+        },
+        start: 0,
+        length: 2,
+        position: 'center',
+        scale: 0.4,
+        opacity: 1,
+        effect: 'fadeIn'
+      });
+      
+      logoClips.push({
+        asset: {
+          type: 'image',
+          src: logoUrl
+        },
+        start: audioDuration - 2,
+        length: 2,
+        position: 'center',
+        scale: 0.4,
+        opacity: 1,
+        effect: 'fadeOut'
+      });
+      
+      console.log(`[Job ${job._id}] Adding intro/outro logo animations`);
+    }
+    
+    if (logoClips.length > 0) {
+      // Insert logo track above subtitles
+      timeline.tracks.unshift({ clips: logoClips });
+    }
+  }
   
   // Add audio track
   timeline.tracks.push({

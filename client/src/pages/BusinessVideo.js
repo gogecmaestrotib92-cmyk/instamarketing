@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiVideo, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiEdit3, FiCheckCircle, FiSquare, FiSmartphone, FiMonitor, FiUser, FiBox, FiFilm, FiPlay, FiLoader, FiAlertCircle, FiTrendingUp, FiStar, FiHeart, FiMic, FiGift } from 'react-icons/fi';
+import { FiVideo, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiEdit3, FiCheckCircle, FiSquare, FiSmartphone, FiMonitor, FiUser, FiBox, FiFilm, FiPlay, FiLoader, FiAlertCircle, FiTrendingUp, FiStar, FiHeart, FiMic, FiGift, FiImage, FiLayers, FiDroplet } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
 import { saveVideoToHub } from '../services/assetService';
 import './BusinessVideo.css';
@@ -27,6 +27,24 @@ const BusinessVideo = () => {
   const [includeCharacters, setIncludeCharacters] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('9:16');
   
+  // NEW: Brand Image Scene Assignments
+  const [sceneImageAssignments, setSceneImageAssignments] = useState({
+    intro: null,      // Image URL for intro scene
+    product: null,    // Image URL for product showcase
+    outro: null       // Image URL for outro/CTA
+  });
+  
+  // NEW: Logo Placement Options
+  const [logoPlacement, setLogoPlacement] = useState('corner'); // 'corner', 'intro-outro', 'none'
+  const [logoPosition, setLogoPosition] = useState('bottom-right'); // 'top-left', 'top-right', 'bottom-left', 'bottom-right'
+  
+  // NEW: Brand Color Overlay Options
+  const [colorOverlay, setColorOverlay] = useState({
+    enabled: true,
+    applyTo: ['transitions', 'text'], // 'transitions', 'text', 'filter', 'lowerThird'
+    intensity: 'medium' // 'subtle', 'medium', 'strong'
+  });
+  
   // ElevenLabs Voice Settings
   const [selectedVoice, setSelectedVoice] = useState('Adam');
   const [selectedVoiceId, setSelectedVoiceId] = useState('pNInz6obpgDQGcFmaJgB');
@@ -52,6 +70,14 @@ const BusinessVideo = () => {
       // Check for meaningful brand data
       const hasData = parsed.businessName && (parsed.description || parsed.industry || (parsed.products && parsed.products.length > 0));
       setHasBrand(hasData);
+      
+      // Auto-assign first brand image to product scene if available
+      if (parsed.brandImages && parsed.brandImages.length > 0) {
+        setSceneImageAssignments(prev => ({
+          ...prev,
+          product: parsed.brandImages[0]
+        }));
+      }
     } else {
       setHasBrand(false);
     }
@@ -490,17 +516,27 @@ Make the script authentic to the brand voice and focused on the product/service.
       const product = getSelectedProductDetails();
       const campaign = campaignTypes.find(c => c.id === campaignType);
       
-      // Build enhanced business info with campaign context
+      // Build enhanced business info with campaign context and NEW brand settings
       const enhancedBusinessInfo = {
         ...businessInfo,
         campaignType: campaignType,
         campaignLabel: campaign?.label,
         selectedProduct: product,
         visualMood: visualMood,
-        campaignGoal: campaignGoal
+        campaignGoal: campaignGoal,
+        // NEW: Scene image assignments for image-to-video
+        sceneImageAssignments: sceneImageAssignments,
+        // NEW: Logo placement settings
+        logoSettings: {
+          placement: logoPlacement,
+          position: logoPosition
+        },
+        // NEW: Brand color overlay settings
+        colorOverlay: colorOverlay
       };
       
-      console.log('[BusinessVideo] brandInfo:', enhancedBusinessInfo);
+      console.log('[BusinessVideo] Enhanced brand info:', enhancedBusinessInfo);
+      console.log('[BusinessVideo] Scene assignments:', sceneImageAssignments);
       
       const response = await fetch('/api/jobs', {
         method: 'POST',
@@ -990,6 +1026,283 @@ Make the script authentic to the brand voice and focused on the product/service.
                   </div>
                 </div>
               </div>
+
+              {/* NEW: Brand Image Scene Assignment */}
+              {businessInfo?.brandImages?.length > 0 && (
+                <div className="settings-section brand-images-section">
+                  <div className="section-header-row">
+                    <h3><FiImage /> Brand Image Scenes</h3>
+                    <span className="images-badge">{businessInfo.brandImages.length} images available</span>
+                  </div>
+                  <p className="section-desc">Assign your brand images to specific scenes for personalized content</p>
+                  
+                  <div className="scene-assignment-grid">
+                    {/* Intro Scene */}
+                    <div className="scene-assignment-card">
+                      <div className="scene-label">
+                        <span className="scene-number">1</span>
+                        <div>
+                          <h4>Intro / Hook</h4>
+                          <p>Opening scene with dramatic reveal</p>
+                        </div>
+                      </div>
+                      <div className="image-selector">
+                        {sceneImageAssignments.intro ? (
+                          <div className="assigned-image">
+                            <img src={sceneImageAssignments.intro} alt="Intro" />
+                            <button 
+                              className="remove-btn"
+                              onClick={() => setSceneImageAssignments(prev => ({ ...prev, intro: null }))}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="image-picker">
+                            {businessInfo.brandImages.slice(0, 4).map((img, idx) => (
+                              <img 
+                                key={idx}
+                                src={img}
+                                alt={`Option ${idx + 1}`}
+                                className="picker-thumb"
+                                onClick={() => setSceneImageAssignments(prev => ({ ...prev, intro: img }))}
+                              />
+                            ))}
+                            <span className="picker-label">Select image</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Product Scene */}
+                    <div className="scene-assignment-card">
+                      <div className="scene-label">
+                        <span className="scene-number">3</span>
+                        <div>
+                          <h4>Product Showcase</h4>
+                          <p>Main product/service highlight</p>
+                        </div>
+                      </div>
+                      <div className="image-selector">
+                        {sceneImageAssignments.product ? (
+                          <div className="assigned-image">
+                            <img src={sceneImageAssignments.product} alt="Product" />
+                            <button 
+                              className="remove-btn"
+                              onClick={() => setSceneImageAssignments(prev => ({ ...prev, product: null }))}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="image-picker">
+                            {businessInfo.brandImages.slice(0, 4).map((img, idx) => (
+                              <img 
+                                key={idx}
+                                src={img}
+                                alt={`Option ${idx + 1}`}
+                                className="picker-thumb"
+                                onClick={() => setSceneImageAssignments(prev => ({ ...prev, product: img }))}
+                              />
+                            ))}
+                            <span className="picker-label">Select image</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Outro Scene */}
+                    <div className="scene-assignment-card">
+                      <div className="scene-label">
+                        <span className="scene-number">6</span>
+                        <div>
+                          <h4>Outro / CTA</h4>
+                          <p>Closing with logo or product</p>
+                        </div>
+                      </div>
+                      <div className="image-selector">
+                        {sceneImageAssignments.outro ? (
+                          <div className="assigned-image">
+                            <img src={sceneImageAssignments.outro} alt="Outro" />
+                            <button 
+                              className="remove-btn"
+                              onClick={() => setSceneImageAssignments(prev => ({ ...prev, outro: null }))}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="image-picker">
+                            {businessInfo.brandImages.slice(0, 4).map((img, idx) => (
+                              <img 
+                                key={idx}
+                                src={img}
+                                alt={`Option ${idx + 1}`}
+                                className="picker-thumb"
+                                onClick={() => setSceneImageAssignments(prev => ({ ...prev, outro: img }))}
+                              />
+                            ))}
+                            <span className="picker-label">Select image</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="hint-text">
+                    💡 Selected images will be animated using AI for professional motion effects
+                  </p>
+                </div>
+              )}
+
+              {/* NEW: Logo Placement Options */}
+              <div className="settings-section logo-section">
+                <div className="section-header-row">
+                  <h3><FiLayers /> Logo Placement</h3>
+                </div>
+                <p className="section-desc">Where should your brand logo appear?</p>
+                
+                <div className="logo-options-grid">
+                  <div 
+                    className={`logo-option ${logoPlacement === 'corner' ? 'selected' : ''}`}
+                    onClick={() => setLogoPlacement('corner')}
+                  >
+                    <div className="logo-preview corner">
+                      <div className="video-placeholder">
+                        <span className="logo-indicator">LOGO</span>
+                      </div>
+                    </div>
+                    <h4>Corner Watermark</h4>
+                    <p>Subtle logo throughout video</p>
+                  </div>
+                  
+                  <div 
+                    className={`logo-option ${logoPlacement === 'intro-outro' ? 'selected' : ''}`}
+                    onClick={() => setLogoPlacement('intro-outro')}
+                  >
+                    <div className="logo-preview intro-outro">
+                      <div className="video-placeholder">
+                        <span className="logo-indicator center">LOGO</span>
+                      </div>
+                    </div>
+                    <h4>Intro & Outro</h4>
+                    <p>Full logo at start and end</p>
+                  </div>
+                  
+                  <div 
+                    className={`logo-option ${logoPlacement === 'none' ? 'selected' : ''}`}
+                    onClick={() => setLogoPlacement('none')}
+                  >
+                    <div className="logo-preview none">
+                      <div className="video-placeholder">
+                        <span className="no-logo">No logo</span>
+                      </div>
+                    </div>
+                    <h4>No Logo</h4>
+                    <p>Clean video without branding</p>
+                  </div>
+                </div>
+                
+                {logoPlacement === 'corner' && (
+                  <div className="logo-position-selector">
+                    <label>Position:</label>
+                    <div className="position-grid">
+                      {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map(pos => (
+                        <button
+                          key={pos}
+                          className={`position-btn ${logoPosition === pos ? 'active' : ''}`}
+                          onClick={() => setLogoPosition(pos)}
+                        >
+                          {pos.split('-').map(w => w[0].toUpperCase()).join('')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* NEW: Brand Color Overlay */}
+              {businessInfo?.brandColors?.length > 0 && (
+                <div className="settings-section color-overlay-section">
+                  <div className="section-header-row">
+                    <h3><FiDroplet /> Brand Colors</h3>
+                    <div className="color-swatches">
+                      {businessInfo.brandColors.slice(0, 3).map((color, idx) => (
+                        <span 
+                          key={idx} 
+                          className="color-swatch" 
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="section-desc">Apply your brand colors to video elements</p>
+                  
+                  <div className="color-toggle">
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={colorOverlay.enabled}
+                        onChange={(e) => setColorOverlay(prev => ({ ...prev, enabled: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                    <span>Enable brand color styling</span>
+                  </div>
+                  
+                  {colorOverlay.enabled && (
+                    <>
+                      <div className="color-apply-options">
+                        <label>Apply to:</label>
+                        <div className="apply-checkboxes">
+                          {[
+                            { id: 'transitions', label: 'Transitions', icon: '🔄' },
+                            { id: 'text', label: 'Text Overlays', icon: '📝' },
+                            { id: 'lowerThird', label: 'Lower Thirds', icon: '▬' },
+                            { id: 'filter', label: 'Color Grade', icon: '🎨' }
+                          ].map(opt => (
+                            <label key={opt.id} className="apply-checkbox">
+                              <input 
+                                type="checkbox"
+                                checked={colorOverlay.applyTo.includes(opt.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setColorOverlay(prev => ({ 
+                                      ...prev, 
+                                      applyTo: [...prev.applyTo, opt.id] 
+                                    }));
+                                  } else {
+                                    setColorOverlay(prev => ({ 
+                                      ...prev, 
+                                      applyTo: prev.applyTo.filter(a => a !== opt.id) 
+                                    }));
+                                  }
+                                }}
+                              />
+                              <span>{opt.icon} {opt.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="color-intensity">
+                        <label>Intensity:</label>
+                        <div className="intensity-pills">
+                          {['subtle', 'medium', 'strong'].map(level => (
+                            <button
+                              key={level}
+                              className={`intensity-pill ${colorOverlay.intensity === level ? 'active' : ''}`}
+                              onClick={() => setColorOverlay(prev => ({ ...prev, intensity: level }))}
+                            >
+                              {level.charAt(0).toUpperCase() + level.slice(1)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Step Actions */}
               <div className="step-actions">
