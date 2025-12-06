@@ -519,9 +519,17 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
       if (data.response) {
         try {
           let jsonStr = data.response.trim();
+          // Remove markdown code blocks
           if (jsonStr.startsWith('```')) {
             jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '');
           }
+          // Try to extract JSON array if there's extra text
+          const arrayMatch = jsonStr.match(/\[[\s\S]*\]/);
+          if (arrayMatch) {
+            jsonStr = arrayMatch[0];
+          }
+          // Fix common JSON issues: trailing commas, single quotes
+          jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1'); // Remove trailing commas
           const suggestions = JSON.parse(jsonStr);
           setAiAdvice(suggestions);
         } catch (parseError) {
