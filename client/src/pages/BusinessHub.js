@@ -281,6 +281,23 @@ const BusinessHub = () => {
     }));
   };
 
+  // Update image type (product, logo, lifestyle)
+  const updateImageType = (url, type) => {
+    setBusinessInfo(prev => ({
+      ...prev,
+      brandImages: (prev.brandImages || []).map(img => 
+        img.url === url ? { ...img, imageType: type } : img
+      )
+    }));
+  };
+
+  // Image type options
+  const imageTypes = [
+    { id: 'product', label: 'Product', emoji: '📦', color: '#8b5cf6' },
+    { id: 'logo', label: 'Logo', emoji: '🏷️', color: '#f59e0b' },
+    { id: 'lifestyle', label: 'Lifestyle', emoji: '👤', color: '#10b981' }
+  ];
+
   // Ref for file input
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -829,7 +846,33 @@ const BusinessHub = () => {
                         >
                           <FiTrash2 />
                         </button>
-                        <span className="image-source">{img.source}</span>
+                        
+                        {/* Image Type Selector */}
+                        <div className="image-type-selector">
+                          {imageTypes.map(type => (
+                            <button
+                              key={type.id}
+                              className={`type-btn ${img.imageType === type.id ? 'active' : ''}`}
+                              onClick={() => updateImageType(img.url, type.id)}
+                              title={type.label}
+                              style={{ 
+                                backgroundColor: img.imageType === type.id ? type.color : 'transparent',
+                                borderColor: type.color
+                              }}
+                            >
+                              {type.emoji}
+                            </button>
+                          ))}
+                        </div>
+                        
+                        {img.imageType && (
+                          <span 
+                            className="image-type-badge"
+                            style={{ backgroundColor: imageTypes.find(t => t.id === img.imageType)?.color }}
+                          >
+                            {imageTypes.find(t => t.id === img.imageType)?.label}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>

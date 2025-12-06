@@ -447,9 +447,12 @@ module.exports = async (req, res) => {
         logoUrl = null,
         logoPosition = 'topRight',
         logoSize = 0.12,
-        // NEW: Brand/product images for accurate product representation
+        // Brand/product images for accurate product representation
         brandImages = [],
         productImages = [],
+        // User pre-classified images (skip GPT Vision for these)
+        userClassifiedProducts = [],
+        userClassifiedLifestyle = [],
         productName = '',
         productDescription = ''
       } = body || {};
@@ -463,6 +466,7 @@ module.exports = async (req, res) => {
       
       console.log(`\n🎬 [${jobId}] Starting Premium AI Video Job`);
       console.log(`[${jobId}] 📦 Brand images: ${brandImages.length}, Product images: ${productImages.length}`);
+      console.log(`[${jobId}] 🏷️ User pre-classified: ${userClassifiedProducts.length} products, ${userClassifiedLifestyle.length} lifestyle`);
 
       const jobData = {
         jobId: jobId,
@@ -473,7 +477,8 @@ module.exports = async (req, res) => {
         input: { 
           prompt, businessName, industry, contentPurpose, aspectRatio, voice, 
           includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize,
-          brandImages, productImages, productName, productDescription
+          brandImages, productImages, userClassifiedProducts, userClassifiedLifestyle,
+          productName, productDescription
         }
       };
 
@@ -812,12 +817,15 @@ async function processPremiumJobVercel(jobId) {
   const { 
     prompt, businessName, industry, contentPurpose, aspectRatio, voice, 
     includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize,
-    brandImages = [], productImages = [], productName = '', productDescription = ''
+    brandImages = [], productImages = [], 
+    userClassifiedProducts = [], userClassifiedLifestyle = [],
+    productName = '', productDescription = ''
   } = job.input;
 
   // Combine all available product/brand images
   const availableProductImages = [...productImages, ...brandImages].filter(Boolean);
   console.log(`[${jobId}] 📸 Available product images for scenes: ${availableProductImages.length}`);
+  console.log(`[${jobId}] 🏷️ User pre-classified: ${userClassifiedProducts.length} products, ${userClassifiedLifestyle.length} lifestyle`);
 
   try {
     const OpenAI = require('openai');
@@ -967,8 +975,8 @@ Output valid JSON only.`
     });
 
     // ============================================
-    // STEP 2.5: Classify brand images with GPT Vision
-    // Determine which images are: product shots, logo, lifestyle/people using product
+    // STEP 2.5: Classify brand images
+    // Use user classifications first, then GPT Vision for unclassified images
     // ============================================
     let classifiedImages = {
       productShots: [],    // Clean product photos
@@ -977,15 +985,29 @@ Output valid JSON only.`
       otherImages: []      // Everything else
     };
 
-    if (availableProductImages.length > 0) {
+    // First, add user pre-classified images (these skip GPT Vision)
+    if (userClassifiedProducts.length > 0) {
+      classifiedImages.productShots = userClassifiedProducts.map(url => ({ url, description: 'user-classified product' }));
+      console.log(`[${jobId}] ✅ Using ${userClassifiedProducts.length} user-classified PRODUCT images`);
+    }
+    if (userClassifiedLifestyle.length > 0) {
+      classifiedImages.lifestyleShots = userClassifiedLifestyle.map(url => ({ url, description: 'user-classified lifestyle' }));
+      console.log(`[${jobId}] ✅ Using ${userClassifiedLifestyle.length} user-classified LIFESTYLE images`);
+    }
+
+    // Find images that still need classification (not in user-classified lists)
+    const alreadyClassified = new Set([...userClassifiedProducts, ...userClassifiedLifestyle]);
+    const needsClassification = availableProductImages.filter(url => !alreadyClassified.has(url));
+
+    if (needsClassification.length > 0) {
       await updatePremiumJobStatus(jobId, {
-        statusMessage: '🔍 Analyzing your brand images...',
+        statusMessage: `🔍 Analyzing ${needsClassification.length} unclassified images...`,
         progress: 22
       });
 
       try {
-        // Use GPT-4 Vision to classify each image
-        const classificationPrompt = `Analyze these ${availableProductImages.length} brand images and classify each one.
+        // Use GPT-4 Vision to classify remaining images
+        const classificationPrompt = `Analyze these ${needsClassification.length} brand images and classify each one.
 
 For each image, determine if it's:
 1. "product" - A clean product shot showing just the product
@@ -1005,7 +1027,7 @@ Return JSON array with classification for each image by index:
             role: 'user',
             content: [
               { type: 'text', text: classificationPrompt },
-              ...availableProductImages.slice(0, 6).map(url => ({
+              ...needsClassification.slice(0, 6).map(url => ({
                 type: 'image_url',
                 image_url: { url, detail: 'low' }
               }))
@@ -1024,11 +1046,11 @@ Return JSON array with classification for each image by index:
         
         if (jsonMatch) {
           const classifications = JSON.parse(jsonMatch[0]);
-          console.log(`[${jobId}] 📊 Image classifications:`, classifications);
+          console.log(`[${jobId}] 📊 GPT Vision classifications:`, classifications);
 
           classifications.forEach(({ index, type, description }) => {
-            if (index < availableProductImages.length) {
-              const imgData = { url: availableProductImages[index], description };
+            if (index < needsClassification.length) {
+              const imgData = { url: needsClassification[index], description };
               switch (type) {
                 case 'product': classifiedImages.productShots.push(imgData); break;
                 case 'lifestyle': classifiedImages.lifestyleShots.push(imgData); break;
@@ -1039,14 +1061,16 @@ Return JSON array with classification for each image by index:
           });
         }
 
-        console.log(`[${jobId}] ✅ Classified: ${classifiedImages.productShots.length} product, ${classifiedImages.lifestyleShots.length} lifestyle, ${classifiedImages.logoImages.length} logo`);
-
       } catch (classifyErr) {
-        console.warn(`[${jobId}] ⚠️ Image classification failed, using all as product shots:`, classifyErr.message);
-        // Fallback: treat all as product shots
-        classifiedImages.productShots = availableProductImages.map(url => ({ url, description: 'product image' }));
+        console.warn(`[${jobId}] ⚠️ GPT Vision classification failed, treating unclassified as product shots:`, classifyErr.message);
+        // Fallback: treat unclassified as product shots
+        needsClassification.forEach(url => {
+          classifiedImages.productShots.push({ url, description: 'auto-fallback product' });
+        });
       }
     }
+
+    console.log(`[${jobId}] ✅ Final classified totals: ${classifiedImages.productShots.length} product, ${classifiedImages.lifestyleShots.length} lifestyle, ${classifiedImages.logoImages.length} logo`);
 
     // ============================================
     // STEP 3: Prepare scene images

@@ -1174,10 +1174,64 @@
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
+  z-index: 2;
 }
 
 .brand-image-card:hover .remove-image-btn {
   opacity: 1;
+}
+
+/* Image Type Selector */
+.image-type-selector {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.brand-image-card:hover .image-type-selector {
+  opacity: 1;
+}
+
+.image-type-selector .type-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.image-type-selector .type-btn:hover {
+  transform: scale(1.1);
+}
+
+.image-type-selector .type-btn.active {
+  color: white;
+  border-color: transparent !important;
+}
+
+/* Image Type Badge */
+.image-type-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 600;
+  color: white;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .brand-image-card .image-source {

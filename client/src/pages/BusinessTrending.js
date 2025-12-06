@@ -943,15 +943,28 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         const videoPrompt = buildAIVideoPrompt();
         console.log('📝 Premium video topic:', videoPrompt);
         
-        // Get ALL brand images for product-accurate scene generation
-        const brandImages = businessInfo?.brandImages?.map(img => img.url).filter(Boolean) || [];
-        const brandLogo = brandImages[0] || null;
-        console.log('🏷️ Brand images:', brandImages.length, 'found');
+        // Get brand images with user-classified types
+        const allBrandImages = businessInfo?.brandImages || [];
+        
+        // Separate images by user-defined type
+        const userClassifiedLogo = allBrandImages.find(img => img.imageType === 'logo');
+        const userClassifiedProducts = allBrandImages.filter(img => img.imageType === 'product').map(img => img.url);
+        const userClassifiedLifestyle = allBrandImages.filter(img => img.imageType === 'lifestyle').map(img => img.url);
+        const unclassifiedImages = allBrandImages.filter(img => !img.imageType).map(img => img.url);
+        
+        // Use user-classified logo, or fall back to first image
+        const brandLogo = userClassifiedLogo?.url || allBrandImages[0]?.url || null;
+        
+        // Combine classified product images + unclassified (GPT will classify unclassified ones)
+        const brandImages = [...userClassifiedProducts, ...userClassifiedLifestyle, ...unclassifiedImages];
+        
+        console.log('🏷️ Logo:', brandLogo ? 'Found (user-classified)' : 'None');
+        console.log('📦 Product images:', userClassifiedProducts.length, 'classified +', unclassifiedImages.length, 'to auto-classify');
+        console.log('👤 Lifestyle images:', userClassifiedLifestyle.length, 'classified');
         
         // Get selected product images if a specific product is selected
         const selectedProductData = getSelectedProductDetails();
         const productImages = selectedProductData?.images || [];
-        console.log('📦 Product images:', productImages.length, 'found');
         
         // ============================================
         // STEP 1: Start job (returns immediately)
@@ -973,9 +986,12 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             logoUrl: brandLogo,
             logoPosition: 'topRight',
             logoSize: 0.12,
-            // NEW: Send all brand/product images for accurate product representation
+            // Send images with pre-classification info
             brandImages: brandImages,
             productImages: productImages,
+            // Pass user classifications to skip GPT Vision for already-classified images
+            userClassifiedProducts: userClassifiedProducts,
+            userClassifiedLifestyle: userClassifiedLifestyle,
             productName: selectedProductData?.name,
             productDescription: selectedProductData?.description
           })
