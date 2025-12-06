@@ -25,29 +25,7 @@ const AIVideo = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) { 
-23:24:38.748 
-(node:95) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
-23:24:38.749 
-(Use `node --trace-deprecation ...` to show where the warning was created)
-23:24:38.820 
-Creating an optimized production build...
-23:24:55.849 
-Failed to compile.
-23:24:55.851 
-23:24:55.851 
-[eslint] 
-23:24:55.851 
-src/App.js
-23:24:55.852 
-  Line 86:1:  Import in body of module; reorder to top  import/first
-23:24:55.852 
-23:24:55.852 
-Search for the keywords to learn more about each error.
-23:24:55.852 
-23:24:55.852 
-23:24:55.914 
-Error: Command "npm run build" exited with 1
+    if (file) {
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
       setImagePosition({ x: 0, y: 0, scale: 1 }); // Reset position on new image

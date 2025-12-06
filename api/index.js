@@ -27,6 +27,7 @@ async function connectDB() {
 // Premium Job Schema (inline for Vercel)
 const premiumJobSchema = new mongoose.Schema({
   jobId: { type: String, required: true, unique: true },
+  userId: { type: String, index: true }, // For auto-saving to Asset Hub
   status: { type: String, default: 'pending' },
   progress: { type: Number, default: 0 },
   statusMessage: { type: String, default: 'Starting...' },
@@ -35,6 +36,7 @@ const premiumJobSchema = new mongoose.Schema({
   voiceoverScript: String,
   error: String,
   input: mongoose.Schema.Types.Mixed,
+  savedToAssetHub: { type: Boolean, default: false }, // Track if user has synced this
   createdAt: { type: Date, default: Date.now },
   completedAt: Date
 });
