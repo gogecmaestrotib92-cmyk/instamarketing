@@ -479,7 +479,7 @@ class ReplicateService {
           input: {
             prompt: prompt,
             image_prompt: referenceImage,
-            image_prompt_strength: 0.15, // Light style influence (0.1-0.3 is good)
+            image_prompt_strength: 0.30, // Balanced style influence for brand consistency
             aspect_ratio: aspectRatio,
             output_format: outputFormat,
             output_quality: outputQuality,
