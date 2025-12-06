@@ -26,6 +26,7 @@ router.post('/', async (req, res) => {
       voiceStyle, 
       userId,
       businessInfo,
+      forceStockVideo,
       style,
       aspectRatio,
       includeCharacters
@@ -42,13 +43,14 @@ router.post('/', async (req, res) => {
     }
     
     // Determine if this is a product/brand video (should use AI-first)
-    // Now triggers when ANY business info is provided, not just images/productName
-    const isProductVideo = !!(businessInfo && (
+    // UNLESS forceStockVideo is true (user explicitly chose stock videos)
+    const isProductVideo = !forceStockVideo && !!(businessInfo && (
       businessInfo.brandImages?.length > 0 || 
       businessInfo.productName ||
       businessInfo.businessName ||
       businessInfo.industry
     ));
+    console.log(`[Jobs API] forceStockVideo: ${!!forceStockVideo}, calculated isProductVideo: ${isProductVideo}`);
     console.log(`[Jobs API] isProductVideo: ${isProductVideo}, businessInfo:`, businessInfo ? 'present' : 'none');
     
     // Normalize businessInfo - extract just URLs from brandImages if they are objects
@@ -272,6 +274,110 @@ router.get('/', async (req, res) => {
     
   } catch (error) {
     console.error('[Jobs API] List error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/jobs/:id/check-ai
+ * Poll Replicate predictions directly when webhooks fail
+ */
+router.post('/:id/check-ai', async (req, res) => {
+  try {
+    const job = await VideoJob.findById(req.params.id);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+    
+    if (job.status !== 'waiting_for_ai') {
+      return res.json({ status: job.status, message: 'Not waiting for AI' });
+    }
+    
+    console.log(`[Jobs API] Checking AI status for job ${job._id}`);
+    
+    // Find scenes with pending predictions
+    const pendingScenes = job.scenes.filter(s => 
+      s.replicateStatus === 'pending' && s.replicatePredictionId
+    );
+    
+    if (pendingScenes.length === 0) {
+      console.log(`[Jobs API] No pending predictions found`);
+      return res.json({ status: job.status, pendingCount: 0 });
+    }
+    
+    const Replicate = require('replicate');
+    const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+    
+    let updated = false;
+    
+    for (const scene of pendingScenes) {
+      try {
+        const prediction = await replicate.predictions.get(scene.replicatePredictionId);
+        console.log(`[Jobs API] Prediction ${scene.replicatePredictionId}: ${prediction.status}`);
+        
+        if (prediction.status === 'succeeded' && prediction.output) {
+          // Update scene with result
+          const sceneIndex = job.scenes.findIndex(s => s.replicatePredictionId === scene.replicatePredictionId);
+          if (sceneIndex >= 0) {
+            // Upload to Cloudinary
+            const cloudinary = require('cloudinary').v2;
+            const videoUrl = Array.isArray(prediction.output) ? prediction.output[0] : prediction.output;
+            
+            try {
+              const uploadResult = await cloudinary.uploader.upload(videoUrl, {
+                resource_type: 'video',
+                folder: 'ai-videos',
+                public_id: `job_${job._id}_scene_${sceneIndex}`
+              });
+              
+              job.scenes[sceneIndex].videoUrl = uploadResult.secure_url;
+              job.scenes[sceneIndex].replicateStatus = 'completed';
+              job.scenes[sceneIndex].source = 'kling-ai';
+              updated = true;
+              console.log(`[Jobs API] Scene ${sceneIndex} AI video uploaded`);
+            } catch (uploadErr) {
+              console.error(`[Jobs API] Upload failed:`, uploadErr.message);
+              job.scenes[sceneIndex].replicateStatus = 'failed';
+            }
+          }
+        } else if (prediction.status === 'failed') {
+          const sceneIndex = job.scenes.findIndex(s => s.replicatePredictionId === scene.replicatePredictionId);
+          if (sceneIndex >= 0) {
+            job.scenes[sceneIndex].replicateStatus = 'failed';
+            updated = true;
+          }
+        }
+      } catch (predErr) {
+        console.error(`[Jobs API] Prediction check error:`, predErr.message);
+      }
+    }
+    
+    // Check if all scenes are done
+    const stillPending = job.scenes.filter(s => s.replicateStatus === 'pending');
+    
+    if (stillPending.length === 0 || updated) {
+      await job.save();
+      
+      if (stillPending.length === 0) {
+        // Continue processing
+        const { continueProcessingAfterAI } = require('../services/videoJobWorker');
+        console.log(`[Jobs API] All AI scenes done, continuing processing`);
+        
+        // Don't await - let it process in background
+        continueProcessingAfterAI(job._id).catch(err => {
+          console.error(`[Jobs API] Continue processing error:`, err.message);
+        });
+      }
+    }
+    
+    res.json({
+      status: job.status,
+      pendingCount: stillPending.length,
+      updated
+    });
+    
+  } catch (error) {
+    console.error('[Jobs API] Check-AI error:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -496,7 +496,8 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             contentType: contentPurpose,
             targetDuration: 15,
             voiceId: getVoiceId(),
-            businessInfo: businessInfo // Pass full brand context
+            businessInfo: businessInfo, // Pass full brand context
+            forceStockVideo: true // User selected stock video background
           })
         });
         
@@ -525,8 +526,10 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
           }
           
           // Poll for completion
-          const maxAttempts = 60; // 2 minutes max
+          const maxAttempts = 150; // 5 minutes max (AI video can take 5-10 min)
           let attempts = 0;
+          let lastStatus = '';
+          let waitingForAiCount = 0;
           
           while (attempts < maxAttempts) {
             await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
@@ -536,7 +539,31 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             const pollData = await pollRes.json();
             
             console.log(`📊 Poll ${attempts}:`, pollData.status, pollData.progress);
-            setGenerationStep(`Processing... ${pollData.progress || 0}%`);
+            
+            // Better status messages
+            if (pollData.status === 'waiting_for_ai') {
+              waitingForAiCount++;
+              const aiMinutes = Math.floor(waitingForAiCount * 2 / 60);
+              const aiSeconds = (waitingForAiCount * 2) % 60;
+              setGenerationStep(`🤖 AI generating videos... ${aiMinutes}:${aiSeconds.toString().padStart(2, '0')} (can take 5-10 min)`);
+              
+              // Every 30 seconds, trigger a check on pending predictions
+              if (waitingForAiCount % 15 === 0) {
+                console.log('🔄 Triggering AI status check...');
+                try {
+                  await fetch(`/api/jobs/${data.jobId}/check-ai`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                  });
+                } catch (e) {
+                  console.log('AI check triggered');
+                }
+              }
+            } else {
+              setGenerationStep(`Processing... ${pollData.progress || 0}%`);
+            }
+            
+            lastStatus = pollData.status;
             
             if (pollData.status === 'done') {
               finalData = {
@@ -552,7 +579,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
           }
           
           if (finalData.status !== 'done' && !finalData.videoUrl) {
-            throw new Error('Video generation timed out. Please try again.');
+            throw new Error(`Video generation timed out (status: ${lastStatus}). AI videos can take 5-10 minutes - please try again or use Stock Video option.`);
           }
         }
         
