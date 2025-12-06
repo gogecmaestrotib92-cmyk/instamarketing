@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiArrowLeft, FiPlay, FiImage, FiVideo, FiUpload, FiPlus, FiMinus, FiCheck, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX, FiFilm, FiAlertCircle, FiVolume2 } from 'react-icons/fi';
+import { FiArrowLeft, FiPlay, FiImage, FiSquare, FiSmartphone, FiMonitor, FiMic, FiDownload, FiRefreshCw, FiZap, FiX, FiFilm, FiAlertCircle, FiCheckCircle, FiBox, FiEdit3, FiTrendingUp, FiBook, FiAward, FiHeart, FiArrowRight } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
 import { saveVideoToHub, saveImageToHub } from '../services/assetService';
 import './BusinessTrending.css';
@@ -7,35 +7,96 @@ import './BusinessTrending.css';
 const BusinessTrending = () => {
   const navigate = useNavigate();
   
-  // Form state
-  const [contentType, setContentType] = useState('tips');
-  const [postTopic, setPostTopic] = useState('');
+  // Current step (1, 2, or 3)
+  const [currentStep, setCurrentStep] = useState(1);
+  
+  // Business Info from Business Hub - REQUIRED
+  const [businessInfo, setBusinessInfo] = useState(null);
+  const [hasBrand, setHasBrand] = useState(false);
+  
+  // Step 1: Content Strategy
+  const [contentPurpose, setContentPurpose] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState('');
+  const [customTopic, setCustomTopic] = useState('');
+  const [contentGoal, setContentGoal] = useState('');
+  
+  // Step 2: Style Settings
   const [selectedTemplate, setSelectedTemplate] = useState('viral-karaoke');
-  const [numGenerations, setNumGenerations] = useState(1);
   const [aspectRatio, setAspectRatio] = useState('9:16');
   const [backgroundType, setBackgroundType] = useState('stock-video');
-  const [selectedMedia, setSelectedMedia] = useState(null);
-  const [selectedVoice, setSelectedVoice] = useState('Rachel'); // ElevenLabs voice
+  const [selectedVoice, setSelectedVoice] = useState('Rachel');
   
-  // Business Info from Business Hub
-  const [businessInfo, setBusinessInfo] = useState(null);
-  const [brandLinked, setBrandLinked] = useState(true);
+  // Step 3: Generate
+  const [postTopic, setPostTopic] = useState('');
   
-  // Load business info on mount
+  // Load business info on mount - BRAND IS REQUIRED
   useEffect(() => {
     const saved = localStorage.getItem('businessInfo');
     if (saved) {
       const parsed = JSON.parse(saved);
       setBusinessInfo(parsed);
-      const hasData = parsed.businessName || parsed.description || parsed.industry;
-      setBrandLinked(hasData);
+      // Check for meaningful brand data
+      const hasData = parsed.businessName && (parsed.description || parsed.industry || (parsed.products && parsed.products.length > 0));
+      setHasBrand(hasData);
     } else {
-      setBrandLinked(false);
+      setHasBrand(false);
     }
   }, []);
   
-  // Check if business info has meaningful data
-  const hasBusinessInfo = businessInfo && (businessInfo.businessName || businessInfo.description || businessInfo.industry);
+  // Content purpose types for brand content
+  const contentPurposes = [
+    { 
+      id: 'tips', 
+      label: 'Tips & How-To', 
+      icon: FiBook, 
+      description: 'Share expertise from your industry',
+      color: '#3b82f6'
+    },
+    { 
+      id: 'behind-scenes', 
+      label: 'Behind the Scenes', 
+      icon: FiFilm, 
+      description: 'Show your brand process',
+      color: '#ec4899'
+    },
+    { 
+      id: 'product-feature', 
+      label: 'Product Feature', 
+      icon: FiBox, 
+      description: 'Highlight benefits & uses',
+      color: '#10b981'
+    },
+    { 
+      id: 'customer-story', 
+      label: 'Customer Success', 
+      icon: FiHeart, 
+      description: 'Share customer wins',
+      color: '#f59e0b'
+    },
+    { 
+      id: 'industry-news', 
+      label: 'Industry Insights', 
+      icon: FiTrendingUp, 
+      description: 'Share relevant news & trends',
+      color: '#8b5cf6'
+    },
+    { 
+      id: 'motivation', 
+      label: 'Motivational', 
+      icon: FiAward, 
+      description: 'Inspire your audience',
+      color: '#ef4444'
+    },
+  ];
+  
+  // Content goals
+  const contentGoals = [
+    { id: 'educate', label: 'Educate', description: 'Teach something valuable' },
+    { id: 'entertain', label: 'Entertain', description: 'Make them smile' },
+    { id: 'inspire', label: 'Inspire', description: 'Motivate action' },
+    { id: 'promote', label: 'Soft Sell', description: 'Subtle promotion' },
+    { id: 'engage', label: 'Drive Engagement', description: 'Get comments/shares' },
+  ];
   
   // AI Advice state
   const [showAdvice, setShowAdvice] = useState(false);
@@ -47,16 +108,6 @@ const BusinessTrending = () => {
   const [generationStep, setGenerationStep] = useState('');
   const [generatedResult, setGeneratedResult] = useState(null);
   const [generationError, setGenerationError] = useState(null);
-
-  // Content types
-  const contentTypes = [
-    { id: 'tips', label: 'Tips & Tricks', icon: '💡' },
-    { id: 'facts', label: 'Facts', icon: '📊' },
-    { id: 'quotes', label: 'Quotes', icon: '💬' },
-    { id: 'story', label: 'Story', icon: '📖' },
-    { id: 'tutorial', label: 'Tutorial', icon: '🎓' },
-    { id: 'motivation', label: 'Motivation', icon: '🔥' },
-  ];
 
   // Template options (simplified from subtitleTemplates)
   const templates = [
@@ -79,24 +130,18 @@ const BusinessTrending = () => {
 
   // Background types
   const backgroundTypes = [
-    { id: 'stock-video', label: 'Stock Videos', icon: FiFilm, description: 'Pexels/Pixabay loops', recommended: true },
-    { id: 'ai-images', label: 'AI Images', icon: FiImage, description: 'AI-generated images' },
-    { id: 'ai-videos', label: 'AI Videos', icon: FiVideo, description: 'Short AI clips (~5s)' },
-    { id: 'upload', label: 'Choose Media', icon: FiUpload, description: 'Upload your own' },
+    { id: 'stock-video', label: 'Stock Videos', icon: FiFilm, description: 'Auto-matched clips', recommended: true },
+    { id: 'ai-images', label: 'AI Background', icon: FiImage, description: 'AI-generated visuals' },
   ];
 
   // ElevenLabs voice options
   const voiceOptions = [
-    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', style: 'conversational', emoji: '👩', description: 'Warm, friendly female' },
-    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'professional', emoji: '👩‍💼', description: 'Clear, professional female' },
-    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', style: 'narrator', emoji: '👨', description: 'Deep, authoritative male' },
-    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', style: 'energetic', emoji: '🎤', description: 'Energetic young female' },
-    { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', style: 'youthful', emoji: '👧', description: 'Youthful female - Gen Z' },
-    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', style: 'dynamic', emoji: '🧑', description: 'Dynamic young male' },
-    { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', style: 'dramatic', emoji: '🎭', description: 'Deep dramatic male' },
-    { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', style: 'luxury', emoji: '🎩', description: 'Deep, rich male - luxury' },
-    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', style: 'british', emoji: '🇬🇧', description: 'British male - sophisticated' },
-    { id: 'pqHfZKP75CvOlQylNhV4', name: 'Bill', style: 'trustworthy', emoji: '📖', description: 'Trustworthy male - documentary' },
+    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', style: 'conversational', emoji: '👩', description: 'Warm, friendly' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', style: 'professional', emoji: '👩‍💼', description: 'Professional' },
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', style: 'narrator', emoji: '👨', description: 'Authoritative' },
+    { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', style: 'energetic', emoji: '🎤', description: 'Energetic' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', style: 'dynamic', emoji: '🧑', description: 'Dynamic' },
+    { id: 'nPczCjzI2devNBz1zQrb', name: 'Brian', style: 'luxury', emoji: '🎩', description: 'Deep, rich' },
   ];
 
   // Voice style mapping based on selected voice
@@ -110,6 +155,88 @@ const BusinessTrending = () => {
     const voice = voiceOptions.find(v => v.name === selectedVoice);
     return voice?.id || '21m00Tcm4TlvDq8ikWAM'; // Default to Rachel
   };
+  
+  // Get selected product details
+  const getSelectedProductDetails = () => {
+    if (selectedProduct && businessInfo?.products) {
+      return businessInfo.products.find(p => p.name === selectedProduct);
+    }
+    return null;
+  };
+  
+  // Build brand-focused content topic
+  const buildBrandTopic = () => {
+    const product = getSelectedProductDetails();
+    const goal = contentGoals.find(g => g.id === contentGoal);
+    
+    let topic = '';
+    
+    // Start with the brand context
+    if (businessInfo?.businessName) {
+      topic += `For ${businessInfo.businessName}`;
+      if (businessInfo.industry) topic += ` (${businessInfo.industry})`;
+      topic += ': ';
+    }
+    
+    // Add purpose-specific context
+    switch (contentPurpose) {
+      case 'tips':
+        topic += `Share expert tips about ${customTopic || product?.name || businessInfo?.industry || 'your expertise'}`;
+        break;
+      case 'behind-scenes':
+        topic += `Show behind the scenes of ${customTopic || 'how we work'}`;
+        break;
+      case 'product-feature':
+        topic += `Highlight ${product?.name || customTopic || 'our product'}: ${product?.description || 'key benefits and features'}`;
+        break;
+      case 'customer-story':
+        topic += `Share a customer success story about ${product?.name || customTopic || 'results achieved'}`;
+        break;
+      case 'industry-news':
+        topic += `Share insights about ${customTopic || businessInfo?.industry || 'industry trends'}`;
+        break;
+      case 'motivation':
+        topic += `Motivational content for ${businessInfo?.targetAudience || 'our audience'}: ${customTopic || 'inspirational message'}`;
+        break;
+      default:
+        topic += customTopic || 'engaging content';
+    }
+    
+    // Add goal context
+    if (goal) {
+      topic += `. Goal: ${goal.description}`;
+    }
+    
+    // Add brand voice
+    if (businessInfo?.brandVoice) {
+      topic += `. Tone: ${businessInfo.brandVoice}`;
+    }
+    
+    return topic;
+  };
+
+  // Navigation
+  const handleNext = () => {
+    if (currentStep < 3) {
+      // Build the topic when moving to step 3
+      if (currentStep === 2) {
+        setPostTopic(buildBrandTopic());
+      }
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    } else {
+      navigate('/dashboard/business/create');
+    }
+  };
+
+  // Check if can proceed to next step
+  const canProceedStep1 = contentPurpose && (selectedProduct || customTopic.trim());
+  const canProceedStep2 = selectedTemplate && aspectRatio && selectedVoice;
 
   // Generate AI Advice based on user's topic and business info
   const generateAIAdvice = async () => {
@@ -117,20 +244,18 @@ const BusinessTrending = () => {
     setShowAdvice(true);
     
     try {
-      const baseTopic = postTopic.trim() || 'viral content ideas';
-      const contentLabel = contentTypes.find(c => c.id === contentType)?.label || 'Tips';
+      const purpose = contentPurposes.find(p => p.id === contentPurpose);
+      const product = getSelectedProductDetails();
       
-      // Build context from business info if available and linked
+      // Build context from business info
       let businessContext = '';
-      if (brandLinked && hasBusinessInfo) {
+      if (businessInfo) {
         const parts = [];
         if (businessInfo.businessName) parts.push(`Business: ${businessInfo.businessName}`);
         if (businessInfo.industry) parts.push(`Industry: ${businessInfo.industry}`);
         if (businessInfo.brandVoice) parts.push(`Brand voice: ${businessInfo.brandVoice}`);
         if (businessInfo.targetAudience) parts.push(`Target audience: ${businessInfo.targetAudience.substring(0, 100)}`);
-        if (businessInfo.products && businessInfo.products.length > 0) {
-          parts.push(`Products/Services: ${businessInfo.products.map(p => p.name).join(', ')}`);
-        }
+        if (product) parts.push(`Product focus: ${product.name} - ${product.description || ''}`);
         if (parts.length > 0) {
           businessContext = `\n\nBusiness Context:\n${parts.join('\n')}`;
         }
@@ -140,9 +265,11 @@ const BusinessTrending = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Based on this video topic: "${baseTopic}" for ${contentLabel} content type.${businessContext}
+          message: `Generate 6 viral short-form video script ideas for "${purpose?.label || 'content'}" content.${businessContext}
 
-Generate 6 viral voiceover video script ideas. Each should be catchy, engaging, and perfect for Instagram/TikTok.
+Topic context: ${customTopic || product?.name || businessInfo?.industry || 'general'}
+
+Each should be catchy, engaging, and perfect for Instagram/TikTok.
 
 For each suggestion, provide:
 1. A hook (attention-grabbing first line)
@@ -157,17 +284,15 @@ Format as JSON array:
   }
 ]
 
-Focus on trending formats, emotional hooks, and viral potential. Make them specific to: ${baseTopic}`,
-          systemPrompt: 'You are a viral content strategist specializing in short-form video. Return ONLY valid JSON array, no markdown or extra text.'
+Focus on trending formats, emotional hooks, and viral potential. Make them authentic to the brand.`,
+          systemPrompt: 'You are a viral content strategist for brands. Return ONLY valid JSON array, no markdown or extra text.'
         })
       });
 
       const data = await response.json();
       
-      // Server returns { response: "..." } without success field
       if (data.response) {
         try {
-          // Clean and parse JSON response
           let jsonStr = data.response.trim();
           if (jsonStr.startsWith('```')) {
             jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '');
@@ -176,34 +301,18 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           setAiAdvice(suggestions);
         } catch (parseError) {
           console.error('Failed to parse AI advice:', parseError);
-          // Fallback suggestions based on topic
+          const topic = customTopic || product?.name || 'your expertise';
           setAiAdvice([
-            { title: `${contentLabel}: ${baseTopic}`, hook: `Here's what nobody tells you about ${baseTopic}...`, description: 'Eye-opening insights that challenge common beliefs' },
-            { title: `3 ${baseTopic} secrets`, hook: `Stop scrolling! These 3 ${baseTopic} tips changed everything...`, description: 'Quick, actionable tips with visual examples' },
-            { title: `${baseTopic} mistakes`, hook: `You're making these ${baseTopic} mistakes every day...`, description: 'Common errors and how to fix them instantly' },
-            { title: `The truth about ${baseTopic}`, hook: `I tested this for 30 days and here's what happened...`, description: 'Personal experience story with real results' },
-            { title: `${baseTopic} in 60 seconds`, hook: `Everything you need to know about ${baseTopic}...`, description: 'Fast-paced informative breakdown' },
-            { title: `Why ${baseTopic} matters`, hook: `This changed my perspective on ${baseTopic}...`, description: 'Emotional hook with valuable insights' },
+            { title: `${purpose?.label || 'Content'}: ${topic}`, hook: `Here's what nobody tells you about ${topic}...`, description: 'Eye-opening insights that challenge common beliefs' },
+            { title: `3 ${topic} secrets`, hook: `Stop scrolling! These 3 tips changed everything...`, description: 'Quick, actionable tips with visual examples' },
+            { title: `${topic} mistakes`, hook: `You're making these mistakes every day...`, description: 'Common errors and how to fix them instantly' },
           ]);
         }
-      } else if (data.error) {
-        console.error('AI advice API error:', data.error);
-        // Show fallback suggestions on API error
-        setAiAdvice([
-          { title: `${contentLabel}: ${baseTopic}`, hook: `Here's what nobody tells you about ${baseTopic}...`, description: 'Eye-opening insights that challenge common beliefs' },
-          { title: `3 ${baseTopic} secrets`, hook: `Stop scrolling! These 3 ${baseTopic} tips changed everything...`, description: 'Quick, actionable tips with visual examples' },
-          { title: `${baseTopic} mistakes`, hook: `You're making these ${baseTopic} mistakes every day...`, description: 'Common errors and how to fix them instantly' },
-          { title: `The truth about ${baseTopic}`, hook: `I tested this for 30 days and here's what happened...`, description: 'Personal experience story with real results' },
-          { title: `${baseTopic} in 60 seconds`, hook: `Everything you need to know about ${baseTopic}...`, description: 'Fast-paced informative breakdown' },
-          { title: `Why ${baseTopic} matters`, hook: `This changed my perspective on ${baseTopic}...`, description: 'Emotional hook with valuable insights' },
-        ]);
       }
     } catch (error) {
       console.error('AI advice error:', error);
-      // Show fallback on network error
-      const baseTopic = postTopic.trim() || 'viral content';
       setAiAdvice([
-        { title: `Viral Tips`, hook: `Here's what nobody tells you about ${baseTopic}...`, description: 'Eye-opening insights' },
+        { title: `Viral Tips`, hook: `Here's what nobody tells you...`, description: 'Eye-opening insights' },
         { title: `3 Secrets`, hook: `Stop scrolling! These tips changed everything...`, description: 'Quick, actionable tips' },
         { title: `Common Mistakes`, hook: `You're making these mistakes every day...`, description: 'Common errors and fixes' },
       ]);
@@ -214,7 +323,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
 
   // Apply AI suggestion
   const applyAdviceSuggestion = (suggestion) => {
-    setPostTopic(`${suggestion.hook} ${suggestion.description}`);
+    setCustomTopic(`${suggestion.hook} ${suggestion.description}`);
     setShowAdvice(false);
   };
 
@@ -228,19 +337,21 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
     try {
       // Use job-based generation for stock videos
       if (backgroundType === 'stock-video') {
-        setGenerationStep('Generating video (this may take 1-2 minutes)...');
+        setGenerationStep('Generating brand content video...');
         console.log('🎬 Creating video generation job');
         
-        // Create and process job in one request
-        // Vercel Pro has 120s timeout, should be enough
+        // Build enhanced topic with brand context
+        const enhancedTopic = postTopic;
+        
         const response = await fetch('/api/jobs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            topic: postTopic,
-            contentType: contentType,
+            topic: enhancedTopic,
+            contentType: contentPurpose,
             targetDuration: 15,
-            voiceId: getVoiceId()
+            voiceId: getVoiceId(),
+            businessInfo: businessInfo // Pass full brand context
           })
         });
         
@@ -253,10 +364,13 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         console.log('✅ Video generated:', data);
         
         // Build result
+        const purpose = contentPurposes.find(p => p.id === contentPurpose);
+        const product = getSelectedProductDetails();
+        
         const result = {
           id: Date.now().toString(),
           type: 'voiceover-video',
-          name: `Voiceover - ${postTopic.substring(0, 30)}${postTopic.length > 30 ? '...' : ''}`,
+          name: `${purpose?.label || 'Content'} - ${product?.name || businessInfo?.businessName || 'Brand Video'}`,
           script: null,
           audioUrl: data.audioUrl,
           backgroundUrl: null,
@@ -264,29 +378,31 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
           backgroundType: 'stock-video',
           template: selectedTemplate,
           aspectRatio: aspectRatio,
-          contentType: contentType,
+          contentType: contentPurpose,
           ttsProvider: 'ElevenLabs',
           createdAt: new Date().toISOString(),
           metadata: {
             postTopic,
-            contentType,
+            contentPurpose,
             template: selectedTemplate,
             aspectRatio,
             backgroundType: 'stock-video',
-            jobId: data.jobId
+            jobId: data.jobId,
+            businessName: businessInfo?.businessName,
+            productName: product?.name
           },
-          instructions: '✅ Your video is ready! Subtitles are synced to voiceover and videos switch with the story.'
+          instructions: '✅ Your brand content video is ready! Subtitles are synced to voiceover.'
         };
         
         setGeneratedResult(result);
         
-        // Auto-save to Asset Hub using service
+        // Auto-save to Asset Hub
         try {
           saveVideoToHub({
             name: result.name,
             url: data.videoUrl,
             caption: postTopic.substring(0, 100),
-            tags: [contentType, 'voiceover', 'trending'],
+            tags: [contentPurpose, 'voiceover', 'brand-content', businessInfo?.industry].filter(Boolean),
             source: 'BusinessTrending',
             metadata: result.metadata
           });
@@ -299,21 +415,17 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         return;
       }
       
-      // Fallback for non-stock-video backgrounds (AI images, uploads, etc.)
-      // Step 1: Generate script with voiceover (Try ElevenLabs first, fallback to Google TTS)
-      setGenerationStep('Generating script and AI voiceover...');
-      console.log('Step 1: Generating script and voiceover for:', postTopic);
+      // AI background fallback
+      setGenerationStep('Generating AI voiceover...');
       
       let voiceoverData = null;
-      let usedElevenLabs = false;
       
-      // Try ElevenLabs first (premium quality)
       try {
         const elevenLabsResponse = await fetch('/api/ai/elevenlabs/full-voiceover', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            topic: `${contentType}: ${postTopic}`,
+            topic: postTopic,
             duration: 15,
             voiceStyle: getVoiceStyle()
           })
@@ -323,24 +435,17 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         
         if (elevenLabsResponse.ok && !elevenLabsData.error && elevenLabsData.audioUrl) {
           voiceoverData = elevenLabsData;
-          usedElevenLabs = true;
-          console.log('✅ ElevenLabs voiceover generated:', elevenLabsData);
-        } else {
-          console.warn('ElevenLabs not available:', elevenLabsData.error);
         }
       } catch (elevenLabsError) {
-        console.warn('ElevenLabs failed, trying Google TTS:', elevenLabsError);
+        console.warn('ElevenLabs failed:', elevenLabsError);
       }
       
-      // Fallback to Google TTS if ElevenLabs fails
       if (!voiceoverData) {
-        setGenerationStep('Generating script and voiceover...');
-        
         const googleResponse = await fetch('/api/ai/full-voiceover', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            topic: `${contentType}: ${postTopic}`,
+            topic: postTopic,
             duration: 15,
             voiceStyle: getVoiceStyle()
           })
@@ -351,18 +456,14 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         if (!googleResponse.ok || voiceoverData.error) {
           throw new Error(voiceoverData.error || 'Failed to generate voiceover');
         }
-        console.log('✅ Google TTS voiceover generated:', voiceoverData);
       }
 
-      // Step 2: Generate background based on selection
-      setGenerationStep('Creating background visual...');
+      // Generate AI background
+      setGenerationStep('Creating visual background...');
       let backgroundUrl = null;
-      let backgroundType_used = backgroundType;
-      let composedVideoUrl = null;
       
       if (backgroundType === 'ai-images') {
-        // Generate AI image - this works well as a static background
-        const imagePrompt = `${contentType} aesthetic background, ${postTopic}, minimalist, high quality, gradient, social media style, 9:16 vertical`;
+        const imagePrompt = `${contentPurpose} content background for ${businessInfo?.industry || 'brand'}, ${postTopic.substring(0, 50)}, professional, high quality, 9:16 vertical`;
         
         const imageResponse = await fetch('/api/ai/image/generate', {
           method: 'POST',
@@ -377,95 +478,59 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
         
         if (imageData.success && imageData.imageUrl) {
           backgroundUrl = imageData.imageUrl;
-          backgroundType_used = 'ai-images';
-          console.log('✅ Image background generated:', backgroundUrl);
-        }
-      } else if (backgroundType === 'ai-videos') {
-        // For now, generate an AI image instead since AI video is too short
-        setGenerationStep('Creating visual background...');
-        
-        const imagePrompt = `Cinematic ${contentType} scene, ${postTopic}, dramatic lighting, trending aesthetic, vertical composition`;
-        
-        const imageResponse = await fetch('/api/ai/image/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: imagePrompt,
-            aspectRatio: '9:16'
-          })
-        });
-        
-        const imageData = await imageResponse.json();
-        
-        if (imageData.success && imageData.imageUrl) {
-          backgroundUrl = imageData.imageUrl;
-          backgroundType_used = 'ai-images'; // Switch to image since video is too short
-          console.log('✅ Using AI image as background (video clips are too short):', backgroundUrl);
         }
       }
 
-      // Step 3: Prepare final result
+      // Prepare final result
       setGenerationStep('Preparing your content...');
+      
+      const purpose = contentPurposes.find(p => p.id === contentPurpose);
+      const product = getSelectedProductDetails();
       
       const result = {
         id: Date.now().toString(),
         type: 'voiceover-video',
-        name: `Voiceover - ${postTopic.substring(0, 30)}${postTopic.length > 30 ? '...' : ''}`,
+        name: `${purpose?.label || 'Content'} - ${product?.name || businessInfo?.businessName || 'Brand'}`,
         script: voiceoverData.script,
         audioUrl: voiceoverData.audioUrl,
         backgroundUrl: backgroundUrl,
-        composedVideoUrl: composedVideoUrl,
-        backgroundType: backgroundType_used,
+        composedVideoUrl: null,
+        backgroundType: backgroundType,
         template: selectedTemplate,
         aspectRatio: aspectRatio,
-        contentType: contentType,
-        ttsProvider: usedElevenLabs ? 'ElevenLabs' : 'Google TTS',
+        contentType: contentPurpose,
+        ttsProvider: 'AI',
         createdAt: new Date().toISOString(),
         metadata: {
           postTopic,
-          contentType,
+          contentPurpose,
           template: selectedTemplate,
           aspectRatio,
-          backgroundType: backgroundType_used
-        },
-        instructions: backgroundType === 'ai-videos' 
-          ? '💡 Tip: AI-generated videos are only ~5 seconds. For longer videos, use a video editor to loop the background or add stock footage, then overlay your voiceover.'
-          : null
+          backgroundType,
+          businessName: businessInfo?.businessName,
+          productName: product?.name
+        }
       };
       
       setGeneratedResult(result);
       
-      // Auto-save to Asset Hub using service
+      // Auto-save
       try {
-        const isVideoAsset = composedVideoUrl || (backgroundType_used !== 'ai-images' && backgroundUrl);
-        const assetUrl = composedVideoUrl || backgroundUrl || voiceoverData.audioUrl;
-        
-        if (isVideoAsset) {
-          saveVideoToHub({
-            name: result.name,
-            url: assetUrl,
-            caption: result.script?.substring(0, 100) + '...',
-            tags: [contentType, 'voiceover', backgroundType_used],
-            source: 'BusinessTrending',
-            metadata: result.metadata
-          });
-        } else {
+        if (backgroundUrl) {
           saveImageToHub({
             name: result.name,
-            url: assetUrl,
+            url: backgroundUrl,
             caption: result.script?.substring(0, 100) + '...',
-            tags: [contentType, 'voiceover', backgroundType_used],
+            tags: [contentPurpose, 'voiceover', backgroundType],
             source: 'BusinessTrending',
             metadata: result.metadata
           });
         }
-        console.log('✅ Auto-saved to Asset Hub');
       } catch (saveError) {
         console.error('Failed to save to Asset Hub:', saveError);
       }
       
       setGenerationStep('');
-      console.log('Generation complete:', result);
       
     } catch (error) {
       console.error('Generation error:', error);
@@ -499,374 +564,518 @@ Focus on trending formats, emotional hooks, and viral potential. Make them speci
     handleGenerate();
   };
 
-  const incrementGenerations = () => {
-    if (numGenerations < 5) setNumGenerations(numGenerations + 1);
-  };
-
-  const decrementGenerations = () => {
-    if (numGenerations > 1) setNumGenerations(numGenerations - 1);
-  };
-
-  const handleMediaUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedMedia(file);
-    }
-  };
+  // If no brand is set up, show required notice
+  if (!hasBrand) {
+    return (
+      <div className="business-trending-page">
+        <div className="business-trending-container">
+          <div className="trending-header">
+            <button className="back-btn" onClick={() => navigate('/dashboard/business/create')}>
+              <FiArrowLeft />
+            </button>
+            <h1>Brand Content Creator</h1>
+          </div>
+          
+          <div className="brand-required-notice">
+            <div className="notice-icon">
+              <FiAlertCircle />
+            </div>
+            <h2>Brand Setup Required</h2>
+            <p>
+              Brand Content Creator generates viral short-form content specifically for your brand.
+              To create content that matches your brand voice and promotes your products/services, please set up your brand first.
+            </p>
+            <div className="notice-features">
+              <div className="feature-item">
+                <FiCheckCircle />
+                <span>AI voiceover videos for your brand</span>
+              </div>
+              <div className="feature-item">
+                <FiCheckCircle />
+                <span>Content tailored to your industry</span>
+              </div>
+              <div className="feature-item">
+                <FiCheckCircle />
+                <span>Scripts in your brand voice</span>
+              </div>
+            </div>
+            <Link to="/dashboard/business/hub" className="setup-brand-btn">
+              <FiZap />
+              <span>Set Up Your Brand</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="business-trending-page">
       <div className="business-trending-container">
-        {/* Minimal Header */}
+        
+        {/* Header with Brand Banner */}
         <div className="trending-header">
-          <button className="back-btn" onClick={() => navigate('/app/create/business')}>
+          <button className="back-btn" onClick={handleBack}>
             <FiArrowLeft />
           </button>
-          <h1>Trending Voiceover</h1>
+          <h1>Brand Content Creator</h1>
+        </div>
+        
+        {/* Brand Info Banner */}
+        <div className="brand-info-banner">
+          <div className="brand-banner-content">
+            <div className="brand-avatar">
+              {businessInfo?.businessName?.charAt(0)?.toUpperCase() || 'B'}
+            </div>
+            <div className="brand-details">
+              <h3>{businessInfo?.businessName}</h3>
+              <p>{businessInfo?.industry || 'Your Brand'}</p>
+            </div>
+          </div>
+          <Link to="/dashboard/business/hub" className="edit-brand-link">
+            Edit Brand
+          </Link>
         </div>
 
-        {/* Hero Topic Input Card */}
-        <div className="hero-card">
-          <div className="hero-content">
-            <div className="hero-icon">
-              <FiMic />
-            </div>
-            <h2>What's your video about?</h2>
-            <p>Describe your content and we'll create a viral voiceover video</p>
+        {/* Progress Steps */}
+        <div className="steps-progress">
+          <div className={`step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
+            <div className="step-number">1</div>
+            <span>Content</span>
           </div>
-          
-          <div className="hero-input">
-            <textarea
-              className="hero-textarea"
-              placeholder="e.g., 3 tips to improve your abs, or a motivational quote about success..."
-              value={postTopic}
-              onChange={(e) => setPostTopic(e.target.value)}
-              rows={5}
-            />
-            <div className="textarea-footer">
-              <button 
-                className="ai-advice-btn"
-                onClick={generateAIAdvice}
-                disabled={isLoadingAdvice}
-              >
-                <FiZap />
-                <span>AI Advice</span>
-              </button>
-              <span className="char-count">{postTopic.length}/500</span>
-            </div>
+          <div className="step-line"></div>
+          <div className={`step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
+            <div className="step-number">2</div>
+            <span>Style</span>
           </div>
+          <div className="step-line"></div>
+          <div className={`step ${currentStep >= 3 ? 'active' : ''}`}>
+            <div className="step-number">3</div>
+            <span>Generate</span>
+          </div>
+        </div>
 
-          {/* AI Advice Panel */}
-          {showAdvice && (
-            <div className="ai-advice-panel">
-              <div className="advice-header">
-                <h4><FiZap /> AI Suggestions</h4>
-                <button className="close-advice" onClick={() => setShowAdvice(false)}>
-                  <FiX />
-                </button>
+        {/* Step Content */}
+        <div className="step-content">
+          
+          {/* STEP 1: Content Strategy */}
+          {currentStep === 1 && (
+            <div className="step-panel">
+              <div className="step-header">
+                <span className="step-label">Step 1 of 3</span>
+                <h2>What Content Are You Creating?</h2>
+                <p>Choose your content type and what to feature</p>
               </div>
-              
-              {isLoadingAdvice ? (
-                <div className="advice-loading">
-                  <div className="advice-spinner"></div>
-                  <span>Generating viral ideas...</span>
-                </div>
-              ) : (
-                <div className="advice-grid">
-                  {aiAdvice.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      className="advice-card"
-                      onClick={() => applyAdviceSuggestion(suggestion)}
+
+              {/* Content Purpose Selection */}
+              <div className="selection-section">
+                <h3>Content Type</h3>
+                <div className="campaign-grid">
+                  {contentPurposes.map(purpose => (
+                    <div 
+                      key={purpose.id}
+                      className={`campaign-card ${contentPurpose === purpose.id ? 'selected' : ''}`}
+                      onClick={() => setContentPurpose(purpose.id)}
+                      style={{ '--campaign-color': purpose.color }}
                     >
-                      <span className="advice-title">{suggestion.title}</span>
-                      <span className="advice-hook">"{suggestion.hook}"</span>
-                      <span className="advice-desc">{suggestion.description}</span>
-                    </button>
+                      <div className="campaign-icon">
+                        <purpose.icon />
+                      </div>
+                      <h4>{purpose.label}</h4>
+                      <p>{purpose.description}</p>
+                    </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-          
-          {/* Content Type Pills */}
-          <div className="content-pills">
-            {contentTypes.map((type) => (
-              <button
-                key={type.id}
-                className={`content-pill ${contentType === type.id ? 'active' : ''}`}
-                onClick={() => setContentType(type.id)}
-              >
-                <span>{type.icon}</span>
-                <span>{type.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Brand Details Toggle */}
-        <div className="brand-toggle-row">
-          <div className="brand-toggle-info">
-            <h4>Brand Details</h4>
-            <p>
-              {!hasBusinessInfo ? (
-                <>
-                  <FiAlertCircle className="warning-icon" /> 
-                  <Link to="/app/business-hub" className="setup-link">Set up in Business Hub</Link>
-                </>
-              ) : brandLinked ? (
-                '✓ Brand identity will be applied'
-              ) : (
-                'Generic styling will be used'
-              )}
-            </p>
-          </div>
-          <label className="toggle-switch">
-            <input 
-              type="checkbox" 
-              checked={brandLinked && hasBusinessInfo} 
-              onChange={(e) => setBrandLinked(e.target.checked)}
-              disabled={!hasBusinessInfo}
-            />
-            <span className={`toggle-slider ${!hasBusinessInfo ? 'disabled' : ''}`}></span>
-          </label>
-        </div>
-
-        {/* Compact Settings Row */}
-        <div className="settings-row">
-          {/* Template Dropdown */}
-          <div className="setting-group">
-            <label>Template</label>
-            <div className="template-selector">
-              <div 
-                className="template-preview-mini"
-                style={{ '--preview-color': templates.find(t => t.id === selectedTemplate)?.color }}
-              >
-                Aa
               </div>
-              <select 
-                value={selectedTemplate} 
-                onChange={(e) => setSelectedTemplate(e.target.value)}
-              >
-                {templates.map((template) => (
-                  <option key={template.id} value={template.id}>
-                    {template.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
 
-          {/* Aspect Ratio */}
-          <div className="setting-group">
-            <label>Aspect</label>
-            <div className="aspect-pills">
-              {aspectRatios.map((ratio) => (
-                <button
-                  key={ratio.id}
-                  className={`aspect-pill ${aspectRatio === ratio.id ? 'active' : ''}`}
-                  onClick={() => setAspectRatio(ratio.id)}
-                >
-                  {ratio.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Background Type */}
-          <div className="setting-group">
-            <label>Background</label>
-            <div className="bg-pills">
-              {backgroundTypes.map((bg) => (
-                <button
-                  key={bg.id}
-                  className={`bg-pill ${backgroundType === bg.id ? 'active' : ''} ${bg.recommended ? 'recommended' : ''}`}
-                  onClick={() => setBackgroundType(bg.id)}
-                  title={bg.description}
-                >
-                  <bg.icon />
-                  {bg.recommended && <span className="rec-dot"></span>}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Voice Picker */}
-          <div className="setting-group voice-picker">
-            <label><FiVolume2 /> Voice</label>
-            <select 
-              value={selectedVoice} 
-              onChange={(e) => setSelectedVoice(e.target.value)}
-              className="voice-select"
-            >
-              {voiceOptions.map((voice) => (
-                <option key={voice.id} value={voice.name}>
-                  {voice.emoji} {voice.name} - {voice.description}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Generations */}
-          <div className="setting-group">
-            <label>Count</label>
-            <div className="count-control">
-              <button onClick={decrementGenerations} disabled={numGenerations <= 1}>
-                <FiMinus />
-              </button>
-              <span>{numGenerations}</span>
-              <button onClick={incrementGenerations} disabled={numGenerations >= 5}>
-                <FiPlus />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Upload Area (when Choose Media is selected) */}
-        {backgroundType === 'upload' && (
-          <div className="upload-compact">
-            <input
-              type="file"
-              id="media-upload"
-              accept="video/*,image/*"
-              onChange={handleMediaUpload}
-              hidden
-            />
-            <label htmlFor="media-upload" className="upload-label-compact">
-              {selectedMedia ? (
-                <>
-                  <FiCheck className="check-icon" />
-                  <span>{selectedMedia.name}</span>
-                </>
-              ) : (
-                <>
-                  <FiUpload />
-                  <span>Upload media</span>
-                </>
-              )}
-            </label>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {generationError && (
-          <div className="generation-error">
-            <span>⚠️ {generationError}</span>
-            <button onClick={() => setGenerationError(null)}>×</button>
-          </div>
-        )}
-
-        {/* Generation Progress */}
-        {isGenerating && generationStep && (
-          <div className="generation-progress">
-            <div className="progress-spinner"></div>
-            <span>{generationStep}</span>
-          </div>
-        )}
-
-        {/* Generated Result */}
-        {generatedResult && !isGenerating && (
-          <div className="generation-result">
-            <div className="result-header">
-              {generatedResult.composedVideoUrl ? (
-                <h3>🎉 Video Ready!</h3>
-              ) : (
-                <h3>⏳ Rendering...</h3>
-              )}
-              <span className="tts-provider">
-                {generatedResult.ttsProvider || 'AI'}
-                {generatedResult.ttsProvider === 'ElevenLabs' && <span className="premium-tag">PRO</span>}
-              </span>
-            </div>
-            
-            {/* Status message */}
-            {!generatedResult.composedVideoUrl && (
-              <div className="result-tip warning">
-                ⏳ Video is still rendering. This can take 1-2 minutes. Refresh to check status or download the audio now.
-              </div>
-            )}
-            
-            {generatedResult.composedVideoUrl && (
-              <div className="result-tip success">
-                ✅ Your video is ready! Subtitles are synced with voiceover.
-              </div>
-            )}
-            
-            <div className="result-content">
-              {/* Show composed video if available */}
-              {generatedResult.composedVideoUrl ? (
-                <div className="result-media composed-video">
-                  <video 
-                    src={generatedResult.composedVideoUrl} 
-                    controls 
-                    autoPlay 
-                    muted
-                    loop
-                    playsInline
-                  />
-                  <span className="media-label">📹 Full Video with Subtitles</span>
-                </div>
-              ) : (
-                /* Show audio player while video is rendering */
-                <div className="result-rendering">
-                  <div className="rendering-animation">
-                    <div className="rendering-spinner"></div>
-                    <span>Video rendering in progress...</span>
-                  </div>
-                  {generatedResult.audioUrl && (
-                    <div className="result-audio">
-                      <label>🎙️ Voiceover (ready)</label>
-                      <audio src={generatedResult.audioUrl} controls />
+              {/* Product/Topic Selection */}
+              {contentPurpose && (
+                <div className="selection-section">
+                  <h3>What to Feature</h3>
+                  <p className="section-hint">Select a product/service or enter a custom topic</p>
+                  
+                  <div className="product-selection">
+                    {/* Products from Business Hub */}
+                    {businessInfo?.products && businessInfo.products.length > 0 && (
+                      <div className="product-list">
+                        {businessInfo.products.map((product, idx) => (
+                          <div 
+                            key={idx}
+                            className={`product-card ${selectedProduct === product.name ? 'selected' : ''}`}
+                            onClick={() => {
+                              setSelectedProduct(product.name);
+                              setCustomTopic('');
+                            }}
+                          >
+                            <div className="product-icon">
+                              <FiBox />
+                            </div>
+                            <div className="product-info">
+                              <h4>{product.name}</h4>
+                              {product.description && <p>{product.description}</p>}
+                            </div>
+                            {selectedProduct === product.name && (
+                              <FiCheckCircle className="selected-check" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Custom Topic Input */}
+                    <div className="custom-topic-section">
+                      <label>Or describe your content topic:</label>
+                      <textarea
+                        placeholder="e.g., 3 tips for better sleep, behind the scenes of our workshop..."
+                        value={customTopic}
+                        onChange={(e) => {
+                          setCustomTopic(e.target.value);
+                          if (e.target.value.trim()) setSelectedProduct('');
+                        }}
+                        rows={3}
+                      />
+                      <button 
+                        className="ai-advice-btn"
+                        onClick={generateAIAdvice}
+                        disabled={isLoadingAdvice || !contentPurpose}
+                      >
+                        <FiZap />
+                        <span>AI Suggestions</span>
+                      </button>
                     </div>
-                  )}
+                    
+                    {/* AI Advice Panel */}
+                    {showAdvice && (
+                      <div className="ai-advice-panel">
+                        <div className="advice-header">
+                          <h4><FiZap /> Content Ideas</h4>
+                          <button className="close-advice" onClick={() => setShowAdvice(false)}>
+                            <FiX />
+                          </button>
+                        </div>
+                        
+                        {isLoadingAdvice ? (
+                          <div className="advice-loading">
+                            <div className="advice-spinner"></div>
+                            <span>Generating ideas for your brand...</span>
+                          </div>
+                        ) : (
+                          <div className="advice-grid">
+                            {aiAdvice.map((suggestion, index) => (
+                              <button
+                                key={index}
+                                className="advice-card"
+                                onClick={() => applyAdviceSuggestion(suggestion)}
+                              >
+                                <span className="advice-title">{suggestion.title}</span>
+                                <span className="advice-hook">"{suggestion.hook}"</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
               
-              {generatedResult.script && (
-                <div className="result-script">
-                  <label>📝 Script</label>
-                  <p>{generatedResult.script}</p>
+              {/* Content Goal */}
+              {contentPurpose && (selectedProduct || customTopic.trim()) && (
+                <div className="selection-section">
+                  <h3>Content Goal (Optional)</h3>
+                  <div className="goal-pills">
+                    {contentGoals.map(goal => (
+                      <button
+                        key={goal.id}
+                        className={`goal-pill ${contentGoal === goal.id ? 'active' : ''}`}
+                        onClick={() => setContentGoal(contentGoal === goal.id ? '' : goal.id)}
+                      >
+                        {goal.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-            
-            <div className="result-actions">
-              {/* Show video download if composed video available */}
-              {generatedResult.composedVideoUrl && (
-                <button className="btn-action download primary" onClick={() => handleDownload(generatedResult.composedVideoUrl, `voiceover-video-${Date.now()}.mp4`)}>
-                  <FiDownload /> Download Video
-                </button>
-              )}
-              {generatedResult.audioUrl && (
-                <button className="btn-action download" onClick={() => handleDownload(generatedResult.audioUrl, `voiceover-${Date.now()}.mp3`)}>
-                  <FiDownload /> Audio
-                </button>
-              )}
-              <button className="btn-action secondary" onClick={handleRegenerate}>
-                <FiRefreshCw /> Retry
-              </button>
-            </div>
-          </div>
-        )}
 
-        {/* Generate Button */}
-        <button 
-          className="btn-generate-hero"
-          onClick={handleGenerate}
-          disabled={!postTopic.trim() || isGenerating}
-        >
-          {isGenerating ? (
-            <>
-              <div className="spinner"></div>
-              <span>{generationStep || 'Generating...'}</span>
-            </>
-          ) : (
-            <>
-              <FiPlay />
-              <span>Generate Video</span>
-            </>
+              {/* Step Actions */}
+              <div className="step-actions">
+                <button className="btn-back" onClick={handleBack}>
+                  <FiArrowLeft />
+                  <span>Back</span>
+                </button>
+                <button 
+                  className="btn-next"
+                  onClick={handleNext}
+                  disabled={!canProceedStep1}
+                >
+                  <span>Continue</span>
+                  <FiArrowRight />
+                </button>
+              </div>
+            </div>
           )}
-        </button>
+
+          {/* STEP 2: Style Settings */}
+          {currentStep === 2 && (
+            <div className="step-panel">
+              <div className="step-header">
+                <span className="step-label">Step 2 of 3</span>
+                <h2>Video Style</h2>
+                <p>Choose your subtitle style, voice, and format</p>
+              </div>
+
+              {/* Voice Selection */}
+              <div className="settings-section">
+                <h3><FiMic /> Voice</h3>
+                <div className="voice-grid">
+                  {voiceOptions.map(voice => (
+                    <div 
+                      key={voice.id}
+                      className={`voice-card ${selectedVoice === voice.name ? 'selected' : ''}`}
+                      onClick={() => setSelectedVoice(voice.name)}
+                    >
+                      <span className="voice-emoji">{voice.emoji}</span>
+                      <h4>{voice.name}</h4>
+                      <p>{voice.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subtitle Template */}
+              <div className="settings-section">
+                <h3>Subtitle Style</h3>
+                <div className="template-grid">
+                  {templates.map(template => (
+                    <div 
+                      key={template.id}
+                      className={`template-card ${selectedTemplate === template.id ? 'selected' : ''}`}
+                      onClick={() => setSelectedTemplate(template.id)}
+                      style={{ '--template-color': template.color }}
+                    >
+                      <div className="template-preview" style={{ color: template.color }}>
+                        Aa
+                      </div>
+                      <h4>{template.name}</h4>
+                      <p>{template.preview}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Aspect Ratio & Background */}
+              <div className="settings-row-compact">
+                <div className="setting-group">
+                  <h4>Aspect Ratio</h4>
+                  <div className="aspect-pills">
+                    {aspectRatios.map(ratio => (
+                      <button
+                        key={ratio.id}
+                        className={`aspect-pill ${aspectRatio === ratio.id ? 'active' : ''}`}
+                        onClick={() => setAspectRatio(ratio.id)}
+                      >
+                        <ratio.icon />
+                        <span>{ratio.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="setting-group">
+                  <h4>Background</h4>
+                  <div className="bg-pills">
+                    {backgroundTypes.map(bg => (
+                      <button
+                        key={bg.id}
+                        className={`bg-pill ${backgroundType === bg.id ? 'active' : ''}`}
+                        onClick={() => setBackgroundType(bg.id)}
+                        title={bg.description}
+                      >
+                        <bg.icon />
+                        <span>{bg.label}</span>
+                        {bg.recommended && <span className="rec-badge">★</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Step Actions */}
+              <div className="step-actions">
+                <button className="btn-back" onClick={handleBack}>
+                  <FiArrowLeft />
+                  <span>Back</span>
+                </button>
+                <button 
+                  className="btn-next"
+                  onClick={handleNext}
+                  disabled={!canProceedStep2}
+                >
+                  <span>Continue</span>
+                  <FiArrowRight />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: Generate */}
+          {currentStep === 3 && (
+            <div className="step-panel">
+              <div className="step-header">
+                <span className="step-label">Step 3 of 3</span>
+                <h2>Review & Generate</h2>
+                <p>Review your content settings and generate</p>
+              </div>
+
+              {/* Content Summary */}
+              <div className="content-summary">
+                <h3>📋 Content Summary</h3>
+                <div className="summary-grid">
+                  <div className="summary-item">
+                    <span className="summary-label">Brand</span>
+                    <span className="summary-value">{businessInfo?.businessName}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Content Type</span>
+                    <span className="summary-value">
+                      {contentPurposes.find(p => p.id === contentPurpose)?.label}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Topic/Product</span>
+                    <span className="summary-value">
+                      {selectedProduct || customTopic.substring(0, 30) + (customTopic.length > 30 ? '...' : '')}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Voice</span>
+                    <span className="summary-value">{selectedVoice}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Style</span>
+                    <span className="summary-value">
+                      {templates.find(t => t.id === selectedTemplate)?.name}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Format</span>
+                    <span className="summary-value">{aspectRatio}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Generated Topic Preview */}
+              <div className="topic-preview">
+                <h4>📝 Content Prompt</h4>
+                <p className="topic-text">{postTopic}</p>
+                <button 
+                  className="edit-topic-btn"
+                  onClick={() => setCurrentStep(1)}
+                >
+                  <FiEdit3 />
+                  <span>Edit</span>
+                </button>
+              </div>
+
+              {/* Error Message */}
+              {generationError && (
+                <div className="generation-error">
+                  <span>⚠️ {generationError}</span>
+                  <button onClick={() => setGenerationError(null)}>×</button>
+                </div>
+              )}
+
+              {/* Generation Progress */}
+              {isGenerating && generationStep && (
+                <div className="generation-progress">
+                  <div className="progress-spinner"></div>
+                  <span>{generationStep}</span>
+                </div>
+              )}
+
+              {/* Generated Result */}
+              {generatedResult && !isGenerating && (
+                <div className="generation-result">
+                  <div className="result-header">
+                    <h3>🎉 Your Brand Content is Ready!</h3>
+                    <span className="tts-provider">
+                      {generatedResult.ttsProvider || 'AI'}
+                    </span>
+                  </div>
+                  
+                  <div className="result-content">
+                    {generatedResult.composedVideoUrl ? (
+                      <div className="result-media">
+                        <video 
+                          src={generatedResult.composedVideoUrl} 
+                          controls 
+                          autoPlay 
+                          muted
+                          loop
+                          playsInline
+                        />
+                      </div>
+                    ) : generatedResult.audioUrl && (
+                      <div className="result-audio">
+                        <label>🎙️ Voiceover</label>
+                        <audio src={generatedResult.audioUrl} controls />
+                      </div>
+                    )}
+                    
+                    {generatedResult.script && (
+                      <div className="result-script">
+                        <label>📝 Script</label>
+                        <p>{generatedResult.script}</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="result-actions">
+                    {generatedResult.composedVideoUrl && (
+                      <button className="btn-action download primary" onClick={() => handleDownload(generatedResult.composedVideoUrl, `${businessInfo?.businessName || 'brand'}-content-${Date.now()}.mp4`)}>
+                        <FiDownload /> Download Video
+                      </button>
+                    )}
+                    {generatedResult.audioUrl && (
+                      <button className="btn-action download" onClick={() => handleDownload(generatedResult.audioUrl, `voiceover-${Date.now()}.mp3`)}>
+                        <FiDownload /> Audio
+                      </button>
+                    )}
+                    <button className="btn-action secondary" onClick={handleRegenerate}>
+                      <FiRefreshCw /> Regenerate
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step Actions */}
+              <div className="step-actions">
+                <button className="btn-back" onClick={handleBack}>
+                  <FiArrowLeft />
+                  <span>Back</span>
+                </button>
+                <button 
+                  className="btn-generate"
+                  onClick={handleGenerate}
+                  disabled={!postTopic.trim() || isGenerating}
+                >
+                  {isGenerating ? (
+                    <>
+                      <div className="spinner"></div>
+                      <span>{generationStep || 'Generating...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <FiPlay />
+                      <span>Generate Content</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );

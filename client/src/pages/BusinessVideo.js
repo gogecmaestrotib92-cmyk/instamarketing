@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiVideo, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiEdit3, FiCheckCircle, FiSquare, FiSmartphone, FiMonitor, FiUser, FiBox, FiFilm, FiPlay, FiLoader } from 'react-icons/fi';
+import { FiVideo, FiZap, FiArrowLeft, FiArrowRight, FiRefreshCw, FiEdit3, FiCheckCircle, FiSquare, FiSmartphone, FiMonitor, FiUser, FiBox, FiFilm, FiPlay, FiLoader, FiAlertCircle, FiTrendingUp, FiStar, FiHeart, FiMic, FiGift } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
 import { saveVideoToHub } from '../services/assetService';
 import './BusinessVideo.css';
@@ -10,120 +10,248 @@ const BusinessVideo = () => {
   // Current step (1, 2, or 3)
   const [currentStep, setCurrentStep] = useState(1);
   
-  // Step 1: Script
-  const [scriptMode, setScriptMode] = useState('generate'); // 'generate' or 'custom'
-  const [scriptPrompt, setScriptPrompt] = useState('');
-  const [generatedScript, setGeneratedScript] = useState(null);
-  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
-  
-  // Business Info from Business Hub
+  // Business Info from Business Hub - REQUIRED
   const [businessInfo, setBusinessInfo] = useState(null);
-  const [brandLinked, setBrandLinked] = useState(true);
+  const [hasBrand, setHasBrand] = useState(false);
+  
+  // Step 1: Campaign Setup
+  const [campaignType, setCampaignType] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState('');
+  const [customProductName, setCustomProductName] = useState('');
+  const [customProductDesc, setCustomProductDesc] = useState('');
+  const [campaignGoal, setCampaignGoal] = useState('');
   
   // Step 2: Video Settings
-  const [includeCharacters, setIncludeCharacters] = useState(true);
-  const [videoStyle, setVideoStyle] = useState('cinematic');
+  const [videoStyle, setVideoStyle] = useState('product-showcase');
+  const [visualMood, setVisualMood] = useState('professional');
+  const [includeCharacters, setIncludeCharacters] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('9:16');
   
   // Step 3: Review & Generate
+  const [generatedScript, setGeneratedScript] = useState(null);
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [generationError, setGenerationError] = useState(null);
   
-  // Load business info on mount
+  // Load business info on mount - BRAND IS REQUIRED
   useEffect(() => {
     const saved = localStorage.getItem('businessInfo');
     if (saved) {
       const parsed = JSON.parse(saved);
       setBusinessInfo(parsed);
-      const hasData = parsed.businessName || parsed.description || parsed.industry;
-      setBrandLinked(hasData);
+      // Check for meaningful brand data
+      const hasData = parsed.businessName && (parsed.description || parsed.industry || (parsed.products && parsed.products.length > 0));
+      setHasBrand(hasData);
     } else {
-      setBrandLinked(false);
+      setHasBrand(false);
     }
   }, []);
   
-  const hasBusinessInfo = businessInfo && (businessInfo.businessName || businessInfo.description || businessInfo.industry);
-
-  // Video style options
-  const videoStyles = [
+  // Campaign types for brand video ads
+  const campaignTypes = [
     { 
-      id: 'cinematic', 
-      label: 'Cinematic Intro', 
-      icon: FiFilm, 
-      description: 'Professional movie-like intro with dramatic lighting',
-      hasCharacters: true
+      id: 'product-demo', 
+      label: 'Product Demo', 
+      icon: FiBox, 
+      description: 'Showcase features and benefits',
+      color: '#3b82f6'
     },
     { 
+      id: 'brand-story', 
+      label: 'Brand Story', 
+      icon: FiHeart, 
+      description: 'Tell your company story',
+      color: '#ec4899'
+    },
+    { 
+      id: 'testimonial', 
+      label: 'Testimonial', 
+      icon: FiStar, 
+      description: 'Customer success stories',
+      color: '#f59e0b'
+    },
+    { 
+      id: 'promotion', 
+      label: 'Sale / Promo', 
+      icon: FiGift, 
+      description: 'Discounts and offers',
+      color: '#10b981'
+    },
+    { 
+      id: 'tutorial', 
+      label: 'How-To / Tutorial', 
+      icon: FiPlay, 
+      description: 'Educate your audience',
+      color: '#8b5cf6'
+    },
+    { 
+      id: 'launch', 
+      label: 'New Launch', 
+      icon: FiTrendingUp, 
+      description: 'Announce something new',
+      color: '#ef4444'
+    },
+  ];
+  
+  // Campaign goals
+  const campaignGoals = [
+    { id: 'awareness', label: 'Brand Awareness', description: 'Get your name out there' },
+    { id: 'engagement', label: 'Drive Engagement', description: 'Likes, comments, shares' },
+    { id: 'traffic', label: 'Website Traffic', description: 'Get people to visit' },
+    { id: 'sales', label: 'Drive Sales', description: 'Convert viewers to buyers' },
+    { id: 'followers', label: 'Grow Followers', description: 'Build your audience' },
+  ];
+
+  // Video style options for brand videos
+  const videoStyles = [
+    { 
       id: 'product-showcase', 
-      label: 'Product Showcase', 
+      label: 'Product Focus', 
       icon: FiBox, 
-      description: 'Focus on your product with smooth transitions',
+      description: 'Clean shots highlighting your product',
       hasCharacters: false
     },
     { 
       id: 'lifestyle', 
       label: 'Lifestyle', 
       icon: FiUser, 
-      description: 'People using your product in real scenarios',
+      description: 'Product in real-life settings',
       hasCharacters: true
     },
     { 
-      id: 'minimal', 
-      label: 'Minimal & Clean', 
-      icon: FiSquare, 
-      description: 'Simple, elegant visuals with text overlays',
+      id: 'cinematic', 
+      label: 'Cinematic', 
+      icon: FiFilm, 
+      description: 'Dramatic, high-production look',
       hasCharacters: false
     },
     { 
-      id: 'dynamic', 
-      label: 'Dynamic Action', 
-      icon: FiPlay, 
-      description: 'Fast-paced, energetic cuts and movement',
+      id: 'testimonial', 
+      label: 'Talking Head', 
+      icon: FiMic, 
+      description: 'Person speaking to camera',
       hasCharacters: true
     },
     { 
-      id: 'testimonial', 
-      label: 'Testimonial Style', 
-      icon: FiUser, 
-      description: 'Person speaking to camera format',
-      hasCharacters: true
+      id: 'dynamic', 
+      label: 'Dynamic Cuts', 
+      icon: FiTrendingUp, 
+      description: 'Fast-paced, energetic editing',
+      hasCharacters: false
+    },
+    { 
+      id: 'minimal', 
+      label: 'Minimal Clean', 
+      icon: FiSquare, 
+      description: 'Simple, elegant composition',
+      hasCharacters: false
     }
+  ];
+  
+  // Visual mood options
+  const visualMoods = [
+    { id: 'professional', label: 'Professional', description: 'Clean, corporate feel', emoji: '💼' },
+    { id: 'premium', label: 'Premium/Luxury', description: 'High-end, sophisticated', emoji: '✨' },
+    { id: 'vibrant', label: 'Vibrant & Bold', description: 'Colorful, eye-catching', emoji: '🎨' },
+    { id: 'warm', label: 'Warm & Friendly', description: 'Approachable, welcoming', emoji: '☀️' },
+    { id: 'minimalist', label: 'Minimalist', description: 'Clean, simple, focused', emoji: '⬜' },
+    { id: 'energetic', label: 'Energetic', description: 'Dynamic, exciting', emoji: '⚡' },
   ];
 
   // Aspect ratio options
   const aspectRatios = [
-    { id: '9:16', label: '9:16', icon: FiSmartphone, description: 'Stories/Reels' },
+    { id: '9:16', label: '9:16', icon: FiSmartphone, description: 'Reels/Stories' },
     { id: '1:1', label: '1:1', icon: FiSquare, description: 'Square Feed' },
-    { id: '16:9', label: '16:9', icon: FiMonitor, description: 'Landscape' },
-    { id: '4:5', label: '4:5', icon: FiSmartphone, description: 'Portrait Feed' }
+    { id: '16:9', label: '16:9', icon: FiMonitor, description: 'YouTube/Web' },
+    { id: '4:5', label: '4:5', icon: FiSmartphone, description: 'Feed Portrait' }
   ];
+  
+  // Get selected product details
+  const getSelectedProductDetails = () => {
+    if (selectedProduct === 'custom') {
+      return { name: customProductName, description: customProductDesc };
+    }
+    if (selectedProduct && businessInfo?.products) {
+      return businessInfo.products.find(p => p.name === selectedProduct);
+    }
+    return null;
+  };
+  
+  // Build brand-focused video script prompt
+  const buildBrandScriptPrompt = () => {
+    const product = getSelectedProductDetails();
+    const campaign = campaignTypes.find(c => c.id === campaignType);
+    const mood = visualMoods.find(m => m.id === visualMood);
+    const style = videoStyles.find(s => s.id === videoStyle);
+    const goal = campaignGoals.find(g => g.id === campaignGoal);
+    
+    let prompt = `Create a 30-second ${campaign?.label || 'promotional'} video script for ${businessInfo?.businessName || 'our brand'}.\n\n`;
+    
+    // Brand context
+    prompt += `BRAND CONTEXT:\n`;
+    prompt += `- Business: ${businessInfo?.businessName || 'Brand'}\n`;
+    if (businessInfo?.industry) prompt += `- Industry: ${businessInfo.industry}\n`;
+    if (businessInfo?.brandVoice) prompt += `- Brand Voice: ${businessInfo.brandVoice}\n`;
+    if (businessInfo?.targetAudience) prompt += `- Target Audience: ${businessInfo.targetAudience}\n`;
+    
+    // Product/Service focus
+    if (product) {
+      prompt += `\nFEATURED PRODUCT/SERVICE:\n`;
+      prompt += `- Name: ${product.name}\n`;
+      if (product.description) prompt += `- Description: ${product.description}\n`;
+      if (product.price) prompt += `- Price: ${product.price}\n`;
+    }
+    
+    // Campaign specifics
+    prompt += `\nCAMPAIGN DETAILS:\n`;
+    prompt += `- Type: ${campaign?.label || campaignType}\n`;
+    if (goal) prompt += `- Goal: ${goal.label} - ${goal.description}\n`;
+    prompt += `- Visual Style: ${style?.label || videoStyle}\n`;
+    prompt += `- Mood: ${mood?.label || visualMood}\n`;
+    prompt += `- Include People: ${includeCharacters ? 'Yes' : 'No'}\n`;
+    
+    // Specific instructions based on campaign type
+    switch (campaignType) {
+      case 'product-demo':
+        prompt += `\nFocus on showing the product's key features, benefits, and how it solves problems.`;
+        break;
+      case 'brand-story':
+        prompt += `\nTell an authentic story about the brand's mission, values, and why it exists.`;
+        break;
+      case 'testimonial':
+        prompt += `\nFrame it as a customer success story with specific benefits and results.`;
+        break;
+      case 'promotion':
+        prompt += `\nHighlight the offer/discount with urgency and clear value proposition.`;
+        break;
+      case 'tutorial':
+        prompt += `\nProvide clear, step-by-step guidance that educates and showcases expertise.`;
+        break;
+      case 'launch':
+        prompt += `\nBuild excitement and anticipation for the new product/service.`;
+        break;
+      default:
+        prompt += `\nCreate engaging brand content that showcases value.`;
+        break;
+    }
+    
+    return prompt;
+  };
 
   // Generate script with AI
   const handleGenerateScript = async () => {
-    if (!scriptPrompt.trim()) return;
-    
     setIsGeneratingScript(true);
+    setGenerationError(null);
     
     try {
-      // Build context from business info
-      let businessContext = '';
-      if (brandLinked && hasBusinessInfo) {
-        const parts = [];
-        if (businessInfo.businessName) parts.push(`Business: ${businessInfo.businessName}`);
-        if (businessInfo.industry) parts.push(`Industry: ${businessInfo.industry}`);
-        if (businessInfo.brandVoice) parts.push(`Brand voice: ${businessInfo.brandVoice}`);
-        if (businessInfo.targetAudience) parts.push(`Target audience: ${businessInfo.targetAudience?.substring(0, 100)}`);
-        if (parts.length > 0) {
-          businessContext = `\n\nBusiness Context:\n${parts.join('\n')}`;
-        }
-      }
+      const brandPrompt = buildBrandScriptPrompt();
       
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Create a 30-second video script for this topic: "${scriptPrompt}"${businessContext}
+          message: `${brandPrompt}
 
 Return a JSON object with this structure:
 {
@@ -140,7 +268,8 @@ Return a JSON object with this structure:
 
 Make it punchy, engaging, and perfect for Instagram/TikTok. 
 Total duration should be around 30 seconds.
-Include 4-6 scenes.`
+Include 4-6 scenes.
+Make the script authentic to the brand voice and focused on the product/service.`
         })
       });
       
@@ -158,13 +287,15 @@ Include 4-6 scenes.`
         }
       } catch (parseError) {
         console.error('Failed to parse script:', parseError);
+        const product = getSelectedProductDetails();
         // Create a fallback structure
         scriptData = {
-          hook: "Attention-grabbing opening",
+          hook: `Discover ${product?.name || 'our product'}`,
           scenes: [
-            { text: scriptPrompt, visual: "Main scene", duration: 5 }
+            { text: `${businessInfo?.businessName} brings you something special`, visual: "Brand logo reveal", duration: 4 },
+            { text: product?.description || 'Quality you can trust', visual: "Product showcase", duration: 5 },
           ],
-          cta: "Follow for more!"
+          cta: "Shop now - link in bio!"
         };
       }
       
@@ -178,31 +309,13 @@ Include 4-6 scenes.`
     }
   };
 
-  // Handle custom script input
-  const handleCustomScriptChange = (e) => {
-    const text = e.target.value;
-    setScriptPrompt(text);
-    
-    // Create a simple script structure from custom text
-    if (text.trim()) {
-      const sentences = text.split(/[.!?]+/).filter(s => s.trim());
-      const scenes = sentences.map((sentence, idx) => ({
-        text: sentence.trim(),
-        visual: `Scene ${idx + 1}`,
-        duration: Math.max(3, Math.min(7, sentence.trim().split(' ').length / 2))
-      }));
-      
-      setGeneratedScript({
-        hook: scenes[0]?.text || text.substring(0, 50),
-        scenes: scenes.slice(1, -1).length > 0 ? scenes.slice(1, -1) : scenes,
-        cta: scenes[scenes.length - 1]?.text || "Learn more!"
-      });
-    }
-  };
-
   // Navigation
   const handleNext = () => {
     if (currentStep < 3) {
+      // Auto-generate script when moving from Step 2 to Step 3
+      if (currentStep === 2 && !generatedScript) {
+        handleGenerateScript();
+      }
       setCurrentStep(currentStep + 1);
     }
   };
@@ -216,11 +329,8 @@ Include 4-6 scenes.`
   };
 
   // Check if can proceed to next step
-  const canProceedStep1 = scriptMode === 'generate' 
-    ? generatedScript !== null 
-    : scriptPrompt.trim().length > 0;
-  
-  const canProceedStep2 = videoStyle && aspectRatio;
+  const canProceedStep1 = campaignType && (selectedProduct || (selectedProduct === 'custom' && customProductName.trim()));
+  const canProceedStep2 = videoStyle && visualMood && aspectRatio;
 
   // State for showing generation progress
   const [generationStatus, setGenerationStatus] = useState('');
@@ -273,15 +383,25 @@ Include 4-6 scenes.`
     setGenerationStatus('Starting video generation...');
     
     try {
-      // Build the full script text
+      // Build the full script text from brand-focused script
       const fullScript = generatedScript 
         ? `${generatedScript.hook} ${generatedScript.scenes.map(s => s.text).join(' ')} ${generatedScript.cta}`
-        : scriptPrompt;
+        : '';
       
-      // Debug: Log what we're sending
-      console.log('[BusinessVideo] brandLinked:', brandLinked);
-      console.log('[BusinessVideo] businessInfo:', businessInfo);
-      console.log('[BusinessVideo] Sending businessInfo:', brandLinked ? businessInfo : null);
+      const product = getSelectedProductDetails();
+      const campaign = campaignTypes.find(c => c.id === campaignType);
+      
+      // Build enhanced business info with campaign context
+      const enhancedBusinessInfo = {
+        ...businessInfo,
+        campaignType: campaignType,
+        campaignLabel: campaign?.label,
+        selectedProduct: product,
+        visualMood: visualMood,
+        campaignGoal: campaignGoal
+      };
+      
+      console.log('[BusinessVideo] brandInfo:', enhancedBusinessInfo);
       
       const response = await fetch('/api/jobs', {
         method: 'POST',
@@ -293,18 +413,17 @@ Include 4-6 scenes.`
           style: videoStyle,
           aspectRatio: aspectRatio,
           includeCharacters: includeCharacters,
-          businessInfo: brandLinked ? businessInfo : null
+          businessInfo: enhancedBusinessInfo
         })
       });
       
       const data = await response.json();
       console.log('[BusinessVideo] API response:', data);
-      console.log('[BusinessVideo] isProductVideo:', data.isProductVideo);
       
       // Handle async processing (202 response for product videos)
       if (data.isProductVideo && data.jobId) {
         console.log('[BusinessVideo] Product video - triggering processing for job:', data.jobId);
-        setGenerationStatus('📝 Processing script & finding content...');
+        setGenerationStatus('📝 Processing your brand video...');
         
         // Trigger the process endpoint
         const processResponse = await fetch(`/api/jobs/${data.jobId}/process`, {
@@ -323,7 +442,7 @@ Include 4-6 scenes.`
         } else if (processData.status === 'waiting_for_ai') {
           // AI videos being generated asynchronously
           console.log('[BusinessVideo] Waiting for AI videos, starting polling...');
-          setGenerationStatus(processData.statusMessage || '🎬 Generating AI videos... (5-10 min)');
+          setGenerationStatus(processData.statusMessage || '🎬 Generating brand video... (5-10 min)');
           const result = await pollJobStatus(data.jobId);
           
           if (result.success) {
@@ -335,7 +454,7 @@ Include 4-6 scenes.`
         } else {
           // Still processing, start polling
           console.log('[BusinessVideo] Starting polling for job:', data.jobId);
-          setGenerationStatus('🎬 Generating AI videos... (5-10 min)');
+          setGenerationStatus('🎬 Generating brand video... (5-10 min)');
           const result = await pollJobStatus(data.jobId);
           
           if (result.success) {
@@ -350,31 +469,31 @@ Include 4-6 scenes.`
       if (data.success && data.videoUrl) {
         setGeneratedVideo(data.videoUrl);
         
-        // Auto-save to Asset Hub
+        // Auto-save to Asset Hub with brand context
         try {
-          const scriptText = generatedScript 
-            ? `${generatedScript.hook} ${generatedScript.scenes.map(s => s.text).join(' ')} ${generatedScript.cta}`
-            : scriptPrompt;
+          const product = getSelectedProductDetails();
+          const campaign = campaignTypes.find(c => c.id === campaignType);
           
           saveVideoToHub({
-            name: `Video - ${scriptText.substring(0, 40)}${scriptText.length > 40 ? '...' : ''}`,
+            name: `${campaign?.label || 'Brand Video'} - ${product?.name || businessInfo?.businessName}`,
             url: data.videoUrl,
-            caption: scriptText,
-            tags: [videoStyle, aspectRatio, brandLinked ? 'brand' : 'generic'].filter(Boolean),
+            caption: generatedScript?.hook || fullScript.substring(0, 100),
+            tags: [campaignType, videoStyle, aspectRatio, 'brand-video', businessInfo?.industry].filter(Boolean),
             source: 'BusinessVideo',
             metadata: {
+              campaignType,
               videoStyle,
               aspectRatio,
+              visualMood,
               includeCharacters,
-              brandLinked,
               businessName: businessInfo?.businessName || null,
+              productName: product?.name || null,
               generatedAt: new Date().toISOString()
             }
           });
-          console.log('✅ Video auto-saved to Asset Hub');
+          console.log('✅ Brand video auto-saved to Asset Hub');
         } catch (saveError) {
           console.error('Failed to auto-save to Asset Hub:', saveError);
-          // Don't throw - video was still generated successfully
         }
       } else if (data.error) {
         throw new Error(data.error);
@@ -392,21 +511,6 @@ Include 4-6 scenes.`
     }
   };
 
-  // Get full script text for display
-  const getFullScriptText = () => {
-    if (!generatedScript) return scriptPrompt;
-    
-    let text = `[HOOK]\n${generatedScript.hook}\n\n`;
-    generatedScript.scenes.forEach((scene, idx) => {
-      text += `[SCENE ${idx + 1}] (${scene.duration}s)\n`;
-      text += `${scene.text}\n`;
-      text += `Visual: ${scene.visual}\n\n`;
-    });
-    text += `[CTA]\n${generatedScript.cta}`;
-    
-    return text;
-  };
-
   // Calculate total duration
   const getTotalDuration = () => {
     if (!generatedScript) return 30;
@@ -416,11 +520,60 @@ Include 4-6 scenes.`
     return hookDuration + scenesDuration + ctaDuration;
   };
 
+  // If no brand is set up, show required notice
+  if (!hasBrand) {
+    return (
+      <div className="business-video-page">
+        <div className="business-video-container">
+          <div className="page-header-row">
+            <button className="back-btn" onClick={() => navigate('/dashboard/business/create')}>
+              <FiArrowLeft />
+              <span>Back</span>
+            </button>
+            <div className="page-title">
+              <FiVideo className="title-icon" />
+              <h1>Brand Video Ad Creator</h1>
+            </div>
+          </div>
+          
+          <div className="brand-required-notice">
+            <div className="notice-icon">
+              <FiAlertCircle />
+            </div>
+            <h2>Brand Setup Required</h2>
+            <p>
+              Brand Video Ad Creator creates professional video advertisements specifically for your brand.
+              To generate videos that match your brand identity, products, and target audience, please set up your brand first.
+            </p>
+            <div className="notice-features">
+              <div className="feature-item">
+                <FiCheckCircle />
+                <span>Product demo videos with your branding</span>
+              </div>
+              <div className="feature-item">
+                <FiCheckCircle />
+                <span>AI-generated scripts tailored to your brand voice</span>
+              </div>
+              <div className="feature-item">
+                <FiCheckCircle />
+                <span>Professional video ads for your products/services</span>
+              </div>
+            </div>
+            <Link to="/dashboard/business/hub" className="setup-brand-btn">
+              <FiZap />
+              <span>Set Up Your Brand</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="business-video-page">
       <div className="business-video-container">
         
-        {/* Header */}
+        {/* Header with Brand Banner */}
         <div className="page-header-row">
           <button className="back-btn" onClick={handleBack}>
             <FiArrowLeft />
@@ -428,20 +581,36 @@ Include 4-6 scenes.`
           </button>
           <div className="page-title">
             <FiVideo className="title-icon" />
-            <h1>Create Video</h1>
+            <h1>Brand Video Ad Creator</h1>
           </div>
+        </div>
+        
+        {/* Brand Info Banner */}
+        <div className="brand-info-banner">
+          <div className="brand-banner-content">
+            <div className="brand-avatar">
+              {businessInfo?.businessName?.charAt(0)?.toUpperCase() || 'B'}
+            </div>
+            <div className="brand-details">
+              <h3>{businessInfo?.businessName}</h3>
+              <p>{businessInfo?.industry || 'Your Brand'}</p>
+            </div>
+          </div>
+          <Link to="/dashboard/business/hub" className="edit-brand-link">
+            Edit Brand
+          </Link>
         </div>
 
         {/* Progress Steps */}
         <div className="steps-progress">
           <div className={`step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
             <div className="step-number">1</div>
-            <span>Script</span>
+            <span>Campaign</span>
           </div>
           <div className="step-line"></div>
           <div className={`step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
             <div className="step-number">2</div>
-            <span>Settings</span>
+            <span>Style</span>
           </div>
           <div className="step-line"></div>
           <div className={`step ${currentStep >= 3 ? 'active' : ''}`}>
@@ -453,111 +622,121 @@ Include 4-6 scenes.`
         {/* Step Content */}
         <div className="step-content">
           
-          {/* STEP 1: Script */}
+          {/* STEP 1: Campaign Setup */}
           {currentStep === 1 && (
             <div className="step-panel">
               <div className="step-header">
                 <span className="step-label">Step 1 of 3</span>
-                <h2>Create Your Script</h2>
-                <p>Choose how you want to create your video script</p>
+                <h2>What Are You Promoting?</h2>
+                <p>Select your campaign type and what you want to feature</p>
               </div>
 
-              {/* Script Mode Toggle */}
-              <div className="script-mode-toggle">
-                <button 
-                  className={`mode-btn ${scriptMode === 'generate' ? 'active' : ''}`}
-                  onClick={() => setScriptMode('generate')}
-                >
-                  <FiZap />
-                  <span>Generate Script</span>
-                </button>
-                <button 
-                  className={`mode-btn ${scriptMode === 'custom' ? 'active' : ''}`}
-                  onClick={() => setScriptMode('custom')}
-                >
-                  <FiEdit3 />
-                  <span>Use Your Own Script</span>
-                </button>
-              </div>
-
-              {/* Script Input Area */}
-              <div className="script-input-area">
-                {scriptMode === 'generate' ? (
-                  <>
-                    <label>What's your video about?</label>
-                    <textarea
-                      className="script-textarea"
-                      placeholder="Describe your video topic... e.g., 'A promotional video for our new fitness app that helps people track their workouts'"
-                      value={scriptPrompt}
-                      onChange={(e) => setScriptPrompt(e.target.value)}
-                      rows={4}
-                    />
-                    <button 
-                      className="generate-script-btn"
-                      onClick={handleGenerateScript}
-                      disabled={!scriptPrompt.trim() || isGeneratingScript}
+              {/* Campaign Type Selection */}
+              <div className="selection-section">
+                <h3>Campaign Type</h3>
+                <div className="campaign-grid">
+                  {campaignTypes.map(campaign => (
+                    <div 
+                      key={campaign.id}
+                      className={`campaign-card ${campaignType === campaign.id ? 'selected' : ''}`}
+                      onClick={() => setCampaignType(campaign.id)}
+                      style={{ '--campaign-color': campaign.color }}
                     >
-                      {isGeneratingScript ? (
-                        <>
-                          <FiRefreshCw className="spin" />
-                          <span>Generating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <FiZap />
-                          <span>Generate Script</span>
-                        </>
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <label>Enter your script</label>
-                    <textarea
-                      className="script-textarea large"
-                      placeholder="Write your video script here. Break it into sentences for different scenes. Include your hook at the start and call-to-action at the end."
-                      value={scriptPrompt}
-                      onChange={handleCustomScriptChange}
-                      rows={8}
-                    />
-                  </>
-                )}
-              </div>
-
-              {/* Generated Script Preview */}
-              {generatedScript && (
-                <div className="generated-script-preview">
-                  <div className="preview-header">
-                    <h3>📝 Generated Script</h3>
-                    <span className="duration-badge">{getTotalDuration()}s</span>
-                  </div>
-                  
-                  <div className="script-section hook">
-                    <span className="section-label">HOOK</span>
-                    <p>{generatedScript.hook}</p>
-                  </div>
-                  
-                  {generatedScript.scenes.map((scene, idx) => (
-                    <div key={idx} className="script-section scene">
-                      <span className="section-label">SCENE {idx + 1} ({scene.duration}s)</span>
-                      <p>{scene.text}</p>
-                      <span className="visual-hint">🎬 {scene.visual}</span>
+                      <div className="campaign-icon">
+                        <campaign.icon />
+                      </div>
+                      <h4>{campaign.label}</h4>
+                      <p>{campaign.description}</p>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Product/Service Selection */}
+              {campaignType && (
+                <div className="selection-section">
+                  <h3>What to Feature</h3>
+                  <p className="section-hint">Select the product or service you want to promote</p>
                   
-                  <div className="script-section cta">
-                    <span className="section-label">CTA</span>
-                    <p>{generatedScript.cta}</p>
+                  <div className="product-selection">
+                    {/* Products from Business Hub */}
+                    {businessInfo?.products && businessInfo.products.length > 0 && (
+                      <div className="product-list">
+                        {businessInfo.products.map((product, idx) => (
+                          <div 
+                            key={idx}
+                            className={`product-card ${selectedProduct === product.name ? 'selected' : ''}`}
+                            onClick={() => setSelectedProduct(product.name)}
+                          >
+                            <div className="product-icon">
+                              <FiBox />
+                            </div>
+                            <div className="product-info">
+                              <h4>{product.name}</h4>
+                              {product.description && <p>{product.description}</p>}
+                              {product.price && <span className="product-price">{product.price}</span>}
+                            </div>
+                            {selectedProduct === product.name && (
+                              <FiCheckCircle className="selected-check" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Custom Product Option */}
+                    <div 
+                      className={`product-card custom ${selectedProduct === 'custom' ? 'selected' : ''}`}
+                      onClick={() => setSelectedProduct('custom')}
+                    >
+                      <div className="product-icon custom">
+                        <FiEdit3 />
+                      </div>
+                      <div className="product-info">
+                        <h4>Custom / Other</h4>
+                        <p>Describe what you're promoting</p>
+                      </div>
+                      {selectedProduct === 'custom' && (
+                        <FiCheckCircle className="selected-check" />
+                      )}
+                    </div>
+                    
+                    {/* Custom Product Input */}
+                    {selectedProduct === 'custom' && (
+                      <div className="custom-product-input">
+                        <input
+                          type="text"
+                          placeholder="Product/Service Name"
+                          value={customProductName}
+                          onChange={(e) => setCustomProductName(e.target.value)}
+                        />
+                        <textarea
+                          placeholder="Brief description (optional)"
+                          value={customProductDesc}
+                          onChange={(e) => setCustomProductDesc(e.target.value)}
+                          rows={2}
+                        />
+                      </div>
+                    )}
                   </div>
-                  
-                  <button 
-                    className="regenerate-btn"
-                    onClick={handleGenerateScript}
-                    disabled={isGeneratingScript}
-                  >
-                    <FiRefreshCw />
-                    <span>Regenerate</span>
-                  </button>
+                </div>
+              )}
+              
+              {/* Campaign Goal */}
+              {campaignType && selectedProduct && (
+                <div className="selection-section">
+                  <h3>Campaign Goal (Optional)</h3>
+                  <div className="goal-pills">
+                    {campaignGoals.map(goal => (
+                      <button
+                        key={goal.id}
+                        className={`goal-pill ${campaignGoal === goal.id ? 'active' : ''}`}
+                        onClick={() => setCampaignGoal(campaignGoal === goal.id ? '' : goal.id)}
+                      >
+                        {goal.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -579,82 +758,57 @@ Include 4-6 scenes.`
             </div>
           )}
 
-          {/* STEP 2: Video Settings */}
+          {/* STEP 2: Video Style Settings */}
           {currentStep === 2 && (
             <div className="step-panel">
               <div className="step-header">
                 <span className="step-label">Step 2 of 3</span>
-                <h2>Video Settings</h2>
-                <p>Customize video settings to match your brand and style</p>
+                <h2>Video Style</h2>
+                <p>Customize the look and feel of your brand video</p>
               </div>
 
-              {/* Brand Details */}
+              {/* Visual Mood */}
               <div className="settings-section">
-                <h3>Brand Details</h3>
-                <div className="brand-status">
-                  {brandLinked && hasBusinessInfo ? (
-                    <div className="brand-linked">
-                      <FiCheckCircle className="check-icon" />
-                      <div>
-                        <strong>Brand details linked</strong>
-                        <p>Your brand identity will be applied to the video</p>
-                        {businessInfo?.businessName && (
-                          <span className="brand-name">{businessInfo.businessName}</span>
-                        )}
-                      </div>
+                <h3>Visual Mood</h3>
+                <p className="section-desc">What feeling should your video convey?</p>
+                <div className="mood-grid">
+                  {visualMoods.map(mood => (
+                    <div 
+                      key={mood.id}
+                      className={`mood-card ${visualMood === mood.id ? 'selected' : ''}`}
+                      onClick={() => setVisualMood(mood.id)}
+                    >
+                      <span className="mood-emoji">{mood.emoji}</span>
+                      <h4>{mood.label}</h4>
+                      <p>{mood.description}</p>
                     </div>
-                  ) : (
-                    <div className="brand-not-linked">
-                      <p>No brand details linked. <Link to="/dashboard/business/hub">Set up your brand →</Link></p>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
-              {/* Include Characters */}
+              {/* Video Style */}
               <div className="settings-section">
-                <h3>Include Characters</h3>
-                <div className="character-options">
-                  <button 
-                    className={`character-btn ${includeCharacters ? 'active' : ''}`}
-                    onClick={() => setIncludeCharacters(true)}
-                  >
-                    <FiUser />
-                    <span>With Characters</span>
-                    <small>Videos featuring people</small>
-                  </button>
-                  <button 
-                    className={`character-btn ${!includeCharacters ? 'active' : ''}`}
-                    onClick={() => setIncludeCharacters(false)}
-                  >
-                    <FiBox />
-                    <span>Without Characters</span>
-                    <small>Product/scene focus only</small>
-                  </button>
-                </div>
-              </div>
-
-              {/* Video Styles */}
-              <div className="settings-section">
-                <h3>Video Style</h3>
-                <p className="section-desc">Choose your preferred video format</p>
+                <h3>Video Format</h3>
+                <p className="section-desc">Choose your preferred video style</p>
                 <div className="video-styles-grid">
-                  {videoStyles
-                    .filter(style => includeCharacters ? true : !style.hasCharacters)
-                    .map(style => (
-                      <div 
-                        key={style.id}
-                        className={`style-card ${videoStyle === style.id ? 'selected' : ''}`}
-                        onClick={() => setVideoStyle(style.id)}
-                      >
-                        <style.icon className="style-icon" />
-                        <h4>{style.label}</h4>
-                        <p>{style.description}</p>
-                        {style.hasCharacters && (
-                          <span className="character-badge">👤 With People</span>
-                        )}
-                      </div>
-                    ))}
+                  {videoStyles.map(style => (
+                    <div 
+                      key={style.id}
+                      className={`style-card ${videoStyle === style.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        setVideoStyle(style.id);
+                        if (style.hasCharacters) setIncludeCharacters(true);
+                        else setIncludeCharacters(false);
+                      }}
+                    >
+                      <style.icon className="style-icon" />
+                      <h4>{style.label}</h4>
+                      <p>{style.description}</p>
+                      {style.hasCharacters && (
+                        <span className="character-badge">👤 With People</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -700,39 +854,103 @@ Include 4-6 scenes.`
               <div className="step-header">
                 <span className="step-label">Step 3 of 3</span>
                 <h2>Review & Generate</h2>
-                <p>Review and confirm your script before generating</p>
+                <p>Review your brand video settings and generate</p>
               </div>
 
-              {/* Settings Summary */}
-              <div className="settings-summary">
-                <div className="summary-item">
-                  <span className="summary-label">Style</span>
-                  <span className="summary-value">
-                    {videoStyles.find(s => s.id === videoStyle)?.label}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Aspect Ratio</span>
-                  <span className="summary-value">{aspectRatio}</span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Characters</span>
-                  <span className="summary-value">
-                    {includeCharacters ? 'With People' : 'Product Focus'}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Duration</span>
-                  <span className="summary-value">~{getTotalDuration()}s</span>
+              {/* Campaign Summary */}
+              <div className="campaign-summary">
+                <h3>📋 Campaign Summary</h3>
+                <div className="summary-grid">
+                  <div className="summary-item">
+                    <span className="summary-label">Brand</span>
+                    <span className="summary-value">{businessInfo?.businessName}</span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Campaign Type</span>
+                    <span className="summary-value">
+                      {campaignTypes.find(c => c.id === campaignType)?.label}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Product/Service</span>
+                    <span className="summary-value">
+                      {selectedProduct === 'custom' ? customProductName : selectedProduct}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Video Style</span>
+                    <span className="summary-value">
+                      {videoStyles.find(s => s.id === videoStyle)?.label}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Visual Mood</span>
+                    <span className="summary-value">
+                      {visualMoods.find(m => m.id === visualMood)?.emoji} {visualMoods.find(m => m.id === visualMood)?.label}
+                    </span>
+                  </div>
+                  <div className="summary-item">
+                    <span className="summary-label">Aspect Ratio</span>
+                    <span className="summary-value">{aspectRatio}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Script Review */}
-              <div className="script-review">
-                <h3>📜 Your Script</h3>
-                <div className="script-display">
-                  <pre>{getFullScriptText()}</pre>
+              {/* Script Generation/Preview */}
+              <div className="script-section-container">
+                <div className="script-header">
+                  <h3>📝 Video Script</h3>
+                  {!generatedScript && !isGeneratingScript && (
+                    <button 
+                      className="generate-script-btn"
+                      onClick={handleGenerateScript}
+                    >
+                      <FiZap />
+                      <span>Generate Script</span>
+                    </button>
+                  )}
                 </div>
+                
+                {isGeneratingScript && (
+                  <div className="script-loading">
+                    <FiRefreshCw className="spin" />
+                    <span>Generating brand-focused script...</span>
+                  </div>
+                )}
+                
+                {generatedScript && (
+                  <div className="generated-script-preview">
+                    <div className="preview-header">
+                      <span className="duration-badge">~{getTotalDuration()}s</span>
+                      <button 
+                        className="regenerate-btn"
+                        onClick={handleGenerateScript}
+                        disabled={isGeneratingScript}
+                      >
+                        <FiRefreshCw />
+                        <span>Regenerate</span>
+                      </button>
+                    </div>
+                    
+                    <div className="script-section hook">
+                      <span className="section-label">HOOK</span>
+                      <p>{generatedScript.hook}</p>
+                    </div>
+                    
+                    {generatedScript.scenes.map((scene, idx) => (
+                      <div key={idx} className="script-section scene">
+                        <span className="section-label">SCENE {idx + 1} ({scene.duration}s)</span>
+                        <p>{scene.text}</p>
+                        <span className="visual-hint">🎬 {scene.visual}</span>
+                      </div>
+                    ))}
+                    
+                    <div className="script-section cta">
+                      <span className="section-label">CTA</span>
+                      <p>{generatedScript.cta}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Error Message */}
@@ -746,14 +964,14 @@ Include 4-6 scenes.`
               {/* Generated Video */}
               {generatedVideo && (
                 <div className="generated-result">
-                  <h3>🎉 Your Video is Ready!</h3>
+                  <h3>🎉 Your Brand Video is Ready!</h3>
                   <div className="video-preview">
                     <video src={generatedVideo} controls autoPlay loop />
                   </div>
                   <div className="result-actions">
                     <a 
                       href={generatedVideo} 
-                      download="video.mp4"
+                      download={`${businessInfo?.businessName || 'brand'}-video.mp4`}
                       className="result-btn primary"
                     >
                       Download Video
@@ -771,7 +989,7 @@ Include 4-6 scenes.`
                 <button 
                   className="btn-generate"
                   onClick={handleGenerateVideo}
-                  disabled={isGenerating}
+                  disabled={isGenerating || !generatedScript}
                 >
                   {isGenerating ? (
                     <>
@@ -781,7 +999,7 @@ Include 4-6 scenes.`
                   ) : (
                     <>
                       <FiVideo />
-                      <span>Generate Video</span>
+                      <span>Generate Brand Video</span>
                     </>
                   )}
                 </button>
