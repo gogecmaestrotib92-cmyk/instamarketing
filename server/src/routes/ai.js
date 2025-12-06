@@ -867,7 +867,7 @@ async function processPremiumJob(jobId) {
 
   try {
     // ============================================
-    // STEP 1: GPT scene breakdown
+    // STEP 1: GPT scene breakdown (Brand-Aware)
     // ============================================
     job.status = 'generating_script';
     job.progress = 5;
@@ -876,37 +876,55 @@ async function processPremiumJob(jobId) {
     const sceneBreakdownResponse = await openaiService.chat([
       {
         role: 'system',
-        content: `You are an expert video producer creating scene breakdowns for AI video generation.
+        content: `You are an expert video producer creating scene breakdowns for premium brand videos.
 
-Your task is to:
+Your task:
 1. Create a compelling voiceover script (15-25 seconds when spoken)
-2. Break it into exactly 3 visual scenes for video clips
+2. Break it into exactly 3 visual scenes that showcase the brand/product
 
-CRITICAL RULES FOR VISUAL SCENES:
-- Each scene description is for AI IMAGE generation (FLUX model)
-- Focus ONLY on VISUAL elements: setting, lighting, colors, composition, mood
-- Be specific about style: professional, cinematic, modern, elegant
-- Include camera angle: wide shot, close-up, overhead
-- ABSOLUTELY NO text/words/logos - pure visuals only
-- Each scene should be visually distinct but thematically connected
+CRITICAL - Each scene needs TWO prompts:
+- visualPrompt: For AI IMAGE generation (FLUX) - describe the STATIC image
+- motionPrompt: For AI VIDEO animation (Kling) - describe HOW the image should MOVE
+
+VISUAL PROMPT RULES:
+- Describe setting, lighting, colors, composition, mood
+- Include product/brand elements naturally in the scene
+- Be specific: "professional studio lighting", "warm golden hour", "sleek modern aesthetic"
+- NO text/words/logos in the image itself
+- Make it look like a premium advertisement
+
+MOTION PROMPT RULES:
+- Describe camera movement: "slow dolly forward", "gentle pan left", "smooth zoom in"
+- Describe subject motion: "steam rising", "fabric flowing", "product rotating"
+- Keep it subtle and professional - avoid jerky or extreme movements
+- Match the brand mood: luxury = slow elegant, fitness = dynamic energy
 
 OUTPUT FORMAT (JSON):
 {
-  "voiceoverScript": "The full narration script to be spoken...",
+  "voiceoverScript": "The narration that sells the product/brand...",
   "scenes": [
-    { "sceneNumber": 1, "visualPrompt": "...", "motionStyle": "subtle|dynamic|cinematic" },
-    { "sceneNumber": 2, "visualPrompt": "...", "motionStyle": "subtle|dynamic|cinematic" },
-    { "sceneNumber": 3, "visualPrompt": "...", "motionStyle": "subtle|dynamic|cinematic" }
+    { 
+      "sceneNumber": 1, 
+      "visualPrompt": "Static image description...", 
+      "motionPrompt": "How this scene animates - camera and subject movement...",
+      "sceneContext": "What this scene represents for the brand"
+    },
+    { "sceneNumber": 2, "visualPrompt": "...", "motionPrompt": "...", "sceneContext": "..." },
+    { "sceneNumber": 3, "visualPrompt": "...", "motionPrompt": "...", "sceneContext": "..." }
   ]
 }`
       },
       {
         role: 'user',
-        content: `Create a premium video scene breakdown for:
-Topic: ${prompt}
-${businessName ? `Business: ${businessName}` : ''}
-${industry ? `Industry: ${industry}` : ''}
-${contentPurpose ? `Content Type: ${contentPurpose}` : ''}
+        content: `Create a premium brand video for:
+
+TOPIC/PRODUCT: ${prompt}
+${businessName ? `BRAND NAME: ${businessName}` : ''}
+${industry ? `INDUSTRY: ${industry}` : ''}
+${contentPurpose ? `PURPOSE: ${contentPurpose}` : ''}
+
+Make the visuals and motion feel like a high-end brand commercial. Each scene should naturally showcase the product/service while telling a compelling story.
+
 Output valid JSON only.`
       }
     ], { model: 'gpt-4o-mini', temperature: 0.8 });
@@ -979,7 +997,7 @@ Output valid JSON only.`
     job.progress = 50;
 
     // ============================================
-    // STEP 4: Animate with Kling
+    // STEP 4: Animate with Kling (Brand-Aware Motion)
     // ============================================
     const animatedScenes = [];
     
@@ -988,12 +1006,34 @@ Output valid JSON only.`
       job.statusMessage = `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s)`;
       job.progress = 50 + (i * 12);
 
-      let motionPrompt = 'Smooth professional motion, elegant camera movement';
-      if (scene.motionStyle === 'subtle') motionPrompt = 'Gentle subtle motion, soft camera movement';
-      else if (scene.motionStyle === 'dynamic') motionPrompt = 'Dynamic energetic motion, smooth camera movement';
-      else if (scene.motionStyle === 'cinematic') motionPrompt = 'Cinematic camera movement, professional film quality';
+      // Build brand-aware motion prompt
+      // Use GPT-generated motionPrompt if available, otherwise create contextual one
+      let motionPrompt = scene.motionPrompt || '';
+      
+      if (!motionPrompt) {
+        // Fallback: create brand-contextual motion based on industry
+        const industryMotions = {
+          'E-Commerce': 'Slow elegant product rotation, soft lighting shift, professional showcase motion',
+          'E-Commerce / Retail': 'Slow elegant product rotation, soft lighting shift, professional showcase motion',
+          'Food & Beverage': 'Gentle steam rising, appetizing reveal, warm inviting camera movement',
+          'Fashion & Beauty': 'Smooth fabric flow, glamorous lighting sweep, elegant model movement',
+          'Health & Fitness': 'Dynamic energy burst, powerful athletic motion, motivational camera push',
+          'Technology': 'Sleek device rotation, futuristic glow pulse, modern reveal transition',
+          'Real Estate': 'Smooth walkthrough motion, grand reveal, cinematic space exploration',
+          'Travel & Hospitality': 'Panoramic sweep, wanderlust reveal, breathtaking vista motion',
+          'Professional Services': 'Confident professional presence, trust-building subtle motion'
+        };
+        
+        motionPrompt = industryMotions[industry] || 'Smooth professional camera movement, elegant subtle motion, premium commercial feel';
+      }
 
-      const videoResult = await replicateService.imageToVideo(scene.imageUrl, motionPrompt, {
+      // Add brand context to motion prompt
+      const brandContext = businessName ? `, showcasing ${businessName} brand quality` : '';
+      const fullMotionPrompt = `${motionPrompt}${brandContext}. High-end commercial production quality.`;
+
+      console.log(`[${jobId}] Scene ${i + 1} motion: ${fullMotionPrompt.substring(0, 80)}...`);
+
+      const videoResult = await replicateService.imageToVideo(scene.imageUrl, fullMotionPrompt, {
         duration: 5,
         aspectRatio: aspectRatio
       });
