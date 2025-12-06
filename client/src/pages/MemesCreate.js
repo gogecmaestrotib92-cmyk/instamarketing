@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { FiArrowLeft, FiDownload, FiCopy, FiSave, FiTrash2, FiRefreshCw, FiUpload, FiEdit2, FiImage, FiHash, FiFileText, FiZap, FiSearch, FiX } from 'react-icons/fi';
 import api from '../services/api';
+import { saveMemeToHub } from '../services/assetService';
 import './MemesCreate.css';
 
 // Default meme backgrounds
@@ -317,11 +318,36 @@ IMPORTANT: No text, no words, no letters in the image. Clean background or simpl
     // Download
     const link = document.createElement('a');
     link.download = `meme-${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png');
+    const dataUrl = canvas.toDataURL('image/png');
+    link.href = dataUrl;
     link.click();
     
-    showNotification('Meme downloaded! 📥');
-  }, [topText, bottomText, customImage, selectedBackground]);
+    // Auto-save to Asset Hub
+    try {
+      saveMemeToHub({
+        name: `Meme - ${topic || humorStyle}`,
+        url: dataUrl,
+        caption: caption || `${topText} / ${bottomText}`,
+        tags: [humorStyle, niche, 'meme', 'social-media'].filter(Boolean),
+        source: 'MemesCreate',
+        metadata: {
+          topText,
+          bottomText,
+          topic,
+          niche,
+          humorStyle,
+          hasCustomImage: !!customImage,
+          templateSuggestion,
+          createdAt: new Date().toISOString()
+        }
+      });
+      console.log('✅ Meme auto-saved to Asset Hub');
+    } catch (saveError) {
+      console.error('Failed to save to Asset Hub:', saveError);
+    }
+    
+    showNotification('Meme downloaded & saved! 📥');
+  }, [topText, bottomText, customImage, selectedBackground, caption, topic, niche, humorStyle, templateSuggestion]);
   
   // Text wrapping helper
   const wrapText = (ctx, text, maxWidth) => {

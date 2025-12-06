@@ -775,6 +775,27 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             metadata: result.metadata
           });
           console.log('✅ AI Video auto-saved to Asset Hub');
+          
+          // Also save the FLUX base image to Asset Hub (useful for reuse/editing)
+          if (videoData.imageUrl) {
+            saveImageToHub({
+              name: `${result.name} - Base Frame`,
+              url: videoData.imageUrl,
+              caption: videoData.imagePrompt?.substring(0, 100) || `Base frame for: ${postTopic.substring(0, 60)}`,
+              tags: [contentPurpose, 'ai-image', 'flux', 'base-frame', 'smart-pipeline', businessInfo?.industry].filter(Boolean),
+              source: 'BusinessTrending-FLUX',
+              metadata: {
+                postTopic,
+                contentPurpose,
+                imagePrompt: videoData.imagePrompt,
+                pipeline: 'smart-flux-kling',
+                linkedVideoUrl: videoData.videoUrl,
+                businessName: businessInfo?.businessName,
+                productName: product?.name
+              }
+            });
+            console.log('✅ FLUX base image auto-saved to Asset Hub');
+          }
         } catch (saveError) {
           console.error('Failed to save to Asset Hub:', saveError);
         }

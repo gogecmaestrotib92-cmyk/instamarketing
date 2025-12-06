@@ -5,6 +5,7 @@ import { FiDownload, FiSave, FiEdit3 } from 'react-icons/fi';
 import SEO from '../components/SEO';
 import NewVideoForm from '../components/NewVideoForm';
 import api from '../services/api';
+import { saveVideoToHub } from '../services/assetService';
 import './AIVideo.css';
 
 const AIVideo = () => {
@@ -24,7 +25,29 @@ const AIVideo = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
+    if (file) { 
+23:24:38.748 
+(node:95) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
+23:24:38.749 
+(Use `node --trace-deprecation ...` to show where the warning was created)
+23:24:38.820 
+Creating an optimized production build...
+23:24:55.849 
+Failed to compile.
+23:24:55.851 
+23:24:55.851 
+[eslint] 
+23:24:55.851 
+src/App.js
+23:24:55.852 
+  Line 86:1:  Import in body of module; reorder to top  import/first
+23:24:55.852 
+23:24:55.852 
+Search for the keywords to learn more about each error.
+23:24:55.852 
+23:24:55.852 
+23:24:55.914 
+Error: Command "npm run build" exited with 1
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
       setImagePosition({ x: 0, y: 0, scale: 1 }); // Reset position on new image
@@ -63,7 +86,7 @@ const AIVideo = () => {
           toast.update(toastId, { render: 'Video ready & saved!', type: 'success', isLoading: false, autoClose: 3000 });
           setGeneratedVideo(video);
           
-          // Auto-save video to localStorage
+          // Auto-save video to localStorage (legacy)
           const savedVideos = JSON.parse(localStorage.getItem('aiVideos') || '[]');
           const newVideo = {
             id: Date.now(),
@@ -78,6 +101,27 @@ const AIVideo = () => {
           if (!exists) {
             savedVideos.unshift(newVideo);
             localStorage.setItem('aiVideos', JSON.stringify(savedVideos));
+          }
+          
+          // Auto-save to Asset Hub
+          try {
+            saveVideoToHub({
+              name: `AI Video - ${(config.prompt || prompt).substring(0, 40)}`,
+              url: video.videoUrl,
+              caption: config.prompt || prompt,
+              tags: ['ai-video', activeTab, `${config.duration || duration}s`].filter(Boolean),
+              source: 'AIVideo',
+              metadata: {
+                prompt: config.prompt || prompt,
+                duration: config.duration || duration,
+                aspectRatio: config.aspectRatio || aspectRatio,
+                type: activeTab,
+                createdAt: new Date().toISOString()
+              }
+            });
+            console.log('✅ AI Video auto-saved to Asset Hub');
+          } catch (saveError) {
+            console.error('Failed to save to Asset Hub:', saveError);
           }
           
           setLoading(false);
