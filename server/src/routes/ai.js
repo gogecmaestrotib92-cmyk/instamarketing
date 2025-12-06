@@ -750,18 +750,359 @@ Generate a detailed visual scene description that would work as a video backgrou
 });
 
 /**
- * PREMIUM MULTI-SCENE AI VIDEO GENERATION
+ * PREMIUM MULTI-SCENE AI VIDEO GENERATION (JOB-BASED)
+ * POST /api/ai/video/start-premium
+ * 
+ * Creates a job and processes in background. Returns jobId for polling.
+ * This is simpler than the multi-step approach - just start and poll.
+ */
+router.post('/video/start-premium', async (req, res) => {
+  try {
+    const { 
+      prompt,
+      businessName,
+      industry,
+      contentPurpose,
+      aspectRatio = '9:16',
+      voice,
+      includeSubtitles = true,
+      subtitleStyle = 'modern',
+      logoUrl = null,
+      logoPosition = 'topRight',
+      logoSize = 0.12
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    // Generate unique job ID
+    const jobId = `premium-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log(`\n🎬 [${jobId}] Starting Premium AI Video Job`);
+    console.log(`   Topic: ${prompt.substring(0, 50)}...`);
+
+    // Store job state in memory (for Vercel, we'll use a simple in-memory store)
+    // In production, this should be Redis or MongoDB
+    if (!global.premiumJobs) {
+      global.premiumJobs = {};
+    }
+
+    global.premiumJobs[jobId] = {
+      id: jobId,
+      status: 'pending',
+      progress: 0,
+      statusMessage: 'Starting...',
+      createdAt: new Date(),
+      input: { prompt, businessName, industry, contentPurpose, aspectRatio, voice, includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize }
+    };
+
+    // Start processing in background
+    processPremiumJob(jobId).catch(err => {
+      console.error(`[${jobId}] Background process error:`, err.message);
+      if (global.premiumJobs[jobId]) {
+        global.premiumJobs[jobId].status = 'failed';
+        global.premiumJobs[jobId].error = err.message;
+      }
+    });
+
+    // Return immediately
+    res.json({
+      success: true,
+      jobId: jobId,
+      status: 'pending',
+      message: 'Premium video job started. Poll /api/ai/video/premium-job-status for progress.'
+    });
+
+  } catch (error) {
+    console.error('❌ Start premium job error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Poll premium job status
+ * POST /api/ai/video/premium-job-status
+ */
+router.post('/video/premium-job-status', async (req, res) => {
+  try {
+    const { jobId } = req.body;
+
+    if (!jobId) {
+      return res.status(400).json({ error: 'jobId is required' });
+    }
+
+    const job = global.premiumJobs?.[jobId];
+    
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    res.json({
+      success: true,
+      jobId: job.id,
+      status: job.status,
+      progress: job.progress,
+      statusMessage: job.statusMessage,
+      videoUrl: job.videoUrl,
+      audioUrl: job.audioUrl,
+      voiceoverScript: job.voiceoverScript,
+      error: job.error
+    });
+
+  } catch (error) {
+    console.error('❌ Premium job status error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Process premium job in background
+ */
+async function processPremiumJob(jobId) {
+  const job = global.premiumJobs[jobId];
+  if (!job) return;
+
+  const { prompt, businessName, industry, contentPurpose, aspectRatio, voice, includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize } = job.input;
+
+  try {
+    // ============================================
+    // STEP 1: GPT scene breakdown
+    // ============================================
+    job.status = 'generating_script';
+    job.progress = 5;
+    job.statusMessage = '📝 Creating script and scenes...';
+
+    const sceneBreakdownResponse = await openaiService.chat([
+      {
+        role: 'system',
+        content: `You are an expert video producer creating scene breakdowns for AI video generation.
+
+Your task is to:
+1. Create a compelling voiceover script (15-25 seconds when spoken)
+2. Break it into exactly 3 visual scenes for video clips
+
+CRITICAL RULES FOR VISUAL SCENES:
+- Each scene description is for AI IMAGE generation (FLUX model)
+- Focus ONLY on VISUAL elements: setting, lighting, colors, composition, mood
+- Be specific about style: professional, cinematic, modern, elegant
+- Include camera angle: wide shot, close-up, overhead
+- ABSOLUTELY NO text/words/logos - pure visuals only
+- Each scene should be visually distinct but thematically connected
+
+OUTPUT FORMAT (JSON):
+{
+  "voiceoverScript": "The full narration script to be spoken...",
+  "scenes": [
+    { "sceneNumber": 1, "visualPrompt": "...", "motionStyle": "subtle|dynamic|cinematic" },
+    { "sceneNumber": 2, "visualPrompt": "...", "motionStyle": "subtle|dynamic|cinematic" },
+    { "sceneNumber": 3, "visualPrompt": "...", "motionStyle": "subtle|dynamic|cinematic" }
+  ]
+}`
+      },
+      {
+        role: 'user',
+        content: `Create a premium video scene breakdown for:
+Topic: ${prompt}
+${businessName ? `Business: ${businessName}` : ''}
+${industry ? `Industry: ${industry}` : ''}
+${contentPurpose ? `Content Type: ${contentPurpose}` : ''}
+Output valid JSON only.`
+      }
+    ], { model: 'gpt-4o-mini', temperature: 0.8 });
+
+    let sceneBreakdown;
+    const jsonMatch = sceneBreakdownResponse.content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      sceneBreakdown = JSON.parse(jsonMatch[0]);
+    } else {
+      throw new Error('Failed to parse scene breakdown');
+    }
+
+    console.log(`[${jobId}] ✅ Script ready: ${sceneBreakdown.scenes.length} scenes`);
+    job.progress = 10;
+    job.voiceoverScript = sceneBreakdown.voiceoverScript; // Store script for status polling
+
+    // ============================================
+    // STEP 2: Generate voiceover
+    // ============================================
+    job.statusMessage = '🎙️ Generating voiceover...';
+    job.progress = 15;
+
+    const elevenResult = await elevenlabsService.textToSpeech(sceneBreakdown.voiceoverScript, {
+      voiceId: voice || '21m00Tcm4TlvDq8ikWAM',
+      stability: 0.5,
+      similarityBoost: 0.75
+    });
+
+    if (!elevenResult.success || !elevenResult.audioUrl) {
+      throw new Error('Voiceover generation failed');
+    }
+
+    job.audioUrl = elevenResult.audioUrl;
+    console.log(`[${jobId}] ✅ Voiceover ready`);
+    job.progress = 20;
+
+    // ============================================
+    // STEP 3: Generate FLUX images
+    // ============================================
+    const scenesWithImages = [];
+    
+    for (let i = 0; i < sceneBreakdown.scenes.length; i++) {
+      const scene = sceneBreakdown.scenes[i];
+      job.statusMessage = `🖼️ Creating image ${i + 1}/${sceneBreakdown.scenes.length}...`;
+      job.progress = 20 + (i * 10);
+
+      const imageResult = await replicateService.textToImage(scene.visualPrompt, {
+        aspectRatio: aspectRatio,
+        outputFormat: 'jpg'
+      });
+
+      if (imageResult.success && imageResult.imageUrl) {
+        // Upload to Cloudinary
+        const upload = await cloudinaryService.uploadFromUrl(imageResult.imageUrl, {
+          folder: 'premium-scenes',
+          public_id: `${jobId}-scene-${i}`
+        });
+        
+        if (upload.success) {
+          scenesWithImages.push({ ...scene, imageUrl: upload.url });
+          console.log(`[${jobId}] ✅ Scene ${i + 1} image ready`);
+        }
+      }
+    }
+
+    if (scenesWithImages.length === 0) {
+      throw new Error('No images generated');
+    }
+
+    job.progress = 50;
+
+    // ============================================
+    // STEP 4: Animate with Kling
+    // ============================================
+    const animatedScenes = [];
+    
+    for (let i = 0; i < scenesWithImages.length; i++) {
+      const scene = scenesWithImages[i];
+      job.statusMessage = `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s)`;
+      job.progress = 50 + (i * 12);
+
+      let motionPrompt = 'Smooth professional motion, elegant camera movement';
+      if (scene.motionStyle === 'subtle') motionPrompt = 'Gentle subtle motion, soft camera movement';
+      else if (scene.motionStyle === 'dynamic') motionPrompt = 'Dynamic energetic motion, smooth camera movement';
+      else if (scene.motionStyle === 'cinematic') motionPrompt = 'Cinematic camera movement, professional film quality';
+
+      const videoResult = await replicateService.imageToVideo(scene.imageUrl, motionPrompt, {
+        duration: 5,
+        aspectRatio: aspectRatio
+      });
+
+      if (videoResult.success && videoResult.videoUrl) {
+        const upload = await cloudinaryService.uploadFromUrl(videoResult.videoUrl, {
+          folder: 'premium-scenes',
+          public_id: `${jobId}-video-${i}`,
+          resource_type: 'video'
+        });
+
+        if (upload.success) {
+          animatedScenes.push({ ...scene, videoUrl: upload.url, duration: 5 });
+          console.log(`[${jobId}] ✅ Scene ${i + 1} animated`);
+        }
+      }
+    }
+
+    if (animatedScenes.length === 0) {
+      throw new Error('No scenes animated');
+    }
+
+    job.progress = 85;
+
+    // ============================================
+    // STEP 5: Compose with Shotstack
+    // ============================================
+    job.statusMessage = '🎥 Composing final video...';
+    job.progress = 90;
+
+    // Generate subtitles
+    let subtitles = [];
+    if (includeSubtitles) {
+      const words = sceneBreakdown.voiceoverScript.split(/\s+/);
+      const wordsPerSub = Math.ceil(words.length / 6);
+      const totalDuration = animatedScenes.length * 5;
+      const subDuration = totalDuration / Math.ceil(words.length / wordsPerSub);
+      let t = 0;
+      for (let i = 0; i < words.length; i += wordsPerSub) {
+        subtitles.push({ text: words.slice(i, i + wordsPerSub).join(' '), start: t, end: t + subDuration });
+        t += subDuration;
+      }
+    }
+
+    const clips = animatedScenes.map(s => ({ url: s.videoUrl, duration: 5 }));
+    
+    const renderResult = await shotstackClient.createMultiClipRender(clips, job.audioUrl, subtitles, {
+      aspectRatio, fps: 30, subtitleStyle, logoUrl, logoPosition, logoSize
+    });
+
+    if (!renderResult.success) {
+      throw new Error('Shotstack render failed');
+    }
+
+    console.log(`[${jobId}] ✅ Shotstack render started: ${renderResult.jobId}`);
+
+    // Poll Shotstack for completion
+    job.statusMessage = '🎥 Rendering final video...';
+    
+    let finalVideoUrl = null;
+    for (let attempt = 0; attempt < 60; attempt++) {
+      await new Promise(r => setTimeout(r, 5000));
+      
+      const status = await shotstackClient.getRenderStatus(renderResult.jobId);
+      job.progress = 90 + Math.min(9, attempt);
+      
+      if (status.status === 'done' && status.url) {
+        // Upload to Cloudinary
+        const finalUpload = await cloudinaryService.uploadFromUrl(status.url, {
+          folder: 'premium-final',
+          public_id: `${jobId}-final`,
+          resource_type: 'video'
+        });
+        finalVideoUrl = finalUpload.success ? finalUpload.url : status.url;
+        break;
+      } else if (status.status === 'failed') {
+        throw new Error('Shotstack render failed');
+      }
+    }
+
+    if (!finalVideoUrl) {
+      throw new Error('Render timed out');
+    }
+
+    // ============================================
+    // DONE!
+    // ============================================
+    job.status = 'done';
+    job.progress = 100;
+    job.statusMessage = '✅ Video ready!';
+    job.videoUrl = finalVideoUrl;
+    job.completedAt = new Date();
+
+    console.log(`[${jobId}] 🎉 Premium video complete: ${finalVideoUrl}`);
+
+  } catch (error) {
+    console.error(`[${jobId}] ❌ Failed:`, error.message);
+    job.status = 'failed';
+    job.error = error.message;
+    job.statusMessage = `❌ Failed: ${error.message}`;
+  }
+}
+
+/**
+ * PREMIUM MULTI-SCENE AI VIDEO GENERATION (MULTI-STEP)
  * POST /api/ai/video/generate-premium
  * 
- * Creates a full composed video with:
- * 1. GPT splits the script into 3-4 visual scenes
- * 2. FLUX Schnell generates an image for each scene
- * 3. Kling v2.1 animates each image into 5-second clips
- * 4. ElevenLabs generates voiceover
- * 5. Shotstack stitches all clips with voiceover + subtitles
- * 
- * Due to Vercel timeout limits, this returns immediately with a jobId
- * and processes in background. Poll /api/ai/video/premium-status for progress.
+ * Alternative approach: Returns script+voiceover, client calls individual endpoints
+ * for each image and animation. More complex but shows real-time progress.
  */
 router.post('/video/generate-premium', async (req, res) => {
   try {
