@@ -209,7 +209,8 @@ router.get('/:id', async (req, res) => {
 /**
  * POST /api/jobs/:id/process
  * Trigger processing for a job (used for async product videos)
- * This endpoint processes one step at a time to stay within timeout
+ * This endpoint starts processing and returns immediately to avoid timeout
+ * Client should poll /api/jobs/:id for status
  */
 router.post('/:id/process', async (req, res) => {
   try {
@@ -231,34 +232,21 @@ router.post('/:id/process', async (req, res) => {
     
     console.log(`[Jobs API] Processing job ${job._id}, current status: ${job.status}`);
     
-    // Process the job
-    try {
-      await processJob(job._id);
-      
-      // Reload to get final status
-      const finalJob = await VideoJob.findById(job._id);
-      
-      res.json({
-        jobId: finalJob._id,
-        status: finalJob.status,
-        progress: finalJob.progress,
-        statusMessage: finalJob.statusMessage,
-        videoUrl: finalJob.finalVideoUrl,
-        error: finalJob.error
-      });
-    } catch (processError) {
-      console.error(`[Jobs API] Process error:`, processError.message);
-      
-      job.status = 'failed';
-      job.error = processError.message;
-      await job.save();
-      
-      res.status(500).json({
-        jobId: job._id,
-        status: 'failed',
-        error: processError.message
-      });
-    }
+    // Start processing in the background (don't await)
+    // This prevents Vercel timeout
+    processJob(job._id).catch(err => {
+      console.error(`[Jobs API] Background process error for ${job._id}:`, err.message);
+      // Error is handled in processJob and saved to job.error
+    });
+    
+    // Return immediately with "processing" status
+    res.json({
+      jobId: job._id,
+      status: 'processing',
+      progress: job.progress || 0,
+      statusMessage: job.statusMessage || 'Starting video generation...',
+      message: 'Processing started. Poll /api/jobs/:id for status.'
+    });
     
   } catch (error) {
     console.error('[Jobs API] Process endpoint error:', error);
