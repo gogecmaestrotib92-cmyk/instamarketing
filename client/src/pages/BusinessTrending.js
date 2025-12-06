@@ -506,7 +506,57 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
           throw new Error(data.error || 'Failed to generate video');
         }
         
-        console.log('✅ Video generated:', data);
+        console.log('📦 Job response:', data);
+        
+        // If job needs polling (isProductVideo), poll for completion
+        let finalData = data;
+        if (data.isProductVideo || data.status === 'pending') {
+          console.log('⏳ Polling for job completion...');
+          setGenerationStep('Processing video... (this may take 1-2 minutes)');
+          
+          // Trigger processing
+          try {
+            await fetch(`/api/jobs/${data.jobId}/process`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+          } catch (triggerErr) {
+            console.log('Process trigger sent (may timeout, polling will catch result)');
+          }
+          
+          // Poll for completion
+          const maxAttempts = 60; // 2 minutes max
+          let attempts = 0;
+          
+          while (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+            attempts++;
+            
+            const pollRes = await fetch(`/api/jobs/${data.jobId}`);
+            const pollData = await pollRes.json();
+            
+            console.log(`📊 Poll ${attempts}:`, pollData.status, pollData.progress);
+            setGenerationStep(`Processing... ${pollData.progress || 0}%`);
+            
+            if (pollData.status === 'done') {
+              finalData = {
+                ...data,
+                videoUrl: pollData.videoUrl,
+                audioUrl: pollData.audioUrl,
+                status: 'done'
+              };
+              break;
+            } else if (pollData.status === 'failed') {
+              throw new Error(pollData.error || 'Video generation failed');
+            }
+          }
+          
+          if (finalData.status !== 'done' && !finalData.videoUrl) {
+            throw new Error('Video generation timed out. Please try again.');
+          }
+        }
+        
+        console.log('✅ Video generated:', finalData);
         
         // Build result
         const purpose = contentPurposes.find(p => p.id === contentPurpose);
@@ -517,9 +567,9 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
           type: 'voiceover-video',
           name: `${purpose?.label || 'Content'} - ${product?.name || businessInfo?.businessName || 'Brand Video'}`,
           script: null,
-          audioUrl: data.audioUrl,
+          audioUrl: finalData.audioUrl,
           backgroundUrl: null,
-          composedVideoUrl: data.videoUrl,
+          composedVideoUrl: finalData.videoUrl,
           backgroundType: 'stock-video',
           template: selectedTemplate,
           aspectRatio: aspectRatio,
@@ -532,7 +582,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             template: selectedTemplate,
             aspectRatio,
             backgroundType: 'stock-video',
-            jobId: data.jobId,
+            jobId: finalData.jobId,
             businessName: businessInfo?.businessName,
             productName: product?.name
           },
@@ -545,7 +595,7 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         try {
           saveVideoToHub({
             name: result.name,
-            url: data.videoUrl,
+            url: finalData.videoUrl,
             caption: postTopic.substring(0, 100),
             tags: [contentPurpose, 'voiceover', 'brand-content', businessInfo?.industry].filter(Boolean),
             source: 'BusinessTrending',
