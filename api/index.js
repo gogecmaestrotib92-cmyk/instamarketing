@@ -446,7 +446,12 @@ module.exports = async (req, res) => {
         subtitleStyle = 'modern',
         logoUrl = null,
         logoPosition = 'topRight',
-        logoSize = 0.12
+        logoSize = 0.12,
+        // NEW: Brand/product images for accurate product representation
+        brandImages = [],
+        productImages = [],
+        productName = '',
+        productDescription = ''
       } = body || {};
 
       if (!prompt) {
@@ -457,6 +462,7 @@ module.exports = async (req, res) => {
       const jobId = `premium-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       console.log(`\n🎬 [${jobId}] Starting Premium AI Video Job`);
+      console.log(`[${jobId}] 📦 Brand images: ${brandImages.length}, Product images: ${productImages.length}`);
 
       const jobData = {
         jobId: jobId,
@@ -464,7 +470,11 @@ module.exports = async (req, res) => {
         progress: 0,
         statusMessage: 'Starting...',
         createdAt: new Date(),
-        input: { prompt, businessName, industry, contentPurpose, aspectRatio, voice, includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize }
+        input: { 
+          prompt, businessName, industry, contentPurpose, aspectRatio, voice, 
+          includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize,
+          brandImages, productImages, productName, productDescription
+        }
       };
 
       // Save to MongoDB if available, otherwise use in-memory
@@ -799,7 +809,15 @@ async function processPremiumJobVercel(jobId) {
     return;
   }
 
-  const { prompt, businessName, industry, contentPurpose, aspectRatio, voice, includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize } = job.input;
+  const { 
+    prompt, businessName, industry, contentPurpose, aspectRatio, voice, 
+    includeSubtitles, subtitleStyle, logoUrl, logoPosition, logoSize,
+    brandImages = [], productImages = [], productName = '', productDescription = ''
+  } = job.input;
+
+  // Combine all available product/brand images
+  const availableProductImages = [...productImages, ...brandImages].filter(Boolean);
+  console.log(`[${jobId}] 📸 Available product images for scenes: ${availableProductImages.length}`);
 
   try {
     const OpenAI = require('openai');
@@ -949,36 +967,73 @@ Output valid JSON only.`
     });
 
     // ============================================
-    // STEP 3: Generate FLUX images
+    // STEP 3: Prepare scene images
+    // USE ACTUAL PRODUCT IMAGES when available for accurate branding
+    // Only generate with FLUX if no product images provided
     // ============================================
     const scenesWithImages = [];
+    const hasProductImages = availableProductImages.length > 0;
+    
+    console.log(`[${jobId}] 🖼️ Image strategy: ${hasProductImages ? 'Using ACTUAL product images' : 'Generating with FLUX'}`);
     
     for (let i = 0; i < sceneBreakdown.scenes.length; i++) {
       const scene = sceneBreakdown.scenes[i];
       await updatePremiumJobStatus(jobId, {
-        statusMessage: `🖼️ Creating image ${i + 1}/${sceneBreakdown.scenes.length}...`,
+        statusMessage: hasProductImages 
+          ? `🖼️ Preparing scene ${i + 1}/${sceneBreakdown.scenes.length} with your product...`
+          : `🖼️ Creating image ${i + 1}/${sceneBreakdown.scenes.length}...`,
         progress: 20 + (i * 10)
       });
 
-      const fluxOutput = await replicate.run(
-        "black-forest-labs/flux-schnell",
-        {
-          input: {
-            prompt: scene.visualPrompt,
-            aspect_ratio: aspectRatio === '9:16' ? '9:16' : (aspectRatio === '16:9' ? '16:9' : '1:1'),
-            output_format: 'jpg'
+      let imageUrl = null;
+
+      if (hasProductImages) {
+        // USE ACTUAL PRODUCT IMAGE - cycle through available images
+        const productImageUrl = availableProductImages[i % availableProductImages.length];
+        console.log(`[${jobId}] Scene ${i + 1}: Using actual product image`);
+        
+        // Upload to Cloudinary for consistent handling (or use directly if already Cloudinary)
+        if (productImageUrl.includes('cloudinary')) {
+          imageUrl = productImageUrl;
+        } else {
+          try {
+            const imgUpload = await cloudinary.uploader.upload(productImageUrl, {
+              folder: 'premium-scenes',
+              public_id: `${jobId}-img-${i}`
+            });
+            imageUrl = imgUpload.secure_url;
+          } catch (uploadErr) {
+            console.warn(`[${jobId}] Failed to upload product image, falling back to FLUX`);
+            // Fall through to FLUX generation
           }
         }
-      );
+      }
 
-      if (fluxOutput && fluxOutput[0]) {
-        // Upload to Cloudinary
-        const imgUpload = await cloudinary.uploader.upload(fluxOutput[0], {
-          folder: 'premium-scenes',
-          public_id: `${jobId}-img-${i}`
-        });
-        scenesWithImages.push({ ...scene, imageUrl: imgUpload.secure_url });
-        console.log(`[${jobId}] ✅ Scene ${i + 1} image ready`);
+      // Fallback: Generate with FLUX if no product image or upload failed
+      if (!imageUrl) {
+        const fluxOutput = await replicate.run(
+          "black-forest-labs/flux-schnell",
+          {
+            input: {
+              prompt: scene.visualPrompt,
+              aspect_ratio: aspectRatio === '9:16' ? '9:16' : (aspectRatio === '16:9' ? '16:9' : '1:1'),
+              output_format: 'jpg'
+            }
+          }
+        );
+
+        if (fluxOutput && fluxOutput[0]) {
+          const imgUpload = await cloudinary.uploader.upload(fluxOutput[0], {
+            folder: 'premium-scenes',
+            public_id: `${jobId}-img-${i}`
+          });
+          imageUrl = imgUpload.secure_url;
+        }
+      }
+
+      if (imageUrl) {
+        scenesWithImages.push({ ...scene, imageUrl, usedProductImage: hasProductImages });
+        console.log(`[${jobId}] ✅ Scene ${i + 1} image ready (${hasProductImages ? 'product' : 'generated'})`);
       }
     }
 
@@ -1001,10 +1056,10 @@ Output valid JSON only.`
       });
 
       // Build product-aware motion prompt for Kling
-      // Include: what the product IS, how it's being USED, and the motion
+      // When using ACTUAL product images, focus on subtle animation that preserves the product
       
-      // Get product description from GPT's analysis
-      const productDesc = sceneBreakdown.productDescription || prompt;
+      const productDesc = productDescription || sceneBreakdown.productDescription || prompt;
+      const actualProductName = productName || businessName || 'the product';
       const productAction = scene.productAction || '';
       let motionPrompt = scene.motionPrompt || '';
       
@@ -1023,11 +1078,17 @@ Output valid JSON only.`
         motionPrompt = industryMotions[industry] || 'Person interacts with product naturally, genuine satisfaction';
       }
 
-      // Build comprehensive Kling prompt with FULL product context
-      // This tells Kling WHAT the product is and HOW to show it being used
-      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Professional commercial quality, smooth natural movement.`;
+      // Different prompts for actual product images vs generated images
+      let fullMotionPrompt;
+      if (scene.usedProductImage) {
+        // ACTUAL PRODUCT IMAGE: Focus on subtle animation that PRESERVES the exact product appearance
+        fullMotionPrompt = `Keep the exact product "${actualProductName}" visible and unchanged. Subtle professional animation: ${motionPrompt}. Gentle camera movement, product stays in focus, commercial quality. Do NOT alter or replace the product design.`;
+      } else {
+        // GENERATED IMAGE: Full motion prompt with product context
+        fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Professional commercial quality, smooth natural movement.`;
+      }
 
-      console.log(`[${jobId}] Scene ${i + 1} motion: ${fullMotionPrompt.substring(0, 80)}...`);
+      console.log(`[${jobId}] Scene ${i + 1} (${scene.usedProductImage ? 'PRODUCT IMG' : 'generated'}): ${fullMotionPrompt.substring(0, 80)}...`);
 
       // Use Kling v2.1 for image-to-video
       const prediction = await replicate.predictions.create({
@@ -1035,8 +1096,8 @@ Output valid JSON only.`
         input: {
           image: scene.imageUrl,
           prompt: fullMotionPrompt,
-          negative_prompt: "blur, distortion, low quality, shaky, amateur, text, watermark",
-          cfg_scale: 0.5,
+          negative_prompt: "blur, distortion, low quality, shaky, amateur, text, watermark, change product, different product, wrong product",
+          cfg_scale: scene.usedProductImage ? 0.3 : 0.5, // Lower CFG for product images = less hallucination
           seed: -1
         }
       });

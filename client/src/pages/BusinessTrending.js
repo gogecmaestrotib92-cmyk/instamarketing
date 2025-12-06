@@ -942,9 +942,15 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
         const videoPrompt = buildAIVideoPrompt();
         console.log('📝 Premium video topic:', videoPrompt);
         
-        // Get logo from brand images (first image is typically the logo)
-        const brandLogo = businessInfo?.brandImages?.[0]?.url || null;
-        console.log('🏷️ Brand logo:', brandLogo ? 'found' : 'not set');
+        // Get ALL brand images for product-accurate scene generation
+        const brandImages = businessInfo?.brandImages?.map(img => img.url).filter(Boolean) || [];
+        const brandLogo = brandImages[0] || null;
+        console.log('🏷️ Brand images:', brandImages.length, 'found');
+        
+        // Get selected product images if a specific product is selected
+        const selectedProductData = getSelectedProductDetails();
+        const productImages = selectedProductData?.images || [];
+        console.log('📦 Product images:', productImages.length, 'found');
         
         // ============================================
         // STEP 1: Start job (returns immediately)
@@ -965,7 +971,12 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             subtitleStyle: selectedTemplate || 'modern',
             logoUrl: brandLogo,
             logoPosition: 'topRight',
-            logoSize: 0.12
+            logoSize: 0.12,
+            // NEW: Send all brand/product images for accurate product representation
+            brandImages: brandImages,
+            productImages: productImages,
+            productName: selectedProductData?.name,
+            productDescription: selectedProductData?.description
           })
         });
         
