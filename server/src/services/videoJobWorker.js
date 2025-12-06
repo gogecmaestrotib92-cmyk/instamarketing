@@ -193,6 +193,166 @@ Return ONLY the motion prompt, nothing else.`;
 }
 
 /**
+ * Generate a FLUX image prompt for a scene based on business context
+ * Used for smart image-first video pipeline
+ */
+async function generateSceneImagePrompt(scene, options = {}) {
+  const { industry, businessName, productName, brandVoice, aspectRatio, sceneIndex, totalScenes } = options;
+  
+  // Get industry-specific style guidance
+  const industryStyle = INDUSTRY_VIDEO_STYLES[industry] || INDUSTRY_VIDEO_STYLES['default'];
+  
+  try {
+    const openai = getOpenAI();
+    
+    const prompt = `You are an expert at creating prompts for AI image generation (FLUX model).
+Convert this video scene into a detailed visual image description for a SINGLE FRAME.
+
+SCENE TEXT: "${scene.text}"
+SCENE VISUAL: "${scene.visual || scene.text}"
+
+BUSINESS CONTEXT:
+- Brand: ${businessName || 'not specified'}
+- Product/Service: ${productName || 'not specified'}
+- Industry: ${industry || 'general'}
+- Brand Voice: ${brandVoice || 'professional'}
+- Scene ${sceneIndex + 1} of ${totalScenes}
+
+INDUSTRY VISUAL STYLE:
+- Lighting: ${industryStyle.lighting}
+- Composition: ${industryStyle.composition}
+- Mood: ${industryStyle.mood}
+
+RULES FOR IMAGE PROMPT:
+1. Describe a SINGLE compelling frame/moment from this scene
+2. Focus on VISUAL elements: setting, lighting, colors, composition
+3. Be specific about camera angle (close-up, wide, overhead, etc.)
+4. Include materials, textures, and atmospheric details
+5. Make it ${aspectRatio === '9:16' ? 'vertical/portrait oriented' : aspectRatio === '16:9' ? 'horizontal/landscape' : 'square'}
+6. Keep under 120 words, visually rich
+7. NO text, logos, or words in the image
+8. Professional, high-quality, suitable for brand content
+
+Return ONLY the image prompt, nothing else.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 200
+    });
+
+    const imagePrompt = response.choices[0].message.content.trim();
+    console.log(`🖼️ Scene ${sceneIndex} image prompt: ${imagePrompt.substring(0, 80)}...`);
+    return imagePrompt;
+    
+  } catch (error) {
+    console.error('Scene image prompt generation failed:', error.message);
+    // Fallback
+    return `${scene.visual || scene.text}. ${industryStyle.lighting}. ${industryStyle.composition}. Professional quality, ${industryStyle.mood}.`;
+  }
+}
+
+/**
+ * Smart scene video generation using FLUX → Kling v2.1 pipeline
+ * Generates an AI image first, then animates it for better control
+ * Returns a prediction ID for async polling
+ */
+async function startSmartSceneVideo(scene, job, sceneIndex, webhookUrl) {
+  const { industry, businessName, productName, brandVoice } = job.businessInfo || {};
+  
+  console.log(`[Job ${job._id}] Scene ${sceneIndex}: 🎨 Starting SMART pipeline (FLUX → Kling)`);
+  
+  try {
+    // Step 1: Generate image prompt using GPT
+    const imagePrompt = await generateSceneImagePrompt(scene, {
+      industry,
+      businessName, 
+      productName,
+      brandVoice,
+      aspectRatio: job.aspectRatio || '9:16',
+      sceneIndex,
+      totalScenes: job.scenes.length
+    });
+    
+    // Step 2: Generate image with FLUX
+    console.log(`[Job ${job._id}] Scene ${sceneIndex}: Generating FLUX image...`);
+    const imageResult = await replicateService.textToImage(imagePrompt, {
+      aspectRatio: job.aspectRatio || '9:16',
+      outputFormat: 'webp',
+      outputQuality: 95
+    });
+    
+    if (!imageResult.success) {
+      throw new Error('FLUX image generation failed: ' + imageResult.error);
+    }
+    
+    console.log(`[Job ${job._id}] Scene ${sceneIndex}: ✅ FLUX image generated`);
+    
+    // Step 3: Upload image to Cloudinary (Replicate URLs expire)
+    let permanentImageUrl = imageResult.imageUrl;
+    try {
+      const imageResponse = await axios.get(imageResult.imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000
+      });
+      const imageBuffer = Buffer.from(imageResponse.data);
+      
+      permanentImageUrl = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: 'image',
+            folder: 'smart-video-frames',
+            public_id: `job_${job._id}_scene_${sceneIndex}_frame`
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+        uploadStream.end(imageBuffer);
+      });
+      
+      console.log(`[Job ${job._id}] Scene ${sceneIndex}: ☁️ Image uploaded to Cloudinary`);
+    } catch (uploadErr) {
+      console.log(`[Job ${job._id}] Scene ${sceneIndex}: Cloudinary upload failed, using Replicate URL`);
+    }
+    
+    // Step 4: Create motion prompt for animation
+    const industryStyle = INDUSTRY_VIDEO_STYLES[industry] || INDUSTRY_VIDEO_STYLES['default'];
+    const motionPrompt = `${industryStyle.cameraMovement}. Smooth professional motion, ${industryStyle.mood}. Subtle atmospheric animation.`;
+    
+    console.log(`[Job ${job._id}] Scene ${sceneIndex}: Animating with Kling v2.1...`);
+    
+    // Step 5: Start image-to-video with Kling v2.1
+    const videoResult = await replicateService.startImageToVideo(permanentImageUrl, motionPrompt, {
+      duration: scene.duration || 5,
+      aspectRatio: job.aspectRatio || '9:16',
+      webhookUrl: webhookUrl
+    });
+    
+    if (!videoResult.success) {
+      throw new Error('Kling animation failed: ' + videoResult.error);
+    }
+    
+    console.log(`[Job ${job._id}] Scene ${sceneIndex}: ✅ Smart pipeline started: ${videoResult.predictionId}`);
+    
+    return {
+      success: true,
+      predictionId: videoResult.predictionId,
+      imageUrl: permanentImageUrl,
+      imagePrompt: imagePrompt,
+      motionPrompt: motionPrompt,
+      pipeline: 'smart-flux-kling'
+    };
+    
+  } catch (error) {
+    console.error(`[Job ${job._id}] Scene ${sceneIndex}: Smart pipeline failed:`, error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Enhance a video scene prompt with AI for better generation accuracy
  * Uses OpenAI to add specific cinematography and visual details
  */
@@ -723,44 +883,27 @@ async function findVideosForProductScenes(job) {
           job.scenes[i].generationType = 'image-to-video';
           console.log(`[Job ${job._id}] Scene ${i}: ✅ Image-to-video started: ${result.predictionId}`);
         } else {
-          throw new Error('Image-to-video failed, falling back to text-to-video');
+          throw new Error('Image-to-video failed, falling back to smart pipeline');
         }
         
       } else {
-        // === TEXT-TO-VIDEO: Generate from enhanced prompt ===
-        const basePrompt = `${scene.visual || scene.text}. ${scene.text}`;
+        // === SMART PIPELINE: FLUX image → Kling v2.1 animation ===
+        // Much better than pure text-to-video for brand content
+        console.log(`[Job ${job._id}] Scene ${i}: 🎨 Using SMART PIPELINE (FLUX → Kling)`);
         
-        // Add brand colors to the prompt if available
-        let colorContext = '';
-        if (brandColors.length > 0) {
-          colorContext = ` Use color palette: ${brandColors.join(', ')}.`;
-        }
+        const smartResult = await startSmartSceneVideo(scene, job, i, webhookUrl);
         
-        console.log(`[Job ${job._id}] Scene ${i}: 🎬 Using TEXT-TO-VIDEO`);
-        const enhancedPrompt = await enhanceVideoPrompt(basePrompt + colorContext, {
-          industry,
-          businessName,
-          productName,
-          brandVoice,
-          sceneContext: `Scene ${i + 1} of ${job.scenes.length} for a ${job.targetDuration}s promotional video`,
-          duration: scene.duration || 5
-        });
-        
-        console.log(`[Job ${job._id}] Scene ${i}: Enhanced prompt ready (${enhancedPrompt.length} chars)`);
-        
-        const result = await replicateService.startAsyncKlingVideo(enhancedPrompt, webhookUrl, {
-          duration: scene.duration || 5,
-          aspectRatio: job.aspectRatio || '9:16'
-        });
-        
-        if (result.success) {
-          job.scenes[i].replicatePredictionId = result.predictionId;
+        if (smartResult.success) {
+          job.scenes[i].replicatePredictionId = smartResult.predictionId;
           job.scenes[i].replicateStatus = 'pending';
-          job.scenes[i].enhancedPrompt = enhancedPrompt;
-          job.scenes[i].generationType = 'text-to-video';
-          console.log(`[Job ${job._id}] Scene ${i}: ✅ Text-to-video started: ${result.predictionId}`);
+          job.scenes[i].sourceImage = smartResult.imageUrl;
+          job.scenes[i].imagePrompt = smartResult.imagePrompt;
+          job.scenes[i].motionPrompt = smartResult.motionPrompt;
+          job.scenes[i].generationType = 'smart-flux-kling';
+          console.log(`[Job ${job._id}] Scene ${i}: ✅ Smart pipeline started: ${smartResult.predictionId}`);
         } else {
-          console.log(`[Job ${job._id}] Scene ${i}: Kling start failed, using stock video fallback`);
+          // Fallback to stock video if smart pipeline fails
+          console.log(`[Job ${job._id}] Scene ${i}: Smart pipeline failed, using stock video fallback`);
           const stockResult = await findStockVideoFallback(scene, job, i, { businessName, industry, productName });
           job.scenes[i].videoUrl = stockResult.videoUrl;
           job.scenes[i].source = stockResult.source;
