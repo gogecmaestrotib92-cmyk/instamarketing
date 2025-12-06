@@ -539,6 +539,171 @@ router.post('/elevenlabs/full-voiceover', async (req, res) => {
 // ==================== Replicate Video Routes ====================
 
 /**
+ * Smart video generation: Image-first pipeline for better visual control
+ * POST /api/ai/video/generate-smart
+ * 
+ * 1. Uses GPT to convert business context into a visual image prompt
+ * 2. Generates a high-quality image with FLUX
+ * 3. Animates the image with Kling v2.1 for realistic motion
+ * 
+ * This produces much better results than text-to-video because:
+ * - FLUX is excellent at understanding business/brand concepts
+ * - Kling v2.1 excels at animating existing images
+ * - You get control over the base visual before animation
+ */
+router.post('/video/generate-smart', async (req, res) => {
+  try {
+    const { 
+      prompt,           // Business context/topic
+      businessName,     // Company name
+      industry,         // Industry for context
+      contentPurpose,   // tips, product-feature, motivation, etc.
+      aspectRatio = '9:16',
+      duration = 5,
+      motionStyle       // Optional: 'subtle', 'dynamic', 'cinematic'
+    } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    console.log('🎨 Smart video generation request');
+    console.log('Business context:', prompt);
+    console.log('Business:', businessName, 'Industry:', industry);
+    console.log('Purpose:', contentPurpose, 'Aspect:', aspectRatio);
+
+    // Step 1: Convert business context to visual image prompt with GPT
+    const imagePromptResponse = await openaiService.chat([
+      {
+        role: 'system',
+        content: `You are an expert at creating prompts for AI image generation (FLUX model).
+Convert business/content descriptions into detailed visual scene descriptions.
+
+Guidelines:
+- Focus on VISUAL elements: setting, lighting, colors, composition, mood
+- Be specific about style: professional, cinematic, modern, elegant, etc.
+- Include camera angle hints: wide shot, close-up, overhead, etc.
+- Describe lighting: soft natural light, dramatic shadows, golden hour, etc.
+- Mention textures and materials when relevant
+- Keep it under 150 words but visually rich
+- NO text/words in the image - focus purely on visuals
+- Make it suitable for a ${aspectRatio === '9:16' ? 'vertical/portrait' : aspectRatio === '16:9' ? 'horizontal/landscape' : 'square'} composition`
+      },
+      {
+        role: 'user',
+        content: `Create an image prompt for:
+Topic: ${prompt}
+${businessName ? `Business: ${businessName}` : ''}
+${industry ? `Industry: ${industry}` : ''}
+${contentPurpose ? `Content type: ${contentPurpose}` : ''}
+
+Generate a detailed visual prompt that captures this concept.`
+      }
+    ], { model: 'gpt-4o-mini', maxTokens: 200 });
+
+    if (!imagePromptResponse.success) {
+      throw new Error('Failed to generate image prompt: ' + imagePromptResponse.error);
+    }
+
+    const imagePrompt = imagePromptResponse.content.trim();
+    console.log('📝 Generated image prompt:', imagePrompt);
+
+    // Step 2: Generate image with FLUX
+    console.log('🖼️ Generating base image with FLUX...');
+    const imageResult = await replicateService.textToImage(imagePrompt, {
+      aspectRatio: aspectRatio,
+      outputFormat: 'webp',
+      outputQuality: 95
+    });
+
+    if (!imageResult.success) {
+      throw new Error('Failed to generate image: ' + imageResult.error);
+    }
+
+    console.log('✅ Image generated:', imageResult.imageUrl);
+
+    // Step 3: Upload image to Cloudinary (Replicate URLs expire)
+    let permanentImageUrl = imageResult.imageUrl;
+    if (cloudinaryService) {
+      try {
+        const imageBuffer = await fetch(imageResult.imageUrl).then(r => r.buffer());
+        const uploadResult = await cloudinaryService.uploadBufferToCloudinary(
+          imageBuffer,
+          `smart-video-frames/${Date.now()}`,
+          'image'
+        );
+        if (uploadResult.url) {
+          permanentImageUrl = uploadResult.url;
+          console.log('☁️ Image uploaded to Cloudinary:', permanentImageUrl);
+        }
+      } catch (uploadErr) {
+        console.log('Cloudinary upload failed, using Replicate URL:', uploadErr.message);
+      }
+    }
+
+    // Step 4: Animate with Kling v2.1
+    console.log('🎬 Animating image with Kling v2.1...');
+    
+    // Create motion prompt based on content and style
+    let motionPrompt = '';
+    switch (motionStyle || contentPurpose) {
+      case 'subtle':
+        motionPrompt = 'Subtle gentle motion, soft atmospheric movement, slow elegant camera drift';
+        break;
+      case 'dynamic':
+        motionPrompt = 'Dynamic motion, energetic movement, engaging camera work';
+        break;
+      case 'cinematic':
+        motionPrompt = 'Cinematic slow motion, dramatic lighting shifts, professional film quality';
+        break;
+      case 'tips':
+      case 'industry-news':
+        motionPrompt = 'Professional subtle motion, clean movement, informative atmosphere';
+        break;
+      case 'product-feature':
+        motionPrompt = 'Elegant product showcase motion, premium reveal, smooth rotation';
+        break;
+      case 'motivation':
+        motionPrompt = 'Inspirational cinematic motion, uplifting camera movement, dramatic lighting';
+        break;
+      case 'behind-scenes':
+        motionPrompt = 'Natural authentic motion, organic movement, documentary style';
+        break;
+      case 'customer-story':
+        motionPrompt = 'Warm inviting motion, personal feel, positive atmosphere';
+        break;
+      default:
+        motionPrompt = 'Professional smooth motion, elegant camera movement, high quality animation';
+    }
+
+    const videoResult = await replicateService.imageToVideo(permanentImageUrl, motionPrompt, {
+      duration: parseInt(duration) >= 10 ? 10 : 5,
+      aspectRatio: aspectRatio
+    });
+
+    if (!videoResult.success) {
+      throw new Error('Failed to animate image: ' + videoResult.error);
+    }
+
+    console.log('✅ Smart video generation complete!');
+
+    res.json({
+      success: true,
+      videoUrl: videoResult.videoUrl,
+      imageUrl: permanentImageUrl,
+      imagePrompt: imagePrompt,
+      motionPrompt: motionPrompt,
+      pipeline: 'image-first',
+      steps: ['prompt-optimization', 'flux-image', 'kling-animation']
+    });
+
+  } catch (error) {
+    console.error('Smart video generation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
  * Generate video from text (synchronous - waits for completion)
  * POST /api/ai/video/generate
  * Uses Kling v1.6 by default - better prompt adherence and quality

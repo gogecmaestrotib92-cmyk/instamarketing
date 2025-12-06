@@ -699,18 +699,22 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
           }
         }
         
-        // Step 2: Generate AI video with Replicate
-        setGenerationStep('🎥 Creating AI video scene... (60-90 seconds)');
+        // Step 2: Generate AI video with smart image-first pipeline
+        setGenerationStep('🎨 Creating AI visual + animation... (2-3 minutes)');
         
         const videoPrompt = buildAIVideoPrompt();
-        console.log('🎬 AI Video prompt:', videoPrompt);
+        console.log('🎬 AI Video context:', videoPrompt);
         
-        const videoResponse = await fetch('/api/ai/video/generate', {
+        // Use smart pipeline: GPT prompt optimization → FLUX image → Kling animation
+        const videoResponse = await fetch('/api/ai/video/generate-smart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt: videoPrompt,
-            duration: 9,
+            businessName: businessInfo?.businessName,
+            industry: businessInfo?.industry,
+            contentPurpose: contentPurpose,
+            duration: 5,
             aspectRatio: aspectRatio
           })
         });
@@ -748,10 +752,14 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             aspectRatio,
             backgroundType: 'ai-video',
             aiVideoPrompt: videoPrompt,
+            imagePrompt: videoData.imagePrompt,  // GPT-optimized visual prompt
+            motionPrompt: videoData.motionPrompt, // Kling animation prompt
+            baseImageUrl: videoData.imageUrl,    // FLUX-generated base image
+            pipeline: videoData.pipeline || 'image-first',
             businessName: businessInfo?.businessName,
             productName: product?.name
           },
-          instructions: '🎬 AI video generated! Download both files and combine in your editor, or use the video as a silent background.'
+          instructions: '🎬 AI video generated with smart pipeline! FLUX image → Kling animation. Download both files and combine in your editor, or use the video as a silent background.'
         };
         
         setGeneratedResult(result);
@@ -762,8 +770,8 @@ Focus on trending formats, emotional hooks, and viral potential. Make them authe
             name: result.name,
             url: videoData.videoUrl,
             caption: `AI-generated: ${postTopic.substring(0, 80)}`,
-            tags: [contentPurpose, 'ai-video', 'brand-content', businessInfo?.industry].filter(Boolean),
-            source: 'BusinessTrending-AI',
+            tags: [contentPurpose, 'ai-video', 'brand-content', 'smart-pipeline', businessInfo?.industry].filter(Boolean),
+            source: 'BusinessTrending-AI-Smart',
             metadata: result.metadata
           });
           console.log('✅ AI Video auto-saved to Asset Hub');
