@@ -754,6 +754,100 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
       return res.status(200).json({ response: completion.choices[0].message.content });
     }
 
+    // ==================== ELEVENLABS ENDPOINTS ====================
+    
+    // ElevenLabs status check
+    if (url === '/api/ai/elevenlabs/status' && req.method === 'GET') {
+      const apiKey = process.env.ELEVENLABS_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(200).json({ 
+          available: false, 
+          message: 'ElevenLabs API key not configured' 
+        });
+      }
+      
+      try {
+        // Check subscription status
+        const response = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
+          headers: { 'xi-api-key': apiKey }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          return res.status(200).json({
+            available: true,
+            subscription: {
+              tier: data.tier,
+              characterCount: data.character_count,
+              characterLimit: data.character_limit,
+              voiceLimit: data.voice_limit
+            }
+          });
+        } else {
+          return res.status(200).json({ 
+            available: false, 
+            message: 'Invalid API key or subscription issue' 
+          });
+        }
+      } catch (err) {
+        return res.status(200).json({ 
+          available: false, 
+          message: err.message 
+        });
+      }
+    }
+    
+    // ElevenLabs recommended voices
+    if (url === '/api/ai/elevenlabs/voices/recommended' && req.method === 'GET') {
+      const apiKey = process.env.ELEVENLABS_API_KEY;
+      
+      if (!apiKey) {
+        return res.status(200).json({ voices: [] });
+      }
+      
+      try {
+        const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+          headers: { 'xi-api-key': apiKey }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Map and filter for recommended voices
+          const voices = data.voices
+            .filter(v => v.labels?.use_case === 'narration' || v.labels?.use_case === 'social_media' || !v.labels?.use_case)
+            .slice(0, 12)
+            .map(v => ({
+              id: v.voice_id,
+              name: v.name,
+              preview_url: v.preview_url,
+              labels: v.labels,
+              category: v.category
+            }));
+          
+          return res.status(200).json({ voices });
+        } else {
+          // Return default voices as fallback
+          return res.status(200).json({ 
+            voices: [
+              { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', labels: { accent: 'american', gender: 'female' } },
+              { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi', labels: { accent: 'american', gender: 'female' } },
+              { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', labels: { accent: 'american', gender: 'female' } },
+              { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni', labels: { accent: 'american', gender: 'male' } },
+              { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli', labels: { accent: 'american', gender: 'female' } },
+              { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh', labels: { accent: 'american', gender: 'male' } },
+              { id: 'VR6AewLTigWG4xSOukaG', name: 'Arnold', labels: { accent: 'american', gender: 'male' } },
+              { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam', labels: { accent: 'american', gender: 'male' } }
+            ]
+          });
+        }
+      } catch (err) {
+        console.error('ElevenLabs voices error:', err);
+        return res.status(200).json({ voices: [] });
+      }
+    }
+
     // ==================== MEDIA UPLOAD (Cloudinary) ====================
     
     // Image upload endpoint for brand images
