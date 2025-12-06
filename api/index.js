@@ -498,13 +498,30 @@ module.exports = async (req, res) => {
         global.premiumJobs[jobId] = jobData;
       }
 
-      // Start processing in background (fire and forget)
-      processPremiumJobVercel(jobId).catch(err => {
+      // Update status to show we're starting
+      await updatePremiumJobStatus(jobId, {
+        status: 'starting',
+        progress: 1,
+        statusMessage: '🚀 Job received, starting processing...'
+      });
+
+      // On Vercel, we can't use true background processing
+      // The function will keep running until timeout (configured in vercel.json)
+      // Use waitUntil pattern if available, otherwise just don't await
+      
+      // Start processing - this will continue after response
+      // Note: On Vercel Pro, maxDuration can be up to 300s
+      const processPromise = processPremiumJobVercel(jobId).catch(err => {
         console.error(`[${jobId}] Background process error:`, err.message);
         updatePremiumJobStatus(jobId, { status: 'failed', error: err.message });
       });
 
-      // Return immediately
+      // If waitUntil is available (Vercel Edge), use it to keep function alive
+      if (res.waitUntil) {
+        res.waitUntil(processPromise);
+      }
+
+      // Return immediately - processing continues in background
       return res.status(200).json({
         success: true,
         jobId: jobId,
