@@ -754,6 +754,79 @@ Vrati kao JSON niz objekata sa poljima: title, description, format`
       return res.status(200).json({ response: completion.choices[0].message.content });
     }
 
+    // ==================== MEDIA UPLOAD (Cloudinary) ====================
+    
+    // Image upload endpoint for brand images
+    if (url === '/api/media/upload/image' && req.method === 'POST') {
+      const cloudinary = require('cloudinary').v2;
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+      });
+
+      // Handle multipart form data
+      const busboy = require('busboy');
+      
+      return new Promise((resolve, reject) => {
+        const bb = busboy({ headers: req.headers });
+        let fileBuffer = null;
+        let folder = 'brand-images';
+        
+        bb.on('file', (name, file, info) => {
+          const chunks = [];
+          file.on('data', (chunk) => chunks.push(chunk));
+          file.on('end', () => {
+            fileBuffer = Buffer.concat(chunks);
+          });
+        });
+        
+        bb.on('field', (name, val) => {
+          if (name === 'folder') folder = val;
+        });
+        
+        bb.on('finish', async () => {
+          if (!fileBuffer) {
+            res.status(400).json({ error: 'No file uploaded' });
+            return resolve();
+          }
+          
+          try {
+            // Upload to Cloudinary using buffer
+            const uploadResult = await new Promise((resolve, reject) => {
+              const uploadStream = cloudinary.uploader.upload_stream(
+                { folder: folder, resource_type: 'image' },
+                (error, result) => {
+                  if (error) reject(error);
+                  else resolve(result);
+                }
+              );
+              uploadStream.end(fileBuffer);
+            });
+            
+            res.status(200).json({
+              success: true,
+              url: uploadResult.secure_url,
+              publicId: uploadResult.public_id
+            });
+            resolve();
+          } catch (uploadErr) {
+            console.error('Cloudinary upload error:', uploadErr);
+            res.status(500).json({ error: 'Upload failed: ' + uploadErr.message });
+            resolve();
+          }
+        });
+        
+        bb.on('error', (err) => {
+          console.error('Busboy error:', err);
+          res.status(500).json({ error: 'Upload parsing failed' });
+          resolve();
+        });
+        
+        req.pipe(bb);
+      });
+    }
+
     // Default response
     return res.status(200).json({ 
       message: 'Route not configured',
