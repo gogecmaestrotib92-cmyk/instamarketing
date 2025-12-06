@@ -1254,26 +1254,43 @@ Return JSON array with classification for each image by index:
       let fullMotionPrompt;
       let cfgScale = 0.5;
 
+      // Build detailed product description for Kling to preserve
+      // Include color, size, shape from the product description
+      const productDetails = productDescription || productDesc || '';
+      const colorMatch = productDetails.match(/\b(black|white|red|blue|green|yellow|orange|purple|pink|brown|gray|gold|silver)\b/i);
+      const productColor = colorMatch ? colorMatch[0].toLowerCase() : '';
+      
       if (scene.imageType === 'lifestyle') {
         // LIFESTYLE IMAGE: Has people - animate the person naturally
-        // Let the product images and description guide WHERE product is applied
-        // Don't assume - some products go on nose (breathing strips), face, body, etc.
+        // Be VERY specific about product appearance to prevent Kling from changing it
         
-        fullMotionPrompt = `The person in the image continues their natural interaction with "${actualProductName}". ${motionPrompt}. Smooth realistic movement, maintain the person's appearance and the product EXACTLY as shown - same shape, same design, same packaging, same placement on body. PRESERVE EXACT PRODUCT COLORS AND SHAPE - do not change any colors or form. Commercial quality.`;
-        cfgScale = 0.3; // Lower CFG to preserve product better
+        fullMotionPrompt = `The person continues natural interaction with the product. ${motionPrompt}. 
+CRITICAL PRODUCT RULES:
+- Product is "${actualProductName}"${productColor ? ` which is ${productColor.toUpperCase()} colored` : ''}
+- Keep product EXACTLY as shown in image - same size, same color, same position
+- Do NOT enlarge, change color, or reposition the product
+- Product stays in its EXACT location${productColor ? ` and stays ${productColor.toUpperCase()}` : ''}
+Smooth realistic movement, commercial quality.`;
+        cfgScale = 0.2; // Very low CFG to strictly preserve product
         
       } else if (scene.imageType === 'product') {
         // PRODUCT SHOT: Clean product image - very subtle animation, preserve product exactly
-        fullMotionPrompt = `Keep this exact "${actualProductName}" product perfectly visible and unchanged. PRESERVE EXACT SHAPE, FORM, PACKAGING AND COLORS - do not change anything about the product appearance. Very subtle animation: gentle lighting shift, soft camera zoom or rotate around product. Professional product showcase, do NOT alter product design, shape, packaging, or colors.`;
-        cfgScale = 0.15; // Even lower CFG to preserve product shape and colors strictly
+        fullMotionPrompt = `Product showcase of "${actualProductName}"${productColor ? ` (${productColor.toUpperCase()} colored)` : ''}.
+STRICT RULES: Do NOT change product size, shape, or color. Keep product EXACTLY as shown.
+${productColor ? `Product color is ${productColor.toUpperCase()} - do not change to any other color.` : ''}
+Very subtle animation only: gentle lighting shift or soft camera movement around the unchanged product.`;
+        cfgScale = 0.1; // Extremely low CFG to preserve product strictly
         
       } else {
         // GENERATED IMAGE: Full motion prompt with product context
-        fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Professional commercial quality, smooth natural movement.`;
-        cfgScale = 0.5; // Normal for generated images
+        fullMotionPrompt = `PRODUCT: ${productDesc}${productColor ? ` (${productColor} colored)` : ''}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Keep product appearance unchanged. Professional commercial quality.`;
+        cfgScale = 0.4; // Lower for generated images too
       }
 
-      console.log(`[${jobId}] Scene ${i + 1} (${scene.imageType}): CFG=${cfgScale}, ${fullMotionPrompt.substring(0, 60)}...`);
+      // Enhanced negative prompt with color-specific terms
+      const negativePrompt = `blur, distortion, low quality, shaky, amateur, text, watermark, change product, different product, wrong product, morph product, alter design, enlarge product, grow product, expand product${productColor === 'black' ? ', white product, change to white' : ''}${productColor === 'white' ? ', black product, change to black' : ''}, change color, wrong color, different color, color shift, resize product`;
+
+      console.log(`[${jobId}] Scene ${i + 1} (${scene.imageType}): CFG=${cfgScale}, color=${productColor || 'unknown'}, ${fullMotionPrompt.substring(0, 80)}...`);
 
       // Use Kling v2.1 for image-to-video
       const prediction = await replicate.predictions.create({
@@ -1281,7 +1298,7 @@ Return JSON array with classification for each image by index:
         input: {
           image: scene.imageUrl,
           prompt: fullMotionPrompt,
-          negative_prompt: "blur, distortion, low quality, shaky, amateur, text, watermark, change product, different product, wrong product, morph product, alter design, change color, wrong color, different color, color shift",
+          negative_prompt: negativePrompt,
           cfg_scale: cfgScale,
           seed: -1
         }

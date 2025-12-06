@@ -1122,20 +1122,30 @@ Output valid JSON only.`
         motionPrompt = industryMotions[industry] || 'Person interacts with product naturally, genuine satisfaction';
       }
 
-      // Let the product images and description guide WHERE product is applied
-      // Don't assume body placement - some products go on nose (breathing strips), face, hands, etc.
+      // Extract product color from description to enforce in prompt
+      const colorMatch = productDesc.match(/\b(black|white|red|blue|green|yellow|orange|purple|pink|brown|gray|gold|silver)\b/i);
+      const productColor = colorMatch ? colorMatch[0].toLowerCase() : '';
 
-      // Build comprehensive Kling prompt with FULL product context + COLOR & SHAPE PRESERVATION
-      // This tells Kling WHAT the product is and HOW to show it being used
-      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Keep product in SAME position on body as shown in image. PRESERVE EXACT PRODUCT SHAPE, FORM, AND COLORS - do not change anything about product appearance. Professional commercial quality, smooth natural movement.`;
+      // Build comprehensive Kling prompt with STRICT product preservation
+      // Be explicit about size, color, and position to prevent Kling from changing them
+      const fullMotionPrompt = `PRODUCT: ${productDesc}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}.
+CRITICAL RULES:
+- Keep product EXACTLY as shown - same size, same position on body
+${productColor ? `- Product is ${productColor.toUpperCase()} colored - do NOT change color` : ''}
+- Do NOT enlarge or resize the product
+- Do NOT change product color or shape
+Professional commercial quality, smooth natural movement.`;
 
-      console.log(`[${jobId}] Scene ${i + 1} Kling prompt: ${fullMotionPrompt.substring(0, 100)}...`);
+      // Enhanced negative prompt with color enforcement
+      const negativePrompt = `blur, distortion, low quality, shaky, amateur, text, watermark, change color, wrong color, different color, color shift, change product, wrong shape, morph, deform, enlarge product, resize product, grow product${productColor === 'black' ? ', white product' : ''}${productColor === 'white' ? ', black product' : ''}`;
+
+      console.log(`[${jobId}] Scene ${i + 1} Kling prompt (color=${productColor || 'unknown'}): ${fullMotionPrompt.substring(0, 100)}...`);
 
       const videoResult = await replicateService.imageToVideo(scene.imageUrl, fullMotionPrompt, {
         duration: 5,
         aspectRatio: aspectRatio,
-        cfgScale: 0.25, // Lower CFG to preserve product shape and colors
-        negativePrompt: 'blur, distortion, low quality, shaky, amateur, text, watermark, change color, wrong color, different color, color shift, change product, wrong shape, morph, deform'
+        cfgScale: 0.15, // Very low CFG to strictly preserve product
+        negativePrompt: negativePrompt
       });
 
       if (videoResult.success && videoResult.videoUrl) {
