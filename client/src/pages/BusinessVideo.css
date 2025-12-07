@@ -1766,20 +1766,21 @@
 }
 
 .image-selector {
-  min-height: 80px;
+  min-height: 100px;
 }
 
 .assigned-image {
   position: relative;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .assigned-image img {
   width: 100%;
-  height: 80px;
+  height: 100px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 .assigned-image .remove-btn {
@@ -1805,23 +1806,26 @@
 .image-picker {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
+  gap: 8px;
   position: relative;
+  padding-bottom: 20px;
 }
 
 .picker-thumb {
   width: 100%;
-  height: 36px;
+  height: 60px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 2px solid var(--border-color);
   transition: all 0.2s;
+  background: var(--bg-tertiary);
 }
 
 .picker-thumb:hover {
   border-color: #8b5cf6;
   transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
 .picker-label {
