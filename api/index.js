@@ -2018,12 +2018,17 @@ Output valid JSON only.`
       soundtrack: { src: job.audioUrl, effect: 'fadeOut' }
     };
 
-    // Add logo if available
-    const actualLogoUrl = classifiedImages.logoImages?.length > 0 
+    // Add logo if available - handle nested URL objects
+    let actualLogoUrl = classifiedImages.logoImages?.length > 0 
       ? classifiedImages.logoImages[0].url 
       : logoUrl;
     
-    if (actualLogoUrl) {
+    // Extract string URL from object if needed
+    if (actualLogoUrl && typeof actualLogoUrl === 'object') {
+      actualLogoUrl = actualLogoUrl.url;
+    }
+    
+    if (actualLogoUrl && typeof actualLogoUrl === 'string') {
       const logoClip = {
         asset: { type: 'image', src: actualLogoUrl },
         start: 0,
