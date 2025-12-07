@@ -1185,6 +1185,102 @@
   text-decoration: underline;
 }
 
+/* ===== Pending Job Banner ===== */
+.pending-job-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.pending-job-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.pending-job-info {
+  flex: 1;
+}
+
+.pending-job-info h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.pending-job-info p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.pending-job-progress {
+  margin-top: 8px;
+  height: 4px;
+  background: rgba(139, 92, 246, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.pending-job-progress .progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.pending-job-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pending-job-actions .resume-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pending-job-actions .resume-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.pending-job-actions .cancel-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pending-job-actions .cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
 /* ===== Steps Progress ===== */
 .steps-progress {
   display: flex;

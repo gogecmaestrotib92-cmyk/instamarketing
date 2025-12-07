@@ -38,6 +38,9 @@ const BusinessTrending = () => {
   const [postTopic, setPostTopic] = useState('');
   const [useBrandContext, setUseBrandContext] = useState(true);
   
+  // Pending job state for resume capability
+  const [pendingJobInfo, setPendingJobInfo] = useState(null);
+  
   // Load business info on mount - BRAND IS REQUIRED
   useEffect(() => {
     const saved = localStorage.getItem('businessInfo');
@@ -59,16 +62,20 @@ const BusinessTrending = () => {
     const checkPendingJobs = async () => {
       try {
         const pendingJob = localStorage.getItem('pendingPremiumJob');
-        if (!pendingJob) return;
+        if (!pendingJob) {
+          setPendingJobInfo(null);
+          return;
+        }
         
-        const { jobId, startedAt, metadata } = JSON.parse(pendingJob);
+        const { jobId, startedAt, metadata, lastStatus, lastProgress } = JSON.parse(pendingJob);
         console.log('🔄 Found pending premium job:', jobId);
         
-        // Check if job is too old (more than 20 minutes)
+        // Check if job is too old (more than 30 minutes)
         const jobAge = Date.now() - new Date(startedAt).getTime();
-        if (jobAge > 20 * 60 * 1000) {
+        if (jobAge > 30 * 60 * 1000) {
           console.log('⏰ Pending job too old, removing');
           localStorage.removeItem('pendingPremiumJob');
+          setPendingJobInfo(null);
           return;
         }
         
@@ -95,43 +102,83 @@ const BusinessTrending = () => {
           
           // Clear pending job
           localStorage.removeItem('pendingPremiumJob');
+          setPendingJobInfo(null);
           console.log('✅ Auto-saved completed premium video to Asset Hub');
+          
+          // Show completion message
+          setGenerationStep('');
+          setGeneratedResult({
+            id: Date.now().toString(),
+            type: 'premium-ai-video',
+            name: metadata?.name || 'Premium AI Video',
+            script: statusData.voiceoverScript,
+            audioUrl: statusData.audioUrl,
+            composedVideoUrl: statusData.videoUrl,
+            backgroundType: 'premium-ai',
+            ttsProvider: 'ElevenLabs',
+            createdAt: new Date().toISOString(),
+            metadata: { ...metadata, jobId },
+            instructions: '🎬 Premium AI video ready! (Resumed from background)'
+          });
           
         } else if (statusData.status === 'failed') {
           console.log('❌ Pending job failed:', statusData.error);
           localStorage.removeItem('pendingPremiumJob');
+          setPendingJobInfo(null);
+          setGenerationError(`Previous job failed: ${statusData.error}`);
           
         } else if (statusData.status === 'pending' || statusData.status === 'starting') {
-          // Job exists but hasn't started processing - trigger it
-          console.log('🔄 Job pending, triggering processing...');
-          setGenerationStep(`🔄 Resuming job - starting processing...`);
-          setIsGenerating(true);
-          
-          // Trigger processing
-          fetch('/api/ai/video/premium-process', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jobId })
-          }).catch(() => console.log('Process request sent'));
-          
-          // Wait a bit then start polling
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          resumePremiumJobPolling(jobId, metadata);
+          // Job exists but hasn't started/stalled - show banner for manual resume
+          console.log('🔄 Job pending/starting, showing resume banner...');
+          const elapsedMin = Math.floor(jobAge / 60000);
+          setPendingJobInfo({
+            jobId,
+            startedAt,
+            metadata,
+            status: statusData.status,
+            statusMessage: `Job created ${elapsedMin} min ago - needs processing`,
+            canResume: true
+          });
           
         } else if (statusData.status && statusData.status !== 'not_found') {
-          // Still processing - show notification and set up polling
+          // Still processing - show banner with current status
           console.log('⏳ Premium job still processing:', statusData.statusMessage);
+          const elapsedMin = Math.floor(jobAge / 60000);
+          setPendingJobInfo({
+            jobId,
+            startedAt,
+            metadata,
+            status: statusData.status,
+            statusMessage: statusData.statusMessage || `Processing... (${elapsedMin} min)`,
+            progress: statusData.progress || lastProgress,
+            canResume: false
+          });
+          
+          // Auto-poll for updates
           setGenerationStep(`🔄 Resuming: ${statusData.statusMessage || 'Processing...'}`);
           setIsGenerating(true);
-          
-          // Resume polling
           resumePremiumJobPolling(jobId, metadata);
+          
         } else {
           // Job not found - clean up
           localStorage.removeItem('pendingPremiumJob');
+          setPendingJobInfo(null);
         }
       } catch (err) {
         console.warn('Failed to check pending premium jobs:', err.message);
+        // Show banner with error for manual retry
+        const pendingJob = localStorage.getItem('pendingPremiumJob');
+        if (pendingJob) {
+          const { jobId, startedAt, metadata } = JSON.parse(pendingJob);
+          setPendingJobInfo({
+            jobId,
+            startedAt,
+            metadata,
+            status: 'unknown',
+            statusMessage: 'Could not check status - click Resume to retry',
+            canResume: true
+          });
+        }
       }
     };
     
@@ -247,6 +294,97 @@ const BusinessTrending = () => {
     // Timed out
     setIsGenerating(false);
     setGenerationStep('');
+  };
+  
+  // Manual resume for pending jobs (triggered by user clicking Resume button)
+  const handleManualResume = async () => {
+    if (!pendingJobInfo?.jobId) return;
+    
+    const { jobId, metadata } = pendingJobInfo;
+    console.log('🔄 Manual resume triggered for job:', jobId);
+    
+    setIsGenerating(true);
+    setPendingJobInfo(null); // Hide the banner
+    setGenerationStep('🔄 Resuming job - checking status...');
+    
+    try {
+      // First check current status
+      const statusResponse = await fetch('/api/ai/video/premium-job-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobId })
+      });
+      const statusData = await statusResponse.json();
+      
+      if (statusData.status === 'done' && statusData.videoUrl) {
+        // Already done! Save it
+        saveVideoToHub({
+          name: metadata?.name || 'Premium AI Video',
+          url: statusData.videoUrl,
+          caption: metadata?.caption || 'Premium AI Generated Video',
+          tags: metadata?.tags || ['premium-ai', 'multi-scene'],
+          source: 'BusinessTrending-Premium',
+          metadata: { ...metadata, jobId, voiceoverScript: statusData.voiceoverScript }
+        });
+        
+        localStorage.removeItem('pendingPremiumJob');
+        setIsGenerating(false);
+        setGenerationStep('');
+        setGeneratedResult({
+          id: Date.now().toString(),
+          type: 'premium-ai-video',
+          name: metadata?.name || 'Premium AI Video',
+          script: statusData.voiceoverScript,
+          audioUrl: statusData.audioUrl,
+          composedVideoUrl: statusData.videoUrl,
+          backgroundType: 'premium-ai',
+          ttsProvider: 'ElevenLabs',
+          createdAt: new Date().toISOString(),
+          metadata: { ...metadata, jobId },
+          instructions: '🎬 Premium AI video ready!'
+        });
+        return;
+      }
+      
+      if (statusData.status === 'failed') {
+        localStorage.removeItem('pendingPremiumJob');
+        setIsGenerating(false);
+        setGenerationError(`Job failed: ${statusData.error}`);
+        return;
+      }
+      
+      // If pending/starting, trigger processing again
+      if (statusData.status === 'pending' || statusData.status === 'starting') {
+        setGenerationStep('🚀 Triggering processing...');
+        
+        // Fire process request (may timeout, that's OK)
+        fetch('/api/ai/video/premium-process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId })
+        }).catch(() => console.log('Process request sent'));
+        
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }
+      
+      // Start polling
+      setGenerationStep(`🔄 ${statusData.statusMessage || 'Processing...'}`);
+      resumePremiumJobPolling(jobId, metadata);
+      
+    } catch (err) {
+      console.error('Manual resume failed:', err);
+      setIsGenerating(false);
+      setGenerationError(`Resume failed: ${err.message}`);
+    }
+  };
+  
+  // Cancel/clear a pending job
+  const handleCancelPendingJob = () => {
+    localStorage.removeItem('pendingPremiumJob');
+    setPendingJobInfo(null);
+    setIsGenerating(false);
+    setGenerationStep('');
+    console.log('🗑️ Pending job cancelled');
   };
   
   // Load ElevenLabs voices and status
@@ -1481,6 +1619,32 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
             Edit Brand
           </Link>
         </div>
+
+        {/* Pending Job Banner */}
+        {pendingJobInfo && !isGenerating && (
+          <div className="pending-job-banner">
+            <div className="pending-job-icon">⏳</div>
+            <div className="pending-job-info">
+              <h4>Premium Video In Progress</h4>
+              <p>{pendingJobInfo.statusMessage || 'Your video is being generated...'}</p>
+              {pendingJobInfo.progress > 0 && (
+                <div className="pending-job-progress">
+                  <div className="progress-bar" style={{ width: `${pendingJobInfo.progress}%` }}></div>
+                </div>
+              )}
+            </div>
+            <div className="pending-job-actions">
+              {pendingJobInfo.canResume && (
+                <button className="resume-btn" onClick={handleManualResume}>
+                  <FiRefreshCw /> Resume
+                </button>
+              )}
+              <button className="cancel-btn" onClick={handleCancelPendingJob}>
+                <FiX /> Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Progress Steps */}
         <div className="steps-progress">
