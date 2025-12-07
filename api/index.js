@@ -1636,7 +1636,7 @@ Output valid JSON only.`
       const status = await replicate.predictions.get(pendingPrediction.predictionId);
       
       if (status.status === 'succeeded' && status.output) {
-        // Upload to Cloudinary
+        // Upload to Cloudinary immediately - Replicate URLs expire!
         const scene = scenesWithImages[pendingPrediction.sceneIndex];
         const vidUpload = await cloudinary.uploader.upload(status.output, {
           resource_type: 'video',
@@ -1657,8 +1657,20 @@ Output valid JSON only.`
         
         const updatedJob = await getPremiumJob(jobId);
         return { ...updatedJob, currentStep: 'animate' };
+      } else if (status.status === 'succeeded' && !status.output) {
+        // Prediction succeeded but output was removed (Replicate cleans up after ~1 hour)
+        // This happens if polling was interrupted for too long
+        console.warn(`[${jobId}] ⚠️ Scene ${pendingPrediction.sceneIndex + 1} - output expired (data_removed)`);
+        // Skip this scene and continue - we can't recover the video
+        await updatePremiumJobStatus(jobId, {
+          currentSceneIndex: pendingPrediction.sceneIndex + 1,
+          pendingPrediction: null,
+          klingCheckCount: 0
+        });
+        const updatedJob = await getPremiumJob(jobId);
+        return { ...updatedJob, currentStep: 'animate' };
       } else if (status.status === 'failed') {
-        console.warn(`[${jobId}] Scene ${pendingPrediction.sceneIndex + 1} animation failed`);
+        console.warn(`[${jobId}] Scene ${pendingPrediction.sceneIndex + 1} animation failed: ${status.error}`);
         // Skip this scene and continue
         await updatePremiumJobStatus(jobId, {
           currentSceneIndex: pendingPrediction.sceneIndex + 1,
