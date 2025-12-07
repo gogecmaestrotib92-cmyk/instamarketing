@@ -37,6 +37,9 @@ const premiumJobSchema = new mongoose.Schema({
   voiceoverScript: String,
   error: String,
   input: mongoose.Schema.Types.Mixed,
+  scenesWithImages: [mongoose.Schema.Types.Mixed], // For resume - stores scenes with their images
+  animatedScenes: [mongoose.Schema.Types.Mixed], // For resume - stores completed scene animations
+  currentSceneIndex: { type: Number, default: 0 }, // Track progress through scenes
   savedToAssetHub: { type: Boolean, default: false }, // Track if user has synced this
   createdAt: { type: Date, default: Date.now },
   completedAt: Date
@@ -1208,6 +1211,16 @@ async function processPremiumJobVercel(jobId) {
     productName = '', productDescription = ''
   } = job.input;
 
+  // Check if we can resume from a previous partial run
+  const canResumeFromAnimations = job.animatedScenes && job.animatedScenes.length > 0;
+  const canResumeFromImages = job.scenesWithImages && job.scenesWithImages.length > 0;
+  
+  if (canResumeFromAnimations) {
+    console.log(`[${jobId}] 🔄 RESUMING: Found ${job.animatedScenes.length} completed animations`);
+  } else if (canResumeFromImages) {
+    console.log(`[${jobId}] 🔄 RESUMING: Found ${job.scenesWithImages.length} prepared scene images`);
+  }
+
   // Combine all available product/brand images
   const availableProductImages = [...productImages, ...brandImages].filter(Boolean);
   console.log(`[${jobId}] 📸 Available product images for scenes: ${availableProductImages.length}`);
@@ -1222,20 +1235,31 @@ async function processPremiumJobVercel(jobId) {
     const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
     // ============================================
-    // STEP 1: GPT scene breakdown
+    // CHECK FOR RESUME: Skip to animation if images ready
     // ============================================
-    await updatePremiumJobStatus(jobId, {
-      status: 'generating_script',
-      progress: 5,
-      statusMessage: '📝 Creating script and scenes...'
-    });
+    let scenesWithImages = job.scenesWithImages || [];
+    let sceneBreakdown = job.voiceoverScript ? { voiceoverScript: job.voiceoverScript } : null;
+    
+    // If we already have scenes with images, skip to animation
+    if (canResumeFromImages && scenesWithImages.length > 0) {
+      console.log(`[${jobId}] ⏭️ Skipping to animation step (${scenesWithImages.length} images ready)`);
+      // Jump directly to Step 4
+    } else {
+      // ============================================
+      // STEP 1: GPT scene breakdown
+      // ============================================
+      await updatePremiumJobStatus(jobId, {
+        status: 'generating_script',
+        progress: 5,
+        statusMessage: '📝 Creating script and scenes...'
+      });
 
-    const sceneBreakdownResponse = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You are an expert video producer creating scene breakdowns for premium brand videos.
+      const sceneBreakdownResponse = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert video producer creating scene breakdowns for premium brand videos.
 
 Your task:
 1. Create a compelling voiceover script (15-25 seconds when spoken)
@@ -1582,14 +1606,30 @@ Return JSON array with classification for each image by index:
       throw new Error('No images generated');
     }
 
-    await updatePremiumJobStatus(jobId, { progress: 50 });
+    // Save scenes with images so we can resume animation step if needed
+    await updatePremiumJobStatus(jobId, { 
+      progress: 50,
+      scenesWithImages: scenesWithImages // Save for resume capability
+    });
+    } // End of else block for image preparation (resume skips this)
+
+    // Use stored scenesWithImages if resuming
+    if (!scenesWithImages || scenesWithImages.length === 0) {
+      scenesWithImages = job.scenesWithImages || [];
+    }
 
     // ============================================
     // STEP 4: Animate with Kling (Brand-Aware Motion)
+    // Check if we have partially completed animations from a previous attempt
     // ============================================
-    const animatedScenes = [];
+    let animatedScenes = job.animatedScenes || [];
+    const startFromScene = animatedScenes.length; // Resume from where we left off
     
-    for (let i = 0; i < scenesWithImages.length; i++) {
+    if (startFromScene > 0) {
+      console.log(`[${jobId}] 🔄 Resuming animation from scene ${startFromScene + 1}/${scenesWithImages.length}`);
+    }
+    
+    for (let i = startFromScene; i < scenesWithImages.length; i++) {
       const scene = scenesWithImages[i];
       await updatePremiumJobStatus(jobId, {
         statusMessage: `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s)`,
@@ -1674,16 +1714,25 @@ Very subtle animation only: gentle lighting shift or soft camera movement around
         }
       });
 
-      // Poll for completion
+      // Poll for completion with progress updates
       let videoUrl = null;
       for (let attempt = 0; attempt < 60; attempt++) {
         await new Promise(r => setTimeout(r, 3000));
+        
+        // Update job status during polling so client sees progress
+        if (attempt % 5 === 0) {
+          await updatePremiumJobStatus(jobId, {
+            statusMessage: `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (${attempt * 3}s elapsed)`,
+            progress: 50 + (i * 12) + Math.floor(attempt / 5)
+          });
+        }
+        
         const status = await replicate.predictions.get(prediction.id);
         if (status.status === 'succeeded' && status.output) {
           videoUrl = status.output;
           break;
         } else if (status.status === 'failed') {
-          console.warn(`[${jobId}] Scene ${i + 1} animation failed`);
+          console.warn(`[${jobId}] Scene ${i + 1} animation failed: ${status.error}`);
           break;
         }
       }
@@ -1697,11 +1746,26 @@ Very subtle animation only: gentle lighting shift or soft camera movement around
         });
         animatedScenes.push({ ...scene, videoUrl: vidUpload.secure_url, duration: 5 });
         console.log(`[${jobId}] ✅ Scene ${i + 1} animated`);
+        
+        // Save partial progress so we can resume if timeout occurs
+        await updatePremiumJobStatus(jobId, {
+          animatedScenes: animatedScenes,
+          currentSceneIndex: i + 1,
+          statusMessage: `🎬 Scene ${i + 1}/${scenesWithImages.length} complete`,
+          progress: 50 + ((i + 1) * 12)
+        });
+      } else {
+        console.warn(`[${jobId}] Scene ${i + 1} animation timed out or failed, skipping`);
       }
     }
 
+    // Allow partial success - at least 1 scene needed
     if (animatedScenes.length === 0) {
-      throw new Error('No scenes animated');
+      throw new Error('No scenes animated - all scenes failed or timed out');
+    }
+    
+    if (animatedScenes.length < scenesWithImages.length) {
+      console.warn(`[${jobId}] ⚠️ Only ${animatedScenes.length}/${scenesWithImages.length} scenes animated - continuing with partial video`);
     }
 
     await updatePremiumJobStatus(jobId, { progress: 85 });
