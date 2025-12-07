@@ -150,7 +150,7 @@ const BusinessTrending = () => {
             metadata,
             status: statusData.status,
             statusMessage: statusData.statusMessage || `Processing... (${elapsedMin} min)`,
-            progress: statusData.progress || lastProgress,
+            progress: statusData.progress || 0,
             canResume: false
           });
           
