@@ -59,6 +59,43 @@ try {
   PremiumJob = mongoose.model('PremiumJob', premiumJobSchema);
 }
 
+// VideoJob Schema for BusinessVideo page
+const videoJobSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  topic: { type: String, required: true },
+  contentType: { type: String, default: 'tips' },
+  targetDuration: { type: Number, default: 15 },
+  voiceId: { type: String },
+  voiceStyle: { type: String, default: 'energetic' },
+  isProductVideo: { type: Boolean, default: false },
+  businessInfo: mongoose.Schema.Types.Mixed,
+  videoStyle: { type: String, default: 'dynamic' },
+  aspectRatio: { type: String, default: '9:16' },
+  status: { type: String, default: 'pending' },
+  progress: { type: Number, default: 0 },
+  statusMessage: { type: String, default: 'Queued...' },
+  script: String,
+  scenes: [mongoose.Schema.Types.Mixed],
+  subtitles: [mongoose.Schema.Types.Mixed],
+  finalVideoUrl: String,
+  audioUrl: String,
+  totalDuration: Number,
+  shotstackJobId: String,
+  shotstackStatus: String,
+  error: String,
+  retryCount: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+  completedAt: Date
+});
+
+let VideoJob;
+try {
+  VideoJob = mongoose.model('VideoJob');
+} catch {
+  VideoJob = mongoose.model('VideoJob', videoJobSchema);
+}
+
 module.exports = async (req, res) => {
   // Connect to DB first
   await connectDB();
@@ -670,6 +707,171 @@ module.exports = async (req, res) => {
         voiceoverScript: job.voiceoverScript,
         error: job.error
       });
+    }
+
+    // ==================== VIDEO JOBS (for BusinessVideo page) ====================
+
+    // Create a new video job
+    if (url === '/api/jobs' && req.method === 'POST') {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const { 
+        topic, contentType, targetDuration, voiceId, voiceStyle,
+        userId, businessInfo, forceStockVideo, style, aspectRatio, includeCharacters
+      } = body || {};
+
+      if (!topic) {
+        return res.status(400).json({ error: 'Topic is required' });
+      }
+
+      // Determine if this is a product video
+      const isProductVideo = !forceStockVideo && !!(businessInfo && (
+        businessInfo.brandImages?.length > 0 || 
+        businessInfo.productName ||
+        businessInfo.businessName
+      ));
+
+      // Create job in MongoDB
+      const job = new VideoJob({
+        userId: userId || null,
+        topic,
+        contentType: contentType || 'tips',
+        targetDuration: targetDuration || 15,
+        voiceId: voiceId || 'pNInz6obpgDQGcFmaJgB',
+        voiceStyle: voiceStyle || 'energetic',
+        isProductVideo,
+        businessInfo: businessInfo || null,
+        videoStyle: style || 'dynamic',
+        aspectRatio: aspectRatio || '9:16',
+        status: 'pending',
+        progress: 0,
+        statusMessage: 'Queued...'
+      });
+
+      await job.save();
+      console.log(`[Jobs API] Created job ${job._id}`);
+
+      // For product videos, return immediately for async processing
+      if (isProductVideo) {
+        return res.status(202).json({
+          success: true,
+          jobId: job._id,
+          status: 'pending',
+          progress: 0,
+          isProductVideo: true,
+          message: 'Video job created. Starting processing...',
+          pollUrl: `/api/jobs/${job._id}`
+        });
+      }
+
+      // For stock videos, we'd need to process - but for now just return pending
+      // The full processing requires videoJobWorker which is complex
+      return res.status(202).json({
+        success: true,
+        jobId: job._id,
+        status: 'pending',
+        progress: 0,
+        isProductVideo: false,
+        message: 'Video job created.',
+        pollUrl: `/api/jobs/${job._id}`
+      });
+    }
+
+    // Get job status (for polling)
+    if (url.match(/^\/api\/jobs\/[a-f0-9]{24}$/) && req.method === 'GET') {
+      const jobId = url.split('/').pop();
+      const job = await VideoJob.findById(jobId);
+
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+
+      // If this job has a premium job linked, sync status from it
+      if (job.shotstackJobId && job.shotstackJobId.startsWith('videojob-')) {
+        const premiumJobId = job.shotstackJobId;
+        const premiumJob = await getPremiumJob(premiumJobId);
+        
+        if (premiumJob) {
+          // Sync premium status to video job
+          await syncPremiumToVideoJob(premiumJobId, job._id);
+          
+          // Reload to get updated data
+          const updatedJob = await VideoJob.findById(jobId);
+          
+          return res.json({
+            jobId: updatedJob._id,
+            status: updatedJob.status,
+            progress: updatedJob.progress,
+            statusMessage: updatedJob.statusMessage,
+            videoUrl: updatedJob.status === 'done' ? updatedJob.finalVideoUrl : null,
+            audioUrl: updatedJob.status === 'done' ? updatedJob.audioUrl : null,
+            duration: updatedJob.totalDuration,
+            error: updatedJob.status === 'failed' ? updatedJob.error : null,
+            createdAt: updatedJob.createdAt,
+            completedAt: updatedJob.completedAt
+          });
+        }
+      }
+
+      return res.json({
+        jobId: job._id,
+        status: job.status,
+        progress: job.progress,
+        statusMessage: job.statusMessage,
+        videoUrl: job.status === 'done' ? job.finalVideoUrl : null,
+        audioUrl: job.status === 'done' ? job.audioUrl : null,
+        duration: job.totalDuration,
+        error: job.status === 'failed' ? job.error : null,
+        createdAt: job.createdAt,
+        completedAt: job.completedAt
+      });
+    }
+
+    // Process job (trigger async processing)
+    if (url.match(/^\/api\/jobs\/[a-f0-9]{24}\/process$/) && req.method === 'POST') {
+      const jobId = url.split('/')[3];
+      const job = await VideoJob.findById(jobId);
+
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+
+      if (job.status === 'done' || job.status === 'failed') {
+        return res.json({
+          jobId: job._id,
+          status: job.status,
+          videoUrl: job.finalVideoUrl,
+          error: job.error
+        });
+      }
+
+      // Update status to show processing started
+      job.status = 'processing';
+      job.statusMessage = 'Starting video generation...';
+      await job.save();
+
+      // Start processing using Premium AI pipeline
+      // Convert VideoJob to Premium AI format
+      try {
+        await processVideoJobAsPremium(job);
+        
+        return res.json({
+          jobId: job._id,
+          status: job.status,
+          progress: job.progress,
+          statusMessage: job.statusMessage,
+          message: 'Processing started. Poll /api/jobs/:id for status.'
+        });
+      } catch (err) {
+        console.error(`[Jobs API] Process error:`, err.message);
+        job.status = 'failed';
+        job.error = err.message;
+        await job.save();
+        
+        return res.status(500).json({
+          error: err.message,
+          status: 'failed'
+        });
+      }
     }
 
     // ==================== AI TEXT GENERATION (OpenAI) ====================
@@ -1948,5 +2150,108 @@ async function processPremiumJobVercel(jobId) {
   const job = await getPremiumJob(jobId);
   if (job) {
     await processOneStep(jobId, job);
+  }
+}
+
+/**
+ * Process a VideoJob (from BusinessVideo) using the Premium AI pipeline
+ * This converts the VideoJob format to Premium format and processes it
+ */
+async function processVideoJobAsPremium(videoJob) {
+  const jobId = `videojob-${videoJob._id}`;
+  const businessInfo = videoJob.businessInfo || {};
+  
+  console.log(`[${jobId}] Converting VideoJob to Premium AI processing`);
+  
+  // Create a PremiumJob entry to track this
+  const premiumJobData = {
+    jobId: jobId,
+    status: 'processing',
+    progress: 0,
+    statusMessage: 'Starting...',
+    currentStep: 'script',
+    createdAt: new Date(),
+    input: {
+      prompt: videoJob.topic,
+      businessName: businessInfo.businessName || null,
+      industry: businessInfo.industry || null,
+      contentPurpose: videoJob.contentType || 'tips',
+      aspectRatio: videoJob.aspectRatio || '9:16',
+      voice: videoJob.voiceId || '21m00Tcm4TlvDq8ikWAM',
+      includeSubtitles: true,
+      subtitleStyle: 'modern',
+      logoUrl: businessInfo.brandImages?.[0] || null,
+      logoPosition: businessInfo.logoSettings?.position || 'topRight',
+      logoSize: 0.12,
+      brandImages: businessInfo.brandImages || [],
+      productImages: [],
+      userClassifiedProducts: [],
+      userClassifiedLifestyle: [],
+      productName: businessInfo.productName || '',
+      productDescription: businessInfo.description || ''
+    }
+  };
+
+  // Save to PremiumJobs collection
+  await PremiumJob.create(premiumJobData);
+  
+  // Update the original VideoJob to track the premium job
+  videoJob.status = 'processing';
+  videoJob.statusMessage = 'Processing with Premium AI...';
+  videoJob.shotstackJobId = jobId; // Reuse this field to store premium job ID
+  await videoJob.save();
+  
+  // Process first step
+  const job = await getPremiumJob(jobId);
+  if (job) {
+    await processOneStep(jobId, job);
+  }
+  
+  // Set up a watcher to sync status back to VideoJob
+  // The client will poll VideoJob, so we need to keep it updated
+  syncPremiumToVideoJob(jobId, videoJob._id);
+  
+  return { jobId, status: 'processing' };
+}
+
+/**
+ * Sync PremiumJob status back to VideoJob
+ * This runs in background to keep VideoJob updated
+ */
+async function syncPremiumToVideoJob(premiumJobId, videoJobId) {
+  try {
+    const premiumJob = await getPremiumJob(premiumJobId);
+    if (!premiumJob) return;
+    
+    const videoJob = await VideoJob.findById(videoJobId);
+    if (!videoJob) return;
+    
+    // Map Premium status to VideoJob status
+    const statusMap = {
+      'pending': 'pending',
+      'processing': 'generating_script',
+      'done': 'done',
+      'failed': 'failed'
+    };
+    
+    videoJob.status = statusMap[premiumJob.status] || premiumJob.status;
+    videoJob.progress = premiumJob.progress;
+    videoJob.statusMessage = premiumJob.statusMessage;
+    
+    if (premiumJob.status === 'done') {
+      videoJob.finalVideoUrl = premiumJob.videoUrl;
+      videoJob.audioUrl = premiumJob.audioUrl;
+      videoJob.completedAt = new Date();
+    }
+    
+    if (premiumJob.error) {
+      videoJob.error = premiumJob.error;
+    }
+    
+    await videoJob.save();
+    console.log(`[${premiumJobId}] Synced to VideoJob: ${videoJob.status} ${videoJob.progress}%`);
+    
+  } catch (err) {
+    console.error(`[${premiumJobId}] Sync error:`, err.message);
   }
 }
