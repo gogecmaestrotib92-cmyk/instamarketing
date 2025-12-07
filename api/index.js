@@ -501,34 +501,61 @@ module.exports = async (req, res) => {
 
       // Update status to show we're starting
       await updatePremiumJobStatus(jobId, {
-        status: 'starting',
+        status: 'pending',
         progress: 1,
-        statusMessage: '🚀 Job received, starting processing...'
+        statusMessage: '🚀 Job created, waiting for processing to start...'
       });
 
-      // On Vercel, we can't use true background processing
-      // The function will keep running until timeout (configured in vercel.json)
-      // Use waitUntil pattern if available, otherwise just don't await
-      
-      // Start processing - this will continue after response
-      // Note: On Vercel Pro, maxDuration can be up to 300s
-      const processPromise = processPremiumJobVercel(jobId).catch(err => {
-        console.error(`[${jobId}] Background process error:`, err.message);
-        updatePremiumJobStatus(jobId, { status: 'failed', error: err.message });
-      });
-
-      // If waitUntil is available (Vercel Edge), use it to keep function alive
-      if (res.waitUntil) {
-        res.waitUntil(processPromise);
-      }
-
-      // Return immediately - processing continues in background
+      // Return job ID - client will call /process endpoint to start actual processing
       return res.status(200).json({
         success: true,
         jobId: jobId,
         status: 'pending',
-        message: 'Premium video job started. Poll /api/ai/video/premium-job-status for progress.'
+        message: 'Premium video job created. Call /api/ai/video/premium-process to start processing.'
       });
+    }
+
+    // Process Premium Job (separate endpoint to avoid timeout on job creation)
+    // This endpoint does the actual heavy lifting
+    if (url === '/api/ai/video/premium-process' && req.method === 'POST') {
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      const { jobId } = body || {};
+
+      if (!jobId) {
+        return res.status(400).json({ error: 'jobId is required' });
+      }
+
+      console.log(`[${jobId}] 🎬 Starting premium video processing...`);
+
+      // Update status
+      await updatePremiumJobStatus(jobId, {
+        status: 'processing',
+        progress: 2,
+        statusMessage: '📝 Creating script and scenes...'
+      });
+
+      // Process the job - this will take a while (up to 300s on Vercel)
+      try {
+        await processPremiumJobVercel(jobId);
+        
+        // Get final job status
+        const job = await getPremiumJob(jobId);
+        
+        return res.status(200).json({
+          success: true,
+          status: job?.status || 'done',
+          videoUrl: job?.videoUrl,
+          message: 'Processing complete'
+        });
+      } catch (err) {
+        console.error(`[${jobId}] Processing failed:`, err.message);
+        await updatePremiumJobStatus(jobId, { 
+          status: 'failed', 
+          error: err.message,
+          statusMessage: `❌ Failed: ${err.message}`
+        });
+        return res.status(500).json({ error: err.message });
+      }
     }
 
     // Poll Premium Job Status (from MongoDB or in-memory)

@@ -63,9 +63,9 @@ const BusinessTrending = () => {
         const { jobId, startedAt, metadata } = JSON.parse(pendingJob);
         console.log('🔄 Found pending premium job:', jobId);
         
-        // Check if job is too old (more than 15 minutes)
+        // Check if job is too old (more than 20 minutes)
         const jobAge = Date.now() - new Date(startedAt).getTime();
-        if (jobAge > 15 * 60 * 1000) {
+        if (jobAge > 20 * 60 * 1000) {
           console.log('⏰ Pending job too old, removing');
           localStorage.removeItem('pendingPremiumJob');
           return;
@@ -99,6 +99,23 @@ const BusinessTrending = () => {
         } else if (statusData.status === 'failed') {
           console.log('❌ Pending job failed:', statusData.error);
           localStorage.removeItem('pendingPremiumJob');
+          
+        } else if (statusData.status === 'pending' || statusData.status === 'starting') {
+          // Job exists but hasn't started processing - trigger it
+          console.log('🔄 Job pending, triggering processing...');
+          setGenerationStep(`🔄 Resuming job - starting processing...`);
+          setIsGenerating(true);
+          
+          // Trigger processing
+          fetch('/api/ai/video/premium-process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jobId })
+          }).catch(() => console.log('Process request sent'));
+          
+          // Wait a bit then start polling
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          resumePremiumJobPolling(jobId, metadata);
           
         } else if (statusData.status && statusData.status !== 'not_found') {
           // Still processing - show notification and set up polling
@@ -1038,7 +1055,25 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
         console.log('💾 Saved pending job to localStorage for resume capability');
         
         // ============================================
-        // STEP 2: Poll for completion
+        // STEP 2: Trigger processing (separate call to avoid timeout)
+        // ============================================
+        setGenerationStep('📝 Creating script and generating scenes...');
+        
+        // Start processing in background - don't await, just fire and poll
+        fetch('/api/ai/video/premium-process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobId })
+        }).catch(err => {
+          // Process endpoint may timeout but job continues - that's OK
+          console.log('Process request sent (may timeout, polling will catch result)');
+        });
+        
+        // Give processing a head start
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // ============================================
+        // STEP 3: Poll for completion
         // ============================================
         let attempts = 0;
         const maxAttempts = 180; // 15 minutes max (5s intervals) - Premium videos can take longer
