@@ -785,12 +785,22 @@ module.exports = async (req, res) => {
         return res.status(404).json({ error: 'Job not found' });
       }
 
-      // If this job has a premium job linked, sync status from it
+      // If this job has a premium job linked, process and sync
       if (job.shotstackJobId && job.shotstackJobId.startsWith('videojob-')) {
         const premiumJobId = job.shotstackJobId;
         const premiumJob = await getPremiumJob(premiumJobId);
         
         if (premiumJob) {
+          // If still processing, continue the processing!
+          if (premiumJob.status === 'processing') {
+            console.log(`[${premiumJobId}] GET poll triggering processOneStep (step: ${premiumJob.step})`);
+            try {
+              await processOneStep(premiumJobId);
+            } catch (stepErr) {
+              console.error(`[${premiumJobId}] Step error:`, stepErr.message);
+            }
+          }
+          
           // Sync premium status to video job
           await syncPremiumToVideoJob(premiumJobId, job._id);
           
