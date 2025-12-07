@@ -1159,28 +1159,41 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
         const videoPrompt = buildAIVideoPrompt();
         console.log('📝 Premium video topic:', videoPrompt);
         
-        // Get brand images with user-classified types
-        const allBrandImages = businessInfo?.brandImages || [];
+        // Only include brand assets if useBrandContext is enabled
+        let brandLogo = null;
+        let brandImages = [];
+        let userClassifiedProducts = [];
+        let userClassifiedLifestyle = [];
+        let productImages = [];
+        let selectedProductData = null;
         
-        // Separate images by user-defined type
-        const userClassifiedLogo = allBrandImages.find(img => img.imageType === 'logo');
-        const userClassifiedProducts = allBrandImages.filter(img => img.imageType === 'product').map(img => img.url);
-        const userClassifiedLifestyle = allBrandImages.filter(img => img.imageType === 'lifestyle').map(img => img.url);
-        const unclassifiedImages = allBrandImages.filter(img => !img.imageType).map(img => img.url);
-        
-        // Use user-classified logo, or fall back to first image
-        const brandLogo = userClassifiedLogo?.url || allBrandImages[0]?.url || null;
-        
-        // Combine classified product images + unclassified (GPT will classify unclassified ones)
-        const brandImages = [...userClassifiedProducts, ...userClassifiedLifestyle, ...unclassifiedImages];
-        
-        console.log('🏷️ Logo:', brandLogo ? 'Found (user-classified)' : 'None');
-        console.log('📦 Product images:', userClassifiedProducts.length, 'classified +', unclassifiedImages.length, 'to auto-classify');
-        console.log('👤 Lifestyle images:', userClassifiedLifestyle.length, 'classified');
-        
-        // Get selected product images if a specific product is selected
-        const selectedProductData = getSelectedProductDetails();
-        const productImages = selectedProductData?.images || [];
+        if (useBrandContext) {
+          // Get brand images with user-classified types
+          const allBrandImages = businessInfo?.brandImages || [];
+          
+          // Separate images by user-defined type
+          const userClassifiedLogoImg = allBrandImages.find(img => img.imageType === 'logo');
+          userClassifiedProducts = allBrandImages.filter(img => img.imageType === 'product').map(img => img.url);
+          userClassifiedLifestyle = allBrandImages.filter(img => img.imageType === 'lifestyle').map(img => img.url);
+          const unclassifiedImages = allBrandImages.filter(img => !img.imageType).map(img => img.url);
+          
+          // Use user-classified logo, or fall back to first image
+          brandLogo = userClassifiedLogoImg?.url || allBrandImages[0]?.url || null;
+          
+          // Combine classified product images + unclassified (GPT will classify unclassified ones)
+          brandImages = [...userClassifiedProducts, ...userClassifiedLifestyle, ...unclassifiedImages];
+          
+          console.log('🏷️ Logo:', brandLogo ? 'Found' : 'None');
+          console.log('📦 Product images:', userClassifiedProducts.length, 'classified +', unclassifiedImages.length, 'to auto-classify');
+          console.log('👤 Lifestyle images:', userClassifiedLifestyle.length, 'classified');
+          
+          // Get selected product images if a specific product is selected
+          selectedProductData = getSelectedProductDetails();
+          productImages = selectedProductData?.images || [];
+        } else {
+          console.log('🚫 Brand context OFF - no logo or brand images will be used');
+          selectedProductData = getSelectedProductDetails(); // Still get product name for context
+        }
         
         // ============================================
         // STEP 1: Start job (returns immediately)
@@ -1192,8 +1205,8 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             prompt: videoPrompt,
-            businessName: businessInfo?.businessName,
-            industry: businessInfo?.industry,
+            businessName: useBrandContext ? businessInfo?.businessName : null,
+            industry: useBrandContext ? businessInfo?.industry : null,
             contentPurpose: contentPurpose,
             aspectRatio: aspectRatio,
             voice: getVoiceId(),
@@ -1202,14 +1215,14 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
             logoUrl: brandLogo,
             logoPosition: 'topRight',
             logoSize: 0.12,
-            // Send images with pre-classification info
+            // Send images with pre-classification info (empty if brand context off)
             brandImages: brandImages,
             productImages: productImages,
             // Pass user classifications to skip GPT Vision for already-classified images
             userClassifiedProducts: userClassifiedProducts,
             userClassifiedLifestyle: userClassifiedLifestyle,
             productName: selectedProductData?.name,
-            productDescription: selectedProductData?.description
+            productDescription: useBrandContext ? selectedProductData?.description : null
           })
         });
         
