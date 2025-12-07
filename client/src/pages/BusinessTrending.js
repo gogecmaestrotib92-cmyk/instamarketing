@@ -67,7 +67,7 @@ const BusinessTrending = () => {
           return;
         }
         
-        const { jobId, startedAt, metadata, lastStatus, lastProgress } = JSON.parse(pendingJob);
+        const { jobId, startedAt, metadata } = JSON.parse(pendingJob);
         console.log('🔄 Found pending premium job:', jobId);
         
         // Check if job is too old (more than 30 minutes)
