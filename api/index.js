@@ -1781,17 +1781,22 @@ Output valid JSON only.`
       }
 
       if (selectedImage) {
-        if (selectedImage.url.includes('cloudinary')) {
-          imageUrl = selectedImage.url;
-        } else {
-          try {
-            const imgUpload = await cloudinary.uploader.upload(selectedImage.url, {
-              folder: 'premium-scenes',
-              public_id: `${jobId}-img-${i}`
-            });
-            imageUrl = imgUpload.secure_url;
-          } catch (uploadErr) {
-            console.warn(`[${jobId}] Failed to upload, falling back to FLUX`);
+        // Handle both string URLs and object URLs {url: "...", addedAt: "..."}
+        const actualUrl = typeof selectedImage.url === 'string' ? selectedImage.url : selectedImage.url?.url;
+        
+        if (actualUrl) {
+          if (actualUrl.includes('cloudinary')) {
+            imageUrl = actualUrl;
+          } else {
+            try {
+              const imgUpload = await cloudinary.uploader.upload(actualUrl, {
+                folder: 'premium-scenes',
+                public_id: `${jobId}-img-${i}`
+              });
+              imageUrl = imgUpload.secure_url;
+            } catch (uploadErr) {
+              console.warn(`[${jobId}] Failed to upload image ${actualUrl}, falling back to FLUX`);
+            }
           }
         }
       }
