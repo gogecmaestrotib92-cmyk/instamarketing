@@ -36,6 +36,7 @@ const BusinessTrending = () => {
   
   // Step 3: Generate
   const [postTopic, setPostTopic] = useState('');
+  const [useBrandContext, setUseBrandContext] = useState(true);
   
   // Load business info on mount - BRAND IS REQUIRED
   useEffect(() => {
@@ -137,6 +138,57 @@ const BusinessTrending = () => {
     checkPendingJobs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  // Rebuild topic when brand context toggle changes (only if on step 3)
+  useEffect(() => {
+    if (currentStep === 3 && contentPurpose) {
+      // Rebuild topic with new brand context setting
+      const product = getSelectedProductDetails();
+      const goal = contentGoals.find(g => g.id === contentGoal);
+      
+      let topic = '';
+      
+      if (useBrandContext && businessInfo?.businessName) {
+        topic += `For ${businessInfo.businessName}`;
+        if (businessInfo.industry) topic += ` (${businessInfo.industry})`;
+        topic += ': ';
+      }
+      
+      switch (contentPurpose) {
+        case 'tips':
+          topic += `Share expert tips about ${customTopic || (useBrandContext ? product?.name : null) || (useBrandContext ? businessInfo?.industry : null) || 'your expertise'}`;
+          break;
+        case 'behind-scenes':
+          topic += `Show behind the scenes of ${customTopic || 'how we work'}`;
+          break;
+        case 'product-feature':
+          topic += `Highlight ${(useBrandContext ? product?.name : null) || customTopic || 'our product'}: ${(useBrandContext ? product?.description : null) || 'key benefits and features'}`;
+          break;
+        case 'customer-story':
+          topic += `Share a customer success story about ${(useBrandContext ? product?.name : null) || customTopic || 'results achieved'}`;
+          break;
+        case 'industry-news':
+          topic += `Share insights about ${customTopic || (useBrandContext ? businessInfo?.industry : null) || 'industry trends'}`;
+          break;
+        case 'motivation':
+          topic += `Motivational content for ${(useBrandContext ? businessInfo?.targetAudience : null) || 'our audience'}: ${customTopic || 'inspirational message'}`;
+          break;
+        default:
+          topic += customTopic || 'engaging content';
+      }
+      
+      if (goal) {
+        topic += `. Goal: ${goal.description}`;
+      }
+      
+      if (useBrandContext && businessInfo?.brandVoice) {
+        topic += `. Tone: ${businessInfo.brandVoice}`;
+      }
+      
+      setPostTopic(topic);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useBrandContext]);
   
   // Resume polling for a pending premium job
   const resumePremiumJobPolling = async (jobId, metadata) => {
@@ -404,15 +456,15 @@ const BusinessTrending = () => {
     return null;
   };
   
-  // Build brand-focused content topic
-  const buildBrandTopic = () => {
+  // Build brand-focused content topic (respects useBrandContext toggle)
+  const buildBrandTopic = (includeBrand = true) => {
     const product = getSelectedProductDetails();
     const goal = contentGoals.find(g => g.id === contentGoal);
     
     let topic = '';
     
-    // Start with the brand context
-    if (businessInfo?.businessName) {
+    // Only add brand context if includeBrand is true
+    if (includeBrand && businessInfo?.businessName) {
       topic += `For ${businessInfo.businessName}`;
       if (businessInfo.industry) topic += ` (${businessInfo.industry})`;
       topic += ': ';
@@ -421,22 +473,22 @@ const BusinessTrending = () => {
     // Add purpose-specific context
     switch (contentPurpose) {
       case 'tips':
-        topic += `Share expert tips about ${customTopic || product?.name || businessInfo?.industry || 'your expertise'}`;
+        topic += `Share expert tips about ${customTopic || (includeBrand ? product?.name : null) || (includeBrand ? businessInfo?.industry : null) || 'your expertise'}`;
         break;
       case 'behind-scenes':
         topic += `Show behind the scenes of ${customTopic || 'how we work'}`;
         break;
       case 'product-feature':
-        topic += `Highlight ${product?.name || customTopic || 'our product'}: ${product?.description || 'key benefits and features'}`;
+        topic += `Highlight ${(includeBrand ? product?.name : null) || customTopic || 'our product'}: ${(includeBrand ? product?.description : null) || 'key benefits and features'}`;
         break;
       case 'customer-story':
-        topic += `Share a customer success story about ${product?.name || customTopic || 'results achieved'}`;
+        topic += `Share a customer success story about ${(includeBrand ? product?.name : null) || customTopic || 'results achieved'}`;
         break;
       case 'industry-news':
-        topic += `Share insights about ${customTopic || businessInfo?.industry || 'industry trends'}`;
+        topic += `Share insights about ${customTopic || (includeBrand ? businessInfo?.industry : null) || 'industry trends'}`;
         break;
       case 'motivation':
-        topic += `Motivational content for ${businessInfo?.targetAudience || 'our audience'}: ${customTopic || 'inspirational message'}`;
+        topic += `Motivational content for ${(includeBrand ? businessInfo?.targetAudience : null) || 'our audience'}: ${customTopic || 'inspirational message'}`;
         break;
       default:
         topic += customTopic || 'engaging content';
@@ -447,8 +499,8 @@ const BusinessTrending = () => {
       topic += `. Goal: ${goal.description}`;
     }
     
-    // Add brand voice
-    if (businessInfo?.brandVoice) {
+    // Add brand voice only if including brand
+    if (includeBrand && businessInfo?.brandVoice) {
       topic += `. Tone: ${businessInfo.brandVoice}`;
     }
     
@@ -584,14 +636,17 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
     // Start with the actual topic/script content
     let prompt = postTopic ? `${postTopic}. ` : '';
     
-    // Add business context
-    if (businessInfo?.businessName) {
-      prompt += `For ${businessInfo.businessName}. `;
-    }
-    
-    // Add product context if available
-    if (product?.name) {
-      prompt += `Featuring ${product.name}. `;
+    // Only add brand context if toggle is enabled
+    if (useBrandContext) {
+      // Add business context
+      if (businessInfo?.businessName) {
+        prompt += `For ${businessInfo.businessName}. `;
+      }
+      
+      // Add product context if available
+      if (product?.name) {
+        prompt += `Featuring ${product.name}. `;
+      }
     }
     
     // Add scene style based on content purpose
@@ -618,14 +673,17 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
         prompt += `Professional brand content style. `;
     }
     
-    // Add industry context
-    if (businessInfo?.industry) {
-      prompt += `${businessInfo.industry} industry setting. `;
-    }
-    
-    // Add brand colors if available
-    if (businessInfo?.brandColors?.length > 0) {
-      prompt += `Color palette: ${businessInfo.brandColors.join(', ')}. `;
+    // Add industry/brand styling context only if toggle is enabled
+    if (useBrandContext) {
+      // Add industry context
+      if (businessInfo?.industry) {
+        prompt += `${businessInfo.industry} industry setting. `;
+      }
+      
+      // Add brand colors if available
+      if (businessInfo?.brandColors?.length > 0) {
+        prompt += `Color palette: ${businessInfo.brandColors.join(', ')}. `;
+      }
     }
     
     // Quality modifiers
@@ -1824,6 +1882,24 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
                     <span className="summary-label">Format</span>
                     <span className="summary-value">{aspectRatio}</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Brand Context Toggle */}
+              <div className="brand-context-toggle">
+                <div className="toggle-row">
+                  <div className="toggle-info">
+                    <h4>🏢 Include Brand Context</h4>
+                    <p>{useBrandContext ? 'Brand details will be included in generation' : 'Generic content without brand mentions'}</p>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={useBrandContext}
+                      onChange={(e) => setUseBrandContext(e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
                 </div>
               </div>
 
