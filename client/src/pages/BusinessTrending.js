@@ -1041,7 +1041,7 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
         // STEP 2: Poll for completion
         // ============================================
         let attempts = 0;
-        const maxAttempts = 120; // 10 minutes max (5s intervals)
+        const maxAttempts = 180; // 15 minutes max (5s intervals) - Premium videos can take longer
         let finalJob = null;
         
         while (attempts < maxAttempts) {
@@ -1056,6 +1056,15 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
             });
             const statusData = await statusResponse.json();
             
+            // Update localStorage with latest status so resume works better
+            const updatedPendingJob = {
+              ...pendingJobData,
+              lastStatus: statusData.status,
+              lastProgress: statusData.progress,
+              lastChecked: new Date().toISOString()
+            };
+            localStorage.setItem('pendingPremiumJob', JSON.stringify(updatedPendingJob));
+            
             if (statusData.status === 'done' && statusData.videoUrl) {
               finalJob = {
                 finalVideoUrl: statusData.videoUrl,
@@ -1064,18 +1073,25 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
                 scenes: []
               };
               console.log('✅ Premium video complete:', statusData.videoUrl);
+              // Clear pending job on success
+              localStorage.removeItem('pendingPremiumJob');
               break;
             } else if (statusData.status === 'failed') {
+              localStorage.removeItem('pendingPremiumJob');
               throw new Error(statusData.error || 'Video generation failed');
             }
             
-            // Update status message from server
+            // Update status message from server with time elapsed
+            const elapsedMin = Math.floor((attempts * 5) / 60);
+            const elapsedSec = (attempts * 5) % 60;
+            const timeStr = `${elapsedMin}:${elapsedSec.toString().padStart(2, '0')}`;
             const statusMsg = statusData.statusMessage || `Processing... (${statusData.status})`;
-            setGenerationStep(statusMsg);
             
             // Also show progress percentage if available
             if (statusData.progress > 0) {
-              setGenerationStep(`${statusMsg} (${statusData.progress}%)`);
+              setGenerationStep(`${statusMsg} (${statusData.progress}%) - ${timeStr} elapsed`);
+            } else {
+              setGenerationStep(`${statusMsg} - ${timeStr} elapsed`);
             }
             
           } catch (pollErr) {
@@ -1088,7 +1104,9 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
         }
         
         if (!finalJob || !finalJob.finalVideoUrl) {
-          throw new Error('Video generation timed out after 10 minutes');
+          // Don't clear localStorage - allow resume
+          console.log('⏳ Video generation timed out but job may still be processing. Check Asset Hub later or refresh page to resume.');
+          throw new Error('Video generation timed out after 15 minutes. The job may still be processing in the background - refresh the page to check status or look in Asset Hub.');
         }
         
         // Build result from completed job
