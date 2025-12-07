@@ -79,11 +79,11 @@ const BusinessTrending = () => {
           return;
         }
         
-        // Poll for status
+        // Poll for status (with continueProcessing to trigger one step)
         const statusResponse = await fetch('/api/ai/video/premium-job-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobId })
+          body: JSON.stringify({ jobId, continueProcessing: true })
         });
         const statusData = await statusResponse.json();
         
@@ -240,10 +240,11 @@ const BusinessTrending = () => {
       attempts++;
       
       try {
+        // Send continueProcessing: true to trigger one step of processing per poll
         const statusResponse = await fetch('/api/ai/video/premium-job-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobId })
+          body: JSON.stringify({ jobId, continueProcessing: true })
         });
         const statusData = await statusResponse.json();
         
@@ -301,11 +302,11 @@ const BusinessTrending = () => {
     setGenerationStep('🔄 Resuming job - checking status...');
     
     try {
-      // First check current status
+      // First check current status (with continueProcessing to trigger a step)
       const statusResponse = await fetch('/api/ai/video/premium-job-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobId })
+        body: JSON.stringify({ jobId, continueProcessing: true })
       });
       const statusData = await statusResponse.json();
       
@@ -1275,23 +1276,49 @@ IMPORTANT: Always respond in English regardless of business name or context.`,
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         // ============================================
-        // STEP 3: Poll for completion
+        // STEP 3: Poll for completion (CHUNKED PROCESSING)
+        // Each poll triggers one processing step on the server
         // ============================================
         let attempts = 0;
         const maxAttempts = 180; // 15 minutes max (5s intervals) - Premium videos can take longer
         let finalJob = null;
+        let lastProgress = 0;
+        let stuckCount = 0;
         
         while (attempts < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 5000));
           attempts++;
           
           try {
+            // ALWAYS send continueProcessing: true - each poll triggers one step
+            // This is the key to chunked processing for Vercel compatibility
             const statusResponse = await fetch('/api/ai/video/premium-job-status', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ jobId })
+              body: JSON.stringify({ 
+                jobId,
+                continueProcessing: true // Always true - each poll processes one step
+              })
             });
             const statusData = await statusResponse.json();
+            
+            // Check if progress is stuck
+            if (statusData.progress === lastProgress && statusData.status === 'processing') {
+              stuckCount++;
+              if (stuckCount >= 6) { // Stuck for 30+ seconds
+                console.log('⚠️ Progress stuck, requesting continuation...');
+                // Force continuation request
+                fetch('/api/ai/video/premium-process', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ jobId })
+                }).catch(() => {});
+                stuckCount = 0;
+              }
+            } else {
+              stuckCount = 0;
+              lastProgress = statusData.progress || 0;
+            }
             
             // Update localStorage with latest status so resume works better
             const updatedPendingJob = {

@@ -37,9 +37,14 @@ const premiumJobSchema = new mongoose.Schema({
   voiceoverScript: String,
   error: String,
   input: mongoose.Schema.Types.Mixed,
-  scenesWithImages: [mongoose.Schema.Types.Mixed], // For resume - stores scenes with their images
-  animatedScenes: [mongoose.Schema.Types.Mixed], // For resume - stores completed scene animations
+  // Step-based processing state (for Vercel chunked execution)
+  currentStep: { type: String, default: 'script' }, // script, voiceover, classify, images, animate, compose, done
+  sceneBreakdown: mongoose.Schema.Types.Mixed, // GPT script result
+  classifiedImages: mongoose.Schema.Types.Mixed, // Image classification result
+  scenesWithImages: [mongoose.Schema.Types.Mixed], // Scenes with their images
+  animatedScenes: [mongoose.Schema.Types.Mixed], // Completed scene animations  
   currentSceneIndex: { type: Number, default: 0 }, // Track progress through scenes
+  pendingPrediction: mongoose.Schema.Types.Mixed, // { predictionId, sceneIndex } for Kling polling
   savedToAssetHub: { type: Boolean, default: false }, // Track if user has synced this
   createdAt: { type: Date, default: Date.now },
   completedAt: Date
@@ -518,8 +523,9 @@ module.exports = async (req, res) => {
       });
     }
 
-    // Process Premium Job (separate endpoint to avoid timeout on job creation)
-    // This endpoint does the actual heavy lifting
+    // Process Premium Job - CHUNKED PROCESSING for Vercel
+    // Each call processes ONE STEP and returns within Vercel's timeout
+    // Client must call repeatedly until job is complete
     if (url === '/api/ai/video/premium-process' && req.method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const { jobId } = body || {};
@@ -528,43 +534,69 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'jobId is required' });
       }
 
-      console.log(`[${jobId}] 🎬 Starting premium video processing...`);
+      // Get job from MongoDB
+      const job = await getPremiumJob(jobId);
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
 
-      // Update status
-      await updatePremiumJobStatus(jobId, {
-        status: 'processing',
-        progress: 2,
-        statusMessage: '📝 Creating script and scenes...'
-      });
+      // If job is already done or failed, return current status
+      if (job.status === 'done' || job.status === 'failed') {
+        return res.status(200).json({
+          success: true,
+          jobId: job.jobId,
+          status: job.status,
+          progress: job.progress,
+          statusMessage: job.statusMessage,
+          videoUrl: job.videoUrl,
+          audioUrl: job.audioUrl,
+          voiceoverScript: job.voiceoverScript,
+          error: job.error
+        });
+      }
 
-      // Process the job - this will take a while (up to 300s on Vercel)
+      const currentStep = job.currentStep || 'script';
+      console.log(`[${jobId}] 🔄 Processing step: ${currentStep}`);
+
       try {
-        await processPremiumJobVercel(jobId);
-        
-        // Get final job status
-        const job = await getPremiumJob(jobId);
+        // Process ONE step at a time - each step saves state and returns
+        const result = await processOneStep(jobId, job);
         
         return res.status(200).json({
           success: true,
-          status: job?.status || 'done',
-          videoUrl: job?.videoUrl,
-          message: 'Processing complete'
+          jobId: job.jobId,
+          status: result.status,
+          progress: result.progress,
+          statusMessage: result.statusMessage,
+          currentStep: result.currentStep,
+          videoUrl: result.videoUrl,
+          audioUrl: result.audioUrl,
+          voiceoverScript: result.voiceoverScript,
+          error: result.error,
+          needsMoreProcessing: result.status === 'processing'
         });
-      } catch (err) {
-        console.error(`[${jobId}] Processing failed:`, err.message);
-        await updatePremiumJobStatus(jobId, { 
-          status: 'failed', 
-          error: err.message,
-          statusMessage: `❌ Failed: ${err.message}`
+      } catch (error) {
+        console.error(`[${jobId}] Step ${currentStep} failed:`, error.message);
+        await updatePremiumJobStatus(jobId, {
+          status: 'failed',
+          error: error.message,
+          statusMessage: `❌ Failed at ${currentStep}: ${error.message}`
         });
-        return res.status(500).json({ error: err.message });
+        return res.status(200).json({
+          success: false,
+          jobId: jobId,
+          status: 'failed',
+          error: error.message,
+          statusMessage: `❌ Failed: ${error.message}`
+        });
       }
     }
 
     // Poll Premium Job Status (from MongoDB or in-memory)
+    // With continueProcessing=true, also triggers the next processing step
     if (url === '/api/ai/video/premium-job-status' && req.method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { jobId } = body || {};
+      const { jobId, continueProcessing } = body || {};
 
       if (!jobId) {
         return res.status(400).json({ error: 'jobId is required' });
@@ -589,9 +621,45 @@ module.exports = async (req, res) => {
         return res.status(404).json({ error: 'Job not found. Please try again or start a new generation.' });
       }
 
+      // If continueProcessing is true and job is still in progress, process one step
+      // Note: job.status can be 'pending', 'processing', or other states
+      if (continueProcessing && job.status !== 'done' && job.status !== 'failed' && job.progress < 100) {
+        console.log(`[${jobId}] 🔄 Status poll with continueProcessing, step: ${job.currentStep || 'script'}`);
+        
+        try {
+          const result = await processOneStep(jobId, job);
+          return res.status(200).json({
+            success: true,
+            jobId: job.jobId,
+            status: result.status,
+            progress: result.progress,
+            statusMessage: result.statusMessage,
+            currentStep: result.currentStep,
+            videoUrl: result.videoUrl,
+            audioUrl: result.audioUrl,
+            voiceoverScript: result.voiceoverScript,
+            error: result.error,
+            needsMoreProcessing: result.status === 'processing'
+          });
+        } catch (error) {
+          console.error(`[${jobId}] Processing continuation failed:`, error.message);
+          await updatePremiumJobStatus(jobId, {
+            status: 'failed',
+            error: error.message,
+            statusMessage: `❌ Failed: ${error.message}`
+          });
+          return res.status(200).json({
+            success: false,
+            jobId: jobId,
+            status: 'failed',
+            error: error.message
+          });
+        }
+      }
+
       return res.status(200).json({
         success: true,
-        jobId: job.id,
+        jobId: job.jobId,
         status: job.status,
         progress: job.progress,
         statusMessage: job.statusMessage,
@@ -1193,15 +1261,28 @@ async function getPremiumJob(jobId) {
 }
 
 /**
- * Process Premium AI Video Job in Background (Vercel)
- * This runs async after the response is sent
+ * CHUNKED PROCESSING: Process ONE step at a time
+ * Each step runs within Vercel's timeout, saves state, and returns
+ * Client calls again to process the next step
+ * 
+ * Steps: script → voiceover → classify → images → animate → compose → done
  */
-async function processPremiumJobVercel(jobId) {
-  const job = await getPremiumJob(jobId);
-  if (!job) {
-    console.error(`[${jobId}] Job not found for processing`);
-    return;
-  }
+async function processOneStep(jobId, job) {
+  const currentStep = job.currentStep || 'script';
+  
+  const OpenAI = require('openai');
+  const Replicate = require('replicate');
+  const fetch = require('node-fetch');
+  const cloudinary = require('cloudinary').v2;
+  
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+  
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'ddvtwoyxp',
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
 
   const { 
     prompt, businessName, industry, contentPurpose, aspectRatio, voice, 
@@ -1211,24 +1292,15 @@ async function processPremiumJobVercel(jobId) {
     productName = '', productDescription = ''
   } = job.input;
 
-  // Combine all available product/brand images
   const availableProductImages = [...productImages, ...brandImages].filter(Boolean);
-  console.log(`[${jobId}] 📸 Available product images for scenes: ${availableProductImages.length}`);
-  console.log(`[${jobId}] 🏷️ User pre-classified: ${userClassifiedProducts.length} products, ${userClassifiedLifestyle.length} lifestyle`);
 
-  try {
-    const OpenAI = require('openai');
-    const Replicate = require('replicate');
-    const fetch = require('node-fetch');
-
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
-
-    // ============================================
-    // STEP 1: GPT scene breakdown
-    // ============================================
+  // ============================================
+  // STEP: SCRIPT - Generate voiceover script with GPT
+  // ============================================
+  if (currentStep === 'script') {
+    console.log(`[${jobId}] 📝 Step: SCRIPT`);
     await updatePremiumJobStatus(jobId, {
-      status: 'generating_script',
+      status: 'processing',
       progress: 5,
       statusMessage: '📝 Creating script and scenes...'
     });
@@ -1249,25 +1321,7 @@ CRITICAL - Each scene needs these fields:
 - motionPrompt: For AI VIDEO animation - describe movement INCLUDING PRODUCT INTERACTION
 - productAction: Specifically how the product appears/is used in this scene
 
-**MOST IMPORTANT**: At least ONE scene MUST show a person USING the product:
-- If it's a nasal strip → show person applying it to their nose, then breathing freely
-- If it's food → show person eating/drinking it with enjoyment
-- If it's clothing → show person putting it on or wearing it confidently
-- If it's tech → show hands using the device, screen interactions
-- If it's skincare → show applying to face, the transformation
-
-VISUAL PROMPT RULES:
-- ALWAYS include the actual product in at least 2 scenes
-- Show the product being USED by a person, not just displayed
-- Describe the person: age, gender, ethnicity for diversity, expression
-- Professional lighting, commercial quality aesthetic
-- NO text/words/logos
-
-MOTION PROMPT RULES:
-- Describe BOTH camera movement AND product/person movement
-- "Person applies [product] to [body part], satisfied expression, gentle camera zoom"
-- "Hand reaches for [product], picks it up, brings to face, smooth motion"
-- Show the product ACTION happening in the animation
+**MOST IMPORTANT**: At least ONE scene MUST show a person USING the product.
 
 OUTPUT FORMAT (JSON only):
 {
@@ -1292,8 +1346,6 @@ ${businessName ? `BRAND: ${businessName}` : ''}
 ${industry ? `INDUSTRY: ${industry}` : ''}
 ${contentPurpose ? `PURPOSE: ${contentPurpose}` : ''}
 
-IMPORTANT: Show the actual product being USED by people in the scenes. Don't just show abstract lifestyle shots - show the product in action!
-
 Output valid JSON only.`
         }
       ],
@@ -1309,20 +1361,35 @@ Output valid JSON only.`
     }
 
     console.log(`[${jobId}] ✅ Script ready: ${sceneBreakdown.scenes.length} scenes`);
+    
     await updatePremiumJobStatus(jobId, {
       progress: 10,
-      voiceoverScript: sceneBreakdown.voiceoverScript
+      voiceoverScript: sceneBreakdown.voiceoverScript,
+      sceneBreakdown: sceneBreakdown,
+      currentStep: 'voiceover',
+      statusMessage: '🎙️ Generating voiceover...'
     });
 
-    // ============================================
-    // STEP 2: Generate voiceover with ElevenLabs
-    // ============================================
+    const updatedJob = await getPremiumJob(jobId);
+    return { ...updatedJob, currentStep: 'voiceover' };
+  }
+
+  // ============================================
+  // STEP: VOICEOVER - Generate with ElevenLabs
+  // ============================================
+  if (currentStep === 'voiceover') {
+    console.log(`[${jobId}] 🎙️ Step: VOICEOVER`);
     await updatePremiumJobStatus(jobId, {
-      statusMessage: '🎙️ Generating voiceover...',
-      progress: 15
+      progress: 15,
+      statusMessage: '🎙️ Generating voiceover...'
     });
 
-    const elevenVoiceId = voice || '21m00Tcm4TlvDq8ikWAM'; // Rachel
+    const sceneBreakdown = job.sceneBreakdown;
+    if (!sceneBreakdown || !sceneBreakdown.voiceoverScript) {
+      throw new Error('No script found - restart processing');
+    }
+
+    const elevenVoiceId = voice || '21m00Tcm4TlvDq8ikWAM';
     const elevenResponse = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${elevenVoiceId}`, {
       method: 'POST',
       headers: {
@@ -1340,15 +1407,7 @@ Output valid JSON only.`
       throw new Error('ElevenLabs voiceover failed');
     }
 
-    // Upload audio to Cloudinary
     const audioBuffer = await elevenResponse.buffer();
-    const cloudinary = require('cloudinary').v2;
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'ddvtwoyxp',
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET
-    });
-
     const audioUpload = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         { resource_type: 'video', folder: 'premium-audio', public_id: `${jobId}-audio` },
@@ -1356,77 +1415,62 @@ Output valid JSON only.`
       ).end(audioBuffer);
     });
 
-    job.audioUrl = audioUpload.secure_url;
     console.log(`[${jobId}] ✅ Voiceover ready`);
+    
     await updatePremiumJobStatus(jobId, {
       audioUrl: audioUpload.secure_url,
-      progress: 20
+      progress: 20,
+      currentStep: 'classify',
+      statusMessage: '🔍 Analyzing images...'
     });
 
-    // ============================================
-    // STEP 2.5: Classify brand images
-    // Use user classifications first, then GPT Vision for unclassified images
-    // ============================================
+    const updatedJob = await getPremiumJob(jobId);
+    return { ...updatedJob, currentStep: 'classify' };
+  }
+
+  // ============================================
+  // STEP: CLASSIFY - Classify brand images
+  // ============================================
+  if (currentStep === 'classify') {
+    console.log(`[${jobId}] 🔍 Step: CLASSIFY`);
+    await updatePremiumJobStatus(jobId, {
+      progress: 22,
+      statusMessage: '🔍 Analyzing images...'
+    });
+
     let classifiedImages = {
-      productShots: [],    // Clean product photos
-      lifestyleShots: [],  // People using the product
-      logoImages: [],      // Brand logos
-      otherImages: []      // Everything else
+      productShots: [],
+      lifestyleShots: [],
+      logoImages: [],
+      otherImages: []
     };
 
-    // First, add user pre-classified images (these skip GPT Vision)
+    // Add user pre-classified images
     if (userClassifiedProducts.length > 0) {
       classifiedImages.productShots = userClassifiedProducts.map(url => ({ url, description: 'user-classified product' }));
-      console.log(`[${jobId}] ✅ Using ${userClassifiedProducts.length} user-classified PRODUCT images`);
     }
     if (userClassifiedLifestyle.length > 0) {
       classifiedImages.lifestyleShots = userClassifiedLifestyle.map(url => ({ url, description: 'user-classified lifestyle' }));
-      console.log(`[${jobId}] ✅ Using ${userClassifiedLifestyle.length} user-classified LIFESTYLE images`);
     }
 
-    // Find images that still need classification (not in user-classified lists)
+    // Find images that need classification
     const alreadyClassified = new Set([...userClassifiedProducts, ...userClassifiedLifestyle]);
     const needsClassification = availableProductImages.filter(url => !alreadyClassified.has(url));
 
     if (needsClassification.length > 0) {
-      await updatePremiumJobStatus(jobId, {
-        statusMessage: `🔍 Analyzing ${needsClassification.length} unclassified images...`,
-        progress: 22
-      });
-
       try {
-        // Use GPT-4 Vision to classify remaining images
-        const classificationPrompt = `Analyze these ${needsClassification.length} brand images and classify each one.
-
-For each image, determine if it's:
-1. "product" - A clean product shot showing just the product
-2. "lifestyle" - Shows people using/interacting with the product  
-3. "logo" - A brand logo or brand name image
-4. "other" - Something else (background, graphics, etc.)
-
-Product being advertised: ${prompt}
-${productName ? `Product name: ${productName}` : ''}
-${productDescription ? `Product description: ${productDescription}` : ''}
-
-Return JSON array with classification for each image by index:
-[{"index": 0, "type": "product", "description": "product bottle on white background"}, ...]`;
-
-        const visionMessages = [
-          {
+        const visionResponse = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [{
             role: 'user',
             content: [
-              { type: 'text', text: classificationPrompt },
+              { type: 'text', text: `Classify these ${needsClassification.length} images as: product, lifestyle, logo, or other. Product: ${prompt}. Return JSON array: [{"index": 0, "type": "product", "description": "..."}]` },
               ...needsClassification.slice(0, 6).map(url => ({
                 type: 'image_url',
                 image_url: { url, detail: 'low' }
               }))
             ]
-          }
-        ];
-
-        const visionResponse = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages: visionMessages,
+          }],
           max_tokens: 500
         });
 
@@ -1435,8 +1479,6 @@ Return JSON array with classification for each image by index:
         
         if (jsonMatch) {
           const classifications = JSON.parse(jsonMatch[0]);
-          console.log(`[${jobId}] 📊 GPT Vision classifications:`, classifications);
-
           classifications.forEach(({ index, type, description }) => {
             if (index < needsClassification.length) {
               const imgData = { url: needsClassification[index], description };
@@ -1449,292 +1491,266 @@ Return JSON array with classification for each image by index:
             }
           });
         }
-
       } catch (classifyErr) {
-        console.warn(`[${jobId}] ⚠️ GPT Vision classification failed, treating unclassified as product shots:`, classifyErr.message);
-        // Fallback: treat unclassified as product shots
+        console.warn(`[${jobId}] Classification failed, treating as product shots`);
         needsClassification.forEach(url => {
-          classifiedImages.productShots.push({ url, description: 'auto-fallback product' });
+          classifiedImages.productShots.push({ url, description: 'auto-fallback' });
         });
       }
     }
 
-    console.log(`[${jobId}] ✅ Final classified totals: ${classifiedImages.productShots.length} product, ${classifiedImages.lifestyleShots.length} lifestyle, ${classifiedImages.logoImages.length} logo`);
-
-    // ============================================
-    // STEP 3: Prepare scene images
-    // SMART MATCHING: Use the RIGHT image type for each scene
-    // ============================================
-    const scenesWithImages = [];
-    const hasClassifiedImages = classifiedImages.productShots.length > 0 || classifiedImages.lifestyleShots.length > 0;
+    console.log(`[${jobId}] ✅ Classified: ${classifiedImages.productShots.length} product, ${classifiedImages.lifestyleShots.length} lifestyle`);
     
-    console.log(`[${jobId}] 🖼️ Image strategy: ${hasClassifiedImages ? 'Using CLASSIFIED product images' : 'Generating with FLUX'}`);
-    
-    // Track which images we've used to avoid repetition
-    let usedProductIdx = 0;
-    let usedLifestyleIdx = 0;
-    
-    for (let i = 0; i < sceneBreakdown.scenes.length; i++) {
-      const scene = sceneBreakdown.scenes[i];
-      await updatePremiumJobStatus(jobId, {
-        statusMessage: hasClassifiedImages 
-          ? `🖼️ Matching image for scene ${i + 1}/${sceneBreakdown.scenes.length}...`
-          : `🖼️ Creating image ${i + 1}/${sceneBreakdown.scenes.length}...`,
-        progress: 25 + (i * 8)
-      });
-
-      let imageUrl = null;
-      let imageType = 'generated';
-
-      if (hasClassifiedImages) {
-        // SMART SELECTION: Pick the RIGHT image type based on scene content
-        const sceneText = `${scene.visualPrompt} ${scene.productAction} ${scene.motionPrompt}`.toLowerCase();
-        
-        // Determine what type of image this scene needs
-        const needsLifestyle = sceneText.includes('person') || 
-                              sceneText.includes('using') || 
-                              sceneText.includes('applying') ||
-                              sceneText.includes('holding') ||
-                              sceneText.includes('enjoying') ||
-                              sceneText.includes('wearing');
-        
-        const needsProductShot = sceneText.includes('close-up') || 
-                                 sceneText.includes('product shot') ||
-                                 sceneText.includes('display') ||
-                                 sceneText.includes('showcase') ||
-                                 sceneText.includes('packaging');
-
-        let selectedImage = null;
-
-        if (needsLifestyle && classifiedImages.lifestyleShots.length > 0) {
-          // Use lifestyle/people image
-          selectedImage = classifiedImages.lifestyleShots[usedLifestyleIdx % classifiedImages.lifestyleShots.length];
-          usedLifestyleIdx++;
-          imageType = 'lifestyle';
-          console.log(`[${jobId}] Scene ${i + 1}: Using LIFESTYLE image (${selectedImage.description})`);
-        } else if (classifiedImages.productShots.length > 0) {
-          // Use clean product shot
-          selectedImage = classifiedImages.productShots[usedProductIdx % classifiedImages.productShots.length];
-          usedProductIdx++;
-          imageType = 'product';
-          console.log(`[${jobId}] Scene ${i + 1}: Using PRODUCT image (${selectedImage.description})`);
-        } else if (classifiedImages.lifestyleShots.length > 0) {
-          // Fallback to lifestyle if no product shots
-          selectedImage = classifiedImages.lifestyleShots[usedLifestyleIdx % classifiedImages.lifestyleShots.length];
-          usedLifestyleIdx++;
-          imageType = 'lifestyle';
-          console.log(`[${jobId}] Scene ${i + 1}: Fallback to LIFESTYLE image`);
-        }
-
-        if (selectedImage) {
-          const productImageUrl = selectedImage.url;
-          
-          // Upload to Cloudinary for consistent handling (or use directly if already Cloudinary)
-          if (productImageUrl.includes('cloudinary')) {
-            imageUrl = productImageUrl;
-          } else {
-            try {
-              const imgUpload = await cloudinary.uploader.upload(productImageUrl, {
-                folder: 'premium-scenes',
-                public_id: `${jobId}-img-${i}`
-              });
-              imageUrl = imgUpload.secure_url;
-            } catch (uploadErr) {
-              console.warn(`[${jobId}] Failed to upload product image, falling back to FLUX`);
-              // Fall through to FLUX generation
-            }
-          }
-        }
-      }
-
-      // Fallback: Generate with FLUX if no product image or upload failed
-      if (!imageUrl) {
-        imageType = 'generated';
-        const fluxOutput = await replicate.run(
-          "black-forest-labs/flux-schnell",
-          {
-            input: {
-              prompt: scene.visualPrompt,
-              aspect_ratio: aspectRatio === '9:16' ? '9:16' : (aspectRatio === '16:9' ? '16:9' : '1:1'),
-              output_format: 'jpg'
-            }
-          }
-        );
-
-        if (fluxOutput && fluxOutput[0]) {
-          const imgUpload = await cloudinary.uploader.upload(fluxOutput[0], {
-            folder: 'premium-scenes',
-            public_id: `${jobId}-img-${i}`
-          });
-          imageUrl = imgUpload.secure_url;
-        }
-      }
-
-      if (imageUrl) {
-        scenesWithImages.push({ 
-          ...scene, 
-          imageUrl, 
-          imageType, // 'product', 'lifestyle', or 'generated'
-          usedProductImage: imageType !== 'generated' 
-        });
-        console.log(`[${jobId}] ✅ Scene ${i + 1} image ready (${imageType})`);
-      }
-    }
-
-    if (scenesWithImages.length === 0) {
-      throw new Error('No images generated');
-    }
-
-    // Save scenes with images for tracking
-    await updatePremiumJobStatus(jobId, { 
-      progress: 50,
-      scenesWithImages: scenesWithImages
+    await updatePremiumJobStatus(jobId, {
+      classifiedImages: classifiedImages,
+      progress: 25,
+      currentStep: 'images',
+      currentSceneIndex: 0,
+      scenesWithImages: [],
+      statusMessage: '🖼️ Preparing scene images...'
     });
 
-    // ============================================
-    // STEP 4: Animate with Kling (Brand-Aware Motion)
-    // ============================================
-    const animatedScenes = [];
+    const updatedJob = await getPremiumJob(jobId);
+    return { ...updatedJob, currentStep: 'images' };
+  }
+
+  // ============================================
+  // STEP: IMAGES - Prepare scene images (one at a time)
+  // ============================================
+  if (currentStep === 'images') {
+    const sceneBreakdown = job.sceneBreakdown;
+    const classifiedImages = job.classifiedImages || { productShots: [], lifestyleShots: [], logoImages: [], otherImages: [] };
+    const scenesWithImages = job.scenesWithImages || [];
+    const currentSceneIndex = job.currentSceneIndex || 0;
     
-    for (let i = 0; i < scenesWithImages.length; i++) {
-      const scene = scenesWithImages[i];
+    if (currentSceneIndex >= sceneBreakdown.scenes.length) {
+      // All images done, move to animation
+      console.log(`[${jobId}] ✅ All scene images ready`);
       await updatePremiumJobStatus(jobId, {
-        statusMessage: `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s)`,
-        progress: 50 + (i * 12)
+        progress: 50,
+        currentStep: 'animate',
+        currentSceneIndex: 0,
+        animatedScenes: [],
+        statusMessage: '🎬 Starting animation...'
       });
+      const updatedJob = await getPremiumJob(jobId);
+      return { ...updatedJob, currentStep: 'animate' };
+    }
 
-      // Build product-aware motion prompt for Kling
-      // Tailor animation based on image TYPE (product shot vs lifestyle vs generated)
+    const i = currentSceneIndex;
+    const scene = sceneBreakdown.scenes[i];
+    console.log(`[${jobId}] 🖼️ Step: IMAGE ${i + 1}/${sceneBreakdown.scenes.length}`);
+    
+    await updatePremiumJobStatus(jobId, {
+      progress: 25 + (i * 8),
+      statusMessage: `🖼️ Preparing image ${i + 1}/${sceneBreakdown.scenes.length}...`
+    });
+
+    const hasClassifiedImages = classifiedImages.productShots.length > 0 || classifiedImages.lifestyleShots.length > 0;
+    let imageUrl = null;
+    let imageType = 'generated';
+
+    if (hasClassifiedImages) {
+      const sceneText = `${scene.visualPrompt} ${scene.productAction || ''} ${scene.motionPrompt || ''}`.toLowerCase();
+      const needsLifestyle = sceneText.includes('person') || sceneText.includes('using');
       
-      const productDesc = productDescription || sceneBreakdown.productDescription || prompt;
-      const actualProductName = productName || businessName || 'the product';
-      const productAction = scene.productAction || '';
-      let motionPrompt = scene.motionPrompt || '';
-      
-      if (!motionPrompt) {
-        // Fallback based on industry
-        const industryMotions = {
-          'E-Commerce': 'Person interacts with product, examining it closely, satisfied expression',
-          'Food & Beverage': 'Person enjoys the food/drink, savoring moment, gentle smile',
-          'Fashion & Beauty': 'Person applies/wears the product confidently, admiring result',
-          'Health & Fitness': 'Person uses the product, feeling the benefit, energized expression',
-          'Technology': 'Hands interact with device smoothly, intuitive usage demonstration',
-          'Real Estate': 'Person walks through space appreciatively, discovering features',
-          'Travel': 'Person experiences destination, wonder and joy in expression',
-          'Professional Services': 'Professional interaction, trust and confidence conveyed'
-        };
-        motionPrompt = industryMotions[industry] || 'Person interacts with product naturally, genuine satisfaction';
+      let selectedImage = null;
+      if (needsLifestyle && classifiedImages.lifestyleShots.length > 0) {
+        selectedImage = classifiedImages.lifestyleShots[i % classifiedImages.lifestyleShots.length];
+        imageType = 'lifestyle';
+      } else if (classifiedImages.productShots.length > 0) {
+        selectedImage = classifiedImages.productShots[i % classifiedImages.productShots.length];
+        imageType = 'product';
+      } else if (classifiedImages.lifestyleShots.length > 0) {
+        selectedImage = classifiedImages.lifestyleShots[i % classifiedImages.lifestyleShots.length];
+        imageType = 'lifestyle';
       }
 
-      // Different prompts based on IMAGE TYPE
-      let fullMotionPrompt;
-      let cfgScale = 0.5;
-
-      // Build detailed product description for Kling to preserve
-      // Include color, size, shape from the product description
-      const productDetails = productDescription || productDesc || '';
-      const colorMatch = productDetails.match(/\b(black|white|red|blue|green|yellow|orange|purple|pink|brown|gray|gold|silver)\b/i);
-      const productColor = colorMatch ? colorMatch[0].toLowerCase() : '';
-      
-      if (scene.imageType === 'lifestyle') {
-        // LIFESTYLE IMAGE: Has people - animate the person naturally
-        // Be VERY specific about product appearance to prevent Kling from changing it
-        
-        fullMotionPrompt = `The person continues natural interaction with the product. ${motionPrompt}. 
-CRITICAL PRODUCT RULES:
-- Product is "${actualProductName}"${productColor ? ` which is ${productColor.toUpperCase()} colored` : ''}
-- Keep product EXACTLY as shown in image - same size, same color, same position
-- Do NOT enlarge, change color, or reposition the product
-- Product stays in its EXACT location${productColor ? ` and stays ${productColor.toUpperCase()}` : ''}
-Smooth realistic movement, commercial quality.`;
-        cfgScale = 0.2; // Very low CFG to strictly preserve product
-        
-      } else if (scene.imageType === 'product') {
-        // PRODUCT SHOT: Clean product image - very subtle animation, preserve product exactly
-        fullMotionPrompt = `Product showcase of "${actualProductName}"${productColor ? ` (${productColor.toUpperCase()} colored)` : ''}.
-STRICT RULES: Do NOT change product size, shape, or color. Keep product EXACTLY as shown.
-${productColor ? `Product color is ${productColor.toUpperCase()} - do not change to any other color.` : ''}
-Very subtle animation only: gentle lighting shift or soft camera movement around the unchanged product.`;
-        cfgScale = 0.1; // Extremely low CFG to preserve product strictly
-        
-      } else {
-        // GENERATED IMAGE: Full motion prompt with product context
-        fullMotionPrompt = `PRODUCT: ${productDesc}${productColor ? ` (${productColor} colored)` : ''}. ${productAction ? `ACTION: ${productAction}. ` : ''}MOTION: ${motionPrompt}. Keep product appearance unchanged. Professional commercial quality.`;
-        cfgScale = 0.4; // Lower for generated images too
+      if (selectedImage) {
+        if (selectedImage.url.includes('cloudinary')) {
+          imageUrl = selectedImage.url;
+        } else {
+          try {
+            const imgUpload = await cloudinary.uploader.upload(selectedImage.url, {
+              folder: 'premium-scenes',
+              public_id: `${jobId}-img-${i}`
+            });
+            imageUrl = imgUpload.secure_url;
+          } catch (uploadErr) {
+            console.warn(`[${jobId}] Failed to upload, falling back to FLUX`);
+          }
+        }
       }
+    }
 
-      // Enhanced negative prompt with color-specific terms
-      const negativePrompt = `blur, distortion, low quality, shaky, amateur, text, watermark, change product, different product, wrong product, morph product, alter design, enlarge product, grow product, expand product${productColor === 'black' ? ', white product, change to white' : ''}${productColor === 'white' ? ', black product, change to black' : ''}, change color, wrong color, different color, color shift, resize product`;
-
-      console.log(`[${jobId}] Scene ${i + 1} (${scene.imageType}): CFG=${cfgScale}, color=${productColor || 'unknown'}, ${fullMotionPrompt.substring(0, 80)}...`);
-
-      // Use Kling v2.1 for image-to-video (correct model name and parameters)
-      const prediction = await replicate.predictions.create({
-        model: "kwaivgi/kling-v2.1",
+    // Generate with FLUX if no product image
+    if (!imageUrl) {
+      imageType = 'generated';
+      const fluxOutput = await replicate.run("black-forest-labs/flux-schnell", {
         input: {
-          prompt: fullMotionPrompt,
-          start_image: scene.imageUrl,
-          duration: 5,
-          aspect_ratio: aspectRatio || '9:16',
-          negative_prompt: negativePrompt,
-          cfg_scale: cfgScale
+          prompt: scene.visualPrompt,
+          aspect_ratio: aspectRatio === '9:16' ? '9:16' : (aspectRatio === '16:9' ? '16:9' : '1:1'),
+          output_format: 'jpg'
         }
       });
 
-      // Poll for completion with progress updates
-      let videoUrl = null;
-      for (let attempt = 0; attempt < 60; attempt++) {
-        await new Promise(r => setTimeout(r, 3000));
-        
-        // Update job status during polling so client sees progress
-        if (attempt % 5 === 0) {
-          await updatePremiumJobStatus(jobId, {
-            statusMessage: `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (${attempt * 3}s elapsed)`,
-            progress: 50 + (i * 12) + Math.floor(attempt / 5)
-          });
-        }
-        
-        const status = await replicate.predictions.get(prediction.id);
-        if (status.status === 'succeeded' && status.output) {
-          videoUrl = status.output;
-          break;
-        } else if (status.status === 'failed') {
-          console.warn(`[${jobId}] Scene ${i + 1} animation failed: ${status.error}`);
-          break;
-        }
+      if (fluxOutput && fluxOutput[0]) {
+        const imgUpload = await cloudinary.uploader.upload(fluxOutput[0], {
+          folder: 'premium-scenes',
+          public_id: `${jobId}-img-${i}`
+        });
+        imageUrl = imgUpload.secure_url;
       }
+    }
 
-      if (videoUrl) {
+    if (imageUrl) {
+      scenesWithImages.push({ ...scene, imageUrl, imageType, usedProductImage: imageType !== 'generated' });
+      console.log(`[${jobId}] ✅ Scene ${i + 1} image ready (${imageType})`);
+    }
+
+    await updatePremiumJobStatus(jobId, {
+      scenesWithImages: scenesWithImages,
+      currentSceneIndex: currentSceneIndex + 1,
+      progress: 25 + ((i + 1) * 8)
+    });
+
+    const updatedJob = await getPremiumJob(jobId);
+    return { ...updatedJob, currentStep: 'images' };
+  }
+
+  // ============================================
+  // STEP: ANIMATE - Animate scenes with Kling (one at a time, with polling)
+  // ============================================
+  if (currentStep === 'animate') {
+    const scenesWithImages = job.scenesWithImages || [];
+    const animatedScenes = job.animatedScenes || [];
+    const currentSceneIndex = job.currentSceneIndex || 0;
+    const pendingPrediction = job.pendingPrediction;
+
+    // If there's a pending Kling prediction, check its status
+    if (pendingPrediction && pendingPrediction.predictionId) {
+      console.log(`[${jobId}] 🔄 Checking Kling prediction ${pendingPrediction.predictionId}`);
+      
+      const status = await replicate.predictions.get(pendingPrediction.predictionId);
+      
+      if (status.status === 'succeeded' && status.output) {
         // Upload to Cloudinary
-        const vidUpload = await cloudinary.uploader.upload(videoUrl, {
+        const scene = scenesWithImages[pendingPrediction.sceneIndex];
+        const vidUpload = await cloudinary.uploader.upload(status.output, {
           resource_type: 'video',
           folder: 'premium-scenes',
-          public_id: `${jobId}-vid-${i}`
+          public_id: `${jobId}-vid-${pendingPrediction.sceneIndex}`
         });
+        
         animatedScenes.push({ ...scene, videoUrl: vidUpload.secure_url, duration: 5 });
-        console.log(`[${jobId}] ✅ Scene ${i + 1} animated`);
+        console.log(`[${jobId}] ✅ Scene ${pendingPrediction.sceneIndex + 1} animated`);
+        
+        await updatePremiumJobStatus(jobId, {
+          animatedScenes: animatedScenes,
+          currentSceneIndex: pendingPrediction.sceneIndex + 1,
+          pendingPrediction: null,
+          progress: 50 + ((pendingPrediction.sceneIndex + 1) * 12)
+        });
+        
+        const updatedJob = await getPremiumJob(jobId);
+        return { ...updatedJob, currentStep: 'animate' };
+      } else if (status.status === 'failed') {
+        console.warn(`[${jobId}] Scene ${pendingPrediction.sceneIndex + 1} animation failed`);
+        // Skip this scene and continue
+        await updatePremiumJobStatus(jobId, {
+          currentSceneIndex: pendingPrediction.sceneIndex + 1,
+          pendingPrediction: null
+        });
+        const updatedJob = await getPremiumJob(jobId);
+        return { ...updatedJob, currentStep: 'animate' };
       } else {
-        console.warn(`[${jobId}] Scene ${i + 1} animation timed out or failed, skipping`);
+        // Still processing - return current status, client will poll again
+        console.log(`[${jobId}] ⏳ Kling still processing scene ${pendingPrediction.sceneIndex + 1}...`);
+        await updatePremiumJobStatus(jobId, {
+          statusMessage: `🎬 Animating scene ${pendingPrediction.sceneIndex + 1}/${scenesWithImages.length}... (please wait)`
+        });
+        const updatedJob = await getPremiumJob(jobId);
+        return { ...updatedJob, currentStep: 'animate' };
       }
     }
 
-    // Allow partial success - at least 1 scene needed
-    if (animatedScenes.length === 0) {
-      throw new Error('No scenes animated - all scenes failed or timed out');
+    // Check if all scenes are done
+    if (currentSceneIndex >= scenesWithImages.length) {
+      if (animatedScenes.length === 0) {
+        throw new Error('No scenes animated - all scenes failed');
+      }
+      console.log(`[${jobId}] ✅ All scenes animated (${animatedScenes.length}/${scenesWithImages.length})`);
+      await updatePremiumJobStatus(jobId, {
+        progress: 85,
+        currentStep: 'compose',
+        statusMessage: '🎥 Composing final video...'
+      });
+      const updatedJob = await getPremiumJob(jobId);
+      return { ...updatedJob, currentStep: 'compose' };
     }
+
+    // Start animating the next scene
+    const i = currentSceneIndex;
+    const scene = scenesWithImages[i];
+    console.log(`[${jobId}] 🎬 Step: ANIMATE scene ${i + 1}/${scenesWithImages.length}`);
     
-    if (animatedScenes.length < scenesWithImages.length) {
-      console.warn(`[${jobId}] ⚠️ Only ${animatedScenes.length}/${scenesWithImages.length} scenes animated - continuing with partial video`);
+    await updatePremiumJobStatus(jobId, {
+      statusMessage: `🎬 Starting animation ${i + 1}/${scenesWithImages.length}...`,
+      progress: 50 + (i * 12)
+    });
+
+    // Build motion prompt
+    const productDesc = productDescription || job.sceneBreakdown?.productDescription || prompt;
+    let motionPrompt = scene.motionPrompt || 'Person interacts with product naturally';
+    let cfgScale = scene.imageType === 'product' ? 0.1 : (scene.imageType === 'lifestyle' ? 0.2 : 0.4);
+    
+    const fullMotionPrompt = scene.imageType === 'lifestyle'
+      ? `The person continues natural interaction. ${motionPrompt}. Keep product unchanged. Commercial quality.`
+      : scene.imageType === 'product'
+      ? `Product showcase. Very subtle animation: gentle lighting or soft camera movement around unchanged product.`
+      : `PRODUCT: ${productDesc}. ${motionPrompt}. Professional commercial quality.`;
+
+    // Create Kling prediction
+    const prediction = await replicate.predictions.create({
+      model: "kwaivgi/kling-v2.1",
+      input: {
+        prompt: fullMotionPrompt,
+        start_image: scene.imageUrl,
+        duration: 5,
+        aspect_ratio: aspectRatio || '9:16',
+        negative_prompt: 'blur, distortion, low quality, change product, morph product',
+        cfg_scale: cfgScale
+      }
+    });
+
+    console.log(`[${jobId}] 🎬 Kling prediction started: ${prediction.id}`);
+    
+    // Save prediction ID and return - client will poll again
+    await updatePremiumJobStatus(jobId, {
+      pendingPrediction: { predictionId: prediction.id, sceneIndex: i },
+      statusMessage: `🎬 Animating scene ${i + 1}/${scenesWithImages.length}... (60-90s)`
+    });
+
+    const updatedJob = await getPremiumJob(jobId);
+    return { ...updatedJob, currentStep: 'animate' };
+  }
+
+  // ============================================
+  // STEP: COMPOSE - Final video composition with Shotstack
+  // ============================================
+  if (currentStep === 'compose') {
+    console.log(`[${jobId}] 🎥 Step: COMPOSE`);
+    const animatedScenes = job.animatedScenes || [];
+    const sceneBreakdown = job.sceneBreakdown;
+    const classifiedImages = job.classifiedImages || {};
+    
+    if (animatedScenes.length === 0) {
+      throw new Error('No animated scenes available for composition');
     }
 
-    await updatePremiumJobStatus(jobId, { progress: 85 });
-
-    // ============================================
-    // STEP 5: Compose with Shotstack
-    // ============================================
     await updatePremiumJobStatus(jobId, {
-      statusMessage: '🎥 Composing final video...',
-      progress: 90
+      progress: 90,
+      statusMessage: '🎥 Composing final video...'
     });
 
     // Build subtitles
@@ -1760,82 +1776,44 @@ Very subtle animation only: gentle lighting shift or soft camera movement around
 
     const timeline = {
       background: '#000000',
-      tracks: [
-        { clips: clips }
-      ],
-      soundtrack: {
-        src: job.audioUrl,
-        effect: 'fadeOut'
-      }
+      tracks: [{ clips }],
+      soundtrack: { src: job.audioUrl, effect: 'fadeOut' }
     };
 
-    // Add logo if provided - prefer classified logo from GPT Vision
-    const actualLogoUrl = classifiedImages.logoImages.length > 0 
+    // Add logo if available
+    const actualLogoUrl = classifiedImages.logoImages?.length > 0 
       ? classifiedImages.logoImages[0].url 
       : logoUrl;
-    console.log(`[${jobId}] 🏷️ Logo: ${actualLogoUrl ? 'Using ' + (classifiedImages.logoImages.length > 0 ? 'CLASSIFIED' : 'provided') + ' logo' : 'No logo'}`);
     
     if (actualLogoUrl) {
-      // Map position to Shotstack format with safe margins
-      const positionMap = {
-        'topRight': { position: 'topRight', offset: { x: -0.03, y: 0.03 } },
-        'topLeft': { position: 'topLeft', offset: { x: 0.03, y: 0.03 } },
-        'bottomRight': { position: 'bottomRight', offset: { x: -0.03, y: -0.12 } }, // Above subtitles
-        'bottomLeft': { position: 'bottomLeft', offset: { x: 0.03, y: -0.12 } }
-      };
-      const logoPos = positionMap[logoPosition] || positionMap['topRight'];
-      
       const logoClip = {
         asset: { type: 'image', src: actualLogoUrl },
         start: 0,
         length: animatedScenes.length * 5,
-        position: logoPos.position,
-        offset: logoPos.offset,
-        scale: Math.min(logoSize, 0.15), // Cap logo size to prevent overflow
-        opacity: 0.9 // Slight transparency for professional look
+        position: 'topRight',
+        offset: { x: -0.03, y: 0.03 },
+        scale: Math.min(logoSize || 0.1, 0.15),
+        opacity: 0.9
       };
       timeline.tracks.unshift({ clips: [logoClip] });
     }
 
-    // Add subtitles track - positioned safely within frame
-    // Format text to max 15 chars per line to prevent overflow
+    // Add subtitles
     if (subtitles.length > 0) {
-      const subClips = subtitles.map(sub => {
-        // Split long text into short lines (max ~15 chars) for viral style
-        const words = sub.text.trim().split(/\s+/);
-        let formattedText = sub.text.toUpperCase();
-        
-        if (sub.text.length > 15) {
-          const lines = [];
-          let currentLine = '';
-          for (const word of words) {
-            const testLine = currentLine ? `${currentLine} ${word}` : word;
-            if (testLine.length > 15 && currentLine) {
-              lines.push(currentLine.toUpperCase());
-              currentLine = word;
-            } else {
-              currentLine = testLine;
-            }
-          }
-          if (currentLine) lines.push(currentLine.toUpperCase());
-          formattedText = lines.join('\n');
-        }
-        
-        return {
-          asset: {
-            type: 'title',
-            text: formattedText,
-            style: 'chunk',
-            size: 'small', // Smaller to fit better
-            color: '#ffffff',
-            background: '#000000cc' // More opaque for readability
-          },
-          start: sub.start,
-          length: sub.end - sub.start,
-          position: 'bottom',
-          offset: { y: -0.08 } // Move UP from bottom edge to stay in frame
-        };
-      });
+      const subClips = subtitles.map(sub => ({
+        asset: {
+          type: 'title',
+          text: sub.text.toUpperCase(),
+          style: 'chunk',
+          size: 'small',
+          color: '#ffffff',
+          background: '#000000cc'
+        },
+        start: sub.start,
+        length: sub.end - sub.start,
+        position: 'bottom',
+        offset: { y: -0.08 }
+      }));
       timeline.tracks.push({ clips: subClips });
     }
 
@@ -1865,54 +1843,89 @@ Very subtle animation only: gentle lighting shift or soft camera movement around
 
     const renderId = shotstackData.response.id;
     console.log(`[${jobId}] ✅ Shotstack render started: ${renderId}`);
+    
+    // Save render ID and move to polling step
+    await updatePremiumJobStatus(jobId, {
+      pendingPrediction: { renderId: renderId },
+      currentStep: 'compose_poll',
+      statusMessage: '🎥 Rendering final video...'
+    });
 
-    // Poll for render completion
-    let finalVideoUrl = null;
-    for (let attempt = 0; attempt < 60; attempt++) {
-      await new Promise(r => setTimeout(r, 5000));
-      await updatePremiumJobStatus(jobId, { progress: 90 + Math.min(9, attempt) });
-      
-      const statusRes = await fetch(`https://api.shotstack.io/v1/render/${renderId}`, {
-        headers: { 'x-api-key': process.env.SHOTSTACK_API_KEY }
+    const updatedJob = await getPremiumJob(jobId);
+    return { ...updatedJob, currentStep: 'compose_poll' };
+  }
+
+  // ============================================
+  // STEP: COMPOSE_POLL - Poll Shotstack render status
+  // ============================================
+  if (currentStep === 'compose_poll') {
+    const pendingPrediction = job.pendingPrediction;
+    
+    if (!pendingPrediction || !pendingPrediction.renderId) {
+      throw new Error('No render ID found');
+    }
+
+    console.log(`[${jobId}] 🔄 Checking Shotstack render ${pendingPrediction.renderId}`);
+    
+    const statusRes = await fetch(`https://api.shotstack.io/v1/render/${pendingPrediction.renderId}`, {
+      headers: { 'x-api-key': process.env.SHOTSTACK_API_KEY }
+    });
+    const statusData = await statusRes.json();
+    
+    if (statusData.response?.status === 'done' && statusData.response?.url) {
+      // Upload to Cloudinary for permanent storage
+      const finalUpload = await cloudinary.uploader.upload(statusData.response.url, {
+        resource_type: 'video',
+        folder: 'premium-final',
+        public_id: `${jobId}-final`
       });
-      const statusData = await statusRes.json();
       
-      if (statusData.response?.status === 'done' && statusData.response?.url) {
-        // Upload to Cloudinary for permanent storage
-        const finalUpload = await cloudinary.uploader.upload(statusData.response.url, {
-          resource_type: 'video',
-          folder: 'premium-final',
-          public_id: `${jobId}-final`
-        });
-        finalVideoUrl = finalUpload.secure_url;
-        break;
-      } else if (statusData.response?.status === 'failed') {
-        throw new Error('Shotstack render failed');
-      }
+      console.log(`[${jobId}] 🎉 Premium video complete: ${finalUpload.secure_url}`);
+      
+      await updatePremiumJobStatus(jobId, {
+        status: 'done',
+        progress: 100,
+        statusMessage: '✅ Video ready!',
+        videoUrl: finalUpload.secure_url,
+        pendingPrediction: null,
+        currentStep: 'done',
+        completedAt: new Date()
+      });
+
+      const updatedJob = await getPremiumJob(jobId);
+      return { ...updatedJob, status: 'done', currentStep: 'done' };
+    } else if (statusData.response?.status === 'failed') {
+      throw new Error('Shotstack render failed');
+    } else {
+      // Still rendering
+      console.log(`[${jobId}] ⏳ Shotstack still rendering...`);
+      await updatePremiumJobStatus(jobId, {
+        progress: 92,
+        statusMessage: '🎥 Rendering final video... (please wait)'
+      });
+      const updatedJob = await getPremiumJob(jobId);
+      return { ...updatedJob, currentStep: 'compose_poll' };
     }
+  }
 
-    if (!finalVideoUrl) {
-      throw new Error('Render timed out');
-    }
+  // If we get here with 'done' status, return the job
+  if (currentStep === 'done' || job.status === 'done') {
+    return job;
+  }
 
-    // ============================================
-    // DONE!
-    // ============================================
-    await updatePremiumJobStatus(jobId, {
-      status: 'done',
-      progress: 100,
-      statusMessage: '✅ Video ready!',
-      videoUrl: finalVideoUrl
-    });
+  throw new Error(`Unknown step: ${currentStep}`);
+}
 
-    console.log(`[${jobId}] 🎉 Premium video complete: ${finalVideoUrl}`);
-
-  } catch (error) {
-    console.error(`[${jobId}] ❌ Failed:`, error.message);
-    await updatePremiumJobStatus(jobId, {
-      status: 'failed',
-      error: error.message,
-      statusMessage: `❌ Failed: ${error.message}`
-    });
+/**
+ * Process Premium AI Video Job in Background (Vercel)
+ * DEPRECATED - Use processOneStep instead for chunked processing
+ * Keeping for reference/fallback
+ */
+async function processPremiumJobVercel(jobId) {
+  console.log(`[${jobId}] ⚠️ processPremiumJobVercel called - this is deprecated, use chunked processing`);
+  // Just call processOneStep once and return
+  const job = await getPremiumJob(jobId);
+  if (job) {
+    await processOneStep(jobId, job);
   }
 }
