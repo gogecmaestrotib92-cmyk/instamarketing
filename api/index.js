@@ -793,9 +793,9 @@ module.exports = async (req, res) => {
         if (premiumJob) {
           // If still processing, continue the processing!
           if (premiumJob.status === 'processing') {
-            console.log(`[${premiumJobId}] GET poll triggering processOneStep (step: ${premiumJob.step})`);
+            console.log(`[${premiumJobId}] GET poll triggering processOneStep (step: ${premiumJob.currentStep})`);
             try {
-              await processOneStep(premiumJobId);
+              await processOneStep(premiumJobId, premiumJob);
             } catch (stepErr) {
               console.error(`[${premiumJobId}] Step error:`, stepErr.message);
             }
