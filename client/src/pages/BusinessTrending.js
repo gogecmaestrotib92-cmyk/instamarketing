@@ -70,10 +70,10 @@ const BusinessTrending = () => {
         const { jobId, startedAt, metadata } = JSON.parse(pendingJob);
         console.log('🔄 Found pending premium job:', jobId);
         
-        // Check if job is too old (more than 30 minutes)
+        // Check if job is too old (more than 15 minutes - reduced from 30)
         const jobAge = Date.now() - new Date(startedAt).getTime();
-        if (jobAge > 30 * 60 * 1000) {
-          console.log('⏰ Pending job too old, removing');
+        if (jobAge > 15 * 60 * 1000) {
+          console.log('⏰ Pending job too old (>15 min), clearing');
           localStorage.removeItem('pendingPremiumJob');
           setPendingJobInfo(null);
           return;
@@ -127,6 +127,12 @@ const BusinessTrending = () => {
           setPendingJobInfo(null);
           setGenerationError(`Previous job failed: ${statusData.error}`);
           
+        } else if (statusData.error || !statusData.status || statusData.status === 'not_found') {
+          // Job not found or error - clean up and let user start fresh
+          console.log('🧹 Job not found or error, clearing localStorage');
+          localStorage.removeItem('pendingPremiumJob');
+          setPendingJobInfo(null);
+          
         } else if (statusData.status === 'pending' || statusData.status === 'starting') {
           // Job exists but hasn't started/stalled - show banner for manual resume
           console.log('🔄 Job pending/starting, showing resume banner...');
@@ -136,49 +142,36 @@ const BusinessTrending = () => {
             startedAt,
             metadata,
             status: statusData.status,
-            statusMessage: `Job created ${elapsedMin} min ago - needs processing`,
+            statusMessage: `Job created ${elapsedMin} min ago - click Resume or Cancel to start fresh`,
             canResume: true
           });
           
-        } else if (statusData.status && statusData.status !== 'not_found') {
-          // Still processing - show banner with current status
-          console.log('⏳ Premium job still processing:', statusData.statusMessage);
+        } else if (statusData.status === 'processing' || statusData.status === 'generating_script') {
+          // Still processing - show banner but DON'T auto-resume (let user decide)
+          console.log('⏳ Premium job status:', statusData.statusMessage);
           const elapsedMin = Math.floor(jobAge / 60000);
           setPendingJobInfo({
             jobId,
             startedAt,
             metadata,
             status: statusData.status,
-            statusMessage: statusData.statusMessage || `Processing... (${elapsedMin} min)`,
+            statusMessage: statusData.statusMessage || `Processing... (${elapsedMin} min elapsed)`,
             progress: statusData.progress || 0,
-            canResume: false
+            canResume: true // Allow user to cancel and start fresh
           });
-          
-          // Auto-poll for updates
-          setGenerationStep(`🔄 Resuming: ${statusData.statusMessage || 'Processing...'}`);
-          setIsGenerating(true);
-          resumePremiumJobPolling(jobId, metadata);
+          // DON'T auto-poll - let user click Resume or Cancel
           
         } else {
-          // Job not found - clean up
+          // Unknown status - clean up
+          console.log('🧹 Unknown status, clearing localStorage');
           localStorage.removeItem('pendingPremiumJob');
           setPendingJobInfo(null);
         }
       } catch (err) {
         console.warn('Failed to check pending premium jobs:', err.message);
-        // Show banner with error for manual retry
-        const pendingJob = localStorage.getItem('pendingPremiumJob');
-        if (pendingJob) {
-          const { jobId, startedAt, metadata } = JSON.parse(pendingJob);
-          setPendingJobInfo({
-            jobId,
-            startedAt,
-            metadata,
-            status: 'unknown',
-            statusMessage: 'Could not check status - click Resume to retry',
-            canResume: true
-          });
-        }
+        // Clear localStorage on error so user can start fresh
+        localStorage.removeItem('pendingPremiumJob');
+        setPendingJobInfo(null);
       }
     };
     
