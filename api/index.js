@@ -45,6 +45,8 @@ const premiumJobSchema = new mongoose.Schema({
   animatedScenes: [mongoose.Schema.Types.Mixed], // Completed scene animations  
   currentSceneIndex: { type: Number, default: 0 }, // Track progress through scenes
   pendingPrediction: mongoose.Schema.Types.Mixed, // { predictionId, sceneIndex } for Kling polling
+  klingCheckCount: { type: Number, default: 0 }, // Counter for Kling status checks
+  shotstackCheckCount: { type: Number, default: 0 }, // Counter for Shotstack status checks
   savedToAssetHub: { type: Boolean, default: false }, // Track if user has synced this
   createdAt: { type: Date, default: Date.now },
   completedAt: Date
@@ -1649,6 +1651,7 @@ Output valid JSON only.`
           animatedScenes: animatedScenes,
           currentSceneIndex: pendingPrediction.sceneIndex + 1,
           pendingPrediction: null,
+          klingCheckCount: 0, // Reset counter for next scene
           progress: 50 + ((pendingPrediction.sceneIndex + 1) * 12)
         });
         
@@ -1659,15 +1662,21 @@ Output valid JSON only.`
         // Skip this scene and continue
         await updatePremiumJobStatus(jobId, {
           currentSceneIndex: pendingPrediction.sceneIndex + 1,
-          pendingPrediction: null
+          pendingPrediction: null,
+          klingCheckCount: 0 // Reset counter
         });
         const updatedJob = await getPremiumJob(jobId);
         return { ...updatedJob, currentStep: 'animate' };
       } else {
         // Still processing - return current status, client will poll again
-        console.log(`[${jobId}] ⏳ Kling still processing scene ${pendingPrediction.sceneIndex + 1}...`);
+        // Increment progress slightly to show we're still checking
+        const checkCount = (job.klingCheckCount || 0) + 1;
+        const progressBump = Math.min(checkCount, 10); // Max 10% bump during waiting
+        console.log(`[${jobId}] ⏳ Kling still processing scene ${pendingPrediction.sceneIndex + 1}... (check #${checkCount})`);
         await updatePremiumJobStatus(jobId, {
-          statusMessage: `🎬 Animating scene ${pendingPrediction.sceneIndex + 1}/${scenesWithImages.length}... (please wait)`
+          statusMessage: `🎬 Animating scene ${pendingPrediction.sceneIndex + 1}/${scenesWithImages.length}... (checking #${checkCount})`,
+          progress: 50 + (pendingPrediction.sceneIndex * 12) + progressBump,
+          klingCheckCount: checkCount
         });
         const updatedJob = await getPremiumJob(jobId);
         return { ...updatedJob, currentStep: 'animate' };
